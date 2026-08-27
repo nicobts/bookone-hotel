@@ -1,0 +1,27 @@
+{
+  "name": "@bookone/agents",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Agent roster, pg-boss runner, typed domain tools, versioned prompts and golden eval sets",
+  "exports": {
+    ".": "./src/index.ts",
+    "./registry": "./src/registry.ts",
+    "./runner": "./src/runner.ts",
+    "./tools": "./src/tools/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --exclude 'src/evals/**'",
+    "test:evals": "vitest run --dir src/evals"
+  },
+  "dependencies": {
+    "@bookone/core": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vitest": "^4.1.11"
+  }
+}

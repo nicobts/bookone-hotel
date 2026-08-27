@@ -1,0 +1,36 @@
+{
+  "name": "@bookone/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Canonical domain: schema, types, event emitter, journey state machine, AuthorityMap router, policy engine, LlmProvider, adapter interfaces",
+  "exports": {
+    ".": "./src/index.ts",
+    "./db": "./src/db/index.ts",
+    "./events": "./src/events/index.ts",
+    "./journey": "./src/journey/index.ts",
+    "./authority": "./src/authority/index.ts",
+    "./policy": "./src/policy/index.ts",
+    "./llm": "./src/llm/index.ts",
+    "./adapters": "./src/adapters/index.ts",
+    "./types": "./src/types/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "test:rls": "vitest run --dir src/db/__tests__/rls",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "postgres": "^3.4.9",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.11"
+  }
+}

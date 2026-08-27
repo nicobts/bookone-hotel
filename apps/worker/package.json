@@ -1,0 +1,34 @@
+{
+  "name": "@bookone/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Persistent Node service: pg-boss jobs, sync engine, reconciliation, connectors, agent runner, tool endpoints",
+  "main": "dist/index.mjs",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsdown",
+    "start": "node dist/index.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@bookone/adapters": "workspace:*",
+    "@bookone/agents": "workspace:*",
+    "@bookone/core": "workspace:*",
+    "@bookone/i18n": "workspace:*",
+    "@hono/node-server": "^2.1.1",
+    "hono": "^4.13.5",
+    "pg-boss": "^12.28.0",
+    "pino": "^10.3.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "tsdown": "^0.22.14",
+    "tsx": "^4.23.12",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.11"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "bookone-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Guest-journey-first hospitality platform for small independent hotels (IT/AT/SI)",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:rls": "turbo run test:rls",
+    "test:evals": "turbo run test:evals",
+    "db:generate": "pnpm --filter @bookone/core db:generate",
+    "db:migrate": "pnpm --filter @bookone/core db:migrate",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@next/eslint-plugin-next": "^16.3.3",
+    "@types/node": "^26.4.0",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-turbo": "^2.10.12",
+    "prettier": "^3.9.6",
+    "turbo": "^2.10.12",
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.68.0",
+    "vitest": "^4.1.11"
+  }
+}

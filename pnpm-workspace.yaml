@@ -1,0 +1,19 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# Native/binary postinstall scripts we accept. Anything not listed here does not
+# get to run code at install time.
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  esbuild: true
+
+minimumReleaseAgeExclude:
+  - '@eloqnt/format-json@0.0.3'
+  - '@eloqnt/format-po@0.0.3'
+  - '@types/node@26.4.0'
+  - icu-minify@4.14.0
+  - next-intl-swc-plugin-extractor@4.14.0
+  - next-intl@4.14.0
+  - use-intl@4.14.0

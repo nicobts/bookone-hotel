@@ -1,0 +1,20 @@
+{
+  "name": "@bookone/i18n",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Locale definitions and shared message catalogues for it/de/en/sl",
+  "exports": {
+    ".": "./src/index.ts",
+    "./messages/*": "./messages/*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vitest": "^4.1.11"
+  }
+}
