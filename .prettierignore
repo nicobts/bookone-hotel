@@ -5,7 +5,7 @@ dist/
 pnpm-lock.yaml
 
 # Documentation is frozen at handoff (README.md) and changes only through
-# docs/05-ADRS.md. Formatters do not get a vote on canonical text.
+# docs/adr/. Formatters do not get a vote on canonical text.
 docs/
 README.md
 CLAUDE.md

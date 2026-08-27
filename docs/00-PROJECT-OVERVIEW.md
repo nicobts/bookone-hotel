@@ -26,7 +26,7 @@ A multi-tenant platform for small independent hotels (30–120 rooms, IT/AT/SI) 
 | 02 | `02-USER-STORIES.md` | Epics and stories, guest-first, with AC |
 | 03 | `03-ARCHITECTURE.md` | Stack, schema, dual-source implementation, security |
 | 04 | `04-IMPLEMENTATION-PLAN.md` | Phases, sprints, DoD, environments, CI/CD |
-| 05 | `05-ADRS.md` | Architecture Decision Records (ADR-001…013) |
+| 05 | `adr/` | Architecture Decision Records, one file each (ADR-001…016) |
 | 06 | `06-AI-AGENT-LAYER.md` | Agent roster, pipeline infra, autonomy tiers, guardrails |
 | 07 | `07-COMPETITIVE-ANALYSIS.md` | Market map, feature matrix, gap backlog, moat definition |
 | 08 | `08-STRATEGY-REFERENCE-PLAYBOOK.md` | Strategy record: demand-cloning thesis, reference implementations, pricing language, endgame register |

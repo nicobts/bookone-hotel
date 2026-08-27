@@ -88,7 +88,7 @@ Not a plan to sell — a discipline on what to invest in. Every asset below comp
 ## 7. Documentation changelog applied
 
 - `00-PROJECT-OVERVIEW`: index + D19–D21 added to the register
-- `05-ADRS`: ADR-014 (reference implementations), ADR-015 (pricing display metric)
+- `docs/adr/`: ADR-014 (reference implementations), ADR-015 (pricing display metric)
 - `01-PRD` §6: per-room equivalence display requirement added
 - `02-USER-STORIES`: E1.2 AC now cites the reference-flow benchmark; preventivi story added to E1 (P1) per 07 §3
 - `07-COMPETITIVE-ANALYSIS`: cross-reference to this record (§6 verdict unchanged)

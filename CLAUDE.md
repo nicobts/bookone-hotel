@@ -5,7 +5,7 @@ Guest-journey-first hospitality platform for small independent hotels (IT/AT/SI)
 ## Read first, in order
 1. `docs/00-PROJECT-OVERVIEW.md` — scope, decision register D1–D21, non-goals
 2. `docs/03-ARCHITECTURE.md` — topology, schema, conventions (§10 = repo layout)
-3. `docs/05-ADRS.md` — 15 ADRs; **ADRs override anything conflicting in older annex documents**
+3. `docs/adr/` — 16 ADRs, one file each ([index](docs/adr/README.md)); **ADRs override anything conflicting in older annex documents**
 4. `docs/01-PRD.md` + `docs/02-USER-STORIES.md` — what to build, acceptance criteria
 5. `docs/04-IMPLEMENTATION-PLAN.md` — current sprint scope and DoD
 6. `docs/06-AI-AGENT-LAYER.md` — agent roster, `agent_runs`, autonomy tiers
@@ -35,11 +35,16 @@ Historical/context docs live in `docs/annexes/` (technical annexes, Concierge wo
 ## CI gates (all merge-blocking)
 typecheck · vitest (every P0 AC has a test) · RLS cross-tenant suite · migration check · agent eval suite
 
+## Conventions and workflows
+- `docs/conventions/` — coding standards, UI component sourcing and theming
+- `docs/runbooks/rls-policies-map.md` — every policy, and when isolation was last verified **by query**
+- `.claude/skills/` — `add-table`, `add-ui-component`, `write-adr`: the sequences where skipping a step fails silently. Use them; they are not summaries of this file
+
 ## Current phase
-Sprint 1 (04-IMPLEMENTATION-PLAN §1 Phase A): monorepo scaffold, schema v1 + RLS + test harness, core package (events, AuthorityMap router, LlmProvider), MockEricsoftAdapter, `agent_runs` + agents scaffold, CI with the five gates. Day-1 task list: 04 §6.
+Sprint 1 (04-IMPLEMENTATION-PLAN §1 Phase A): monorepo scaffold ✅, schema v1 + RLS + test harness, auth + console shell, core package (events, AuthorityMap router, LlmProvider), MockEricsoftAdapter, `agent_runs` + agents scaffold, CI with the five gates. Day-1 task list: 04 §6. Built-vs-decided: `docs/adr/IMPLEMENTATION-STATUS.md`.
 
 ## Environments
 `local` (Supabase CLI, mock adapter, Stripe test) → `staging` (EU project, seeded demo property) → `prod` (EU, migrations via CI only). EU residency is non-negotiable (D9): no service, endpoint, or region outside the EU without updating the sub-processor register first.
 
 ## When uncertain
-Prefer the documented decision over cleverness. If a task seems to require violating a binding rule, stop and surface it — the answer is a decision revision in `docs/05-ADRS.md`, not a workaround.
+Prefer the documented decision over cleverness. If a task seems to require violating a binding rule, stop and surface it — the answer is a new ADR in `docs/adr/` (use the `write-adr` skill), not a workaround.

@@ -36,7 +36,8 @@ docs/
   02-USER-STORIES.md       ← 8 epics, 34 stories with AC
   03-ARCHITECTURE.md       ← topology, schema, conventions, repo layout (§10)
   04-IMPLEMENTATION-PLAN.md← 10 sprints, DoD, CI gates, day-1 tasks (§6)
-  05-ADRS.md               ← 15 decision records — OVERRIDE anything conflicting elsewhere
+  adr/                     ← 16 decision records, one file each — OVERRIDE anything conflicting
+  05-ADRS.md               ← pointer to adr/ (was the single file at handoff)
   06-AI-AGENT-LAYER.md     ← agent roster AG-01…07, agent_runs, autonomy tiers, evals
   07-COMPETITIVE-ANALYSIS.md
   08-STRATEGY-REFERENCE-PLAYBOOK.md
@@ -62,4 +63,4 @@ Ericsoft API request · ElevenLabs Enterprise quote (EU residency) · Dograh mul
 `local` (Supabase CLI + MockEricsoftAdapter + Stripe test) → `staging` (Supabase EU, seeded demo property) → `prod` (EU, migrations via CI only).
 
 ---
-RT Holding Group GmbH · July 2026 · Documentation v1 (frozen at handoff — changes go through docs/05-ADRS.md)
+RT Holding Group GmbH · July 2026 · Documentation v1 (frozen at handoff — changes go through docs/adr/)
