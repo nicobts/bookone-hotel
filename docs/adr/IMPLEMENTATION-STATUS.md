@@ -7,18 +7,18 @@ worse than none, because it is read as current.
 
 | ADR | Decision | Built? | Where |
 |---|---|---|---|
-| 001 | Platform UUIDs; external systems via `external_refs` | ✅ as-built | Every table keys on a platform UUID; `external_refs` is the only home for a foreign identifier |
-| 002 | Fiscal core gated | ✅ by construction | Nothing fiscal exists. Enforced by absence, not by a check |
+| 001 | Platform UUIDs; external systems via `external_refs` | ✅ as-built | Platform UUIDs everywhere; `external_refs` the only home for a foreign id; AuthorityMap + write-router in `src/authority` with both routes tested per domain (E6.2) |
+| 002 | Fiscal core gated | ✅ as-built | Nothing fiscal exists, and the authority router refuses to grant the domain to the platform whatever a property row says — a row is data, so "we would never configure that" is not a control |
 | 003 | Two deployables; worker is persistent | ✅ as-built | `apps/web`, `apps/worker`; constraint stated in the worker README |
 | 004 | Hono on `@hono/node-server` | ✅ as-built | `apps/worker/src/app.ts` |
-| 005 | pg-boss behind a `JobQueue` interface | ⬜ not yet | Dependency installed; wiring is Sprint 2 |
+| 005 | pg-boss behind a `JobQueue` interface | ⬜ not yet | Dependency installed; the interface and wiring land with the sync jobs in Sprint 2 |
 | 006 | Supabase EU; Drizzle for domain access | 🟨 partial | Schema, access layer and Auth built on local Supabase. Cloud EU project not yet provisioned |
 | 007 | RLS on every client-reachable table, tested in CI | ✅ as-built | 10/10 tables, both suites green, negative control verified, and now a CI job of its own |
-| 008 | Mock-first connector | ⬜ not yet | `packages/adapters` scaffolded; day-1 task 4 |
+| 008 | Mock-first connector | ✅ as-built | `MockEricsoftAdapter` with counted failure injection, plus the shared contract suite the real adapter must pass before the swap. Verified by negative control: removing the idempotency guard fails the contract |
 | 009 | Voice hard tool boundaries | ⬜ WS-B | Not this workstream |
 | 010 | Stripe behind `PaymentAdapter` | ⬜ not yet | Sprint 4 |
 | 011 | Agents as first-class workers, tiered autonomy | 🟨 partial | `agent_runs` exists and is policed (no session insert — a human-recorded run would be a forged audit entry). Runner is Sprint 2 |
-| 012 | `LlmProvider` abstraction; no vendor SDK imports | 🟨 partial | The prohibition is enforced now by `no-restricted-imports` in `eslint.config.mjs`; the interface itself is day-1 task 3 |
+| 012 | `LlmProvider` abstraction; no vendor SDK imports | ✅ as-built | Interface and registry in `src/llm`; registration refuses any provider without declared EU processing, a region, a sub-processor register entry and a verification under a year old. No provider registered yet — that waits for a real requirement |
 | 013 | Journey state machine is the single source of stay truth | ⬜ not yet | Sprint 2 |
 | 014 | Reference implementations over blank-page design | ⬜ not yet | First design note is due with the booking surface (Sprint 3). The console shell follows the BookOne design system, which is our own and needs no note |
 | 015 | Pricing in €/room/month equivalence | ⬜ not yet | Sprint 8 reporting |
