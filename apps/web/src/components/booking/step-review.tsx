@@ -2,11 +2,13 @@ import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import type { HeldBooking, BookingProperty } from '@bookone/core/db'
 import type { TouristTaxNote } from '@bookone/core/booking'
+import type { DepositQuote } from '@bookone/core/policy'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import type { BookingDraft } from '@/lib/booking/draft'
 import { formatDate, formatMoney, formatTime, roomName } from './format'
 import { StateFields, type BookingState } from './state-fields'
+import { SimulatedPaymentNotice } from './payment-notice'
 
 /**
  * Step 4 — the itemised total, the terms, and then the commitment.
@@ -26,6 +28,8 @@ export async function StepReview({
   booking,
   draft,
   touristTax,
+  deposit,
+  paymentsSimulated,
   locale,
   action,
   state,
@@ -36,6 +40,14 @@ export async function StepReview({
   booking: HeldBooking
   draft: BookingDraft
   touristTax: TouristTaxNote | null
+  /** What the property's policy says is due now (E1.3). */
+  deposit: DepositQuote
+  /**
+   * MEMO: true while the payment provider is the mock (ADR-010). Read from the
+   * worker rather than an env var here, because the process that would take the
+   * money is the one entitled to say whether it is real.
+   */
+  paymentsSimulated: boolean
   locale: string
   action: (formData: FormData) => Promise<void>
   state: BookingState
@@ -95,8 +107,40 @@ export async function StepReview({
 
       <Separator className="my-6" />
 
+      {/*
+        Payment sits between the itemised total and the commit control — the
+        placement both reference implementations use, and the reason they use it
+        is that a guest who has read the total and the terms is a guest ready to
+        pay (design note §3). The step count does not change.
+      */}
+      {deposit.dueNowCents > 0 && (
+        <section className="mb-6 space-y-4">
+          {/* MEMO: disappears on its own once a real provider is connected. */}
+          {paymentsSimulated && <SimulatedPaymentNotice />}
+
+          <div className="space-y-1 text-sm">
+            <p className="flex items-baseline justify-between">
+              <span className="text-foreground font-medium">{t('payment.dueNow')}</span>
+              <span className="text-foreground tabular-nums">
+                {formatMoney(deposit.dueNowCents, booking.currency, locale)}
+              </span>
+            </p>
+            {deposit.dueAtPropertyCents > 0 && (
+              <p className="text-muted-foreground flex items-baseline justify-between text-xs">
+                <span>{t('payment.dueAtProperty')}</span>
+                <span className="tabular-nums">
+                  {formatMoney(deposit.dueAtPropertyCents, booking.currency, locale)}
+                </span>
+              </p>
+            )}
+          </div>
+
+          <Separator />
+        </section>
+      )}
+
       <ul className="text-muted-foreground space-y-2 text-xs">
-        <li>{t('review.payment')}</li>
+        {deposit.dueNowCents === 0 && <li>{t('payment.nothingNow')}</li>}
         <li>{t('review.cancellation')}</li>
         {booking.expiresAt && (
           <li>
@@ -116,7 +160,7 @@ export async function StepReview({
       <form action={action} className="mt-8 flex items-center gap-4">
         <StateFields state={state} />
         <Button type="submit" size="lg">
-          {t('review.confirm')}
+          {deposit.dueNowCents > 0 ? t('payment.payAndConfirm') : t('review.confirm')}
         </Button>
         <Link
           href={backHref}

@@ -137,10 +137,51 @@ property that cannot answer the phone in Slovenian should not present a
 Slovenian booking flow — the promise implied by the language switch extends past
 the booking, and this is the surface that makes it.
 
+## 4b. Payment, and what "staged" means here
+
+Payment landed in Sprint 4 in the place §3 reserved for it: inside step 4,
+below the itemised total, above the commit control. The step count did not
+change, which was the test of whether that placement was real or aspirational.
+
+**No payment provider is connected.** The adapter behind it is a simulated one
+that moves no money (ADR-010), and the decision to stage it that way is the same
+one ADR-008 made for the PMS connector: build against the interface, prove the
+whole path, swap the implementation when the commercial side is ready — Stripe
+account, Connect Standard onboarding, and the commercialista session on the fee
+flow are all 04 §0 items with their own calendars.
+
+What that leaves real, and it is most of it: the deposit comes from the
+property's own policy; the `payments` ledger and the `fee_events` row are
+written; the provider's webhook is the only thing that confirms a booking
+(03 §7.2); the signature on that webhook is checked; redelivery is idempotent;
+a lost webhook is recovered by a sweep; and a cancellation computes its refund
+from the policy and the ledger before the guest presses anything.
+
+What is fake: the card form, the authorisation, and the money.
+
+**Three deliberate choices about telling the guest.**
+
+*The notice is above the amount, not below the button.* A disclaimer under a
+control is a disclaimer nobody reads, and the failure it guards against — a
+guest who believes they paid a deposit, arriving to be asked for it again — is
+the worst outcome this staging could produce.
+
+*It says what is real as well as what is not.* "Nothing here is real" would make
+a guest abandon a booking the hotel genuinely receives.
+
+*It is driven by the adapter's own `simulated` flag, read from the worker.* Not
+an environment variable in the web app, and not a name comparison scattered
+through the UI. The process that would take the money is the one entitled to say
+whether it is real — and when the flag goes false the notice disappears without
+anyone remembering to remove it. If the worker cannot be reached, the surface
+assumes simulated and warns: a confused guest is a cheaper mistake than a
+deceived one.
+
 ## 5. What is deliberately deferred
 
-Payment and 3DS (E1.3), self-service change and cancel (E1.4), upsells (E1.7,
-P2), and multi-room bookings — one room per booking in V1, because the group and
+A real payment provider (see §4b), 3DS beyond the interface's
+`requires_action` status, guest-initiated *changes* as opposed to cancellation
+(E1.4's second half), upsells (E1.7, P2), and multi-room bookings — one room per booking in V1, because the group and
 family case is a *preventivo* (E1.8) and gets Slope's quote structure as its own
 surface with its own note, not a checkbox bolted onto this one.
 

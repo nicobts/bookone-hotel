@@ -4,6 +4,7 @@ import { properties, reservations, roomTypes } from '../db/schema'
 import { emit } from '../events'
 import { guestActor, systemActor } from '../events/actor'
 import { resolveAuthority } from '../authority'
+import { hasSettledPayment } from '../payments/webhook'
 import { generateReference } from './reference'
 import { nightsBetween, quoteStay } from './quote'
 import type { SnapshotNight } from './quote'
@@ -178,6 +179,13 @@ export async function expireHolds(now: Date = new Date()): Promise<{ expired: nu
       let expired = 0
 
       for (const row of stale) {
+        // A hold with money against it is not an abandoned hold. It is a
+        // booking whose confirmation did not finish — the webhook was lost, or
+        // the confirm failed after the capture — and cancelling it here would
+        // take the room away from someone who has already paid for it, silently
+        // and on a schedule. `replayLostPayments` is what resolves these.
+        if (await hasSettledPayment(row.id)) continue
+
         const updated = await tx
           .update(reservations)
           .set({ status: 'cancelled' })

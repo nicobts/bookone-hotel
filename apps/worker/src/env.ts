@@ -38,6 +38,27 @@ const envSchema = z.object({
    * intended outcome: the residency gate is not skippable by setting a variable.
    */
   NOTIFICATION_PROVIDER: z.string().default('log'),
+
+  /**
+   * MEMO: `mock` is the only implementation today and it moves no money
+   * (ADR-010, staged like the PMS connector in ADR-008). The worker refuses to
+   * boot with a simulated provider when NODE_ENV=production — see index.ts.
+   */
+  PAYMENT_PROVIDER: z.string().default('mock'),
+
+  /**
+   * Shared secret the provider signs webhooks with.
+   *
+   * The webhook endpoint is deliberately unauthenticated at the transport
+   * level — a provider cannot present our bearer token — so this signature is
+   * the *only* thing standing between a stranger and marking bookings as paid.
+   */
+  PAYMENT_WEBHOOK_SECRET: z
+    .string()
+    .min(24, 'PAYMENT_WEBHOOK_SECRET must be at least 24 characters'),
+
+  /** Where the guest comes back to, and where the simulated checkout lives. */
+  APP_URL: z.string().url().default('http://localhost:3000'),
 })
 
 export type Env = z.infer<typeof envSchema>

@@ -29,6 +29,13 @@
       "when": 1787936264425,
       "tag": "20260828165744_flowery_shape",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787943260801,
+      "tag": "20260828185420_narrow_patriot",
+      "breakpoints": true
     }
   ]
 }

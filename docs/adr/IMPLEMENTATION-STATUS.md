@@ -16,7 +16,7 @@ worse than none, because it is read as current.
 | 007 | RLS on every client-reachable table, tested in CI | ✅ as-built | 11/11 tables, both suites green, negative control verified, and a CI job of its own. The public booking surface has no JWT to police, so it runs under `asService` with explicit scoping — asserted by handing each function the other property's ids (`booking.test.ts`) |
 | 008 | Mock-first connector | ✅ as-built | `MockEricsoftAdapter` with counted failure injection, plus the shared contract suite the real adapter must pass before the swap. Verified by negative control: removing the idempotency guard fails the contract |
 | 009 | Voice hard tool boundaries | ⬜ WS-B | Not this workstream |
-| 010 | Stripe behind `PaymentAdapter` | ⬜ not yet | Sprint 4. The booking flow's step 4 is built with the payment step's place already in it |
+| 010 | Stripe behind `PaymentAdapter` | 🟨 port built, **provider not connected** | `PaymentAdapter` + `MockPaymentAdapter`, which moves no money. The interface, policy engine, `payments` ledger, `fee_events`, webhook-as-authority, signature check, redelivery idempotency and lost-webhook replay are all real and exercised. Blocked on 04 §0 item 6 (Stripe account, Connect Standard, commercialista). A real adapter must pass `describePaymentAdapterContract` — the suite the mock passes — before the swap, and the worker refuses to boot simulated in production |
 | 011 | Agents as first-class workers, tiered autonomy | ✅ as-built | Registry, runner and typed tools; AG-05 live on reconciliation. The runner refuses an ungranted tool, scopes to one property, and records every run — including the ones that fail |
 | 012 | `LlmProvider` abstraction; no vendor SDK imports | ✅ as-built | Interface and registry in `src/llm`; registration refuses any provider without declared EU processing, a region, a sub-processor register entry and a verification under a year old. No provider registered yet — that waits for a real requirement |
 | 013 | Journey state machine is the single source of stay truth | ⬜ not yet | `journey_states` and the evented commands land with the pre-arrival journey in Sprint 5 |
@@ -35,6 +35,19 @@ worse than none, because it is read as current.
 | Booking hold | ✅ | A **price** hold, not an inventory hold — design note §4A |
 | Confirmation notifications | ✅ | Transactional outbox; email only, `log` provider until an ESP clears D9 |
 | Per-property theming | ✅ | `--bo-primary` / `--bo-accent` from `settings.theme`, validated as colours |
+
+## Sprint 4 additions
+
+| Thing | Status | Note |
+|---|---|---|
+| Deposit and cancellation policy engine | ✅ | Pure, provider-agnostic, DST-correct in the property's zone |
+| `payments` ledger + `fee_events` | ✅ | Refunds negative so the column sums to what the property holds |
+| Payment step inside step 4 | ✅ | With an unmissable simulated-payment notice, driven by the adapter's own flag |
+| Webhook as the only state authority | ✅ | Signature checked; redelivery writes one fee, one confirmation, one email |
+| Webhook-loss replay | ✅ | Every 2 minutes; recovers a paid-but-unconfirmed booking through the same code path |
+| Self-service cancel (E1.4) | ✅ | Refund shown before confirm; recomputed server-side on submit |
+| Fee computation (D14) | ✅ | Basis points, integer; conservative attribution rule with its evidence stored |
+| **Real payment provider** | ⬜ **deliberately not built** | See ADR-010 row above and design-notes/booking-flow.md §4b |
 
 ## CI gates
 

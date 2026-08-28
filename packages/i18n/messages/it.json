@@ -125,7 +125,8 @@
       "payment": "Non è stato addebitato nulla online. La struttura concorderà con te le modalità di pagamento.",
       "help": "Domande sul tuo soggiorno? Rispondi a questa email e la struttura ti risponderà.",
       "signOff": "Ti aspettiamo.",
-      "sender": "{property}"
+      "sender": "{property}",
+      "manage": "Devi modificare o annullare? {url}"
     },
     "bookingRequest": {
       "subject": "Richiesta di prenotazione — dal {arrival} al {departure}",
@@ -196,7 +197,6 @@
       "touristTax": "Imposta di soggiorno, riscossa dalla struttura",
       "touristTaxCap": "Dovuta per le prime {nights} notti.",
       "touristTaxChildren": "I bambini sotto i {age} anni sono esenti; l'età viene verificata in struttura.",
-      "payment": "Ora non viene addebitato nulla. La struttura concorderà con te il pagamento.",
       "cancellation": "Cancellazione gratuita — contatta la struttura, che ti darà conferma.",
       "holdExpires": "Il prezzo è bloccato fino alle {time}.",
       "confirm": "Conferma la prenotazione",
@@ -228,6 +228,57 @@
     },
     "errors": {
       "generic": "Qualcosa è andato storto. Riprova."
+    },
+    "payment": {
+      "heading": "Pagamento",
+      "dueNow": "Da pagare ora",
+      "dueAtProperty": "Da pagare in struttura",
+      "nothingNow": "Ora non viene addebitato nulla. La struttura concorderà con te il pagamento.",
+      "vaultConsent": "La struttura conserverà la tua carta per policy sui no-show. Non verrà addebitata se non in quel caso.",
+      "payAndConfirm": "Paga e conferma",
+      "failed": "Il pagamento non è andato a buon fine. La camera è ancora bloccata — riprova.",
+      "cancelledPayment": "Il pagamento è stato annullato. La camera è ancora bloccata.",
+      "simulated": {
+        "title": "Pagamento simulato — nessun addebito",
+        "body": "Questa struttura utilizza un sistema di pagamento di prova. Non verrà addebitato nulla e non vengono raccolti dati della carta. La prenotazione invece è reale."
+      }
+    },
+    "checkout": {
+      "title": "Pagamento simulato",
+      "subtitle": "Nessun sistema di pagamento è collegato. Non viene addebitato nulla e non viene raccolta alcuna carta — scegli cosa deve succedere.",
+      "amount": "Importo",
+      "reference": "Codice",
+      "succeed": "Simula un pagamento riuscito",
+      "fail": "Simula una carta rifiutata",
+      "cancel": "Torna indietro senza pagare",
+      "working": "Attendere",
+      "note": "Questa pagina esiste perché l'integrazione dei pagamenti è volutamente rinviata. Tutto ciò che sta dietro — registro, webhook, conferma — è il percorso reale."
+    },
+    "manage": {
+      "title": "La tua prenotazione",
+      "reference": "Codice prenotazione",
+      "stay": "Soggiorno",
+      "room": "Camera",
+      "total": "Totale",
+      "paid": "Pagato finora",
+      "status": "Stato",
+      "statusConfirmed": "Confermata",
+      "statusCancelled": "Annullata",
+      "statusHold": "Non ancora confermata",
+      "cancelHeading": "Annulla la prenotazione",
+      "refundNow": "Annullando ora ti verranno rimborsati",
+      "refundNone": "Annullando ora non è previsto alcun rimborso, secondo la policy della struttura.",
+      "refundAll": "Questa prenotazione è completamente rimborsabile.",
+      "window": "Perché stai annullando più di {hours} ore prima dell'arrivo.",
+      "pastWindow": "Sei entrato nell'ultima finestra di cancellazione della struttura.",
+      "confirmCancel": "Annulla la prenotazione",
+      "pending": "Annullamento in corso",
+      "keep": "Mantieni la prenotazione",
+      "notCancellable": "Questa prenotazione non può più essere annullata qui — contatta la struttura.",
+      "cancelled": "La tua prenotazione è stata annullata.",
+      "cancelledRefund": "{amount} ti verranno restituiti.",
+      "cancelledNoRefund": "Non è previsto alcun rimborso secondo la policy della struttura.",
+      "refundFailed": "Il rimborso non è stato completato automaticamente. La struttura è stata avvisata e se ne occuperà."
     }
   }
 }

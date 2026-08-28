@@ -1,7 +1,8 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getBookingProperty, getHeldBooking } from '@bookone/core/db'
 import { readTouristTaxPolicy, searchAvailability, touristTaxNote } from '@bookone/core/booking'
+import { computeDeposit, readBookingPolicy } from '@bookone/core/policy'
 import { BookingShell } from '@/components/booking/booking-shell'
 import { StaleFallback } from '@/components/booking/stale-fallback'
 import { StepConfirmed } from '@/components/booking/step-confirmed'
@@ -10,6 +11,7 @@ import { StepDetails } from '@/components/booking/step-details'
 import { StepReview } from '@/components/booking/step-review'
 import { StepRooms } from '@/components/booking/step-rooms'
 import { readDraft } from '@/lib/booking/draft'
+import { paymentsAreSimulated } from '@/lib/worker'
 import { parseSearch, searchToQuery } from '@/lib/booking/params'
 import { confirm, saveDetails, selectRoom, sendRequest } from './actions'
 
@@ -60,7 +62,35 @@ export default async function BookingPage({
   const booked = single(query.booked)
   if (booked) {
     const booking = await getHeldBooking(property.id, booked)
-    if (!booking || booking.status !== 'confirmed') notFound()
+    if (!booking) notFound()
+
+    /*
+     * A guest coming back from the payment provider lands here whatever
+     * happened, because the return URL is fixed when the intent is created and
+     * the provider does not know how it went either — the webhook does.
+     *
+     * So the *reservation* decides what they see. Still a hold means the
+     * payment was declined, or they walked away from the provider's page: send
+     * them back to step 4, where the room is still held and they can try again.
+     *
+     * This 404'd at first, which is the worst possible answer: the guest has
+     * just been declined and the page tells them their booking does not exist.
+     * Found by clicking "simulate a declined card" rather than by reading the
+     * code, which is the entire reason that button exists.
+     */
+    if (booking.status !== 'confirmed') {
+      const back = new URLSearchParams({
+        arrival: booking.arrivalDate,
+        departure: booking.departureDate,
+        adults: String(booking.adults),
+        children: String(booking.children),
+        hold: booking.id,
+        step: 'review',
+        error: 'payment',
+      })
+
+      redirect(`/${locale}/book/${slug}?${back.toString()}`)
+    }
 
     return (
       <BookingShell property={property} step={null}>
@@ -106,6 +136,19 @@ export default async function BookingPage({
       const policy = readTouristTaxPolicy(property.settings)
       const nights = countNights(booking.arrivalDate, booking.departureDate)
 
+      // The deposit is computed here rather than asked of the worker: it is a
+      // pure function of the property's policy and the stay, and a network call
+      // to render a number we already hold would be a network call on the
+      // critical path of the step that converts.
+      const deposit = computeDeposit(readBookingPolicy(property.settings), {
+        totalCents: booking.totalCents,
+        nightCount: nights,
+      })
+
+      // MEMO: whether to warn the guest that no money moves (ADR-010). Asked of
+      // the worker, which owns the provider; defaults to warning if unreachable.
+      const paymentsSimulated = deposit.dueNowCents > 0 ? await paymentsAreSimulated() : false
+
       return (
         <BookingShell property={property} step={4}>
           <StepReview
@@ -122,14 +165,18 @@ export default async function BookingPage({
                   })
                 : null
             }
+            deposit={deposit}
+            paymentsSimulated={paymentsSimulated}
             action={confirm.bind(null, context)}
             state={{ ...search, hold: holdId }}
             backHref={`/${locale}/book/${slug}?${searchToQuery(search, { hold: holdId })}`}
             {...(error === 'expired'
               ? { error: t('review.expired') }
-              : error === 'confirm'
-                ? { error: t('errors.generic') }
-                : {})}
+              : error === 'payment'
+                ? { error: t('payment.failed') }
+                : error === 'confirm'
+                  ? { error: t('errors.generic') }
+                  : {})}
           />
         </BookingShell>
       )

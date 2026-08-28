@@ -7,6 +7,7 @@ import {
   sendNotification,
   type NotificationProvider,
 } from '@bookone/core/notifications'
+import { replayLostPayments, type PaymentAdapter } from '@bookone/core/payments'
 import { runAgent } from '@bookone/agents/runner'
 import type { Logger } from 'pino'
 
@@ -23,6 +24,7 @@ export interface HandlerDeps {
   queue: JobQueue
   adapter: PmsAdapter
   notifications: NotificationProvider
+  payments: PaymentAdapter
   logger: Logger
 }
 
@@ -38,8 +40,17 @@ const SWEEP_AFTER_SECONDS = 30
 /** Bounded, so one stuck property cannot starve the rest of a sweep. */
 const SWEEP_BATCH = 50
 
+/**
+ * How long a payment may sit unsettled before we go and ask the provider.
+ *
+ * Long enough that an ordinary checkout — a guest reading the page, entering a
+ * card, completing 3DS — is finished. Short enough that a lost webhook does not
+ * leave money taken and no booking for the length of a hold.
+ */
+const PAYMENT_REPLAY_AFTER_SECONDS = 5 * 60
+
 export async function registerHandlers(deps: HandlerDeps): Promise<void> {
-  const { queue, adapter, notifications, logger } = deps
+  const { queue, adapter, notifications, payments, logger } = deps
 
   await queue.work('reservation.reflect', async (job) => {
     const { propertyId, reservationId } = job.data
@@ -183,6 +194,23 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     // the minute it says 40.
     if (pending.length > 0) {
       logger.info({ jobId: job.id, swept: pending.length }, 'notification.sweep')
+    }
+  })
+
+  await queue.work('payment.replay', async (job) => {
+    const result = await replayLostPayments(
+      { adapter: payments },
+      { olderThanSeconds: PAYMENT_REPLAY_AFTER_SECONDS, limit: SWEEP_BATCH },
+    )
+
+    // Logged only when it found something to check. A recovery is worth an
+    // alert, not a log line — money was taken and the webhook never arrived,
+    // which is a provider problem somebody should know about.
+    if (result.checked > 0) {
+      logger.info(
+        { jobId: job.id, checked: result.checked, recovered: result.recovered },
+        'payment.replay',
+      )
     }
   })
 

@@ -52,6 +52,15 @@ export interface BookingConfirmationFacts {
   currency: string
   /** Already-composed tourist-tax sentence, or null when the property has none. */
   touristTaxPhrase: string | null
+  /**
+   * Where the guest manages the booking (E1.4).
+   *
+   * Carried in the confirmation because that email is the only thing a guest
+   * reliably keeps. A self-service cancellation with no link in it is a
+   * self-service cancellation nobody finds, and they phone the hotel instead —
+   * which is the chore the whole product exists to remove.
+   */
+  manageUrl?: string | null
 }
 
 export function renderBookingConfirmation(
@@ -83,6 +92,7 @@ export function renderBookingConfirmation(
       : []),
     t.payment,
     '',
+    ...(facts.manageUrl ? [interpolate(t.manage, { url: facts.manageUrl }), ''] : []),
     t.help,
     '',
     t.signOff,

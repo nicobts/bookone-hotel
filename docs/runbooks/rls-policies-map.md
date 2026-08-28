@@ -63,6 +63,8 @@ only (`user_property_ids_admin()`).
 | `reconciliation_runs` | member | — ¹⁰ | — ¹⁰ | — ¹¹ | 2026-08-28 |
 | `discrepancies` | member | — ¹² | member ¹³ | — ¹¹ | 2026-08-28 |
 | `notifications` | member | — ¹⁴ | — ¹⁴ | — ¹⁵ | 2026-08-28 |
+| `payments` | member | — ¹⁶ | — ¹⁶ | — ¹⁷ | 2026-08-28 |
+| `fee_events` | member | — ¹⁸ | — ¹⁸ | — ¹⁸ | 2026-08-28 |
 
 1. `with check (true)`. A new property has no members yet, so nothing else could
    pass; the `on_property_created` trigger makes the creator its owner in the
@@ -101,6 +103,17 @@ only (`user_property_ids_admin()`).
 15. The row is the audit trail for a message that already reached a human
     being. Retention is the E8 job's decision, applied on a schedule, not a
     button next to a row.
+16. The payment provider's webhook is the only state authority (03 §7.2). A row
+    written from a session would assert that money moved when nothing did, and
+    a refund is a new movement rather than an edit of the charge it reverses —
+    which is why there is no update path even for the status column.
+17. Deleting one erases the record of a real charge to a real person.
+18. Computed once, at confirmation, from the values true at that moment. The
+    monthly report built on these rows **is the invoice** (D14), so a
+    hand-written or hand-edited fee is a line nobody can reproduce. Staff read
+    it as well as owners: these rows are the evidence behind a number the owner
+    will be asked about, and a receptionist who can see the booking but not its
+    fee cannot answer the question either.
 
 ## Exceptions — not property-scoped, and why
 
@@ -119,7 +132,9 @@ surface is server-side code, and it is tested as such.
 
 | Surface | Boundary | Reads | Writes |
 |---|---|---|---|
-| `/[locale]/book/[property]` | the slug in the URL, resolved to one property id server-side | that property's `room_types` and `rate_snapshots` | one `guests`, one `reservations`, one `notifications`, all carrying that id |
+| `/[locale]/book/[property]` | the slug in the URL, resolved to one property id server-side | that property's `room_types` and `rate_snapshots` | one `guests`, one `reservations`, one `notifications`, one `payments`, one `fee_events`, all carrying that id |
+| `/[locale]/book/[property]/manage/[reservation]` | the reservation UUID, unguessable and scoped to one booking | that reservation and its refund quote | its cancellation and refund |
+| `/webhooks/payments` (worker) | the provider's payload **signature** — not a bearer token, because a provider cannot hold one | the payment and its reservation | confirms the booking, settles the payment, writes the fee |
 | `/[locale]/stay/[token]` | a short-lived signed token, resolved server-side (Sprint 5) | one reservation | that reservation's journey |
 
 The booking surface runs under `asService`, because an anonymous visitor has no

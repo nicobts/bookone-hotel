@@ -136,6 +136,12 @@ function localeOf(pathname: string): string {
 
 export const config = {
   // Skip Next internals, the API surface, auth callbacks (which must not be
-  // locale-rewritten — those links arrive from email), and any file request.
-  matcher: ['/((?!api|auth|_next|_vercel|.*[.].*).*)'],
+  // locale-rewritten — those links arrive from email), any file request, and
+  // `/pay`.
+  //
+  // MEMO on `/pay`: it is the simulated checkout standing in for a payment
+  // provider's hosted page (ADR-010). A provider's page has no locale of ours
+  // and is reached by an id alone, so rewriting it to `/en/pay/...` would break
+  // the one URL the adapter handed the guest. Deleted with the mock.
+  matcher: ['/((?!api|auth|pay|_next|_vercel|.*[.].*).*)'],
 }

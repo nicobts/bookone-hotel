@@ -88,8 +88,14 @@ try {
   const staffId = await createUser('staff@bookone.test', 'Lena Fischer')
 
   // Settings carry what the booking surface reads: the whitelabel colours
-  // (PRD A1), the contact the stale-source fallback offers, and the tourist-tax
-  // rule the review step states as a note rather than a charge.
+  // (PRD A1), the contact the stale-source fallback offers, the tourist-tax
+  // rule the review step states as a note rather than a charge, the deposit and
+  // cancellation policy (E1.3/E1.4), and the fee rates D14 bills on.
+  //
+  // The two properties differ deliberately: Hotel Sonja takes a 30% deposit
+  // with a two-tier cancellation ladder, Garni Alpin takes nothing. Both paths
+  // are then reachable in development — and a bug that only appears when money
+  // is involved cannot hide behind a seed where money never is.
   //
   // The two properties are deliberately themed differently. One property
   // looking like the other is how per-property theming passes review while
@@ -101,7 +107,16 @@ try {
       '{
         "theme": {"primary": "#1F6F5C", "accent": "#E0A458"},
         "contact": {"email": "reception@hotel-sonja.test", "phone": "+39 0471 000001"},
-        "touristTax": {"amountCentsPerPersonPerNight": 200, "currency": "EUR", "maxNights": 5, "exemptUnderAge": 14}
+        "touristTax": {"amountCentsPerPersonPerNight": 200, "currency": "EUR", "maxNights": 5, "exemptUnderAge": 14},
+        "policy": {
+          "deposit": {"mode": "percent", "percent": 30},
+          "cancellation": [
+            {"hoursBeforeArrival": 48, "refundPercent": 100},
+            {"hoursBeforeArrival": 24, "refundPercent": 50}
+          ],
+          "vaultCard": false
+        },
+        "fees": {"directBookingBps": 300, "aiAttributedBps": 1000}
       }'::jsonb
     )
     returning id`
@@ -113,7 +128,9 @@ try {
       '{
         "theme": {"primary": "#7A3E9D", "accent": "#F2994A"},
         "contact": {"email": "info@garni-alpin.test"},
-        "touristTax": {"amountCentsPerPersonPerNight": 150, "currency": "EUR"}
+        "touristTax": {"amountCentsPerPersonPerNight": 150, "currency": "EUR"},
+        "policy": {"deposit": {"mode": "none"}, "cancellation": [], "vaultCard": false},
+        "fees": {"directBookingBps": 250, "aiAttributedBps": 900}
       }'::jsonb
     )
     returning id`
@@ -145,6 +162,9 @@ try {
   console.log('  Booking surfaces (prices arrive once the worker refreshes availability):')
   console.log('    http://localhost:3000/de/book/hotel-sonja')
   console.log('    http://localhost:3000/it/book/garni-alpin')
+  console.log('')
+  console.log('  Hotel Sonja takes a 30% deposit (simulated payment — no money moves);')
+  console.log('  Garni Alpin takes none, so both paths are reachable.')
   console.log('')
   console.log('  owner@bookone.test  owner of Hotel Sonja, staff at Garni Alpin')
   console.log('  staff@bookone.test  staff at Hotel Sonja only')

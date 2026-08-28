@@ -45,6 +45,16 @@ const EXPIRE_HOLDS = '*/5 * * * *'
 /** The outbox safety net. See the sweep handler for why it is not the primary path. */
 const NOTIFICATION_SWEEP = '* * * * *'
 
+/**
+ * The webhook safety net (04 §1 Sprint 4: webhook-loss replay).
+ *
+ * Every two minutes, because the failure it catches is the worst one available:
+ * a guest charged for a booking that was never confirmed. Cheap when there is
+ * nothing to do — it queries for unsettled intents older than five minutes and
+ * usually finds none.
+ */
+const PAYMENT_REPLAY = '*/2 * * * *'
+
 export async function registerSchedules(deps: { queue: JobQueue; logger: Logger }): Promise<void> {
   const { queue, logger } = deps
 
@@ -103,6 +113,7 @@ export async function registerSchedules(deps: { queue: JobQueue; logger: Logger 
   // hold that needs expiring.
   await queue.schedule('reservation.expire_holds', EXPIRE_HOLDS, {})
   await queue.schedule('notification.sweep', NOTIFICATION_SWEEP, {})
+  await queue.schedule('payment.replay', PAYMENT_REPLAY, {})
 
   logger.info(
     {
@@ -112,6 +123,7 @@ export async function registerSchedules(deps: { queue: JobQueue; logger: Logger 
       availabilityThrough: isoDate(horizon),
       expireHolds: EXPIRE_HOLDS,
       notificationSweep: NOTIFICATION_SWEEP,
+      paymentReplay: PAYMENT_REPLAY,
     },
     'schedules registered',
   )

@@ -125,7 +125,8 @@
       "payment": "Nothing has been charged online. The property will arrange payment with you.",
       "help": "Questions about your stay? Reply to this email and the property will answer.",
       "signOff": "We look forward to welcoming you.",
-      "sender": "{property}"
+      "sender": "{property}",
+      "manage": "Need to change or cancel? {url}"
     },
     "bookingRequest": {
       "subject": "Booking request — {arrival} to {departure}",
@@ -196,7 +197,6 @@
       "touristTax": "Tourist tax, collected by the property",
       "touristTaxCap": "Charged for the first {nights} nights.",
       "touristTaxChildren": "Children under {age} are exempt; ages are confirmed at the property.",
-      "payment": "Nothing is charged now. The property will arrange payment with you.",
       "cancellation": "Free cancellation — contact the property and they will confirm.",
       "holdExpires": "Your price is held until {time}.",
       "confirm": "Confirm booking",
@@ -228,6 +228,57 @@
     },
     "errors": {
       "generic": "Something went wrong. Try again."
+    },
+    "payment": {
+      "heading": "Payment",
+      "dueNow": "Due now",
+      "dueAtProperty": "Due at the property",
+      "nothingNow": "Nothing is charged now. The property will arrange payment with you.",
+      "vaultConsent": "The property will keep your card on file for its no-show policy. It is not charged unless that policy applies.",
+      "payAndConfirm": "Pay and confirm",
+      "failed": "That payment did not go through. Your room is still held — try again.",
+      "cancelledPayment": "The payment was cancelled. Your room is still held.",
+      "simulated": {
+        "title": "Simulated payment — no money will be taken",
+        "body": "This property is running on a test payment provider. You will not be charged, and no card details are collected. The booking itself is real."
+      }
+    },
+    "checkout": {
+      "title": "Simulated payment",
+      "subtitle": "No payment provider is connected. Nothing is charged and no card is collected — choose what should happen next.",
+      "amount": "Amount",
+      "reference": "Reference",
+      "succeed": "Simulate a successful payment",
+      "fail": "Simulate a declined card",
+      "cancel": "Go back without paying",
+      "working": "Working",
+      "note": "This page exists because the payment integration is deliberately staged. Everything behind it — the ledger, the webhook, the confirmation — is the real path."
+    },
+    "manage": {
+      "title": "Your booking",
+      "reference": "Booking reference",
+      "stay": "Stay",
+      "room": "Room",
+      "total": "Total",
+      "paid": "Paid so far",
+      "status": "Status",
+      "statusConfirmed": "Confirmed",
+      "statusCancelled": "Cancelled",
+      "statusHold": "Not yet confirmed",
+      "cancelHeading": "Cancel this booking",
+      "refundNow": "Cancel now and you get back",
+      "refundNone": "Cancelling now refunds nothing, per the property’s policy.",
+      "refundAll": "This booking is fully refundable.",
+      "window": "Because you are cancelling more than {hours} hours before arrival.",
+      "pastWindow": "You are inside the property’s final cancellation window.",
+      "confirmCancel": "Cancel my booking",
+      "pending": "Cancelling",
+      "keep": "Keep my booking",
+      "notCancellable": "This booking can no longer be cancelled here — please contact the property.",
+      "cancelled": "Your booking is cancelled.",
+      "cancelledRefund": "{amount} is on its way back to you.",
+      "cancelledNoRefund": "No refund is due under the property’s policy.",
+      "refundFailed": "The refund could not be completed automatically. The property has been notified and will sort it out."
     }
   }
 }

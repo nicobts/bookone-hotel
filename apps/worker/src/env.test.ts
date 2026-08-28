@@ -5,6 +5,7 @@ import { loadEnv } from './env'
 const required = {
   DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:54422/postgres',
   WORKER_INTERNAL_TOKEN: 'a-token-long-enough-to-pass-the-check',
+  PAYMENT_WEBHOOK_SECRET: 'a-webhook-secret-long-enough-to-pass',
 }
 
 describe('loadEnv', () => {
@@ -15,6 +16,8 @@ describe('loadEnv', () => {
       WORKER_PORT: 8787,
       LOG_LEVEL: 'info',
       NOTIFICATION_PROVIDER: 'log',
+      PAYMENT_PROVIDER: 'mock',
+      APP_URL: 'http://localhost:3000',
     })
   })
 
@@ -34,6 +37,14 @@ describe('loadEnv', () => {
     // body. A guessable secret there is the same as no secret.
     expect(() => loadEnv({ ...required, WORKER_INTERNAL_TOKEN: 'short' })).toThrow(
       /WORKER_INTERNAL_TOKEN/,
+    )
+  })
+
+  it('refuses a short webhook secret', () => {
+    // That signature is the only authentication on an endpoint that marks
+    // bookings as paid. A guessable secret there is the same as none.
+    expect(() => loadEnv({ ...required, PAYMENT_WEBHOOK_SECRET: 'short' })).toThrow(
+      /PAYMENT_WEBHOOK_SECRET/,
     )
   })
 
@@ -58,5 +69,6 @@ describe('loadEnv', () => {
 
     expect(message).toMatch(/DATABASE_URL/)
     expect(message).toMatch(/WORKER_INTERNAL_TOKEN/)
+    expect(message).toMatch(/PAYMENT_WEBHOOK_SECRET/)
   })
 })

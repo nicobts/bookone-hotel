@@ -125,7 +125,8 @@
       "payment": "Online wurde nichts abgebucht. Das Haus vereinbart die Zahlung direkt mit Ihnen.",
       "help": "Fragen zu Ihrem Aufenthalt? Antworten Sie einfach auf diese E-Mail, das Haus meldet sich.",
       "signOff": "Wir freuen uns auf Sie.",
-      "sender": "{property}"
+      "sender": "{property}",
+      "manage": "Ändern oder stornieren? {url}"
     },
     "bookingRequest": {
       "subject": "Buchungsanfrage — {arrival} bis {departure}",
@@ -196,7 +197,6 @@
       "touristTax": "Ortstaxe, wird vom Haus eingehoben",
       "touristTaxCap": "Fällig für die ersten {nights} Nächte.",
       "touristTaxChildren": "Kinder unter {age} sind befreit; das Alter wird im Haus bestätigt.",
-      "payment": "Jetzt wird nichts abgebucht. Das Haus vereinbart die Zahlung mit Ihnen.",
       "cancellation": "Kostenlose Stornierung — melden Sie sich beim Haus, es bestätigt Ihnen das.",
       "holdExpires": "Ihr Preis ist bis {time} reserviert.",
       "confirm": "Buchung bestätigen",
@@ -228,6 +228,57 @@
     },
     "errors": {
       "generic": "Etwas ist schiefgegangen. Bitte erneut versuchen."
+    },
+    "payment": {
+      "heading": "Zahlung",
+      "dueNow": "Jetzt fällig",
+      "dueAtProperty": "Im Haus fällig",
+      "nothingNow": "Jetzt wird nichts abgebucht. Das Haus vereinbart die Zahlung mit Ihnen.",
+      "vaultConsent": "Das Haus hinterlegt Ihre Karte für seine No-Show-Regelung. Sie wird nur in diesem Fall belastet.",
+      "payAndConfirm": "Bezahlen und buchen",
+      "failed": "Die Zahlung ist nicht durchgegangen. Ihr Zimmer ist weiterhin reserviert — bitte erneut versuchen.",
+      "cancelledPayment": "Die Zahlung wurde abgebrochen. Ihr Zimmer ist weiterhin reserviert.",
+      "simulated": {
+        "title": "Simulierte Zahlung — es wird nichts abgebucht",
+        "body": "Dieses Haus läuft auf einem Test-Zahlungsanbieter. Es wird nichts belastet und es werden keine Kartendaten erfasst. Die Buchung selbst ist echt."
+      }
+    },
+    "checkout": {
+      "title": "Simulierte Zahlung",
+      "subtitle": "Es ist kein Zahlungsanbieter angebunden. Es wird nichts abgebucht und keine Karte erfasst — wählen Sie, was passieren soll.",
+      "amount": "Betrag",
+      "reference": "Referenz",
+      "succeed": "Erfolgreiche Zahlung simulieren",
+      "fail": "Abgelehnte Karte simulieren",
+      "cancel": "Zurück, ohne zu zahlen",
+      "working": "Einen Moment",
+      "note": "Diese Seite gibt es, weil die Zahlungsanbindung bewusst zurückgestellt ist. Alles dahinter — Buchhaltung, Webhook, Bestätigung — ist der echte Weg."
+    },
+    "manage": {
+      "title": "Ihre Buchung",
+      "reference": "Buchungsnummer",
+      "stay": "Aufenthalt",
+      "room": "Zimmer",
+      "total": "Gesamtbetrag",
+      "paid": "Bisher bezahlt",
+      "status": "Status",
+      "statusConfirmed": "Bestätigt",
+      "statusCancelled": "Storniert",
+      "statusHold": "Noch nicht bestätigt",
+      "cancelHeading": "Buchung stornieren",
+      "refundNow": "Bei Stornierung jetzt erhalten Sie zurück",
+      "refundNone": "Eine Stornierung jetzt wird nach der Regelung des Hauses nicht erstattet.",
+      "refundAll": "Diese Buchung ist voll erstattungsfähig.",
+      "window": "Weil Sie mehr als {hours} Stunden vor Anreise stornieren.",
+      "pastWindow": "Sie sind innerhalb der letzten Stornofrist des Hauses.",
+      "confirmCancel": "Buchung stornieren",
+      "pending": "Wird storniert",
+      "keep": "Buchung behalten",
+      "notCancellable": "Diese Buchung kann hier nicht mehr storniert werden — bitte wenden Sie sich an das Haus.",
+      "cancelled": "Ihre Buchung ist storniert.",
+      "cancelledRefund": "{amount} sind auf dem Weg zu Ihnen zurück.",
+      "cancelledNoRefund": "Nach der Regelung des Hauses wird nichts erstattet.",
+      "refundFailed": "Die Erstattung konnte nicht automatisch abgeschlossen werden. Das Haus ist informiert und kümmert sich darum."
     }
   }
 }

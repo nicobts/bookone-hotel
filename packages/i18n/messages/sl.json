@@ -125,7 +125,8 @@
       "payment": "Spletno ni bilo obračunano nič. Nastanitev se bo o plačilu dogovorila z vami.",
       "help": "Vprašanja o bivanju? Odgovorite na to sporočilo in nastanitev vam bo odgovorila.",
       "signOff": "Veselimo se vašega obiska.",
-      "sender": "{property}"
+      "sender": "{property}",
+      "manage": "Želite spremeniti ali preklicati? {url}"
     },
     "bookingRequest": {
       "subject": "Povpraševanje za rezervacijo — od {arrival} do {departure}",
@@ -196,7 +197,6 @@
       "touristTax": "Turistična taksa, pobere jo nastanitev",
       "touristTaxCap": "Zaračuna se za prvih {nights} noči.",
       "touristTaxChildren": "Otroci, mlajši od {age} let, so oproščeni; starost se potrdi ob prihodu.",
-      "payment": "Zdaj ni obračunano nič. Nastanitev se bo o plačilu dogovorila z vami.",
       "cancellation": "Brezplačna odpoved — obrnite se na nastanitev in vam bo potrdila.",
       "holdExpires": "Cena je zadržana do {time}.",
       "confirm": "Potrdi rezervacijo",
@@ -228,6 +228,57 @@
     },
     "errors": {
       "generic": "Nekaj je šlo narobe. Poskusite znova."
+    },
+    "payment": {
+      "heading": "Plačilo",
+      "dueNow": "Za plačilo zdaj",
+      "dueAtProperty": "Za plačilo v nastanitvi",
+      "nothingNow": "Zdaj ni obračunano nič. Nastanitev se bo o plačilu dogovorila z vami.",
+      "vaultConsent": "Nastanitev bo shranila vašo kartico za primer neprihoda. Bremenjena bo samo v tem primeru.",
+      "payAndConfirm": "Plačaj in potrdi",
+      "failed": "Plačilo ni uspelo. Soba je še vedno zadržana — poskusite znova.",
+      "cancelledPayment": "Plačilo je bilo preklicano. Soba je še vedno zadržana.",
+      "simulated": {
+        "title": "Simulirano plačilo — nič ne bo obračunano",
+        "body": "Ta nastanitev uporablja testni plačilni sistem. Nič ne bo bremenjeno in podatki o kartici se ne zbirajo. Rezervacija sama pa je resnična."
+      }
+    },
+    "checkout": {
+      "title": "Simulirano plačilo",
+      "subtitle": "Noben plačilni ponudnik ni povezan. Nič ni obračunano in kartica se ne zbira — izberite, kaj naj se zgodi.",
+      "amount": "Znesek",
+      "reference": "Referenca",
+      "succeed": "Simuliraj uspešno plačilo",
+      "fail": "Simuliraj zavrnjeno kartico",
+      "cancel": "Nazaj brez plačila",
+      "working": "Trenutek",
+      "note": "Ta stran obstaja, ker je plačilna integracija namenoma odložena. Vse za njo — evidenca, webhook, potrditev — je resnična pot."
+    },
+    "manage": {
+      "title": "Vaša rezervacija",
+      "reference": "Številka rezervacije",
+      "stay": "Bivanje",
+      "room": "Soba",
+      "total": "Skupaj",
+      "paid": "Doslej plačano",
+      "status": "Stanje",
+      "statusConfirmed": "Potrjena",
+      "statusCancelled": "Preklicana",
+      "statusHold": "Še ni potrjena",
+      "cancelHeading": "Prekliči rezervacijo",
+      "refundNow": "Če prekličete zdaj, dobite nazaj",
+      "refundNone": "Preklic zdaj po pravilih nastanitve ne prinese vračila.",
+      "refundAll": "Ta rezervacija je v celoti vračljiva.",
+      "window": "Ker preklicujete več kot {hours} ur pred prihodom.",
+      "pastWindow": "Ste znotraj zadnjega roka za preklic pri nastanitvi.",
+      "confirmCancel": "Prekliči rezervacijo",
+      "pending": "Preklicujem",
+      "keep": "Obdrži rezervacijo",
+      "notCancellable": "Te rezervacije tukaj ni več mogoče preklicati — obrnite se na nastanitev.",
+      "cancelled": "Vaša rezervacija je preklicana.",
+      "cancelledRefund": "{amount} vam bo vrnjeno.",
+      "cancelledNoRefund": "Po pravilih nastanitve vračilo ni predvideno.",
+      "refundFailed": "Vračila ni bilo mogoče samodejno izvesti. Nastanitev je obveščena in bo to uredila."
     }
   }
 }

@@ -14,6 +14,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
@@ -72,6 +73,38 @@ export const agentTier = pgEnum('agent_tier', ['T1', 'T2', 'T3'])
 
 /** What a human did with the run. This column is the evidence a tier may widen (06 §4). */
 export const agentOutcome = pgEnum('agent_outcome', ['accepted', 'edited', 'rejected', 'auto'])
+
+/**
+ * What a payment row is for.
+ *
+ * `deposit` and `balance` are money in; `refund` is money out and carries a
+ * negative amount, so summing the column for a reservation gives what the
+ * property actually holds without anyone remembering which signs to flip.
+ */
+export const paymentKind = pgEnum('payment_kind', ['deposit', 'balance', 'refund'])
+
+/**
+ * Mirrors the port's `PaymentIntentStatus` (ADR-010), plus nothing.
+ *
+ * A status the adapter cannot produce is a status no code path can reach, and
+ * an enum with aspirational values is a `switch` nobody can prove exhaustive.
+ */
+export const paymentStatus = pgEnum('payment_status', [
+  'requires_payment',
+  'requires_action',
+  'succeeded',
+  'failed',
+  'cancelled',
+])
+
+/**
+ * Which half of D14's hybrid model a fee belongs to.
+ *
+ * `ai_attributed` rows are only ever written where the attribution rule's
+ * evidence chain is complete (PRD §6) — the report built on this table is the
+ * invoice, and a fee nobody can evidence is a fee that gets disputed.
+ */
+export const feeKind = pgEnum('fee_kind', ['direct_booking', 'ai_attributed'])
 
 /**
  * How a guest is reached. Email is first and unconditional (04 §1 Sprint 3);
@@ -816,5 +849,154 @@ export const notifications = pgTable(
      * than the one the retry was fixing.
      */
     unique('notifications_reservation_template_channel').on(t.reservationId, t.template, t.channel),
+  ],
+)
+
+// ---------------------------------------------------------------------------
+// Money
+// ---------------------------------------------------------------------------
+
+/**
+ * Every movement of money, in or out (03 §7.4).
+ *
+ * A ledger, not a status column: a reservation can have a deposit, a balance
+ * and two partial refunds, and collapsing that into one `paid` field on the
+ * reservation loses the history exactly when someone disputes it.
+ *
+ * The provider's own identifier for the transaction is **not** here. It goes in
+ * `external_refs` with `entity_type = 'payment'`, like every other foreign id
+ * (ADR-001, binding rule 1) — which also means a provider swap does not leave a
+ * column named after the provider we left.
+ *
+ * Nothing fiscal (ADR-002 / D11). This records that money moved; it issues no
+ * document, computes no tax and produces no receipt.
+ */
+export const payments = pgTable(
+  'payments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+
+    /**
+     * `restrict`, not `cascade`. A payment outlives our interest in the
+     * booking: deleting a reservation must never silently delete the record
+     * that someone was charged.
+     */
+    reservationId: uuid('reservation_id')
+      .notNull()
+      .references(() => reservations.id, { onDelete: 'restrict' }),
+
+    kind: paymentKind('kind').notNull(),
+    status: paymentStatus('status').notNull().default('requires_payment'),
+
+    /** Negative for a refund, so the column sums to what the property holds. */
+    amountCents: integer('amount_cents').notNull(),
+    currency: text('currency').notNull().default('EUR'),
+
+    /** `mock`, `stripe`, `nexi`. Kept per row: a property can change provider. */
+    provider: text('provider').notNull(),
+
+    /**
+     * True when no real money moved.
+     *
+     * Denormalised onto the row on purpose. Once a real provider is connected
+     * these two kinds of row sit side by side forever, and any report that
+     * sums them together is wrong. Deriving it from `provider` later means
+     * every such query has to know which provider names were simulated.
+     */
+    simulated: boolean('simulated').notNull().default(false),
+
+    failureReason: text('failure_reason'),
+
+    settledAt: timestamp('settled_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('payments_property_status_idx').on(t.propertyId, t.status),
+    index('payments_reservation_idx').on(t.reservationId),
+    /**
+     * One live charge per reservation per kind — and **only** for charges.
+     *
+     * The webhook is the state authority and webhooks are redelivered; without
+     * this, a replayed `payment_intent.succeeded` writes a second deposit and
+     * the property appears to hold twice what it does.
+     *
+     * A partial index rather than a table constraint, because refunds have to
+     * be excluded: a stay can legitimately have several, and a plain unique on
+     * (reservation, kind, provider) would silently reject the second one. That
+     * was written as a constraint first, with a comment claiming refunds were
+     * excluded when nothing excluded them — caught by a test that refunded
+     * twice on purpose.
+     */
+    uniqueIndex('payments_reservation_charge')
+      .on(t.reservationId, t.kind, t.provider)
+      .where(sql`${t.kind} <> 'refund'`),
+    check('payments_refund_is_negative', sql`${t.kind} <> 'refund' or ${t.amountCents} <= 0`),
+    check('payments_charge_is_positive', sql`${t.kind} = 'refund' or ${t.amountCents} >= 0`),
+  ],
+)
+
+/**
+ * The fee this platform earned on a booking (D14).
+ *
+ * Written once, at confirmation, from the values true at that moment. Not
+ * recomputed later and not derived on demand: the monthly report built on these
+ * rows **is the invoice** (PRD C4), and an invoice that changes when a rate card
+ * changes is an invoice that gets disputed and lost.
+ *
+ * This is a record of what we will bill the property. It is not an invoice, it
+ * issues nothing, and it stays firmly outside the fiscal gate (D11).
+ */
+export const feeEvents = pgTable(
+  'fee_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+    reservationId: uuid('reservation_id')
+      .notNull()
+      .references(() => reservations.id, { onDelete: 'restrict' }),
+
+    kind: feeKind('kind').notNull(),
+
+    /** What the percentage was applied to — the stay total at confirmation. */
+    basisCents: integer('basis_cents').notNull(),
+
+    /**
+     * Basis points, integer. 2.5% is 250.
+     *
+     * Not a decimal percentage: a float rate times a cents basis reintroduces
+     * exactly the rounding this schema keeps out of money everywhere else.
+     */
+    rateBps: integer('rate_bps').notNull(),
+
+    feeCents: integer('fee_cents').notNull(),
+    currency: text('currency').notNull().default('EUR'),
+
+    /**
+     * The evidence chain, for `ai_attributed` rows (PRD §6).
+     *
+     * Stored with the fee rather than reconstructed, because the reconstruction
+     * would run against a database that has moved on — and disputes resolve in
+     * the owner's favour, so an unevidenced fee is a fee we drop.
+     */
+    evidence: jsonb('evidence')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('fee_events_property_created_idx').on(t.propertyId, t.createdAt),
+    /**
+     * One fee per booking per kind. A retried confirmation must not bill the
+     * property twice for the same stay — and this is the table the invoice is
+     * built from, so a duplicate here is a real overcharge.
+     */
+    unique('fee_events_reservation_kind').on(t.reservationId, t.kind),
+    check('fee_events_rate_sane', sql`${t.rateBps} >= 0 and ${t.rateBps} <= 10000`),
   ],
 )

@@ -34,6 +34,8 @@ export const jobNames = [
   'notification.sweep',
   /** Cancel booking holds past their thirty minutes (E1.3). */
   'reservation.expire_holds',
+  /** Ask the provider about payments whose webhook never arrived. */
+  'payment.replay',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -75,6 +77,11 @@ export interface JobPayloads {
    */
   'notification.sweep': Record<string, never>
   'reservation.expire_holds': Record<string, never>
+  /**
+   * No payload, for the same reason as the sweep: a payment whose webhook was
+   * lost is exactly the one nothing would name.
+   */
+  'payment.replay': Record<string, never>
 }
 
 export interface SendOptions {

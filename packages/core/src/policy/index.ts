@@ -1,5 +1,7 @@
-// Deposit and cancellation policy engine — provider-agnostic, drives both the
-// booking hold and refund computation (03-ARCHITECTURE §7, PRD A4/A5).
+// Deposit and cancellation policy — provider-agnostic by design (ADR-010).
 //
-// Fills in Sprint 4.
-export {}
+// Drives the deposit shown at booking and the refund shown before a
+// cancellation is confirmed. Knows nothing about any payment provider, which is
+// what makes the eventual Stripe-to-Italian-provider swap a change of adapter
+// and not a change of terms.
+export * from './booking-policy'

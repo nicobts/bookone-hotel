@@ -3,7 +3,13 @@ import { createApp } from './app'
 
 const TOKEN = 'a-token-long-enough-to-pass-the-check'
 
-function build(overrides: { send?: ReturnType<typeof vi.fn> } = {}) {
+function build(
+  overrides: {
+    send?: ReturnType<typeof vi.fn>
+    parseWebhook?: ReturnType<typeof vi.fn>
+    allowSimulation?: boolean
+  } = {},
+) {
   const send = overrides.send ?? vi.fn(async () => 'job-1')
 
   /** Stand-ins: these tests exercise routing and the guard, not the queue. */
@@ -19,8 +25,23 @@ function build(overrides: { send?: ReturnType<typeof vi.fn> } = {}) {
       system: 'mock',
       healthCheck: async () => ({ healthy: true, checkedAt: new Date() }),
     },
-    logger: { info: () => undefined },
+    payments: {
+      provider: 'mock',
+      simulated: true,
+      healthCheck: async () => ({ healthy: true, checkedAt: new Date() }),
+      parseWebhook:
+        overrides.parseWebhook ??
+        vi.fn(async () => {
+          throw Object.assign(new Error('bad signature'), {
+            name: 'PaymentAdapterError',
+            code: 'invalid_signature',
+          })
+        }),
+    },
+    logger: { info: () => undefined, warn: () => undefined },
     internalToken: TOKEN,
+    appUrl: 'http://localhost:3000',
+    allowSimulation: overrides.allowSimulation ?? true,
   } as never
 
   return { app: createApp(deps), send }
@@ -137,5 +158,84 @@ describe('POST /jobs/booking-confirmed', () => {
 
     expect(res.status).toBe(400)
     expect(send).not.toHaveBeenCalled()
+  })
+})
+
+describe('POST /webhooks/payments', () => {
+  /**
+   * This endpoint can mark a booking as paid, and it deliberately sits outside
+   * the bearer-token guard — a payment provider cannot present our internal
+   * secret. The payload signature is therefore the *only* authentication, so
+   * these are the tests that matter most on the whole surface.
+   */
+  it('is reachable without the internal token, by design', async () => {
+    const { app } = build()
+
+    const res = await app.request('/webhooks/payments', {
+      method: 'POST',
+      body: '{}',
+    })
+
+    // 400 from the signature check, not 401 from the guard. A 401 here would
+    // mean a real provider could never deliver anything.
+    expect(res.status).toBe(400)
+  })
+
+  it('rejects an unsigned payload with 400, never 5xx', async () => {
+    const { app } = build()
+
+    const res = await app.request('/webhooks/payments', {
+      method: 'POST',
+      headers: { 'x-payment-signature': 'nope' },
+      body: '{"type":"payment.succeeded"}',
+    })
+
+    // 400 and not 500: a signature that does not match will not match on the
+    // retry either, and a 5xx invites the provider to retry all day.
+    expect(res.status).toBe(400)
+    await expect(res.json()).resolves.toEqual({ error: 'invalid webhook' })
+  })
+
+  it('acknowledges an event it does not act on', async () => {
+    const { app, send } = build({ parseWebhook: vi.fn(async () => null) })
+
+    const res = await app.request('/webhooks/payments', {
+      method: 'POST',
+      headers: { 'x-payment-signature': 'ok' },
+      body: '{"type":"provider.noise"}',
+    })
+
+    // A provider sends many events. Answering 2xx and doing nothing is correct;
+    // a non-2xx would make it redeliver noise forever.
+    expect(res.status).toBe(200)
+    expect(send).not.toHaveBeenCalled()
+  })
+})
+
+describe('POST /jobs/payment-simulate', () => {
+  it('does not exist when simulation is disabled', async () => {
+    const { app } = build({ allowSimulation: false })
+
+    const res = await app.request('/jobs/payment-simulate', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...authorised },
+      body: JSON.stringify({ intentId: 'pi_mock_000001' }),
+    })
+
+    // 404, not 403. In production this route is never registered — there is
+    // nothing to probe and no path from a request to a fabricated capture.
+    expect(res.status).toBe(404)
+  })
+
+  it('still requires the internal token when it does exist', async () => {
+    const { app } = build({ allowSimulation: true })
+
+    const res = await app.request('/jobs/payment-simulate', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ intentId: 'pi_mock_000001' }),
+    })
+
+    expect(res.status).toBe(401)
   })
 })

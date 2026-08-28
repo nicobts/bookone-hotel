@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { serve } from '@hono/node-server'
 import { pino } from 'pino'
 import { MockEricsoftAdapter } from '@bookone/adapters/mock-ericsoft'
+import { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
 import { getNotificationProvider, registerNotificationProvider } from '@bookone/core/notifications'
 import { createApp } from './app'
 import { LogNotificationProvider } from './notifications/log-provider'
@@ -53,6 +54,31 @@ const adapter = new MockEricsoftAdapter({
   roomTypeCodes: ['DBL', 'SGL', 'FAM'],
 })
 
+/**
+ * The payment provider.
+ *
+ * MEMO — SIMULATED. `MockPaymentAdapter` moves no money (ADR-010, staged the
+ * same way ADR-008 staged the PMS connector). The interface, the policy engine,
+ * the ledger, the webhook path and its signature check are all real; the card
+ * form and the authorisation are not.
+ *
+ * The guard below is what keeps that a staging decision rather than an accident
+ * waiting to happen. It is deliberately a hard exit and not a warning: a
+ * warning in a startup log is a warning nobody reads until a guest has been
+ * shown a payment page that takes no money.
+ */
+const paymentAdapter = new MockPaymentAdapter({
+  webhookSecret: env.PAYMENT_WEBHOOK_SECRET,
+  checkoutBaseUrl: env.APP_URL,
+})
+
+if (env.NODE_ENV === 'production' && paymentAdapter.simulated) {
+  throw new Error(
+    `Refusing to start: payment provider "${paymentAdapter.provider}" is simulated and ` +
+      'NODE_ENV=production. Connect a real PaymentAdapter (ADR-010) before deploying.',
+  )
+}
+
 const queue = new PgBossQueue(env.DATABASE_URL)
 
 /**
@@ -65,17 +91,32 @@ registerNotificationProvider(new LogNotificationProvider(logger))
 
 const notifications = getNotificationProvider(env.NOTIFICATION_PROVIDER)
 
-const app = createApp({ queue, adapter, logger, internalToken: env.WORKER_INTERNAL_TOKEN })
+const app = createApp({
+  queue,
+  adapter,
+  payments: paymentAdapter,
+  logger,
+  internalToken: env.WORKER_INTERNAL_TOKEN,
+  appUrl: env.APP_URL,
+  allowSimulation: env.NODE_ENV !== 'production',
+})
 
 const server = serve({ fetch: app.fetch, port: env.WORKER_PORT }, (info) => {
   logger.info({ port: info.port, env: env.NODE_ENV }, 'worker listening')
 })
 
 await queue.start()
-await registerHandlers({ queue, adapter, notifications, logger })
+await registerHandlers({ queue, adapter, payments: paymentAdapter, notifications, logger })
 await registerSchedules({ queue, logger })
 logger.info(
-  { adapter: adapter.system, notifications: notifications.name },
+  {
+    adapter: adapter.system,
+    notifications: notifications.name,
+    payments: paymentAdapter.provider,
+    // Printed on every boot on purpose. "Which environment is taking real
+    // money" should never be a question anyone has to go and look up.
+    paymentsSimulated: paymentAdapter.simulated,
+  },
   'queue started, handlers registered',
 )
 
