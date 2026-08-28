@@ -50,3 +50,5 @@ split here unchanged; their bodies are verbatim, with only a status line added.
 | [014](ADR-014-reference-implementations-over-blank-page-design.md) | Reference implementations over blank-page design | Accepted |
 | [015](ADR-015-pricing-in-per-room-month-equivalence.md) | Pricing displayed in €/room/month equivalence | Accepted |
 | [016](ADR-016-property-in-the-url.md) | The active property is a URL segment | Accepted |
+| [017](ADR-017-identity-tables-outside-tenancy.md) | Identity tables sit outside tenancy | Accepted |
+| [018](ADR-018-rls-enforcement-on-the-drizzle-path.md) | RLS is enforced on the Drizzle path via withUser | Accepted (as-built) |

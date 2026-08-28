@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run",
-    "test:rls": "vitest run --dir src/db/__tests__/rls",
+    "test:rls": "vitest run --config vitest.rls.config.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate"
   },
