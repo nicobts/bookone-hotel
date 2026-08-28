@@ -22,7 +22,14 @@ merge gate; this file is how we know the gate covers everything.
 pnpm db:start      # local stack
 pnpm db:reset      # replay every migration from zero
 pnpm test:rls      # both access paths
+pnpm db:seed       # the isolation fixtures truncate; put the dev data back
 ```
+
+That last line is not optional housekeeping. The fixtures delete every row in
+the public schema — they have to, because a suite that runs against leftover
+data proves whatever the leftovers happen to allow. Running `test:rls` against
+your local stack therefore empties it, and the next thing you do will fail in a
+way that looks like the code broke.
 
 Reading a policy proves nothing. As a member of property A, query for a row
 belonging to property B:
@@ -55,6 +62,7 @@ only (`user_property_ids_admin()`).
 | `agent_runs` | member | — ⁸ | member ⁹ | — | 2026-08-28 |
 | `reconciliation_runs` | member | — ¹⁰ | — ¹⁰ | — ¹¹ | 2026-08-28 |
 | `discrepancies` | member | — ¹² | member ¹³ | — ¹¹ | 2026-08-28 |
+| `notifications` | member | — ¹⁴ | — ¹⁴ | — ¹⁵ | 2026-08-28 |
 
 1. `with check (true)`. A new property has no members yet, so nothing else could
    pass; the `on_property_created` trigger makes the creator its owner in the
@@ -86,6 +94,13 @@ only (`user_property_ids_admin()`).
     observe that into existence.
 13. Resolving one writes `status`, `explanation`, `resolved_by` and
     `resolved_at` — the one-tap action the exceptions inbox offers (PRD C1).
+14. Queued in the same transaction as the thing being announced, then moved by
+    the sender. A person inserting a row would assert that a message was queued
+    when none was; a person editing one would hand-write a delivery record,
+    which is worse than no record because it looks like evidence.
+15. The row is the audit trail for a message that already reached a human
+    being. Retention is the E8 job's decision, applied on a schedule, not a
+    button next to a row.
 
 ## Exceptions — not property-scoped, and why
 
@@ -98,11 +113,21 @@ follow from any of them, so the suite tests it separately.
 
 ## Guest-surface access
 
-Guests never hold a database session (ADR-007). `/[locale]/stay/[token]` resolves
-a short-lived signed token **server-side** and queries on the guest's behalf,
-scoped to one reservation. There is no guest role in the database, so there is no
-guest policy on this map — the boundary is the token resolver, and it is tested
-as such. Lands in Sprint 5.
+Guests never hold a database session (ADR-007). There is no guest role in the
+database, so no guest policy appears on this map. The boundary for each guest
+surface is server-side code, and it is tested as such.
+
+| Surface | Boundary | Reads | Writes |
+|---|---|---|---|
+| `/[locale]/book/[property]` | the slug in the URL, resolved to one property id server-side | that property's `room_types` and `rate_snapshots` | one `guests`, one `reservations`, one `notifications`, all carrying that id |
+| `/[locale]/stay/[token]` | a short-lived signed token, resolved server-side (Sprint 5) | one reservation | that reservation's journey |
+
+The booking surface runs under `asService`, because an anonymous visitor has no
+JWT for a policy to read. That makes the explicit `property_id` on every query
+the whole of the isolation, not a convenience — which is the case ADR-007
+anticipates and binding rule 3's second sentence exists for. The suite asserts
+it by asking the surface for another property's room types by id and expecting
+nothing back.
 
 ## Helper functions
 

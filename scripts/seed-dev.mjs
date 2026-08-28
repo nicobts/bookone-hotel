@@ -87,14 +87,35 @@ try {
   const ownerId = await createUser('owner@bookone.test', 'Markus Rainer')
   const staffId = await createUser('staff@bookone.test', 'Lena Fischer')
 
+  // Settings carry what the booking surface reads: the whitelabel colours
+  // (PRD A1), the contact the stale-source fallback offers, and the tourist-tax
+  // rule the review step states as a note rather than a charge.
+  //
+  // The two properties are deliberately themed differently. One property
+  // looking like the other is how per-property theming passes review while
+  // being broken.
   const [sonja] = await sql`
-    insert into properties (slug, name, locale_default, languages, timezone)
-    values ('hotel-sonja', 'Hotel Sonja', 'de', '["de","it","en"]'::jsonb, 'Europe/Rome')
+    insert into properties (slug, name, locale_default, languages, timezone, settings)
+    values (
+      'hotel-sonja', 'Hotel Sonja', 'de', '["de","it","en"]'::jsonb, 'Europe/Rome',
+      '{
+        "theme": {"primary": "#1F6F5C", "accent": "#E0A458"},
+        "contact": {"email": "reception@hotel-sonja.test", "phone": "+39 0471 000001"},
+        "touristTax": {"amountCentsPerPersonPerNight": 200, "currency": "EUR", "maxNights": 5, "exemptUnderAge": 14}
+      }'::jsonb
+    )
     returning id`
 
   const [alpin] = await sql`
-    insert into properties (slug, name, locale_default, languages, timezone)
-    values ('garni-alpin', 'Garni Alpin', 'it', '["it","de","en","sl"]'::jsonb, 'Europe/Rome')
+    insert into properties (slug, name, locale_default, languages, timezone, settings)
+    values (
+      'garni-alpin', 'Garni Alpin', 'it', '["it","de","en","sl"]'::jsonb, 'Europe/Rome',
+      '{
+        "theme": {"primary": "#7A3E9D", "accent": "#F2994A"},
+        "contact": {"email": "info@garni-alpin.test"},
+        "touristTax": {"amountCentsPerPersonPerNight": 150, "currency": "EUR"}
+      }'::jsonb
+    )
     returning id`
 
   await sql`
@@ -107,8 +128,9 @@ try {
   for (const property of [sonja, alpin]) {
     await sql`
       insert into room_types (property_id, code, name_i18n, capacity) values
-        (${property.id}, 'DBL', '{"de":"Doppelzimmer","it":"Camera doppia","en":"Double room"}'::jsonb, 2),
-        (${property.id}, 'SGL', '{"de":"Einzelzimmer","it":"Camera singola","en":"Single room"}'::jsonb, 1)`
+        (${property.id}, 'DBL', '{"de":"Doppelzimmer","it":"Camera doppia","en":"Double room","sl":"Dvoposteljna soba"}'::jsonb, 2),
+        (${property.id}, 'SGL', '{"de":"Einzelzimmer","it":"Camera singola","en":"Single room","sl":"Enoposteljna soba"}'::jsonb, 1),
+        (${property.id}, 'FAM', '{"de":"Familienzimmer","it":"Camera familiare","en":"Family room","sl":"Družinska soba"}'::jsonb, 4)`
   }
 
   // One event per property, so the log is not empty on first look — Sprint 1's
@@ -118,7 +140,11 @@ try {
       (${sonja.id}, 'property', 'property.created', 'platform', 'system', '{"seed":true}'::jsonb),
       (${alpin.id}, 'property', 'property.created', 'platform', 'system', '{"seed":true}'::jsonb)`
 
-  console.log('Seeded 2 properties, 2 accounts, 4 room types, 2 events.')
+  console.log('Seeded 2 properties, 2 accounts, 6 room types, 2 events.')
+  console.log('')
+  console.log('  Booking surfaces (prices arrive once the worker refreshes availability):')
+  console.log('    http://localhost:3000/de/book/hotel-sonja')
+  console.log('    http://localhost:3000/it/book/garni-alpin')
   console.log('')
   console.log('  owner@bookone.test  owner of Hotel Sonja, staff at Garni Alpin')
   console.log('  staff@bookone.test  staff at Hotel Sonja only')

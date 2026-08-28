@@ -6,6 +6,7 @@ import type {
   JobName,
   JobPayloads,
   JobQueue,
+  ScheduleOptions,
   SendOptions,
 } from '@bookone/core/jobs'
 
@@ -92,9 +93,31 @@ export class PgBossQueue implements JobQueue {
     })
   }
 
-  async schedule<N extends JobName>(name: N, cron: string, data: JobPayloads[N]): Promise<void> {
+  async schedule<N extends JobName>(
+    name: N,
+    cron: string,
+    data: JobPayloads[N],
+    options: ScheduleOptions = {},
+  ): Promise<void> {
     // Property-local time matters here: "nightly" for a hotel means after its
     // own last checkout, not at 02:00 UTC.
-    await this.boss.schedule(name, cron, data as object, { tz: 'Europe/Rome' })
+    //
+    // The key is what makes several schedules of one job coexist. pg-boss
+    // identifies a schedule by name, so without it the second property's
+    // registration silently replaces the first's — see `ScheduleOptions`.
+    await this.boss.schedule(name, cron, data as object, {
+      tz: 'Europe/Rome',
+      ...(options.key ? { key: options.key } : {}),
+    })
+  }
+
+  async listSchedules(name: JobName): Promise<{ name: JobName; key: string }[]> {
+    const schedules = await this.boss.getSchedules(name)
+
+    return schedules.map((schedule) => ({ name, key: schedule.key ?? '' }))
+  }
+
+  async unschedule(name: JobName, key?: string): Promise<void> {
+    await this.boss.unschedule(name, key)
   }
 }

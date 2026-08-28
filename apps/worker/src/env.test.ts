@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { loadEnv } from './env'
 
-/** The one variable with no sensible default. */
-const required = { DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:54422/postgres' }
+/** The variables with no sensible default — a default would be a published one. */
+const required = {
+  DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:54422/postgres',
+  WORKER_INTERNAL_TOKEN: 'a-token-long-enough-to-pass-the-check',
+}
 
 describe('loadEnv', () => {
   it('applies defaults for local development', () => {
@@ -11,6 +14,7 @@ describe('loadEnv', () => {
       NODE_ENV: 'development',
       WORKER_PORT: 8787,
       LOG_LEVEL: 'info',
+      NOTIFICATION_PROVIDER: 'log',
     })
   })
 
@@ -25,10 +29,34 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ ...required, LOG_LEVEL: 'chatty' })).toThrow(/LOG_LEVEL/)
   })
 
+  it('refuses a short internal token rather than guarding /jobs with one', () => {
+    // The endpoints behind it enqueue work against any property id in the
+    // body. A guessable secret there is the same as no secret.
+    expect(() => loadEnv({ ...required, WORKER_INTERNAL_TOKEN: 'short' })).toThrow(
+      /WORKER_INTERNAL_TOKEN/,
+    )
+  })
+
   it('refuses to boot without a database url', () => {
     // pg-boss would otherwise fail on its first poll, a minute after boot, in
     // a log nobody is reading — rather than here, where the process refuses to
     // start and says which variable is missing.
     expect(() => loadEnv({})).toThrow(/DATABASE_URL/)
+  })
+
+  it('names every missing variable at once, not one per restart', () => {
+    // Fixing a missing-variable error and hitting the next one is how a
+    // deployment turns into four.
+    const message = (() => {
+      try {
+        loadEnv({})
+        return ''
+      } catch (error) {
+        return (error as Error).message
+      }
+    })()
+
+    expect(message).toMatch(/DATABASE_URL/)
+    expect(message).toMatch(/WORKER_INTERNAL_TOKEN/)
   })
 })

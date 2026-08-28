@@ -16,7 +16,9 @@
     "./types": "./src/types/index.ts",
     "./db/queries": "./src/db/queries/index.ts",
     "./jobs": "./src/jobs/index.ts",
-    "./sync": "./src/sync/index.ts"
+    "./sync": "./src/sync/index.ts",
+    "./booking": "./src/booking/index.ts",
+    "./notifications": "./src/notifications/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -27,6 +29,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@bookone/i18n": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "postgres": "^3.4.9",
     "zod": "^4.4.3"

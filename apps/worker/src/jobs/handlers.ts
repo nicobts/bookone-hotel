@@ -1,6 +1,12 @@
 import type { JobQueue } from '@bookone/core/jobs'
 import type { PmsAdapter } from '@bookone/core/adapters'
 import { refreshAvailability, reconcileBookingDomain, reflectReservation } from '@bookone/core/sync'
+import { expireHolds } from '@bookone/core/booking'
+import {
+  listPendingNotifications,
+  sendNotification,
+  type NotificationProvider,
+} from '@bookone/core/notifications'
 import { runAgent } from '@bookone/agents/runner'
 import type { Logger } from 'pino'
 
@@ -16,11 +22,24 @@ import type { Logger } from 'pino'
 export interface HandlerDeps {
   queue: JobQueue
   adapter: PmsAdapter
+  notifications: NotificationProvider
   logger: Logger
 }
 
+/**
+ * How long a queued message may sit before the sweep picks it up.
+ *
+ * Longer than a send takes, so the sweep never races the direct enqueue and
+ * mails a guest twice — and short enough to stay inside E1.2's sixty seconds
+ * when the direct enqueue was the thing that failed.
+ */
+const SWEEP_AFTER_SECONDS = 30
+
+/** Bounded, so one stuck property cannot starve the rest of a sweep. */
+const SWEEP_BATCH = 50
+
 export async function registerHandlers(deps: HandlerDeps): Promise<void> {
-  const { queue, adapter, logger } = deps
+  const { queue, adapter, notifications, logger } = deps
 
   await queue.work('reservation.reflect', async (job) => {
     const { propertyId, reservationId } = job.data
@@ -47,6 +66,10 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
         // have. Worth seeing: it is usually a room added in the PMS and not
         // here, which the onboarding wizard will eventually reconcile.
         skipped: result.skipped,
+        // Nights with nothing left. Not an error and not written — but worth
+        // seeing, because "the booking page shows no rooms" and "the connector
+        // is broken" look identical from the outside.
+        soldOut: result.soldOut,
       },
       'availability.refresh',
     )
@@ -121,5 +144,53 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       },
       'agent.run',
     )
+  })
+
+  await queue.work('notification.send', async (job) => {
+    const { propertyId, notificationId } = job.data
+
+    const outcome = await sendNotification({ provider: notifications }, { notificationId })
+
+    logger.info(
+      { jobId: job.id, propertyId, notificationId, outcome: outcome.status },
+      'notification.send',
+    )
+
+    // Rethrown so the queue retries it. Everything else — an unknown template,
+    // a channel this provider cannot send on — will fail identically next time,
+    // and is already recorded on the row for the console to show.
+    if (outcome.status === 'failed' && outcome.retryable) {
+      throw new Error(outcome.error)
+    }
+  })
+
+  await queue.work('notification.sweep', async (job) => {
+    const pending = await listPendingNotifications({
+      olderThanSeconds: SWEEP_AFTER_SECONDS,
+      limit: SWEEP_BATCH,
+    })
+
+    for (const row of pending) {
+      await queue.send(
+        'notification.send',
+        { propertyId: row.propertyId, notificationId: row.id },
+        { singletonKey: `notify:${row.id}` },
+      )
+    }
+
+    // Logged only when it found something. A sweep that runs every minute and
+    // says "0" every minute is a log nobody reads, which is a log that hides
+    // the minute it says 40.
+    if (pending.length > 0) {
+      logger.info({ jobId: job.id, swept: pending.length }, 'notification.sweep')
+    }
+  })
+
+  await queue.work('reservation.expire_holds', async (job) => {
+    const { expired } = await expireHolds()
+
+    if (expired > 0) {
+      logger.info({ jobId: job.id, expired }, 'reservation.expire_holds')
+    }
   })
 }

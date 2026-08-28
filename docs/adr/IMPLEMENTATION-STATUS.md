@@ -13,18 +13,28 @@ worse than none, because it is read as current.
 | 004 | Hono on `@hono/node-server` | ✅ as-built | `apps/worker/src/app.ts` |
 | 005 | pg-boss behind a `JobQueue` interface | ✅ as-built | `JobQueue` port in core, `PgBossQueue` the only file importing pg-boss. Verified live: enqueue to reflected in 780ms, against a 60s requirement |
 | 006 | Supabase EU; Drizzle for domain access | 🟨 partial | Schema, access layer and Auth built on local Supabase. Cloud EU project not yet provisioned |
-| 007 | RLS on every client-reachable table, tested in CI | ✅ as-built | 10/10 tables, both suites green, negative control verified, and now a CI job of its own |
+| 007 | RLS on every client-reachable table, tested in CI | ✅ as-built | 11/11 tables, both suites green, negative control verified, and a CI job of its own. The public booking surface has no JWT to police, so it runs under `asService` with explicit scoping — asserted by handing each function the other property's ids (`booking.test.ts`) |
 | 008 | Mock-first connector | ✅ as-built | `MockEricsoftAdapter` with counted failure injection, plus the shared contract suite the real adapter must pass before the swap. Verified by negative control: removing the idempotency guard fails the contract |
 | 009 | Voice hard tool boundaries | ⬜ WS-B | Not this workstream |
-| 010 | Stripe behind `PaymentAdapter` | ⬜ not yet | Sprint 4 |
+| 010 | Stripe behind `PaymentAdapter` | ⬜ not yet | Sprint 4. The booking flow's step 4 is built with the payment step's place already in it |
 | 011 | Agents as first-class workers, tiered autonomy | ✅ as-built | Registry, runner and typed tools; AG-05 live on reconciliation. The runner refuses an ungranted tool, scopes to one property, and records every run — including the ones that fail |
 | 012 | `LlmProvider` abstraction; no vendor SDK imports | ✅ as-built | Interface and registry in `src/llm`; registration refuses any provider without declared EU processing, a region, a sub-processor register entry and a verification under a year old. No provider registered yet — that waits for a real requirement |
 | 013 | Journey state machine is the single source of stay truth | ⬜ not yet | `journey_states` and the evented commands land with the pre-arrival journey in Sprint 5 |
-| 014 | Reference implementations over blank-page design | ⬜ not yet | First design note is due with the booking surface (Sprint 3). The console shell follows the BookOne design system, which is our own and needs no note |
+| 014 | Reference implementations over blank-page design | ✅ as-built | First note written before the first component: [booking-flow.md](../design-notes/booking-flow.md) — Mews + Booking.com studied, six deviations each tied to the wedge. Index and legal-hygiene rules in [design-notes/](../design-notes/README.md) |
 | 015 | Pricing in €/room/month equivalence | ⬜ not yet | Sprint 8 reporting |
 | 016 | Property is a URL segment | ✅ as-built | `/[locale]/[property]/console/…`; verified in a browser that a non-member typing another slug gets a 404, not a redirect |
 | 017 | Identity tables sit outside tenancy | ✅ as-built | `profiles` isolated by `auth.uid()`; asserted separately in the suite |
 | 018 | RLS enforced on the Drizzle path via `withUser` | ✅ as-built | `packages/core/src/db/session.ts`; removing the role-drop fails 8 of 21 |
+
+## Sprint 3 additions
+
+| Thing | Status | Note |
+|---|---|---|
+| `/book/[property]`, four steps, four locales | ✅ | Walked end to end in a browser in DE, IT and SL |
+| Availability from `rate_snapshots`, stale fallback | ✅ | 15-minute threshold against a 2-minute refresh; oldest row decides |
+| Booking hold | ✅ | A **price** hold, not an inventory hold — design note §4A |
+| Confirmation notifications | ✅ | Transactional outbox; email only, `log` provider until an ESP clears D9 |
+| Per-property theming | ✅ | `--bo-primary` / `--bo-accent` from `settings.theme`, validated as colours |
 
 ## CI gates
 

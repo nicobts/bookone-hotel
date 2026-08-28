@@ -19,7 +19,10 @@ import type { PmsAdapter } from '../adapters/pms'
 
 export interface RefreshResult {
   written: number
+  /** Entries naming a room type this property does not have. */
   skipped: number
+  /** Nights with no rooms left. Not written — see the loop. */
+  soldOut: number
   fetchedAt: Date
 }
 
@@ -46,12 +49,26 @@ export async function refreshAvailability(
 
     const rows: (typeof rateSnapshots.$inferInsert)[] = []
     let skipped = 0
+    let soldOut = 0
 
     for (const entry of result.entries) {
       const roomTypeId = byCode.get(entry.roomTypeCode)
 
       if (!roomTypeId) {
         skipped += 1
+        continue
+      }
+
+      // A price for a night with nothing left is not availability, and this
+      // table is what the booking surface treats as bookable. Writing the row
+      // and filtering it later would mean every future reader of
+      // `rate_snapshots` has to remember to — one of them would not, and the
+      // guest would book a room the hotel does not have.
+      //
+      // The absence is also what the quote needs: a gap in the window makes the
+      // room unofferable for that stay, which is exactly what sold out means.
+      if (entry.available <= 0) {
+        soldOut += 1
         continue
       }
 
@@ -70,7 +87,7 @@ export async function refreshAvailability(
     }
 
     if (rows.length === 0) {
-      return { written: 0, skipped, fetchedAt: result.fetchedAt }
+      return { written: 0, skipped, soldOut, fetchedAt: result.fetchedAt }
     }
 
     await db.transaction(async (tx) => {
@@ -98,7 +115,7 @@ export async function refreshAvailability(
     // event per night per room type per five minutes would bury every real
     // event in the log under noise, which is the opposite of what the rule is
     // protecting. The provenance lives on the rows themselves.
-    return { written: rows.length, skipped, fetchedAt: result.fetchedAt }
+    return { written: rows.length, skipped, soldOut, fetchedAt: result.fetchedAt }
   })
 }
 

@@ -106,5 +106,128 @@
     "light": "Hell",
     "dark": "Dunkel",
     "system": "System"
+  },
+  "notifications": {
+    "bookingConfirmation": {
+      "subject": "Ihre Buchung im {property} — {reference}",
+      "greeting": "Guten Tag {guestName},",
+      "intro": "Ihr Aufenthalt im {property} ist bestätigt.",
+      "labels": {
+        "reference": "Buchungsnummer",
+        "arrival": "Anreise",
+        "departure": "Abreise",
+        "room": "Zimmer",
+        "adults": "Erwachsene",
+        "children": "Kinder",
+        "total": "Gesamtbetrag"
+      },
+      "touristTax": "Die Ortstaxe ist im Gesamtbetrag nicht enthalten und wird vom Haus eingehoben: {touristTax}",
+      "payment": "Online wurde nichts abgebucht. Das Haus vereinbart die Zahlung direkt mit Ihnen.",
+      "help": "Fragen zu Ihrem Aufenthalt? Antworten Sie einfach auf diese E-Mail, das Haus meldet sich.",
+      "signOff": "Wir freuen uns auf Sie.",
+      "sender": "{property}"
+    },
+    "bookingRequest": {
+      "subject": "Buchungsanfrage — {arrival} bis {departure}",
+      "intro": "Ein Gast hat nach Daten gefragt, die die Buchungsmaschine nicht bepreisen konnte. Die Live-Verfügbarkeit war nicht erreichbar, es wurde also weder ein Preis genannt noch etwas reserviert.",
+      "labels": {
+        "guest": "Gast",
+        "email": "E-Mail",
+        "phone": "Telefon",
+        "arrival": "Anreise",
+        "departure": "Abreise",
+        "adults": "Erwachsene",
+        "children": "Kinder",
+        "message": "Nachricht"
+      },
+      "action": "Antworten Sie dem Gast direkt unter {email}."
+    }
+  },
+  "booking": {
+    "stepOf": "Schritt {current} von {total}",
+    "steps": {
+      "dates": "Termin",
+      "rooms": "Zimmer",
+      "details": "Ihre Daten",
+      "confirm": "Bestätigen"
+    },
+    "nights": "{count, plural, one {# Nacht} other {# Nächte}}",
+    "guests": "{count, plural, one {# Gast} other {# Gäste}}",
+    "dates": {
+      "title": "Wann möchten Sie bleiben?",
+      "subtitle": "Kein Konto nötig. Sie sehen den vollen Preis, bevor Sie buchen.",
+      "arrival": "Anreise",
+      "departure": "Abreise",
+      "adults": "Erwachsene",
+      "children": "Kinder",
+      "submit": "Verfügbarkeit ansehen",
+      "invalid": "Die Abreise muss nach der Anreise liegen."
+    },
+    "rooms": {
+      "title": "Zimmer wählen",
+      "subtitle": "{nights} · {guests}",
+      "perNight": "pro Nacht",
+      "total": "Gesamt für Ihren Aufenthalt",
+      "select": "Dieses Zimmer wählen",
+      "sleeps": "Für bis zu {capacity} Personen",
+      "none": "Für diesen Aufenthalt ist kein Zimmer verfügbar.",
+      "noneHint": "Versuchen Sie andere Termine oder eine kleinere Gruppe — oder schreiben Sie dem Haus direkt.",
+      "change": "Termin ändern"
+    },
+    "details": {
+      "title": "Auf wen läuft die Buchung?",
+      "subtitle": "Nur das, was das Haus braucht, um Sie zu empfangen.",
+      "name": "Vor- und Nachname",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "optional": "optional",
+      "marketing": "Schicken Sie mir gelegentlich Angebote dieses Hauses",
+      "submit": "Weiter",
+      "back": "Zurück"
+    },
+    "review": {
+      "title": "Prüfen und bestätigen",
+      "stay": "Aufenthalt",
+      "room": "Zimmer",
+      "party": "Gäste",
+      "name": "Name",
+      "email": "E-Mail",
+      "total": "Gesamtbetrag",
+      "touristTax": "Ortstaxe, wird vom Haus eingehoben",
+      "touristTaxCap": "Fällig für die ersten {nights} Nächte.",
+      "touristTaxChildren": "Kinder unter {age} sind befreit; das Alter wird im Haus bestätigt.",
+      "payment": "Jetzt wird nichts abgebucht. Das Haus vereinbart die Zahlung mit Ihnen.",
+      "cancellation": "Kostenlose Stornierung — melden Sie sich beim Haus, es bestätigt Ihnen das.",
+      "holdExpires": "Ihr Preis ist bis {time} reserviert.",
+      "confirm": "Buchung bestätigen",
+      "pending": "Wird bestätigt",
+      "back": "Zurück",
+      "expired": "Ihre Preisreservierung ist abgelaufen.",
+      "expiredHint": "Die Preise können sich geändert haben. Beginnen Sie neu, wir zeigen Ihnen die heutigen."
+    },
+    "confirmed": {
+      "title": "Sie sind gebucht.",
+      "subtitle": "{property} erwartet Sie.",
+      "reference": "Buchungsnummer",
+      "emailSent": "Eine Bestätigung ist an {email} unterwegs.",
+      "next": "Das Haus meldet sich wegen Zahlung und Anreise."
+    },
+    "stale": {
+      "title": "Wir erreichen die aktuellen Preise gerade nicht",
+      "body": "Statt Ihnen einen möglicherweise falschen Preis zu zeigen, fragen wir lieber im Haus nach. Senden Sie Ihre Termine, man meldet sich direkt bei Ihnen.",
+      "callInstead": "Oder rufen Sie {phone} an",
+      "name": "Vor- und Nachname",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "message": "Was das Haus wissen sollte",
+      "submit": "Anfrage senden",
+      "pending": "Wird gesendet",
+      "sent": "Ihre Anfrage liegt beim Haus.",
+      "sentBody": "Man antwortet Ihnen an {email}.",
+      "noContact": "Dieses Haus hat keine Kontaktadresse hinterlegt. Bitte versuchen Sie es in Kürze erneut."
+    },
+    "errors": {
+      "generic": "Etwas ist schiefgegangen. Bitte erneut versuchen."
+    }
   }
 }

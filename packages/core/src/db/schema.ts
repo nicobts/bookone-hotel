@@ -73,6 +73,24 @@ export const agentTier = pgEnum('agent_tier', ['T1', 'T2', 'T3'])
 /** What a human did with the run. This column is the evidence a tier may widen (06 §4). */
 export const agentOutcome = pgEnum('agent_outcome', ['accepted', 'edited', 'rejected', 'auto'])
 
+/**
+ * How a guest is reached. Email is first and unconditional (04 §1 Sprint 3);
+ * SMS and WhatsApp are additive and gated on BSP verification, which is exactly
+ * why the channel is a column rather than four parallel tables.
+ */
+export const notificationChannel = pgEnum('notification_channel', ['email', 'sms', 'whatsapp'])
+
+/**
+ * `queued` is written in the same transaction as the thing being announced;
+ * the send happens afterwards and moves the row. See `notifications`.
+ */
+export const notificationStatus = pgEnum('notification_status', [
+  'queued',
+  'sent',
+  'failed',
+  'suppressed',
+])
+
 // ---------------------------------------------------------------------------
 // Tenancy
 // ---------------------------------------------------------------------------
@@ -414,12 +432,61 @@ export const reservations = pgTable(
     engineSessionId: text('engine_session_id'),
     conciergeSessionId: text('concierge_session_id'),
 
+    /**
+     * The booking reference a guest reads out on the phone (E1.2).
+     *
+     * Not a key and never used as one — the UUID is the key (binding rule 1).
+     * This exists because "my booking is 3f2a…-9c" is not a sentence a human
+     * says, and the confirmation email, the front desk and the guest all need
+     * one short string they can agree on.
+     *
+     * Nullable: reservations arriving from the PMS (`origin='sync'`) already
+     * have the hotel's own reference and inventing a second one would give the
+     * same stay two names.
+     */
+    reference: text('reference'),
+
+    /**
+     * When a `hold` stops being one (E1.3: 30 minutes).
+     *
+     * A *price* hold, not an inventory hold — see docs/design-notes/booking-flow.md
+     * §4A. It fixes the quoted total and the snapshots below; it reserves no
+     * room, because in V1 we hold no inventory to reserve.
+     */
+    holdExpiresAt: timestamp('hold_expires_at', { withTimezone: true }),
+
+    /**
+     * The `rate_snapshots` rows this total was computed from (PRD A2).
+     *
+     * Provenance, not a foreign key: snapshots are a cache and get replaced by
+     * the next refresh, so a real reference would either block the refresh or
+     * cascade the booking away. Kept as ids so a disputed price can be traced
+     * to the fetch that produced it — and the fetch is in the event log even
+     * once the row is gone.
+     */
+    rateSnapshotIds: jsonb('rate_snapshot_ids')
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('reservations_property_arrival_idx').on(t.propertyId, t.arrivalDate),
     index('reservations_property_status_idx').on(t.propertyId, t.status),
     check('reservations_date_order', sql`${t.departureDate} > ${t.arrivalDate}`),
+    /**
+     * Scoped to the property, like every other identifier here. Two hotels
+     * independently generating `BO-7QK2M9` is not a collision worth preventing
+     * globally, and a global constraint would make one property's booking
+     * volume able to fail another's checkout (the same lesson as
+     * `external_refs_property_system_entity`).
+     */
+    unique('reservations_property_reference').on(t.propertyId, t.reference),
+    /** A hold with no expiry never expires, which is the one thing it must do. */
+    check(
+      'reservations_hold_has_expiry',
+      sql`${t.status} <> 'hold' or ${t.holdExpiresAt} is not null`,
+    ),
   ],
 )
 
@@ -661,5 +728,93 @@ export const discrepancies = pgTable(
      * connector by — silently inflates.
      */
     unique('discrepancies_run_entity').on(t.runId, t.entityRef),
+  ],
+)
+
+// ---------------------------------------------------------------------------
+// Guest communication
+// ---------------------------------------------------------------------------
+
+/**
+ * The outbound message outbox (E1.2, 04 §1 Sprint 3).
+ *
+ * An outbox rather than a direct send, because the alternative is a dual write:
+ * confirm the booking, then call an email provider. A crash between the two
+ * leaves a confirmed guest who was never told, and a provider timeout after a
+ * successful send leaves a retry that tells them twice. Writing the row in the
+ * same transaction as the confirmation makes "the guest will be told" a
+ * property of the commit, and the worker turns it into an actual message.
+ *
+ * The row is also the evidence. E1.2 requires a confirmation within 60 seconds;
+ * `created_at` to `sent_at` is that measurement, per message, without anyone
+ * having to instrument anything.
+ */
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+
+    /** What it is about. Null for messages that are not about one stay. */
+    reservationId: uuid('reservation_id').references(() => reservations.id, {
+      onDelete: 'cascade',
+    }),
+
+    channel: notificationChannel('channel').notNull(),
+
+    /** Template name, resolved in `packages/core/src/notifications`. */
+    template: text('template').notNull(),
+
+    /** The locale actually rendered, after the guest -> property -> en chain. */
+    locale: text('locale').notNull(),
+
+    /**
+     * Where it went. Personal data, deliberately kept: a guest asking why they
+     * never got their confirmation is answered by this column and nothing else.
+     * In scope for the E8 retention job — it ages out with the stay, not with
+     * the row.
+     */
+    recipient: text('recipient').notNull(),
+
+    /**
+     * The facts the template rendered from, captured at queue time.
+     *
+     * Stored rather than re-derived on send: the message must say what was true
+     * when the booking was confirmed, not what is true when the queue drains.
+     * This is also what makes a message reproducible during a dispute.
+     */
+    payload: jsonb('payload')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+
+    status: notificationStatus('status').notNull().default('queued'),
+
+    attempts: smallint('attempts').notNull().default(0),
+
+    /** Provider identity and their id for it, for tracing a delivery complaint. */
+    provider: text('provider'),
+    providerMessageId: text('provider_message_id'),
+
+    /** Last failure, human-readable. Kept even after a later attempt succeeds. */
+    lastError: text('last_error'),
+
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('notifications_property_status_idx').on(t.propertyId, t.status),
+    index('notifications_reservation_idx').on(t.reservationId),
+    /**
+     * One message per template per reservation per channel.
+     *
+     * The confirmation path is retryable from several places (a retried job, an
+     * owner re-sending, a webhook replay in Sprint 4). Without this, each of
+     * them mails the guest again — and a guest who receives four identical
+     * confirmations concludes the hotel is broken, which is a worse outcome
+     * than the one the retry was fixing.
+     */
+    unique('notifications_reservation_template_channel').on(t.reservationId, t.template, t.channel),
   ],
 )

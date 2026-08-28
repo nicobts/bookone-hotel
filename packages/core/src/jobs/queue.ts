@@ -28,6 +28,12 @@ export const jobNames = [
   'reconcile.nightly',
   /** Run one agent against one trigger (06 §3). */
   'agent.run',
+  /** Render and send one queued outbox row (E1.2). */
+  'notification.send',
+  /** Catch outbox rows whose direct enqueue was lost. */
+  'notification.sweep',
+  /** Cancel booking holds past their thirty minutes (E1.3). */
+  'reservation.expire_holds',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -54,6 +60,21 @@ export interface JobPayloads {
     triggerEventId?: string
     input?: Record<string, unknown>
   }
+  /**
+   * Carries the outbox row id, not the message.
+   *
+   * The row already holds the recipient, the locale and the facts, captured at
+   * queue time — putting them on the job too would create a second copy that
+   * can disagree with the first, and the row is the one that gets audited.
+   */
+  'notification.send': { propertyId: string; notificationId: string }
+  /**
+   * No payload. The sweep is a query over every property, which is legitimate
+   * for a maintenance job and meaningless to scope to one — a property whose
+   * own enqueue was lost is exactly the property that would not be named.
+   */
+  'notification.sweep': Record<string, never>
+  'reservation.expire_holds': Record<string, never>
 }
 
 export interface SendOptions {
@@ -74,6 +95,23 @@ export interface SendOptions {
   retryDelaySeconds?: number
 }
 
+export interface ScheduleOptions {
+  /**
+   * Discriminator for several schedules of the same job.
+   *
+   * Required whenever a job is scheduled per property, and the reason is worth
+   * stating: a schedule is identified by its job name, so scheduling
+   * `availability.refresh` for a second property **replaces** the first
+   * property's schedule instead of adding to it. Nothing errors. The first
+   * hotel simply stops being refreshed, and the only symptom is a booking page
+   * that falls back to the request form some time later.
+   *
+   * Measured, not assumed: with two seeded properties and no key, exactly one
+   * property id appeared in the refresh log.
+   */
+  key?: string
+}
+
 export interface Job<N extends JobName = JobName> {
   id: string
   name: N
@@ -92,8 +130,25 @@ export interface JobQueue {
   /** Registers the consumer. One handler per name. */
   work<N extends JobName>(name: N, handler: JobHandler<N>): Promise<void>
 
-  /** Cron. Used for `reconcile.nightly` and the scheduled agents. */
-  schedule<N extends JobName>(name: N, cron: string, data: JobPayloads[N]): Promise<void>
+  /** Cron. Used for `reconcile.nightly`, availability and the scheduled agents. */
+  schedule<N extends JobName>(
+    name: N,
+    cron: string,
+    data: JobPayloads[N],
+    options?: ScheduleOptions,
+  ): Promise<void>
+
+  /**
+   * Every schedule currently registered for a job name.
+   *
+   * Needed because schedules outlive the process that created them. A property
+   * that is removed, or a key format that changes, otherwise leaves a schedule
+   * firing forever against something that is gone — and pg-boss has no notion
+   * of a schedule belonging to a boot.
+   */
+  listSchedules(name: JobName): Promise<{ name: JobName; key: string }[]>
+
+  unschedule(name: JobName, key?: string): Promise<void>
 
   start(): Promise<void>
   stop(): Promise<void>

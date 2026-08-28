@@ -5,6 +5,7 @@ import { PageShell } from '@/components/shell/page-shell'
 import { requireProperty } from '@/lib/auth/current-property'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { retryReflectionAction } from './actions'
 
 /**
  * Exceptions — the console's reason to exist (PRD C1, D15).
@@ -28,6 +29,7 @@ export default async function ExceptionsPage({
   const exceptions = await listExceptions(user.id, property.id)
 
   const t = await getTranslations('console.exceptions')
+  const context = { locale, slug }
 
   return (
     <PageShell
@@ -50,7 +52,7 @@ export default async function ExceptionsPage({
       ) : (
         <ul className="flex flex-col gap-3">
           {exceptions.map((item) => (
-            <ExceptionRow key={item.id} item={item} locale={locale} />
+            <ExceptionRow key={item.id} item={item} locale={locale} context={context} />
           ))}
         </ul>
       )}
@@ -58,7 +60,15 @@ export default async function ExceptionsPage({
   )
 }
 
-async function ExceptionRow({ item, locale }: { item: ExceptionItem; locale: string }) {
+async function ExceptionRow({
+  item,
+  locale,
+  context,
+}: {
+  item: ExceptionItem
+  locale: string
+  context: { locale: string; slug: string }
+}) {
   const t = await getTranslations('console.exceptions')
 
   const isUnreflected = item.kind === 'unreflected-reservation'
@@ -97,21 +107,23 @@ async function ExceptionRow({ item, locale }: { item: ExceptionItem; locale: str
 
           A retryable exception offers a retry; a discrepancy offers a review,
           because retrying a comparison produces the same disagreement — it
-          needs a decision, not another attempt. Both are placeholders until the
-          console actions land in Sprint 4; showing a button that does nothing
-          would be worse than showing what the action will be, so they are
-          disabled rather than dead.
+          needs a decision, not another attempt. Review is still a placeholder
+          and stays disabled: a button that does nothing is worse than one that
+          says what it will do.
         */}
-        <Button variant="outline" size="sm" disabled>
-          {item.retryable ? (
-            <>
+        {item.retryable ? (
+          <form action={retryReflectionAction.bind(null, context)}>
+            <input type="hidden" name="reservationId" value={item.subject} />
+            <Button type="submit" variant="outline" size="sm">
               <RefreshCwIcon className="size-3.5" aria-hidden />
               {t('retry')}
-            </>
-          ) : (
-            t('review')
-          )}
-        </Button>
+            </Button>
+          </form>
+        ) : (
+          <Button variant="outline" size="sm" disabled>
+            {t('review')}
+          </Button>
+        )}
       </div>
 
       <span className="sr-only">{new Date(item.occurredAt).toLocaleString(locale)}</span>

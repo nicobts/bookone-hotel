@@ -1,5 +1,24 @@
+import { existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import type { NextConfig } from 'next'
 import createNextIntlPlugin from 'next-intl/plugin'
+
+/**
+ * The repo-root `.env`.
+ *
+ * Next reads `.env` files beside the app, and the platform's configuration
+ * lives one level up because the worker, the migrations and the seed script
+ * share it — one set of credentials, one file, per `.env.example`.
+ *
+ * Loaded here because this file runs in the server process before the app
+ * boots. Without it the app starts perfectly and then fails at the first
+ * outbound call, with an error that names neither the variable nor the file.
+ * Deployed environments supply real environment variables and have no file
+ * here, which is why a missing one is silent. Nothing already set is
+ * overwritten.
+ */
+const rootEnv = fileURLToPath(new URL('../../.env', import.meta.url))
+if (existsSync(rootEnv)) process.loadEnvFile(rootEnv)
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 

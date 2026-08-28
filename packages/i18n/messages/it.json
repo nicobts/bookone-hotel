@@ -106,5 +106,128 @@
     "light": "Chiaro",
     "dark": "Scuro",
     "system": "Sistema"
+  },
+  "notifications": {
+    "bookingConfirmation": {
+      "subject": "La tua prenotazione presso {property} — {reference}",
+      "greeting": "Gentile {guestName},",
+      "intro": "Il tuo soggiorno presso {property} è confermato.",
+      "labels": {
+        "reference": "Codice prenotazione",
+        "arrival": "Arrivo",
+        "departure": "Partenza",
+        "room": "Camera",
+        "adults": "Adulti",
+        "children": "Bambini",
+        "total": "Totale"
+      },
+      "touristTax": "L'imposta di soggiorno non è inclusa nel totale ed è riscossa dalla struttura: {touristTax}",
+      "payment": "Non è stato addebitato nulla online. La struttura concorderà con te le modalità di pagamento.",
+      "help": "Domande sul tuo soggiorno? Rispondi a questa email e la struttura ti risponderà.",
+      "signOff": "Ti aspettiamo.",
+      "sender": "{property}"
+    },
+    "bookingRequest": {
+      "subject": "Richiesta di prenotazione — dal {arrival} al {departure}",
+      "intro": "Un ospite ha chiesto informazioni per date che il motore di prenotazione non ha potuto quotare. La disponibilità in tempo reale non era raggiungibile: nessun prezzo è stato mostrato e nessuna opzione è stata bloccata.",
+      "labels": {
+        "guest": "Ospite",
+        "email": "Email",
+        "phone": "Telefono",
+        "arrival": "Arrivo",
+        "departure": "Partenza",
+        "adults": "Adulti",
+        "children": "Bambini",
+        "message": "Messaggio"
+      },
+      "action": "Rispondi direttamente all'ospite scrivendo a {email}."
+    }
+  },
+  "booking": {
+    "stepOf": "Passo {current} di {total}",
+    "steps": {
+      "dates": "Date",
+      "rooms": "Camere",
+      "details": "I tuoi dati",
+      "confirm": "Conferma"
+    },
+    "nights": "{count, plural, one {# notte} other {# notti}}",
+    "guests": "{count, plural, one {# ospite} other {# ospiti}}",
+    "dates": {
+      "title": "Quando vorresti soggiornare?",
+      "subtitle": "Nessun account necessario. Vedrai il prezzo completo prima di confermare.",
+      "arrival": "Arrivo",
+      "departure": "Partenza",
+      "adults": "Adulti",
+      "children": "Bambini",
+      "submit": "Vedi disponibilità",
+      "invalid": "La partenza deve essere successiva all'arrivo."
+    },
+    "rooms": {
+      "title": "Scegli la camera",
+      "subtitle": "{nights} · {guests}",
+      "perNight": "a notte",
+      "total": "Totale del soggiorno",
+      "select": "Scegli questa camera",
+      "sleeps": "Fino a {capacity} persone",
+      "none": "Nessuna camera disponibile per questo soggiorno.",
+      "noneHint": "Prova date diverse o un gruppo più piccolo — oppure scrivi direttamente alla struttura.",
+      "change": "Cambia le date"
+    },
+    "details": {
+      "title": "A chi è intestata la prenotazione?",
+      "subtitle": "Solo ciò che serve alla struttura per accoglierti.",
+      "name": "Nome e cognome",
+      "email": "Email",
+      "phone": "Telefono",
+      "optional": "facoltativo",
+      "marketing": "Inviatemi ogni tanto le offerte di questa struttura",
+      "submit": "Continua",
+      "back": "Indietro"
+    },
+    "review": {
+      "title": "Controlla e conferma",
+      "stay": "Soggiorno",
+      "room": "Camera",
+      "party": "Ospiti",
+      "name": "Nome",
+      "email": "Email",
+      "total": "Totale",
+      "touristTax": "Imposta di soggiorno, riscossa dalla struttura",
+      "touristTaxCap": "Dovuta per le prime {nights} notti.",
+      "touristTaxChildren": "I bambini sotto i {age} anni sono esenti; l'età viene verificata in struttura.",
+      "payment": "Ora non viene addebitato nulla. La struttura concorderà con te il pagamento.",
+      "cancellation": "Cancellazione gratuita — contatta la struttura, che ti darà conferma.",
+      "holdExpires": "Il prezzo è bloccato fino alle {time}.",
+      "confirm": "Conferma la prenotazione",
+      "pending": "Conferma in corso",
+      "back": "Indietro",
+      "expired": "Il blocco del prezzo è scaduto.",
+      "expiredHint": "I prezzi potrebbero essere cambiati. Ricomincia e ti mostreremo quelli di oggi."
+    },
+    "confirmed": {
+      "title": "Prenotazione confermata.",
+      "subtitle": "{property} ti aspetta.",
+      "reference": "Codice prenotazione",
+      "emailSent": "La conferma sta arrivando a {email}.",
+      "next": "La struttura ti contatterà per il pagamento e l'arrivo."
+    },
+    "stale": {
+      "title": "Al momento non riusciamo a leggere i prezzi aggiornati",
+      "body": "Invece di mostrarti un prezzo che potrebbe essere sbagliato, preferiamo chiedere alla struttura. Invia le tue date e ti risponderanno direttamente.",
+      "callInstead": "Oppure chiama {phone}",
+      "name": "Nome e cognome",
+      "email": "Email",
+      "phone": "Telefono",
+      "message": "Qualcosa che dovrebbero sapere",
+      "submit": "Invia la richiesta",
+      "pending": "Invio in corso",
+      "sent": "La tua richiesta è arrivata alla struttura.",
+      "sentBody": "Ti risponderanno a {email}.",
+      "noContact": "Questa struttura non ha pubblicato un indirizzo di contatto. Riprova tra poco."
+    },
+    "errors": {
+      "generic": "Qualcosa è andato storto. Riprova."
+    }
   }
 }

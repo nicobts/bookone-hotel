@@ -106,5 +106,128 @@
     "light": "Svetla",
     "dark": "Temna",
     "system": "Sistem"
+  },
+  "notifications": {
+    "bookingConfirmation": {
+      "subject": "Vaša rezervacija v {property} — {reference}",
+      "greeting": "Pozdravljeni, {guestName},",
+      "intro": "Vaše bivanje v {property} je potrjeno.",
+      "labels": {
+        "reference": "Številka rezervacije",
+        "arrival": "Prihod",
+        "departure": "Odhod",
+        "room": "Soba",
+        "adults": "Odrasli",
+        "children": "Otroci",
+        "total": "Skupaj"
+      },
+      "touristTax": "Turistična taksa ni vključena v znesek in jo pobere nastanitev: {touristTax}",
+      "payment": "Spletno ni bilo obračunano nič. Nastanitev se bo o plačilu dogovorila z vami.",
+      "help": "Vprašanja o bivanju? Odgovorite na to sporočilo in nastanitev vam bo odgovorila.",
+      "signOff": "Veselimo se vašega obiska.",
+      "sender": "{property}"
+    },
+    "bookingRequest": {
+      "subject": "Povpraševanje za rezervacijo — od {arrival} do {departure}",
+      "intro": "Gost je povprašal za termin, ki ga rezervacijski sistem ni mogel ovrednotiti. Razpoložljivost v živo ni bila dosegljiva, zato cena ni bila prikazana in nič ni bilo rezervirano.",
+      "labels": {
+        "guest": "Gost",
+        "email": "E-pošta",
+        "phone": "Telefon",
+        "arrival": "Prihod",
+        "departure": "Odhod",
+        "adults": "Odrasli",
+        "children": "Otroci",
+        "message": "Sporočilo"
+      },
+      "action": "Gostu odgovorite neposredno na {email}."
+    }
+  },
+  "booking": {
+    "stepOf": "Korak {current} od {total}",
+    "steps": {
+      "dates": "Termin",
+      "rooms": "Sobe",
+      "details": "Vaši podatki",
+      "confirm": "Potrditev"
+    },
+    "nights": "{count, plural, one {# noč} two {# noči} few {# noči} other {# noči}}",
+    "guests": "{count, plural, one {# gost} two {# gosta} few {# gostje} other {# gostov}}",
+    "dates": {
+      "title": "Kdaj bi radi bivali?",
+      "subtitle": "Računa ne potrebujete. Celotno ceno vidite pred potrditvijo.",
+      "arrival": "Prihod",
+      "departure": "Odhod",
+      "adults": "Odrasli",
+      "children": "Otroci",
+      "submit": "Poglej razpoložljivost",
+      "invalid": "Odhod mora biti za prihodom."
+    },
+    "rooms": {
+      "title": "Izberite sobo",
+      "subtitle": "{nights} · {guests}",
+      "perNight": "na noč",
+      "total": "Skupaj za bivanje",
+      "select": "Izberi to sobo",
+      "sleeps": "Za največ {capacity} oseb",
+      "none": "Za to bivanje ni proste sobe.",
+      "noneHint": "Poskusite z drugim terminom ali manjšo družbo — ali pišite nastanitvi neposredno.",
+      "change": "Spremeni termin"
+    },
+    "details": {
+      "title": "Na koga se glasi rezervacija?",
+      "subtitle": "Samo to, kar nastanitev potrebuje za vaš sprejem.",
+      "name": "Ime in priimek",
+      "email": "E-pošta",
+      "phone": "Telefon",
+      "optional": "neobvezno",
+      "marketing": "Občasno mi pošljite ponudbe te nastanitve",
+      "submit": "Naprej",
+      "back": "Nazaj"
+    },
+    "review": {
+      "title": "Preverite in potrdite",
+      "stay": "Bivanje",
+      "room": "Soba",
+      "party": "Gostje",
+      "name": "Ime",
+      "email": "E-pošta",
+      "total": "Skupaj",
+      "touristTax": "Turistična taksa, pobere jo nastanitev",
+      "touristTaxCap": "Zaračuna se za prvih {nights} noči.",
+      "touristTaxChildren": "Otroci, mlajši od {age} let, so oproščeni; starost se potrdi ob prihodu.",
+      "payment": "Zdaj ni obračunano nič. Nastanitev se bo o plačilu dogovorila z vami.",
+      "cancellation": "Brezplačna odpoved — obrnite se na nastanitev in vam bo potrdila.",
+      "holdExpires": "Cena je zadržana do {time}.",
+      "confirm": "Potrdi rezervacijo",
+      "pending": "Potrjujem",
+      "back": "Nazaj",
+      "expired": "Zadržanje cene je poteklo.",
+      "expiredHint": "Cene so se morda spremenile. Začnite znova in pokazali vam bomo današnje."
+    },
+    "confirmed": {
+      "title": "Rezervacija je potrjena.",
+      "subtitle": "{property} vas pričakuje.",
+      "reference": "Številka rezervacije",
+      "emailSent": "Potrditev je na poti na {email}.",
+      "next": "Nastanitev se bo oglasila glede plačila in prihoda."
+    },
+    "stale": {
+      "title": "Trenutno ne moremo pridobiti aktualnih cen",
+      "body": "Namesto da bi vam pokazali morda napačno ceno, raje povprašamo nastanitev. Pošljite svoj termin in odgovorili vam bodo neposredno.",
+      "callInstead": "Ali pokličite {phone}",
+      "name": "Ime in priimek",
+      "email": "E-pošta",
+      "phone": "Telefon",
+      "message": "Kar naj vedo",
+      "submit": "Pošlji povpraševanje",
+      "pending": "Pošiljam",
+      "sent": "Vaše povpraševanje je pri nastanitvi.",
+      "sentBody": "Odgovorili vam bodo na {email}.",
+      "noContact": "Ta nastanitev ni objavila kontaktnega naslova. Poskusite znova čez nekaj časa."
+    },
+    "errors": {
+      "generic": "Nekaj je šlo narobe. Poskusite znova."
+    }
   }
 }

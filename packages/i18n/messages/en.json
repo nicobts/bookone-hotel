@@ -106,5 +106,128 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System"
+  },
+  "notifications": {
+    "bookingConfirmation": {
+      "subject": "Your booking at {property} — {reference}",
+      "greeting": "Hello {guestName},",
+      "intro": "Your stay at {property} is confirmed.",
+      "labels": {
+        "reference": "Booking reference",
+        "arrival": "Arrival",
+        "departure": "Departure",
+        "room": "Room",
+        "adults": "Adults",
+        "children": "Children",
+        "total": "Total"
+      },
+      "touristTax": "Tourist tax is not included above and is collected by the property: {touristTax}",
+      "payment": "Nothing has been charged online. The property will arrange payment with you.",
+      "help": "Questions about your stay? Reply to this email and the property will answer.",
+      "signOff": "We look forward to welcoming you.",
+      "sender": "{property}"
+    },
+    "bookingRequest": {
+      "subject": "Booking request — {arrival} to {departure}",
+      "intro": "A guest asked about dates your booking engine could not price. Live availability was unavailable at the time, so nothing was quoted or held.",
+      "labels": {
+        "guest": "Guest",
+        "email": "Email",
+        "phone": "Phone",
+        "arrival": "Arrival",
+        "departure": "Departure",
+        "adults": "Adults",
+        "children": "Children",
+        "message": "Message"
+      },
+      "action": "Reply to the guest directly at {email}."
+    }
+  },
+  "booking": {
+    "stepOf": "Step {current} of {total}",
+    "steps": {
+      "dates": "Dates",
+      "rooms": "Rooms",
+      "details": "Your details",
+      "confirm": "Confirm"
+    },
+    "nights": "{count, plural, one {# night} other {# nights}}",
+    "guests": "{count, plural, one {# guest} other {# guests}}",
+    "dates": {
+      "title": "When would you like to stay?",
+      "subtitle": "No account needed. You will see the full price before you commit.",
+      "arrival": "Arrival",
+      "departure": "Departure",
+      "adults": "Adults",
+      "children": "Children",
+      "submit": "See availability",
+      "invalid": "Departure has to be after arrival."
+    },
+    "rooms": {
+      "title": "Choose your room",
+      "subtitle": "{nights} · {guests}",
+      "perNight": "per night",
+      "total": "Total for your stay",
+      "select": "Choose this room",
+      "sleeps": "Sleeps up to {capacity}",
+      "none": "No room fits this stay.",
+      "noneHint": "Try different dates or a smaller party — or write to the property directly.",
+      "change": "Change dates"
+    },
+    "details": {
+      "title": "Who is the booking for?",
+      "subtitle": "Only what the property needs to welcome you.",
+      "name": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "optional": "optional",
+      "marketing": "Send me occasional offers from this property",
+      "submit": "Continue",
+      "back": "Back"
+    },
+    "review": {
+      "title": "Check and confirm",
+      "stay": "Stay",
+      "room": "Room",
+      "party": "Guests",
+      "name": "Name",
+      "email": "Email",
+      "total": "Total",
+      "touristTax": "Tourist tax, collected by the property",
+      "touristTaxCap": "Charged for the first {nights} nights.",
+      "touristTaxChildren": "Children under {age} are exempt; ages are confirmed at the property.",
+      "payment": "Nothing is charged now. The property will arrange payment with you.",
+      "cancellation": "Free cancellation — contact the property and they will confirm.",
+      "holdExpires": "Your price is held until {time}.",
+      "confirm": "Confirm booking",
+      "pending": "Confirming",
+      "back": "Back",
+      "expired": "Your hold has expired.",
+      "expiredHint": "Prices may have changed. Start again and we will show you today's."
+    },
+    "confirmed": {
+      "title": "You are booked.",
+      "subtitle": "{property} is expecting you.",
+      "reference": "Booking reference",
+      "emailSent": "A confirmation is on its way to {email}.",
+      "next": "The property will be in touch about payment and arrival."
+    },
+    "stale": {
+      "title": "We cannot reach live prices right now",
+      "body": "Rather than show you a price that may be wrong, we would rather ask the property. Send your dates and they will reply directly.",
+      "callInstead": "Or call {phone}",
+      "name": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "message": "Anything they should know",
+      "submit": "Send my request",
+      "pending": "Sending",
+      "sent": "Your request is with the property.",
+      "sentBody": "They will reply to {email}.",
+      "noContact": "This property has not published a contact address. Please try again shortly."
+    },
+    "errors": {
+      "generic": "Something went wrong. Try again."
+    }
   }
 }
