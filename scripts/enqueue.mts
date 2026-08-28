@@ -13,7 +13,7 @@ import { PgBossQueue } from '../apps/worker/src/queue/pg-boss-queue'
 const [, , name, propertyId] = process.argv
 
 if (!name || !propertyId) {
-  console.error('usage: enqueue.mts <availability|reconcile|agent> <propertyId>')
+  console.error('usage: enqueue.mts <availability|reconcile|agent|precheckin> <propertyId>')
   process.exit(1)
 }
 
@@ -29,6 +29,10 @@ switch (name) {
     break
   case 'agent':
     await queue.send('agent.run', { propertyId, agent: 'AG-05' })
+    break
+  case 'precheckin':
+    // No payload: the sweep finds every stay due its invitation (E2.1).
+    await queue.send('precheckin.sweep', {})
     break
   default:
     console.error(`unknown job: ${name}`)

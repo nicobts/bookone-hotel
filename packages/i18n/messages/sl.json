@@ -79,7 +79,14 @@
       "arrivals": "Prihodi",
       "departures": "Odhodi",
       "inHouse": "V hiši",
-      "empty": "Za danes ni nič načrtovanega."
+      "empty": "Za danes ni nič načrtovanega.",
+      "awaiting": "Čakamo na gosta",
+      "noArrivals": "Danes ni prihodov.",
+      "ready": "Pripravljeno",
+      "chase": "Čakamo na gosta",
+      "noTime": "Ura prihoda ni navedena",
+      "guests": "{adults} odraslih, {children} otrok",
+      "arrivalsHeading": "Današnji prihodi"
     },
     "exceptions": {
       "title": "Izjeme",
@@ -142,6 +149,16 @@
         "message": "Sporočilo"
       },
       "action": "Gostu odgovorite neposredno na {email}."
+    },
+    "precheckinInvite": {
+      "subject": "Pred prihodom v {property} — nekaj minut zdaj vam prihrani recepcijo",
+      "greeting": "Pozdravljeni, {guestName},",
+      "intro": "V {property} prihajate {arrival}. Če prijavo opravite zdaj, lahko greste naravnost v sobo.",
+      "what": "Traja približno pet minut: kdo potuje z vami, fotografija dokumenta vsakega gosta in približna ura prihoda.",
+      "cta": "Dokončajte prijavo: {url}",
+      "why": "Nastanitev mora po zakonu prijaviti vsakega gosta. Če to storite zdaj, tega ne bo treba na recepciji.",
+      "signOff": "Se vidimo kmalu.",
+      "sender": "{property}"
     }
   },
   "booking": {
@@ -279,6 +296,64 @@
       "cancelledRefund": "{amount} vam bo vrnjeno.",
       "cancelledNoRefund": "Po pravilih nastanitve vračilo ni predvideno.",
       "refundFailed": "Vračila ni bilo mogoče samodejno izvesti. Nastanitev je obveščena in bo to uredila."
+    }
+  },
+  "stay": {
+    "title": "Prijavite se pred prihodom",
+    "subtitle": "{property} · prihod {arrival}",
+    "reference": "Številka rezervacije",
+    "minutes": "Približno pet minut. Lahko prekinete in se vrnete — vse sproti shranimo.",
+    "outstanding": {
+      "details": "Kdo potuje",
+      "documents": "Osebni dokumenti",
+      "arrival": "Kdaj boste prispeli"
+    },
+    "done": "Opravljeno",
+    "party": {
+      "heading": "Kdo potuje",
+      "lead": "Glavni gost",
+      "guest": "Gost {n}",
+      "fullName": "Ime in priimek",
+      "birthDate": "Datum rojstva",
+      "nationality": "Državljanstvo",
+      "documentType": "Vrsta dokumenta",
+      "documentNumber": "Številka dokumenta",
+      "passport": "Potni list",
+      "idCard": "Osebna izkaznica",
+      "drivingLicence": "Vozniško dovoljenje",
+      "save": "Shrani in nadaljuj",
+      "hint": "Nastanitev mora po zakonu prijaviti vsakega gosta v sobi."
+    },
+    "documents": {
+      "heading": "Osebni dokumenti",
+      "hint": "Ena fotografija na gosta. Dokument položite na ravno podlago, zapolnite okvir in pred pošiljanjem preverite, ali so številke berljive.",
+      "for": "Dokument za {name}",
+      "upload": "Izberite fotografijo",
+      "uploaded": "Prejeto",
+      "deleted": "Izbrisano po prijavi",
+      "replace": "Zamenjaj",
+      "send": "Pošlji dokument",
+      "needParty": "Najprej dodajte goste, nato priložite dokument za vsakega.",
+      "retention": "Nastanitev jih izbriše, ko je vaše bivanje prijavljeno pri organih. Ohrani se le potrdilo."
+    },
+    "arrival": {
+      "heading": "Kdaj boste prispeli?",
+      "hint": "Zadostuje približno. Nastanitev bo vedela, kdaj naj bo soba pripravljena.",
+      "time": "Ura prihoda",
+      "save": "Shrani uro prihoda",
+      "saved": "Nastanitvi smo sporočili, da prispete okoli {time}."
+    },
+    "complete": {
+      "heading": "Prijava je zaključena.",
+      "body": "{property} ima vse potrebno. Ob prihodu greste lahko naravnost v sobo."
+    },
+    "errors": {
+      "invalidToken": "Ta povezava za prijavo ni veljavna.",
+      "expiredToken": "Ta povezava za prijavo je potekla. Nastanitev vam lahko pošlje novo.",
+      "unavailable": "Ta rezervacija ni več aktivna. Obrnite se na nastanitev.",
+      "notConfigured": "Prijava v tem okolju ni na voljo.",
+      "upload": "Datoteke ni bilo mogoče sprejeti. Uporabite JPEG, PNG ali PDF pod 10 MB.",
+      "generic": "Nekaj je šlo narobe. Poskusite znova."
     }
   }
 }

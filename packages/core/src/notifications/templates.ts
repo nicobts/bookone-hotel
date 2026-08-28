@@ -179,3 +179,55 @@ export function renderBookingRequest(locale: string, facts: BookingRequestFacts)
     body: lines.join('\n'),
   }
 }
+
+/**
+ * The pre-arrival invitation (E2.1).
+ *
+ * Sent at T-48h, in the guest's own language. Three things it deliberately
+ * does, in this order:
+ *
+ *   1. **Says what they get.** "Go straight to your room" is the reason to
+ *      spend five minutes on a phone; "complete your registration" is a chore.
+ *   2. **Says how long.** A guest who knows it is five minutes starts now. A
+ *      guest who does not, starts at the desk.
+ *   3. **Says why the property must ask.** Registering every guest is a legal
+ *      obligation on the hotel, and a stranger asking for a passport photo
+ *      without explaining that reads as phishing — which is exactly what it
+ *      would look like if we left the sentence out.
+ */
+export interface PrecheckinInviteFacts {
+  propertyName: string
+  guestName: string
+  arrivalDate: string
+  checkinUrl: string
+}
+
+export function renderPrecheckinInvite(
+  locale: string,
+  facts: PrecheckinInviteFacts,
+): RenderedMessage {
+  const resolved: TemplateLocale = isTemplateLocale(locale) ? locale : 'en'
+  const t = catalogues[resolved].notifications.precheckinInvite
+
+  const arrival = formatDate(facts.arrivalDate, resolved)
+
+  const lines = [
+    interpolate(t.greeting, { guestName: facts.guestName }),
+    '',
+    interpolate(t.intro, { property: facts.propertyName, arrival }),
+    '',
+    t.what,
+    '',
+    interpolate(t.cta, { url: facts.checkinUrl }),
+    '',
+    t.why,
+    '',
+    t.signOff,
+    interpolate(t.sender, { property: facts.propertyName }),
+  ]
+
+  return {
+    subject: interpolate(t.subject, { property: facts.propertyName }),
+    body: lines.join('\n'),
+  }
+}

@@ -55,6 +55,16 @@ const NOTIFICATION_SWEEP = '* * * * *'
  */
 const PAYMENT_REPLAY = '*/2 * * * *'
 
+/**
+ * The pre-arrival invitation sweep (E2.1).
+ *
+ * Hourly, not by-the-minute: T-48h is an approximate moment by nature, and an
+ * email that arrives within an hour of it is indistinguishable to a guest from
+ * one that arrives on the minute. Hourly also means the sweep is cheap enough
+ * to keep running when nothing is due, which is most hours.
+ */
+const PRECHECKIN_SWEEP = '7 * * * *'
+
 export async function registerSchedules(deps: { queue: JobQueue; logger: Logger }): Promise<void> {
   const { queue, logger } = deps
 
@@ -114,6 +124,7 @@ export async function registerSchedules(deps: { queue: JobQueue; logger: Logger 
   await queue.schedule('reservation.expire_holds', EXPIRE_HOLDS, {})
   await queue.schedule('notification.sweep', NOTIFICATION_SWEEP, {})
   await queue.schedule('payment.replay', PAYMENT_REPLAY, {})
+  await queue.schedule('precheckin.sweep', PRECHECKIN_SWEEP, {})
 
   logger.info(
     {
@@ -124,6 +135,7 @@ export async function registerSchedules(deps: { queue: JobQueue; logger: Logger 
       expireHolds: EXPIRE_HOLDS,
       notificationSweep: NOTIFICATION_SWEEP,
       paymentReplay: PAYMENT_REPLAY,
+      precheckinSweep: PRECHECKIN_SWEEP,
     },
     'schedules registered',
   )

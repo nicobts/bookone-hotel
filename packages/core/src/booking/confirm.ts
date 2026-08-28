@@ -8,6 +8,7 @@ import { guestActor, systemActor, type Actor } from '../events/actor'
 import { BOOKING_CONFIRMATION, queueNotification } from '../notifications/outbox'
 import { formatMoney, type BookingConfirmationFacts } from '../notifications/templates'
 import { computeFee, readFeeRates } from '../payments/fees'
+import { applyJourneyCommandIn } from '../journey/apply'
 import { readTouristTaxPolicy, touristTaxNote } from './quote'
 
 /**
@@ -309,6 +310,17 @@ export async function confirmReservation(input: {
         origin: 'platform',
         actor: systemActor,
         payload: { kind: fee.kind, rateBps: fee.rateBps, feeCents: fee.feeCents },
+      })
+
+      // The journey starts here, in the same transaction (ADR-013). A stay
+      // that was confirmed but whose journey never began is a stay nothing
+      // tracks: no pre-arrival invitation, no arrival, and nothing for the
+      // console to show — and it would look exactly like a normal booking.
+      await applyJourneyCommandIn(tx, {
+        propertyId,
+        reservationId: row.id,
+        command: { type: 'journey.start' },
+        actor: input.actor ?? guestActor(row.id),
       })
 
       const notificationId = await queueNotification(tx, {

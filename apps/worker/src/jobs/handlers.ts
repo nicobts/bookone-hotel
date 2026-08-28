@@ -8,6 +8,7 @@ import {
   type NotificationProvider,
 } from '@bookone/core/notifications'
 import { replayLostPayments, type PaymentAdapter } from '@bookone/core/payments'
+import { listPrecheckinDue, sendPrecheckinInvite } from '@bookone/core/journey'
 import { runAgent } from '@bookone/agents/runner'
 import type { Logger } from 'pino'
 
@@ -48,6 +49,15 @@ const SWEEP_BATCH = 50
  * leave money taken and no booking for the length of a hold.
  */
 const PAYMENT_REPLAY_AFTER_SECONDS = 5 * 60
+
+/**
+ * How far ahead the pre-arrival sweep looks (E2.1: T-48h).
+ *
+ * Slightly more than 48 so an hourly sweep cannot miss the window by falling
+ * between two runs — a guest invited at T-47 is fine; a guest never invited
+ * because the sweep ticked at T-49 and again at T-47 is not.
+ */
+const PRECHECKIN_WINDOW_HOURS = 50
 
 export async function registerHandlers(deps: HandlerDeps): Promise<void> {
   const { queue, adapter, notifications, payments, logger } = deps
@@ -210,6 +220,44 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       logger.info(
         { jobId: job.id, checked: result.checked, recovered: result.recovered },
         'payment.replay',
+      )
+    }
+  })
+
+  await queue.work('precheckin.sweep', async (job) => {
+    const due = await listPrecheckinDue({
+      withinHours: PRECHECKIN_WINDOW_HOURS,
+      limit: SWEEP_BATCH,
+    })
+
+    for (const stay of due) {
+      // Fanned out one per stay rather than looped inline: one guest without an
+      // email must not stop the rest being invited, and each invitation wants
+      // its own retry.
+      await queue.send(
+        'precheckin.invite',
+        { propertyId: stay.propertyId, reservationId: stay.reservationId },
+        { singletonKey: `precheckin:${stay.reservationId}` },
+      )
+    }
+
+    if (due.length > 0) {
+      logger.info({ jobId: job.id, due: due.length }, 'precheckin.sweep')
+    }
+  })
+
+  await queue.work('precheckin.invite', async (job) => {
+    const { propertyId, reservationId } = job.data
+
+    const outcome = await sendPrecheckinInvite({ propertyId, reservationId })
+
+    logger.info({ jobId: job.id, reservationId, outcome: outcome.status }, 'precheckin.invite')
+
+    if (outcome.status === 'invited' && outcome.notificationId) {
+      await queue.send(
+        'notification.send',
+        { propertyId, notificationId: outcome.notificationId },
+        { singletonKey: `notify:${outcome.notificationId}` },
       )
     }
   })

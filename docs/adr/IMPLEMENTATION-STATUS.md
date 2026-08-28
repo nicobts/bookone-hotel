@@ -19,7 +19,7 @@ worse than none, because it is read as current.
 | 010 | Stripe behind `PaymentAdapter` | 🟨 port built, **provider not connected** | `PaymentAdapter` + `MockPaymentAdapter`, which moves no money. The interface, policy engine, `payments` ledger, `fee_events`, webhook-as-authority, signature check, redelivery idempotency and lost-webhook replay are all real and exercised. Blocked on 04 §0 item 6 (Stripe account, Connect Standard, commercialista). A real adapter must pass `describePaymentAdapterContract` — the suite the mock passes — before the swap, and the worker refuses to boot simulated in production |
 | 011 | Agents as first-class workers, tiered autonomy | ✅ as-built | Registry, runner and typed tools; AG-05 live on reconciliation. The runner refuses an ungranted tool, scopes to one property, and records every run — including the ones that fail |
 | 012 | `LlmProvider` abstraction; no vendor SDK imports | ✅ as-built | Interface and registry in `src/llm`; registration refuses any provider without declared EU processing, a region, a sub-processor register entry and a verification under a year old. No provider registered yet — that waits for a real requirement |
-| 013 | Journey state machine is the single source of stay truth | ⬜ not yet | `journey_states` and the evented commands land with the pre-arrival journey in Sprint 5 |
+| 013 | Journey state machine is the single source of stay truth | ✅ as-built | Five dimensions, evented commands, `applyJourneyCommand` the only writer. Illegal transitions refused and separated from retries; every transition emits its event in the same transaction, so G1 is computable from the log alone. `journey_states` has no write policy at all — the console's arrival button will take the same command a door sensor will |
 | 014 | Reference implementations over blank-page design | ✅ as-built | First note written before the first component: [booking-flow.md](../design-notes/booking-flow.md) — Mews + Booking.com studied, six deviations each tied to the wedge. Index and legal-hygiene rules in [design-notes/](../design-notes/README.md) |
 | 015 | Pricing in €/room/month equivalence | ⬜ not yet | Sprint 8 reporting |
 | 016 | Property is a URL segment | ✅ as-built | `/[locale]/[property]/console/…`; verified in a browser that a non-member typing another slug gets a 404, not a redirect |
@@ -48,6 +48,19 @@ worse than none, because it is read as current.
 | Self-service cancel (E1.4) | ✅ | Refund shown before confirm; recomputed server-side on submit |
 | Fee computation (D14) | ✅ | Basis points, integer; conservative attribution rule with its evidence stored |
 | **Real payment provider** | ⬜ **deliberately not built** | See ADR-010 row above and design-notes/booking-flow.md §4b |
+
+## Sprint 5 additions
+
+| Thing | Status | Note |
+|---|---|---|
+| Journey state machine (ADR-013) | ✅ | Five dimensions; 48 unit tests, mostly of refusals |
+| `/stay/[token]` pre-arrival | ✅ | One page, three sections, each saving independently — resumable without a session |
+| Signed stay tokens | ✅ | Stateless HMAC; the resolver re-reads the reservation, so cancellation revokes without a table |
+| Documents to EU Storage | ✅ | Private bucket, no `authenticated` policy, paths carry ids only |
+| T-48h invitation | ✅ | Hourly sweep, fanned out per stay; the machine makes re-running it safe |
+| Console Today, live | ✅ | Arrivals ordered by stated time; **awaiting guest** is the only number that implies work |
+| Alloggiati submission (E2.3) | ⬜ Sprint 6 | States and transitions exist; the channel does not |
+| Document deletion job (E2.4) | ⬜ Sprint 6 | `documents.delete` and `deleteIdentityDocument` exist; the job that calls them on acknowledgement does not |
 
 ## CI gates
 

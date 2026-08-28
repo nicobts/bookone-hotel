@@ -36,6 +36,10 @@ export const jobNames = [
   'reservation.expire_holds',
   /** Ask the provider about payments whose webhook never arrived. */
   'payment.replay',
+  /** Find stays due their pre-arrival invitation and send it (E2.1, T-48h). */
+  'precheckin.sweep',
+  /** Send one invitation. Fanned out by the sweep, one per stay. */
+  'precheckin.invite',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -82,6 +86,8 @@ export interface JobPayloads {
    * lost is exactly the one nothing would name.
    */
   'payment.replay': Record<string, never>
+  'precheckin.sweep': Record<string, never>
+  'precheckin.invite': { propertyId: string; reservationId: string }
 }
 
 export interface SendOptions {

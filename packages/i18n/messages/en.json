@@ -79,7 +79,14 @@
       "arrivals": "Arrivals",
       "departures": "Departures",
       "inHouse": "In house",
-      "empty": "Nothing scheduled for today."
+      "empty": "Nothing scheduled for today.",
+      "awaiting": "Awaiting guest",
+      "noArrivals": "No arrivals today.",
+      "ready": "Ready",
+      "chase": "Waiting on the guest",
+      "noTime": "No arrival time given",
+      "guests": "{adults} adults, {children} children",
+      "arrivalsHeading": "Arriving today"
     },
     "exceptions": {
       "title": "Exceptions",
@@ -142,6 +149,16 @@
         "message": "Message"
       },
       "action": "Reply to the guest directly at {email}."
+    },
+    "precheckinInvite": {
+      "subject": "Before you arrive at {property} — a few minutes now saves the desk",
+      "greeting": "Hello {guestName},",
+      "intro": "You arrive at {property} on {arrival}. If you complete check-in now, you can go straight to your room.",
+      "what": "It takes about five minutes: who is travelling with you, a photo of each guest's ID, and roughly when you will arrive.",
+      "cta": "Complete check-in: {url}",
+      "why": "The property is legally required to register every guest. Doing it now means not doing it at the desk.",
+      "signOff": "See you soon.",
+      "sender": "{property}"
     }
   },
   "booking": {
@@ -279,6 +296,64 @@
       "cancelledRefund": "{amount} is on its way back to you.",
       "cancelledNoRefund": "No refund is due under the property’s policy.",
       "refundFailed": "The refund could not be completed automatically. The property has been notified and will sort it out."
+    }
+  },
+  "stay": {
+    "title": "Check in before you arrive",
+    "subtitle": "{property} · arriving {arrival}",
+    "reference": "Booking reference",
+    "minutes": "About five minutes. You can stop and come back — everything you enter is saved as you go.",
+    "outstanding": {
+      "details": "Who is travelling",
+      "documents": "Identity documents",
+      "arrival": "When you will arrive"
+    },
+    "done": "Done",
+    "party": {
+      "heading": "Who is travelling",
+      "lead": "Lead guest",
+      "guest": "Guest {n}",
+      "fullName": "Full name",
+      "birthDate": "Date of birth",
+      "nationality": "Nationality",
+      "documentType": "Document type",
+      "documentNumber": "Document number",
+      "passport": "Passport",
+      "idCard": "Identity card",
+      "drivingLicence": "Driving licence",
+      "save": "Save and continue",
+      "hint": "The property is legally required to register every guest staying in the room."
+    },
+    "documents": {
+      "heading": "Identity documents",
+      "hint": "One photo per guest. Lay the document flat, fill the frame, and check the numbers are readable before you send it.",
+      "for": "Document for {name}",
+      "upload": "Choose a photo",
+      "uploaded": "Received",
+      "deleted": "Deleted after registration",
+      "replace": "Replace",
+      "send": "Send document",
+      "needParty": "Add the guests first, then attach a document for each of them.",
+      "retention": "The property deletes these once your stay is registered with the authorities. Only the receipt is kept."
+    },
+    "arrival": {
+      "heading": "When will you arrive?",
+      "hint": "Roughly is fine. It tells the property when to have your room ready.",
+      "time": "Arrival time",
+      "save": "Save arrival time",
+      "saved": "We told the property you arrive around {time}."
+    },
+    "complete": {
+      "heading": "You are checked in.",
+      "body": "{property} has everything they need. Go straight to your room when you arrive."
+    },
+    "errors": {
+      "invalidToken": "This check-in link is not valid.",
+      "expiredToken": "This check-in link has expired. The property can send you a new one.",
+      "unavailable": "This booking is no longer active. Please contact the property.",
+      "notConfigured": "Check-in is not available in this environment.",
+      "upload": "That file could not be accepted. Use a JPEG, PNG or PDF under 10 MB.",
+      "generic": "Something went wrong. Try again."
     }
   }
 }

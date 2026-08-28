@@ -8,8 +8,10 @@ import { systemActor } from '../events/actor'
 import {
   renderBookingConfirmation,
   renderBookingRequest,
+  renderPrecheckinInvite,
   type BookingConfirmationFacts,
   type BookingRequestFacts,
+  type PrecheckinInviteFacts,
 } from './templates'
 import {
   UnsupportedChannelError,
@@ -42,6 +44,9 @@ export const BOOKING_CONFIRMATION = 'booking.confirmation'
  * the whole reason the message exists.
  */
 export const BOOKING_REQUEST = 'booking.request'
+
+/** The pre-arrival invitation (E2.1), sent at T-48h. */
+export const PRECHECKIN_INVITE = 'precheckin.invite'
 
 export interface QueueInput {
   propertyId: string
@@ -245,6 +250,10 @@ function render(template: string, locale: string, payload: unknown) {
 
   if (template === BOOKING_REQUEST) {
     return renderBookingRequest(locale, payload as BookingRequestFacts)
+  }
+
+  if (template === PRECHECKIN_INVITE) {
+    return renderPrecheckinInvite(locale, payload as PrecheckinInviteFacts)
   }
 
   throw new Error(`unknown notification template "${template}"`)

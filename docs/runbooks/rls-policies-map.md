@@ -65,6 +65,8 @@ only (`user_property_ids_admin()`).
 | `notifications` | member | — ¹⁴ | — ¹⁴ | — ¹⁵ | 2026-08-28 |
 | `payments` | member | — ¹⁶ | — ¹⁶ | — ¹⁷ | 2026-08-28 |
 | `fee_events` | member | — ¹⁸ | — ¹⁸ | — ¹⁸ | 2026-08-28 |
+| `journey_states` | member | — ¹⁹ | — ¹⁹ | — ¹⁹ | 2026-08-28 |
+| `registration_records` | member | — ²⁰ | — ²⁰ | — ²¹ | 2026-08-28 |
 
 1. `with check (true)`. A new property has no members yet, so nothing else could
    pass; the `on_property_created` trigger makes the creator its owner in the
@@ -114,6 +116,21 @@ only (`user_property_ids_admin()`).
     it as well as owners: these rows are the evidence behind a number the owner
     will be asked about, and a receptionist who can see the booking but not its
     fee cannot answer the question either.
+19. Binding rule 4: journey state changes only via evented commands (ADR-013).
+    A staff member who could update this table directly could mark a stay
+    arrived without the transition that fires Alloggiati, sends the welcome
+    message and records who did it — and G1 is computed from those events, so a
+    state reached without one never happened as far as the product can tell.
+    The console's arrival button therefore takes the same command every other
+    trigger source does.
+20. Written by the guest through the pre-arrival surface, which holds no session
+    at all (ADR-007) and runs under the service role scoped to one reservation
+    by a signed token. A staff member typing a companion's document number into
+    our database happens at a desk with paper, not through this table.
+21. Deletion here is a *feature* (E2.4) — and it deletes the **document**, not
+    the row: the retention job nulls `document_path`, stamps `deleted_at` and
+    emits an event. Deleting the row would destroy the audit trail proving the
+    deletion happened.
 
 ## Exceptions — not property-scoped, and why
 
@@ -135,7 +152,20 @@ surface is server-side code, and it is tested as such.
 | `/[locale]/book/[property]` | the slug in the URL, resolved to one property id server-side | that property's `room_types` and `rate_snapshots` | one `guests`, one `reservations`, one `notifications`, one `payments`, one `fee_events`, all carrying that id |
 | `/[locale]/book/[property]/manage/[reservation]` | the reservation UUID, unguessable and scoped to one booking | that reservation and its refund quote | its cancellation and refund |
 | `/webhooks/payments` (worker) | the provider's payload **signature** — not a bearer token, because a provider cannot hold one | the payment and its reservation | confirms the booking, settles the payment, writes the fee |
-| `/[locale]/stay/[token]` | a short-lived signed token, resolved server-side (Sprint 5) | one reservation | that reservation's journey |
+| `/[locale]/stay/[token]` | an HMAC-signed token carrying one reservation id and its own expiry, verified server-side | that reservation, its journey and its party | its `registration_records`, its journey transitions, and one private Storage object per guest |
+
+The stay token is stateless: no table, no revocation list. What makes that safe
+is that the resolver **re-reads the reservation on every request**, so a
+cancelled booking stops working the moment it is cancelled. Rotating
+`STAY_TOKEN_SECRET` invalidates every outstanding link at once, which is the
+blunt instrument if one is ever leaked in bulk. Per-token revocation would need
+a table, and that is a decision to write down at the time rather than now.
+
+Identity documents live in the private `identity-documents` bucket with **no**
+storage policy for the `authenticated` role. Nothing reaches them from a
+browser: the guest uploads through a server action and the console reads through
+a signed URL valid for two minutes, both minted server-side under the service
+role.
 
 The booking surface runs under `asService`, because an anonymous visitor has no
 JWT for a policy to read. That makes the explicit `property_id` on every query

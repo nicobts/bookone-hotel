@@ -74,6 +74,50 @@ export const agentTier = pgEnum('agent_tier', ['T1', 'T2', 'T3'])
 /** What a human did with the run. This column is the evidence a tier may widen (06 §4). */
 export const agentOutcome = pgEnum('agent_outcome', ['accepted', 'edited', 'rejected', 'auto'])
 
+// ---------------------------------------------------------------------------
+// Journey (ADR-013)
+// ---------------------------------------------------------------------------
+// Five dimensions, each with its own small state, rather than one linear status
+// column. 03 §5 writes the happy path as a single chain — that chain is a
+// *path through* these five, not a sixth thing.
+//
+// Modelled this way because the dimensions genuinely move independently: a
+// guest can state an arrival time before uploading a document, documents are
+// deleted long after arrival, and Alloggiati can fail and be retried while the
+// stay is already active. A single column would have to enumerate the product
+// of all five, and the first unexpected ordering would need a new value.
+
+/** Has the guest been asked, and have they answered (E2.1). */
+export const precheckinState = pgEnum('precheckin_state', ['pending', 'invited', 'submitted'])
+
+/**
+ * Identity documents (E2.1, E2.4).
+ *
+ * `deleted` is terminal and it is a *feature*: the property holds no
+ * unnecessary personal data once the submission is acknowledged, and the state
+ * says so rather than an absent row implying it.
+ */
+export const documentsState = pgEnum('documents_state', [
+  'pending',
+  'captured',
+  'validated',
+  'deleted',
+])
+
+/** Sprint 6 owns these transitions; the column exists now so the machine is whole. */
+export const alloggiatiState = pgEnum('alloggiati_state', [
+  'pending',
+  'staged',
+  'submitted',
+  'acknowledged',
+  'failed',
+])
+
+/** `expected` means the guest told us when (E2.2); `confirmed` means they are here. */
+export const arrivalState = pgEnum('arrival_state', ['pending', 'expected', 'confirmed'])
+
+export const departureState = pgEnum('departure_state', ['pending', 'settled', 'closed'])
+
 /**
  * What a payment row is for.
  *
@@ -998,5 +1042,140 @@ export const feeEvents = pgTable(
      */
     unique('fee_events_reservation_kind').on(t.reservationId, t.kind),
     check('fee_events_rate_sane', sql`${t.rateBps} >= 0 and ${t.rateBps} <= 10000`),
+  ],
+)
+
+// ---------------------------------------------------------------------------
+// The guest journey
+// ---------------------------------------------------------------------------
+
+/**
+ * The single source of stay truth (ADR-013, 03 §5).
+ *
+ * One row per reservation, keyed by it — a stay has exactly one journey, and a
+ * surrogate key here would only make room for two.
+ *
+ * **Nothing writes this table directly** (binding rule 4). Every change goes
+ * through `applyJourneyCommand` in `packages/core/src/journey`, which validates
+ * the transition and emits the event in the same transaction. That discipline
+ * is the whole point of the ADR: the console, the agents, the voice concierge
+ * and later the door sensors are all trigger *sources* into one machine, and a
+ * module that writes a state column directly is a module whose transitions
+ * nobody can audit, replay or count.
+ */
+export const journeyStates = pgTable(
+  'journey_states',
+  {
+    reservationId: uuid('reservation_id')
+      .primaryKey()
+      .references(() => reservations.id, { onDelete: 'cascade' }),
+
+    /**
+     * Denormalized like everywhere else (binding rule 3): the RLS policy is
+     * written against this column, and a policy that has to join is a policy
+     * that gets written wrong.
+     */
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+
+    precheckin: precheckinState('precheckin_state').notNull().default('pending'),
+    documents: documentsState('documents_state').notNull().default('pending'),
+    alloggiati: alloggiatiState('alloggiati_state').notNull().default('pending'),
+    arrival: arrivalState('arrival_state').notNull().default('pending'),
+    departure: departureState('departure_state').notNull().default('pending'),
+
+    /**
+     * When the guest says they will arrive (E2.2).
+     *
+     * A local clock time as text, not an instant. A guest saying "around six"
+     * is saying it in the hotel day; storing it as UTC would move it the moment
+     * anything about the property timezone changed, and "18:00" is the thing
+     * the arrival-prep hook actually wants.
+     */
+    expectedArrivalTime: text('expected_arrival_time'),
+
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('journey_states_property_idx').on(t.propertyId),
+    /** The console Today query: who is arriving, and how far along they are. */
+    index('journey_states_property_arrival_idx').on(t.propertyId, t.arrival),
+    check(
+      'journey_states_arrival_time_format',
+      sql`${t.expectedArrivalTime} is null or ${t.expectedArrivalTime} ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$'`,
+    ),
+  ],
+)
+
+/**
+ * One person in the party, and their identity document (E2.1, E2.4).
+ *
+ * Named for what it is: the record a property is legally required to register.
+ * The lead guest is `guest_index = 0` and is the same person as
+ * `reservations.guest_id`; the rest are travelling companions who hold no
+ * account and may never give us an email.
+ *
+ * ## The deletion story is the design
+ *
+ * `document_path` points at a private object in EU Storage; `data` holds the
+ * registration fields. E2.4 requires the document to be hard-deleted once the
+ * submission is acknowledged, keeping only the receipt — so the *file* and the
+ * *fields* are deliberately separable, and `deleted_at` records that it
+ * happened rather than leaving an absence to be interpreted later.
+ *
+ * Nothing here is fiscal and nothing here is a document we issue (D11).
+ */
+export const registrationRecords = pgTable(
+  'registration_records',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+    reservationId: uuid('reservation_id')
+      .notNull()
+      .references(() => reservations.id, { onDelete: 'cascade' }),
+
+    /** 0 is the lead guest. Stable, so a resumed form updates rather than adds. */
+    guestIndex: smallint('guest_index').notNull(),
+
+    /**
+     * Registration fields — name, birth date, nationality, document number.
+     *
+     * Jsonb rather than columns because the required set is defined by the
+     * *destination* (Alloggiati today, an Austrian or Slovenian equivalent
+     * later) and the two do not agree. Validated against a schema at the point
+     * of staging, which is where the requirement actually lives.
+     */
+    data: jsonb('data')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+
+    /** Object path in the private EU bucket. Null once deleted, or if never captured. */
+    documentPath: text('document_path'),
+
+    validatedAt: timestamp('validated_at', { withTimezone: true }),
+
+    /** Set when the file is destroyed. The row survives; the document does not. */
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('registration_records_property_idx').on(t.propertyId),
+    /**
+     * One record per person per stay. A resumable form that posts twice must
+     * update the same person rather than register them again — and a party of
+     * two that becomes a party of four in the registry is a compliance problem,
+     * not a cosmetic one.
+     */
+    unique('registration_records_reservation_index').on(t.reservationId, t.guestIndex),
+    check('registration_records_index_non_negative', sql`${t.guestIndex} >= 0`),
+    /** A deleted document keeps no path. Enforced, not merely intended (E2.4). */
+    check(
+      'registration_records_deleted_has_no_path',
+      sql`${t.deletedAt} is null or ${t.documentPath} is null`,
+    ),
   ],
 )

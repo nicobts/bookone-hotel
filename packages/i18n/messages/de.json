@@ -79,7 +79,14 @@
       "arrivals": "Anreisen",
       "departures": "Abreisen",
       "inHouse": "Im Haus",
-      "empty": "Für heute ist nichts geplant."
+      "empty": "Für heute ist nichts geplant.",
+      "awaiting": "Warten auf Gast",
+      "noArrivals": "Heute keine Anreisen.",
+      "ready": "Bereit",
+      "chase": "Warten auf den Gast",
+      "noTime": "Keine Ankunftszeit angegeben",
+      "guests": "{adults} Erwachsene, {children} Kinder",
+      "arrivalsHeading": "Heutige Anreisen"
     },
     "exceptions": {
       "title": "Ausnahmen",
@@ -142,6 +149,16 @@
         "message": "Nachricht"
       },
       "action": "Antworten Sie dem Gast direkt unter {email}."
+    },
+    "precheckinInvite": {
+      "subject": "Vor Ihrer Anreise im {property} — ein paar Minuten jetzt sparen die Rezeption",
+      "greeting": "Guten Tag {guestName},",
+      "intro": "Sie reisen am {arrival} im {property} an. Wenn Sie den Check-in jetzt erledigen, können Sie direkt aufs Zimmer gehen.",
+      "what": "Es dauert etwa fünf Minuten: wer mit Ihnen reist, ein Foto des Ausweises jedes Gastes und ungefähr wann Sie ankommen.",
+      "cta": "Check-in abschließen: {url}",
+      "why": "Das Haus ist gesetzlich verpflichtet, jeden Gast zu melden. Jetzt erledigt heißt: nicht an der Rezeption.",
+      "signOff": "Bis bald.",
+      "sender": "{property}"
     }
   },
   "booking": {
@@ -279,6 +296,64 @@
       "cancelledRefund": "{amount} sind auf dem Weg zu Ihnen zurück.",
       "cancelledNoRefund": "Nach der Regelung des Hauses wird nichts erstattet.",
       "refundFailed": "Die Erstattung konnte nicht automatisch abgeschlossen werden. Das Haus ist informiert und kümmert sich darum."
+    }
+  },
+  "stay": {
+    "title": "Checken Sie vor der Anreise ein",
+    "subtitle": "{property} · Anreise {arrival}",
+    "reference": "Buchungsnummer",
+    "minutes": "Etwa fünf Minuten. Sie können unterbrechen und später weitermachen — alles wird laufend gespeichert.",
+    "outstanding": {
+      "details": "Wer reist mit",
+      "documents": "Ausweisdokumente",
+      "arrival": "Wann Sie ankommen"
+    },
+    "done": "Erledigt",
+    "party": {
+      "heading": "Wer reist mit",
+      "lead": "Hauptgast",
+      "guest": "Gast {n}",
+      "fullName": "Vor- und Nachname",
+      "birthDate": "Geburtsdatum",
+      "nationality": "Staatsangehörigkeit",
+      "documentType": "Dokumentart",
+      "documentNumber": "Dokumentnummer",
+      "passport": "Reisepass",
+      "idCard": "Personalausweis",
+      "drivingLicence": "Führerschein",
+      "save": "Speichern und weiter",
+      "hint": "Das Haus ist gesetzlich verpflichtet, jeden Gast im Zimmer zu melden."
+    },
+    "documents": {
+      "heading": "Ausweisdokumente",
+      "hint": "Ein Foto pro Gast. Legen Sie das Dokument flach hin, füllen Sie den Rahmen aus und prüfen Sie vor dem Senden, ob die Nummern lesbar sind.",
+      "for": "Dokument von {name}",
+      "upload": "Foto auswählen",
+      "uploaded": "Erhalten",
+      "deleted": "Nach der Meldung gelöscht",
+      "replace": "Ersetzen",
+      "send": "Dokument senden",
+      "needParty": "Tragen Sie zuerst die Gäste ein, dann je ein Dokument dazu.",
+      "retention": "Das Haus löscht diese, sobald Ihr Aufenthalt bei den Behörden gemeldet ist. Nur die Bestätigung bleibt erhalten."
+    },
+    "arrival": {
+      "heading": "Wann kommen Sie an?",
+      "hint": "Ungefähr genügt. Das Haus weiß dann, wann Ihr Zimmer bereit sein soll.",
+      "time": "Ankunftszeit",
+      "save": "Ankunftszeit speichern",
+      "saved": "Wir haben dem Haus gesagt, dass Sie gegen {time} ankommen."
+    },
+    "complete": {
+      "heading": "Sie sind eingecheckt.",
+      "body": "{property} hat alles, was nötig ist. Gehen Sie bei der Ankunft direkt aufs Zimmer."
+    },
+    "errors": {
+      "invalidToken": "Dieser Check-in-Link ist ungültig.",
+      "expiredToken": "Dieser Check-in-Link ist abgelaufen. Das Haus kann Ihnen einen neuen senden.",
+      "unavailable": "Diese Buchung ist nicht mehr aktiv. Bitte wenden Sie sich an das Haus.",
+      "notConfigured": "Der Check-in ist in dieser Umgebung nicht verfügbar.",
+      "upload": "Diese Datei konnte nicht angenommen werden. Bitte JPEG, PNG oder PDF unter 10 MB.",
+      "generic": "Etwas ist schiefgegangen. Bitte erneut versuchen."
     }
   }
 }

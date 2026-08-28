@@ -79,7 +79,14 @@
       "arrivals": "Arrivi",
       "departures": "Partenze",
       "inHouse": "In casa",
-      "empty": "Nulla in programma per oggi."
+      "empty": "Nulla in programma per oggi.",
+      "awaiting": "In attesa dell'ospite",
+      "noArrivals": "Nessun arrivo oggi.",
+      "ready": "Pronto",
+      "chase": "In attesa dell'ospite",
+      "noTime": "Ora di arrivo non indicata",
+      "guests": "{adults} adulti, {children} bambini",
+      "arrivalsHeading": "Arrivi di oggi"
     },
     "exceptions": {
       "title": "Eccezioni",
@@ -142,6 +149,16 @@
         "message": "Messaggio"
       },
       "action": "Rispondi direttamente all'ospite scrivendo a {email}."
+    },
+    "precheckinInvite": {
+      "subject": "Prima del tuo arrivo presso {property} — pochi minuti ora ti evitano la reception",
+      "greeting": "Gentile {guestName},",
+      "intro": "Arrivi presso {property} il {arrival}. Se completi ora il check-in, potrai andare direttamente in camera.",
+      "what": "Servono circa cinque minuti: chi viaggia con te, una foto del documento di ogni ospite e all'incirca a che ora arriverai.",
+      "cta": "Completa il check-in: {url}",
+      "why": "La struttura è tenuta per legge a registrare ogni ospite. Farlo ora significa non farlo alla reception.",
+      "signOff": "A presto.",
+      "sender": "{property}"
     }
   },
   "booking": {
@@ -279,6 +296,64 @@
       "cancelledRefund": "{amount} ti verranno restituiti.",
       "cancelledNoRefund": "Non è previsto alcun rimborso secondo la policy della struttura.",
       "refundFailed": "Il rimborso non è stato completato automaticamente. La struttura è stata avvisata e se ne occuperà."
+    }
+  },
+  "stay": {
+    "title": "Fai il check-in prima di arrivare",
+    "subtitle": "{property} · arrivo {arrival}",
+    "reference": "Codice prenotazione",
+    "minutes": "Circa cinque minuti. Puoi interrompere e riprendere — tutto ciò che inserisci viene salvato.",
+    "outstanding": {
+      "details": "Chi viaggia",
+      "documents": "Documenti d'identità",
+      "arrival": "Quando arrivi"
+    },
+    "done": "Fatto",
+    "party": {
+      "heading": "Chi viaggia",
+      "lead": "Ospite principale",
+      "guest": "Ospite {n}",
+      "fullName": "Nome e cognome",
+      "birthDate": "Data di nascita",
+      "nationality": "Cittadinanza",
+      "documentType": "Tipo di documento",
+      "documentNumber": "Numero del documento",
+      "passport": "Passaporto",
+      "idCard": "Carta d'identità",
+      "drivingLicence": "Patente di guida",
+      "save": "Salva e continua",
+      "hint": "La struttura è tenuta per legge a registrare ogni ospite che soggiorna in camera."
+    },
+    "documents": {
+      "heading": "Documenti d'identità",
+      "hint": "Una foto per ospite. Appoggia il documento in piano, riempi l'inquadratura e controlla che i numeri siano leggibili prima di inviarlo.",
+      "for": "Documento di {name}",
+      "upload": "Scegli una foto",
+      "uploaded": "Ricevuto",
+      "deleted": "Eliminato dopo la registrazione",
+      "replace": "Sostituisci",
+      "send": "Invia documento",
+      "needParty": "Aggiungi prima gli ospiti, poi allega un documento per ciascuno.",
+      "retention": "La struttura li elimina una volta registrato il soggiorno presso le autorità. Viene conservata solo la ricevuta."
+    },
+    "arrival": {
+      "heading": "A che ora arriverai?",
+      "hint": "Anche approssimativamente. Serve alla struttura per preparare la camera.",
+      "time": "Ora di arrivo",
+      "save": "Salva l'ora di arrivo",
+      "saved": "Abbiamo comunicato alla struttura che arrivi verso le {time}."
+    },
+    "complete": {
+      "heading": "Check-in completato.",
+      "body": "{property} ha tutto il necessario. All'arrivo puoi andare direttamente in camera."
+    },
+    "errors": {
+      "invalidToken": "Questo link per il check-in non è valido.",
+      "expiredToken": "Questo link per il check-in è scaduto. La struttura può inviartene uno nuovo.",
+      "unavailable": "Questa prenotazione non è più attiva. Contatta la struttura.",
+      "notConfigured": "Il check-in non è disponibile in questo ambiente.",
+      "upload": "Non è stato possibile accettare il file. Usa JPEG, PNG o PDF sotto i 10 MB.",
+      "generic": "Qualcosa è andato storto. Riprova."
     }
   }
 }
