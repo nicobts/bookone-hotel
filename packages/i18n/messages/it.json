@@ -1,5 +1,101 @@
 {
   "common": {
-    "appName": "BookOne"
+    "appName": "BookOne",
+    "loading": "Caricamento",
+    "cancel": "Annulla",
+    "save": "Salva",
+    "retry": "Riprova"
+  },
+  "auth": {
+    "brandLine": "Ogni soggiorno, gestito.",
+    "brandLineEmphasis": "gestito.",
+    "email": "Email",
+    "password": "Password",
+    "emailPlaceholder": "tu@hotel.example",
+    "login": {
+      "title": "Accedi",
+      "subtitle": "Entra nella console della tua struttura.",
+      "submit": "Accedi",
+      "pending": "Accesso in corso",
+      "remember": "Resta collegato",
+      "rememberHint": "Lascia disattivato su un computer condiviso alla reception.",
+      "forgot": "Password dimenticata?"
+    },
+    "forgotPassword": {
+      "title": "Reimposta la password",
+      "subtitle": "Ti inviamo per email un link per sceglierne una nuova.",
+      "submit": "Invia il link",
+      "pending": "Invio in corso",
+      "sent": "Controlla la posta: trovi il link.",
+      "back": "Torna all'accesso"
+    },
+    "updatePassword": {
+      "title": "Scegli una nuova password",
+      "subtitle": "Servono almeno 8 caratteri.",
+      "newPassword": "Nuova password",
+      "submit": "Aggiorna la password",
+      "pending": "Aggiornamento",
+      "done": "Password aggiornata."
+    },
+    "logout": "Esci",
+    "error": {
+      "invalidCredentials": "Email e password non corrispondono.",
+      "emailNotConfirmed": "Conferma prima il tuo indirizzo email: controlla la posta.",
+      "rateLimited": "Troppi tentativi. Attendi un minuto e riprova.",
+      "samePassword": "È già la tua password attuale.",
+      "weakPassword": "Scegli una password più lunga: almeno 8 caratteri.",
+      "linkExpired": "Il link è scaduto. Richiedine uno nuovo.",
+      "notConfigured": "L'accesso non è configurato in questo ambiente.",
+      "unknown": "Qualcosa è andato storto. Riprova."
+    }
+  },
+  "nav": {
+    "today": "Oggi",
+    "exceptions": "Eccezioni",
+    "reservations": "Prenotazioni",
+    "guests": "Ospiti",
+    "sections": {
+      "operate": "Operatività",
+      "configure": "Configurazione"
+    },
+    "rooms": "Tipologie camera",
+    "members": "Team",
+    "settings": "Impostazioni"
+  },
+  "property": {
+    "switcher": {
+      "label": "Struttura",
+      "switchTo": "Cambia struttura"
+    },
+    "role": {
+      "owner": "Titolare",
+      "staff": "Staff"
+    }
+  },
+  "console": {
+    "today": {
+      "title": "Oggi",
+      "subtitle": "Arrivi, partenze e chi è in casa.",
+      "arrivals": "Arrivi",
+      "departures": "Partenze",
+      "inHouse": "In casa",
+      "empty": "Nulla in programma per oggi."
+    },
+    "exceptions": {
+      "title": "Eccezioni",
+      "subtitle": "Solo ciò che richiede una persona. Il resto si è gestito da sé.",
+      "empty": "Non serve il tuo intervento al momento."
+    }
+  },
+  "noProperty": {
+    "title": "Nessuna struttura",
+    "body": "Il tuo account non è collegato a una struttura. Chi ti ha invitato può aggiungerti dalla pagina Team.",
+    "signOut": "Esci"
+  },
+  "theme": {
+    "toggle": "Cambia tema",
+    "light": "Chiaro",
+    "dark": "Scuro",
+    "system": "Sistema"
   }
 }

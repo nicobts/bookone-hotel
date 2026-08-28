@@ -1,45 +1,202 @@
 @import 'tailwindcss';
+@import './tokens.css';
 
-/*
- * Base tokens. Property theming (logo, colours, photos) layers on top of these
- * per tenant in Sprint 3 (PRD A1) by overriding the same variables — surfaces
- * never hard-code a colour.
- */
+/* =============================================================
+   The mapping layer.
+   =============================================================
+   tokens.css is the design system's vocabulary. This file is ours:
+   it maps that vocabulary onto the semantic names shadcn components
+   and Tailwind utilities expect, and it is where adjustments belong.
+
+   Rule of thumb: if you are about to edit a hex in tokens.css, edit
+   a mapping here instead.
+   ============================================================= */
+
+/* The design system toggles dark with [data-theme="dark"], so the
+   Tailwind `dark:` variant has to follow it rather than the default
+   `.dark` class. next-themes is configured with attribute="data-theme"
+   in the layout to match — one switch, one selector. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --border: oklch(0.922 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --radius: 0.625rem;
+  --background: var(--bo-bg-canvas);
+  --foreground: var(--bo-fg-1);
+
+  --card: var(--bo-bg-surface);
+  --card-foreground: var(--bo-fg-1);
+  --popover: var(--bo-bg-raised);
+  --popover-foreground: var(--bo-fg-1);
+
+  /* Primary is the *property's* colour once one is in context, and
+     BookOne signal blue before that. Reading through --bo-primary is
+     what makes per-property theming a variable override rather than a
+     rebuild (PRD A1). */
+  --primary: var(--bo-primary);
+  --primary-foreground: var(--bo-primary-fg);
+
+  --secondary: var(--bo-n-50);
+  --secondary-foreground: var(--bo-fg-1);
+
+  --muted: var(--bo-n-50);
+  --muted-foreground: var(--bo-fg-3);
+
+  --accent: var(--bo-n-50);
+  --accent-foreground: var(--bo-fg-1);
+
+  --destructive: var(--bo-danger-500);
+  --destructive-foreground: var(--bo-white);
+
+  --border: var(--bo-border-1);
+  --input: var(--bo-border-2);
+
+  /* Focus is always signal, never the accent: a colour that also means
+     "focused" stops meaning either. */
+  --ring: var(--bo-signal-400);
+
+  --radius: var(--bo-radius-md);
+
+  /* Data visualisation stays platform-owned — a chart that recolours
+     per property cannot be compared across properties. */
+  --chart-1: var(--bo-signal-500);
+  --chart-2: var(--bo-ember-400);
+  --chart-3: var(--bo-signal-200);
+  --chart-4: var(--bo-n-400);
+  --chart-5: var(--bo-success-500);
+
+  /* The console shell is BookOne chrome — ink in both themes, so an
+     operator moving between properties keeps one stable frame. Only
+     what is *inside* the content area takes the property's colour. */
+  --sidebar: var(--bo-ink);
+  --sidebar-foreground: var(--bo-fg-on-ink);
+  --sidebar-primary: var(--bo-signal-400);
+  --sidebar-primary-foreground: var(--bo-white);
+  --sidebar-accent: var(--bo-ink-3);
+  --sidebar-accent-foreground: var(--bo-white);
+  --sidebar-border: var(--bo-ink-4);
+  --sidebar-ring: var(--bo-signal-400);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --border: oklch(0.269 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-  }
+[data-theme='dark'] {
+  --secondary: var(--bo-ink-3);
+  --secondary-foreground: var(--bo-fg-1);
+  --muted: var(--bo-ink-3);
+  --muted-foreground: var(--bo-fg-3);
+  --accent: var(--bo-ink-3);
+  --accent-foreground: var(--bo-fg-1);
+  --input: var(--bo-border-2);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --radius-lg: var(--radius);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Ink and paper reachable as utilities, for the surfaces the brand
+     kit puts on the dark canvas (login, marketing, cockpit panels). */
+  --color-ink: var(--bo-ink);
+  --color-ink-2: var(--bo-ink-2);
+  --color-ink-3: var(--bo-ink-3);
+  --color-paper: var(--bo-paper);
+  --color-paper-2: var(--bo-paper-2);
+  --color-signal: var(--bo-signal-500);
+  --color-ember: var(--bo-ember-400);
+
+  --font-sans: var(--bo-font-sans);
+  --font-mono: var(--bo-font-mono);
+  --font-serif: var(--bo-font-display-editorial);
+
+  --radius-sm: var(--bo-radius-sm);
+  --radius-md: var(--bo-radius-md);
+  --radius-lg: var(--bo-radius-lg);
+  --radius-xl: var(--bo-radius-xl);
+
+  --shadow-xs: var(--bo-shadow-xs);
+  --shadow-sm: var(--bo-shadow-sm);
+  --shadow-md: var(--bo-shadow-md);
+  --shadow-lg: var(--bo-shadow-lg);
+  --shadow-xl: var(--bo-shadow-xl);
+
+  --ease-out: var(--bo-ease-out);
+  --ease-spring: var(--bo-ease-spring);
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html,
+  body {
+    font-family: var(--bo-font-sans);
+    background: var(--bo-bg-canvas);
+    color: var(--bo-fg-2);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Every money, date, time and quantity figure is tabular. Rates,
+     folios and occupancy get compared down a column by eye, and
+     proportional digits make that harder than it needs to be. */
+  .num,
+  [data-numeric] {
+    font-family: var(--bo-font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings:
+      'zero' 1,
+      'ss01' 1;
+  }
+}
+
+@layer components {
+  /* The brand signature. Lands on ONE clause — the last one — and
+     never on a paragraph, a button, or a verb. See the brand kit's
+     do/don't: editorial italic does not scale down. */
+  .bo-editorial {
+    font-family: var(--bo-font-display-editorial);
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: -0.01em;
+  }
+
+  /* Micro-cap label: section starters, form labels, status chips. */
+  .bo-label {
+    font-family: var(--bo-font-sans);
+    font-size: var(--bo-text-2xs);
+    line-height: var(--bo-lh-2xs);
+    font-weight: var(--bo-weight-semibold);
+    letter-spacing: var(--bo-tracking-caps);
+    text-transform: uppercase;
+    color: var(--bo-fg-3);
+  }
 }

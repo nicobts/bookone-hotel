@@ -1,5 +1,101 @@
 {
   "common": {
-    "appName": "BookOne"
+    "appName": "BookOne",
+    "loading": "Wird geladen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "retry": "Erneut versuchen"
+  },
+  "auth": {
+    "brandLine": "Jeder Aufenthalt, erledigt.",
+    "brandLineEmphasis": "erledigt.",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "emailPlaceholder": "du@hotel.example",
+    "login": {
+      "title": "Anmelden",
+      "subtitle": "Zur Konsole Ihres Hauses.",
+      "submit": "Anmelden",
+      "pending": "Anmeldung läuft",
+      "remember": "Angemeldet bleiben",
+      "rememberHint": "An einem gemeinsam genutzten Rezeptionsrechner besser aus.",
+      "forgot": "Passwort vergessen?"
+    },
+    "forgotPassword": {
+      "title": "Passwort zurücksetzen",
+      "subtitle": "Wir senden Ihnen einen Link für ein neues Passwort.",
+      "submit": "Link senden",
+      "pending": "Wird gesendet",
+      "sent": "Der Link ist unterwegs — bitte Posteingang prüfen.",
+      "back": "Zurück zur Anmeldung"
+    },
+    "updatePassword": {
+      "title": "Neues Passwort wählen",
+      "subtitle": "Mindestens 8 Zeichen.",
+      "newPassword": "Neues Passwort",
+      "submit": "Passwort aktualisieren",
+      "pending": "Wird aktualisiert",
+      "done": "Passwort aktualisiert."
+    },
+    "logout": "Abmelden",
+    "error": {
+      "invalidCredentials": "E-Mail und Passwort passen nicht zusammen.",
+      "emailNotConfirmed": "Bitte zuerst die E-Mail-Adresse bestätigen.",
+      "rateLimited": "Zu viele Versuche. Bitte eine Minute warten.",
+      "samePassword": "Das ist bereits Ihr Passwort.",
+      "weakPassword": "Bitte ein längeres Passwort wählen — mindestens 8 Zeichen.",
+      "linkExpired": "Der Link ist abgelaufen. Bitte einen neuen anfordern.",
+      "notConfigured": "Die Anmeldung ist in dieser Umgebung nicht konfiguriert.",
+      "unknown": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+    }
+  },
+  "nav": {
+    "today": "Heute",
+    "exceptions": "Ausnahmen",
+    "reservations": "Reservierungen",
+    "guests": "Gäste",
+    "sections": {
+      "operate": "Betrieb",
+      "configure": "Einrichtung"
+    },
+    "rooms": "Zimmertypen",
+    "members": "Team",
+    "settings": "Einstellungen"
+  },
+  "property": {
+    "switcher": {
+      "label": "Haus",
+      "switchTo": "Haus wechseln"
+    },
+    "role": {
+      "owner": "Inhaber",
+      "staff": "Team"
+    }
+  },
+  "console": {
+    "today": {
+      "title": "Heute",
+      "subtitle": "Anreisen, Abreisen und wer im Haus ist.",
+      "arrivals": "Anreisen",
+      "departures": "Abreisen",
+      "inHouse": "Im Haus",
+      "empty": "Für heute ist nichts geplant."
+    },
+    "exceptions": {
+      "title": "Ausnahmen",
+      "subtitle": "Nur was einen Menschen braucht. Alles andere hat sich selbst erledigt.",
+      "empty": "Im Moment ist nichts zu tun."
+    }
+  },
+  "noProperty": {
+    "title": "Noch kein Haus",
+    "body": "Ihr Konto ist keinem Haus zugeordnet. Wer Sie eingeladen hat, kann Sie über die Team-Seite hinzufügen.",
+    "signOut": "Abmelden"
+  },
+  "theme": {
+    "toggle": "Theme wechseln",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System"
   }
 }

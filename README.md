@@ -64,3 +64,33 @@ Ericsoft API request · ElevenLabs Enterprise quote (EU residency) · Dograh mul
 
 ---
 RT Holding Group GmbH · July 2026 · Documentation v1 (frozen at handoff — changes go through docs/adr/)
+
+## Running it locally
+
+```bash
+pnpm install
+cp .env.example .env          # local Supabase keys are already in the template
+pnpm db:start                 # Supabase on 544xx (Docker); realtime excluded
+pnpm db:reset                 # replay every migration from zero
+pnpm db:seed                  # two properties, two accounts
+pnpm dev                      # web on :3000, worker on :8787
+```
+
+Seeded accounts, password `devpassword123!` — the seed refuses to run against
+anything but a loopback address, because that password is published here.
+
+| Account | Properties | Why it exists |
+|---|---|---|
+| `owner@bookone.test` | owner of Hotel Sonja, staff at Garni Alpin | Two properties, so the switcher has something to do |
+| `staff@bookone.test` | staff at Hotel Sonja only | One property, so the switcher hides itself — and reaching `/de/garni-alpin/…` must 404 |
+
+The asymmetry is the point: a single-property seed cannot show a switcher
+working, and cannot show isolation failing when it breaks.
+
+## Gates
+
+```bash
+pnpm typecheck && pnpm lint && pnpm test    # static + unit
+pnpm test:rls                               # cross-tenant isolation, both access paths
+pnpm build
+```

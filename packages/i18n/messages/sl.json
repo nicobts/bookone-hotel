@@ -1,5 +1,101 @@
 {
   "common": {
-    "appName": "BookOne"
+    "appName": "BookOne",
+    "loading": "Nalaganje",
+    "cancel": "Prekliči",
+    "save": "Shrani",
+    "retry": "Poskusi znova"
+  },
+  "auth": {
+    "brandLine": "Vsako bivanje, urejeno.",
+    "brandLineEmphasis": "urejeno.",
+    "email": "E-pošta",
+    "password": "Geslo",
+    "emailPlaceholder": "vi@hotel.example",
+    "login": {
+      "title": "Prijava",
+      "subtitle": "Vstopite v konzolo svojega objekta.",
+      "submit": "Prijava",
+      "pending": "Prijavljanje",
+      "remember": "Ostani prijavljen",
+      "rememberHint": "Na skupnem računalniku na recepciji pustite izklopljeno.",
+      "forgot": "Ste pozabili geslo?"
+    },
+    "forgotPassword": {
+      "title": "Ponastavitev gesla",
+      "subtitle": "Po e-pošti vam pošljemo povezavo za novo geslo.",
+      "submit": "Pošlji povezavo",
+      "pending": "Pošiljanje",
+      "sent": "Preverite e-pošto — povezava je na poti.",
+      "back": "Nazaj na prijavo"
+    },
+    "updatePassword": {
+      "title": "Izberite novo geslo",
+      "subtitle": "Vsaj 8 znakov.",
+      "newPassword": "Novo geslo",
+      "submit": "Posodobi geslo",
+      "pending": "Posodabljanje",
+      "done": "Geslo je posodobljeno."
+    },
+    "logout": "Odjava",
+    "error": {
+      "invalidCredentials": "E-pošta in geslo se ne ujemata.",
+      "emailNotConfirmed": "Najprej potrdite svoj e-poštni naslov.",
+      "rateLimited": "Preveč poskusov. Počakajte minuto in poskusite znova.",
+      "samePassword": "To je že vaše geslo.",
+      "weakPassword": "Izberite daljše geslo — vsaj 8 znakov.",
+      "linkExpired": "Povezava je potekla. Zahtevajte novo.",
+      "notConfigured": "Prijava v tem okolju ni nastavljena.",
+      "unknown": "Nekaj je šlo narobe. Poskusite znova."
+    }
+  },
+  "nav": {
+    "today": "Danes",
+    "exceptions": "Izjeme",
+    "reservations": "Rezervacije",
+    "guests": "Gostje",
+    "sections": {
+      "operate": "Poslovanje",
+      "configure": "Nastavitve"
+    },
+    "rooms": "Tipi sob",
+    "members": "Ekipa",
+    "settings": "Nastavitve"
+  },
+  "property": {
+    "switcher": {
+      "label": "Objekt",
+      "switchTo": "Zamenjaj objekt"
+    },
+    "role": {
+      "owner": "Lastnik",
+      "staff": "Osebje"
+    }
+  },
+  "console": {
+    "today": {
+      "title": "Danes",
+      "subtitle": "Prihodi, odhodi in kdo je v hiši.",
+      "arrivals": "Prihodi",
+      "departures": "Odhodi",
+      "inHouse": "V hiši",
+      "empty": "Za danes ni nič načrtovanega."
+    },
+    "exceptions": {
+      "title": "Izjeme",
+      "subtitle": "Samo tisto, kar potrebuje človeka. Vse drugo se je uredilo samo.",
+      "empty": "Trenutno vas nič ne potrebuje."
+    }
+  },
+  "noProperty": {
+    "title": "Še brez objekta",
+    "body": "Vaš račun ni povezan z objektom. Kdor vas je povabil, vas lahko doda na strani Ekipa.",
+    "signOut": "Odjava"
+  },
+  "theme": {
+    "toggle": "Zamenjaj temo",
+    "light": "Svetla",
+    "dark": "Temna",
+    "system": "Sistem"
   }
 }

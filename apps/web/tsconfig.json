@@ -1,5 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
+  // exactOptionalPropertyTypes is on repo-wide (tsconfig.base.json) and stays on
+  // for packages/*, where we own every line and the strictness pays for itself
+  // in the domain layer. It is off here because shadcn components are vendored
+  // registry code: `shadcn add` rewrites them, they are written against the
+  // default flag, and three of them fail under it today. Keeping it on would
+  // mean hand-patching every component on every registry update, which is a
+  // patch that eventually does not happen.
   "compilerOptions": {
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["node"],
@@ -10,7 +17,12 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "plugins": [{ "name": "next" }]
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "exactOptionalPropertyTypes": false
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "next-env.d.ts", ".next/types/**/*.ts", "*.ts"],
   "exclude": ["node_modules", ".next"]

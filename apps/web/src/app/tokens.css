@@ -1,0 +1,269 @@
+/* =============================================================
+   BookOne Design System — Colors & Type
+   =============================================================
+   SYNCED SURFACE — treat as read-mostly (docs/conventions/UI_COMPONENTS.md).
+
+   Source: the BookOne Design System project on claude.ai/design,
+   file `colors_and_type.css`. Never edit a value here to make one
+   screen look right — put the adjustment in globals.css, which is
+   the mapping layer, or raise it with the design system. Keeping
+   this file a faithful copy is what keeps the next sync readable.
+
+   Two deliberate omissions versus the source:
+     - the @import font lines: next/font loads Inter, Geist Mono and
+       Instrument Serif and exposes them as --font-* variables, which
+       avoids a render-blocking request to a third host
+     - the html/body block: globals.css owns element defaults
+
+   Brand tension: enterprise-grade cloud (cool, precise, trustworthy)
+   x hospitality (warm, human, considered). The chassis is cold — ink
+   navy, crisp whites, a signal blue — and the accents are warm.
+   ============================================================= */
+
+:root {
+  /* =============================================================
+     Whitelabel theming (per-property overrides)
+     =============================================================
+     The platform ships with BookOne brand defaults (signal blue +
+     ember). Each property overrides primary + accent via two custom
+     properties, and everything brand-colored reads from them.
+
+     This is the mechanism PRD A1 requires for per-property theming
+     of the booking surface. See docs/conventions/UI_COMPONENTS.md for
+     which surfaces are BookOne-branded and which are the property's. */
+  --bo-primary: var(--bo-signal-500);
+  --bo-primary-hover: var(--bo-signal-600);
+  --bo-primary-subtle: var(--bo-signal-50);
+  --bo-primary-fg: var(--bo-white);
+
+  --bo-accent: var(--bo-ember-400);
+  --bo-accent-hover: var(--bo-ember-500);
+  --bo-accent-subtle: var(--bo-ember-50);
+  --bo-accent-fg: var(--bo-white);
+
+  /* ---------- Brand core ----------
+     Anchor colors extracted directly from the BookOne logo:
+       --bo-ink        = logo navy (#12283E)
+       --bo-signal-500 = logo blue (#0466C8)
+     Ember is retained as a TERTIARY warm accent (used rarely). */
+  --bo-ink: #12283e; /* logo navy — primary canvas for enterprise surfaces */
+  --bo-ink-2: #192f48; /* one step up from ink for layered dark surfaces */
+  --bo-ink-3: #223a58; /* raised dark surface / hover */
+  --bo-ink-4: #2e4a6e; /* dark borders */
+
+  --bo-paper: #fafaf7; /* warm off-white — default light surface */
+  --bo-paper-2: #f3f2ec; /* warm paper shade for sections */
+  --bo-white: #ffffff;
+
+  /* ---------- Signal (primary action — enterprise trust, logo blue) ---------- */
+  --bo-signal-50: #e6f0fb;
+  --bo-signal-100: #c6dcf5;
+  --bo-signal-200: #8dbaec;
+  --bo-signal-300: #5497e2;
+  --bo-signal-400: #2a7fd5;
+  --bo-signal-500: #0466c8; /* primary — logo blue */
+  --bo-signal-600: #0353a3;
+  --bo-signal-700: #034380;
+  --bo-signal-800: #033361;
+  --bo-signal-900: #022446;
+
+  /* ---------- Ember (hospitality accent — warm, reserved) ---------- */
+  --bo-ember-50: #fdf3ec;
+  --bo-ember-100: #f9e1cf;
+  --bo-ember-200: #f2c29a;
+  --bo-ember-300: #eda167;
+  --bo-ember-400: #e87b3a; /* accent */
+  --bo-ember-500: #d9611e;
+  --bo-ember-600: #b54a12;
+  --bo-ember-700: #8a3810;
+  --bo-ember-800: #5f2710;
+
+  /* ---------- Neutrals (cool slate) ---------- */
+  --bo-n-0: #ffffff;
+  --bo-n-25: #fafaf7;
+  --bo-n-50: #f3f4f7;
+  --bo-n-100: #e7e9ee;
+  --bo-n-150: #d8dce4;
+  --bo-n-200: #c1c7d2;
+  --bo-n-300: #9ca4b4;
+  --bo-n-400: #6e7689;
+  --bo-n-500: #4e5668;
+  --bo-n-600: #363d4d;
+  --bo-n-700: #232938;
+  --bo-n-800: #192f48;
+  --bo-n-900: #12283e;
+
+  /* ---------- Semantic status ----------
+     Platform-owned. These never shift per property: a guest reading
+     "confirmed" green at one hotel and amber at another is a product
+     that cannot be trusted to mean anything. */
+  --bo-success-50: #e8f7ef;
+  --bo-success-500: #1f9d55;
+  --bo-success-700: #156a39;
+
+  --bo-warning-50: #fff6e0;
+  --bo-warning-500: #e5a100;
+  --bo-warning-700: #8a6100;
+
+  --bo-danger-50: #fdecec;
+  --bo-danger-500: #d13b3b;
+  --bo-danger-700: #8f2323;
+
+  --bo-info-50: var(--bo-signal-50);
+  --bo-info-500: var(--bo-signal-500);
+  --bo-info-700: var(--bo-signal-700);
+
+  /* ---------- Reservation status ----------
+     Mapped to this product's own vocabulary. The source design system
+     carries a restaurant set (pending/rejected/expired); a hotel stay
+     is `hold` until payment confirms and `no_show` when nobody
+     arrives — see the reservation_status enum in @bookone/core. */
+  --bo-status-hold-bg: #fff6e0;
+  --bo-status-hold-fg: #8a6100;
+  --bo-status-confirmed-bg: #e8f7ef;
+  --bo-status-confirmed-fg: #156a39;
+  --bo-status-cancelled-bg: #eef0f5;
+  --bo-status-cancelled-fg: #4e5668;
+  --bo-status-no-show-bg: #fdecec;
+  --bo-status-no-show-fg: #8f2323;
+
+  /* ---------- Semantic foreground / background (light theme) ---------- */
+  --bo-fg-1: var(--bo-n-900); /* highest emphasis text */
+  --bo-fg-2: var(--bo-n-700); /* body */
+  --bo-fg-3: var(--bo-n-500); /* secondary / caption */
+  --bo-fg-4: var(--bo-n-400); /* muted / placeholder */
+  --bo-fg-on-ink: var(--bo-n-25);
+  --bo-fg-on-signal: var(--bo-white);
+  --bo-fg-on-ember: var(--bo-white);
+
+  --bo-bg-canvas: var(--bo-paper);
+  --bo-bg-surface: var(--bo-white);
+  --bo-bg-sunken: var(--bo-n-50);
+  --bo-bg-raised: var(--bo-white);
+  --bo-bg-ink: var(--bo-ink);
+  --bo-bg-ink-2: var(--bo-ink-2);
+
+  --bo-border-1: var(--bo-n-100); /* hairline, default */
+  --bo-border-2: var(--bo-n-150); /* stronger */
+  --bo-border-3: var(--bo-n-200); /* focus-ring neighbor */
+  --bo-border-ink: var(--bo-ink-4);
+
+  /* ---------- Typography ----------
+     The --font-* variables come from next/font in layout.tsx. The
+     literal stacks stay as fallbacks so a font that fails to load
+     degrades to something reasonable rather than to Times. */
+  --bo-font-sans:
+    var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  --bo-font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --bo-font-display-editorial: var(--font-instrument-serif), 'Iowan Old Style', Georgia, serif;
+  /* Instrument Serif is the BRAND HEADING face — marketing, hero
+     moments, login screens, any "elegant" touchpoint. Its italic is
+     the brand signature and lands on ONE clause, never a paragraph
+     and never a button. The console stays sans-first because the
+     product itself is a working tool. */
+
+  /* Type scale — 1.200 "minor third" — restrained and enterprise */
+  --bo-text-2xs: 11px;
+  --bo-lh-2xs: 14px;
+  --bo-text-xs: 12px;
+  --bo-lh-xs: 16px;
+  --bo-text-sm: 13px;
+  --bo-lh-sm: 18px;
+  --bo-text-base: 14px;
+  --bo-lh-base: 20px; /* app default */
+  --bo-text-md: 16px;
+  --bo-lh-md: 24px; /* web default */
+  --bo-text-lg: 18px;
+  --bo-lh-lg: 26px;
+  --bo-text-xl: 22px;
+  --bo-lh-xl: 30px;
+  --bo-text-2xl: 28px;
+  --bo-lh-2xl: 36px;
+  --bo-text-3xl: 36px;
+  --bo-lh-3xl: 44px;
+  --bo-text-4xl: 48px;
+  --bo-lh-4xl: 56px;
+  --bo-text-5xl: 64px;
+  --bo-lh-5xl: 72px;
+  --bo-text-6xl: 84px;
+  --bo-lh-6xl: 90px;
+
+  --bo-weight-regular: 400;
+  --bo-weight-medium: 500;
+  --bo-weight-semibold: 600;
+  --bo-weight-bold: 700;
+
+  --bo-tracking-tight: -0.02em;
+  --bo-tracking-tighter: -0.03em;
+  --bo-tracking-normal: 0;
+  --bo-tracking-wide: 0.02em;
+  --bo-tracking-caps: 0.08em; /* micro-caps labels */
+
+  /* ---------- Radii ---------- */
+  --bo-radius-xs: 4px;
+  --bo-radius-sm: 6px;
+  --bo-radius-md: 10px; /* default for cards / inputs */
+  --bo-radius-lg: 14px;
+  --bo-radius-xl: 20px;
+  --bo-radius-2xl: 28px;
+  --bo-radius-pill: 999px;
+
+  /* ---------- Spacing (4-based) ---------- */
+  --bo-space-1: 4px;
+  --bo-space-2: 8px;
+  --bo-space-3: 12px;
+  --bo-space-4: 16px;
+  --bo-space-5: 20px;
+  --bo-space-6: 24px;
+  --bo-space-8: 32px;
+  --bo-space-10: 40px;
+  --bo-space-12: 48px;
+  --bo-space-16: 64px;
+  --bo-space-20: 80px;
+  --bo-space-24: 96px;
+  --bo-space-32: 128px;
+
+  /* ---------- Shadows (measured, not floaty) ---------- */
+  --bo-shadow-xs: 0 1px 1px rgba(11, 18, 32, 0.04);
+  --bo-shadow-sm: 0 1px 2px rgba(11, 18, 32, 0.06), 0 1px 1px rgba(11, 18, 32, 0.04);
+  --bo-shadow-md: 0 4px 12px -2px rgba(11, 18, 32, 0.08), 0 2px 4px -1px rgba(11, 18, 32, 0.04);
+  --bo-shadow-lg: 0 12px 32px -8px rgba(11, 18, 32, 0.14), 0 4px 8px -2px rgba(11, 18, 32, 0.06);
+  --bo-shadow-xl: 0 24px 60px -12px rgba(11, 18, 32, 0.22), 0 8px 16px -4px rgba(11, 18, 32, 0.08);
+
+  /* Inner shadow used on dark "screen" panels to feel like lit glass */
+  --bo-shadow-inner-ink:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+
+  /* Focus ring — 2px signal, 2px halo */
+  --bo-ring: 0 0 0 2px var(--bo-bg-canvas), 0 0 0 4px var(--bo-signal-400);
+
+  /* ---------- Motion ---------- */
+  --bo-ease-out: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --bo-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --bo-ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  --bo-dur-fast: 120ms;
+  --bo-dur-base: 180ms;
+  --bo-dur-slow: 280ms;
+  --bo-dur-page: 420ms;
+}
+
+/* =============================================================
+   Dark theme — the "cockpit" surface. Toggled by [data-theme="dark"].
+   ============================================================= */
+[data-theme='dark'] {
+  --bo-fg-1: #f4f6fb;
+  --bo-fg-2: #c8cedc;
+  --bo-fg-3: #8d95a8;
+  --bo-fg-4: #5e677b;
+
+  --bo-bg-canvas: var(--bo-ink);
+  --bo-bg-surface: var(--bo-ink-2);
+  --bo-bg-sunken: var(--bo-ink);
+  --bo-bg-raised: var(--bo-ink-3);
+
+  --bo-border-1: rgba(255, 255, 255, 0.06);
+  --bo-border-2: rgba(255, 255, 255, 0.1);
+  --bo-border-3: rgba(255, 255, 255, 0.16);
+}

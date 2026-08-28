@@ -13,7 +13,8 @@
     "./policy": "./src/policy/index.ts",
     "./llm": "./src/llm/index.ts",
     "./adapters": "./src/adapters/index.ts",
-    "./types": "./src/types/index.ts"
+    "./types": "./src/types/index.ts",
+    "./db/queries": "./src/db/queries/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

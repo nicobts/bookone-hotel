@@ -1,5 +1,101 @@
 {
   "common": {
-    "appName": "BookOne"
+    "appName": "BookOne",
+    "loading": "Loading",
+    "cancel": "Cancel",
+    "save": "Save",
+    "retry": "Try again"
+  },
+  "auth": {
+    "brandLine": "Every stay, handled.",
+    "brandLineEmphasis": "handled.",
+    "email": "Email",
+    "password": "Password",
+    "emailPlaceholder": "you@hotel.example",
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Access your property console.",
+      "submit": "Sign in",
+      "pending": "Signing in",
+      "remember": "Keep me signed in",
+      "rememberHint": "Leave off on a shared front-desk machine.",
+      "forgot": "Forgot your password?"
+    },
+    "forgotPassword": {
+      "title": "Reset your password",
+      "subtitle": "We will email you a link to choose a new one.",
+      "submit": "Send the link",
+      "pending": "Sending",
+      "sent": "Check your inbox for the link.",
+      "back": "Back to sign in"
+    },
+    "updatePassword": {
+      "title": "Choose a new password",
+      "subtitle": "It needs at least 8 characters.",
+      "newPassword": "New password",
+      "submit": "Update password",
+      "pending": "Updating",
+      "done": "Password updated."
+    },
+    "logout": "Sign out",
+    "error": {
+      "invalidCredentials": "That email and password do not match.",
+      "emailNotConfirmed": "Confirm your email address first — check your inbox.",
+      "rateLimited": "Too many attempts. Wait a minute and try again.",
+      "samePassword": "That is already your password.",
+      "weakPassword": "Choose a longer password — at least 8 characters.",
+      "linkExpired": "That link has expired. Request a new one.",
+      "notConfigured": "Sign-in is not configured in this environment.",
+      "unknown": "Something went wrong. Try again."
+    }
+  },
+  "nav": {
+    "today": "Today",
+    "exceptions": "Exceptions",
+    "reservations": "Reservations",
+    "guests": "Guests",
+    "sections": {
+      "operate": "Operate",
+      "configure": "Configure"
+    },
+    "rooms": "Room types",
+    "members": "Team",
+    "settings": "Settings"
+  },
+  "property": {
+    "switcher": {
+      "label": "Property",
+      "switchTo": "Switch property"
+    },
+    "role": {
+      "owner": "Owner",
+      "staff": "Staff"
+    }
+  },
+  "console": {
+    "today": {
+      "title": "Today",
+      "subtitle": "Arrivals, departures and who is in house.",
+      "arrivals": "Arrivals",
+      "departures": "Departures",
+      "inHouse": "In house",
+      "empty": "Nothing scheduled for today."
+    },
+    "exceptions": {
+      "title": "Exceptions",
+      "subtitle": "Only what needs a person. Everything else has handled itself.",
+      "empty": "Nothing needs you right now."
+    }
+  },
+  "noProperty": {
+    "title": "No property yet",
+    "body": "Your account is not attached to a property. Whoever invited you can add you from the team page.",
+    "signOut": "Sign out"
+  },
+  "theme": {
+    "toggle": "Switch theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
   }
 }

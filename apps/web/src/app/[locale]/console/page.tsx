@@ -1,23 +1,22 @@
+import { redirect } from 'next/navigation'
 import { setRequestLocale } from 'next-intl/server'
+import { defaultPropertyPath } from '@/lib/auth/current-property'
+import { requireUser } from '@/lib/auth/current-user'
 
 /**
- * Owner console — an exception-handling surface, not a data-entry surface (D15).
+ * `/[locale]/console` is a redirect, not a page.
  *
- * The home screen is the exceptions inbox (C1), not a dashboard: unreflected
- * reservations, failed payments, pre-arrival incomplete at T-12h, Alloggiati
- * unconfirmed, escalated messages, reconciliation discrepancies — each with a
- * one-tap resolution. Today (C2) sits beside it.
- *
- * Shell + Today placeholder is Sprint 1; C1 lands in Sprint 4.
+ * Login, password reset and email confirmation all need somewhere to send
+ * people, and two of them run in the browser where the person's memberships are
+ * unknown. This resolves their property server-side and forwards — so a link
+ * written before any property existed still lands somewhere sensible, and
+ * someone in no property gets a page that says so rather than a redirect loop
+ * (ADR-016).
  */
-export default async function ConsolePage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function ConsoleEntry({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
   setRequestLocale(locale)
 
-  return (
-    <main className="mx-auto flex min-h-dvh max-w-2xl flex-col justify-center gap-2 px-6">
-      <h1 className="text-2xl font-medium tracking-tight">Console</h1>
-      <p className="text-muted-foreground text-sm">Exceptions and Today · Sprint 1 shell.</p>
-    </main>
-  )
+  const user = await requireUser(locale)
+  redirect(await defaultPropertyPath(user.id, locale))
 }

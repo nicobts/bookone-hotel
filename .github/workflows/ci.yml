@@ -1,0 +1,129 @@
+name: CI
+
+# The five merge gates (04-IMPLEMENTATION-PLAN §6):
+#   typecheck · vitest · RLS cross-tenant suite · migration check · agent evals
+#
+# They are separate jobs rather than one script so a failure names itself in the
+# checks list. "CI failed" tells a reviewer nothing; "rls" tells them to stop.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Local Supabase, started by the CLI in the jobs that need it. These are the
+  # CLI's own published demo keys — identical on every machine, worthless off
+  # loopback.
+  DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54422/postgres
+  DIRECT_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54422/postgres
+  NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54421
+
+jobs:
+  static:
+    name: typecheck · lint · format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm format:check
+
+  test:
+    name: vitest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+
+  rls:
+    name: cross-tenant isolation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Realtime is excluded deliberately: its container fails to resolve the
+      # database host in some environments, and nothing under test needs it.
+      - name: Start Supabase
+        run: pnpm db:start
+
+      - name: Capture the local keys
+        run: |
+          {
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(pnpm exec supabase status -o env | grep ANON_KEY | cut -d= -f2- | tr -d '\"')"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(pnpm exec supabase status -o env | grep SERVICE_ROLE_KEY | cut -d= -f2- | tr -d '\"')"
+          } >> "$GITHUB_ENV"
+
+      # Both access paths. The client-path suite passing says nothing about the
+      # application's own path, which connects with a role holding BYPASSRLS
+      # (ADR-018) — that is the whole reason there are two.
+      - run: pnpm test:rls
+
+  migrations:
+    name: migration check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Replaying from zero proves the migrations work on a clean database, not
+      # just on the one they were developed against.
+      - run: pnpm db:start
+
+      # Drift check: generating against the committed schema must produce
+      # nothing new. A dirty tree here means someone changed the schema and did
+      # not commit the migration — which applies fine locally and fails on the
+      # next environment.
+      - name: No uncommitted schema drift
+        run: |
+          pnpm db:generate
+          if [ -n "$(git status --porcelain supabase/migrations)" ]; then
+            echo "::error::Schema changed without a committed migration."
+            git status --porcelain supabase/migrations
+            git diff -- supabase/migrations
+            exit 1
+          fi
+
+  evals:
+    name: agent evals
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Green today because the roster is empty — the gate exists before the
+      # agents do, so no agent can ship without one (06 §1.5). The first
+      # populated set is AG-05 in Sprint 2.
+      - run: pnpm test:evals
