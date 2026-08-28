@@ -141,6 +141,9 @@ importers:
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.5)
+      '@supabase/supabase-js':
+        specifier: ^2.112.4
+        version: 2.112.4
       hono:
         specifier: ^4.13.5
         version: 4.13.5

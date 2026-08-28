@@ -4,9 +4,11 @@ import { serve } from '@hono/node-server'
 import { pino } from 'pino'
 import { MockEricsoftAdapter } from '@bookone/adapters/mock-ericsoft'
 import { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
+import { MockAlloggiatiAdapter } from '@bookone/adapters/mock-alloggiati'
 import { getNotificationProvider, registerNotificationProvider } from '@bookone/core/notifications'
 import { createApp } from './app'
 import { LogNotificationProvider } from './notifications/log-provider'
+import { createDocumentDeleter } from './storage/documents'
 import { loadEnv } from './env'
 import { registerHandlers } from './jobs/handlers'
 import { registerSchedules } from './jobs/schedules'
@@ -79,6 +81,31 @@ if (env.NODE_ENV === 'production' && paymentAdapter.simulated) {
   )
 }
 
+/**
+ * The Alloggiati channel.
+ *
+ * MEMO — SIMULATED. Nothing is filed with any authority. The direct-web-service
+ * versus certified-intermediary decision is still open (04 §0 item 5), so this
+ * ships behind a port exactly as the PMS connector and payments did.
+ *
+ * The guard below matters more here than for payments. A property that believes
+ * its guests are registered when nothing was filed is a property facing a fine
+ * for a breach it does not know about — so a simulated channel refuses to boot
+ * in production, loudly, rather than warning into a log nobody reads.
+ */
+const alloggiatiAdapter = new MockAlloggiatiAdapter()
+
+if (env.NODE_ENV === 'production' && alloggiatiAdapter.simulated) {
+  throw new Error(
+    `Refusing to start: Alloggiati channel "${alloggiatiAdapter.channel}" is simulated and ` +
+      'NODE_ENV=production. Nothing would be filed with the authority. Connect a real ' +
+      'AlloggiatiAdapter (docs/runbooks/alloggiati.md) before deploying.',
+  )
+}
+
+/** E2.4. See the module for why it reports failure rather than swallowing it. */
+const deleteObject = createDocumentDeleter(logger)
+
 const queue = new PgBossQueue(env.DATABASE_URL)
 
 /**
@@ -106,13 +133,23 @@ const server = serve({ fetch: app.fetch, port: env.WORKER_PORT }, (info) => {
 })
 
 await queue.start()
-await registerHandlers({ queue, adapter, payments: paymentAdapter, notifications, logger })
+await registerHandlers({
+  queue,
+  adapter,
+  payments: paymentAdapter,
+  alloggiati: alloggiatiAdapter,
+  notifications,
+  deleteObject,
+  logger,
+})
 await registerSchedules({ queue, logger })
 logger.info(
   {
     adapter: adapter.system,
     notifications: notifications.name,
     payments: paymentAdapter.provider,
+    alloggiati: alloggiatiAdapter.channel,
+    alloggiatiSimulated: alloggiatiAdapter.simulated,
     // Printed on every boot on purpose. "Which environment is taking real
     // money" should never be a question anyone has to go and look up.
     paymentsSimulated: paymentAdapter.simulated,

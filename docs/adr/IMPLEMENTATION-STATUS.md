@@ -62,6 +62,19 @@ worse than none, because it is read as current.
 | Alloggiati submission (E2.3) | ⬜ Sprint 6 | States and transitions exist; the channel does not |
 | Document deletion job (E2.4) | ⬜ Sprint 6 | `documents.delete` and `deleteIdentityDocument` exist; the job that calls them on acknowledgement does not |
 
+## Sprint 6 additions
+
+| Thing | Status | Note |
+|---|---|---|
+| Payload builder + validation | 🟨 built, **layout unverified** | 168-character records; offsets and the country code tables need checking against the official spec before any real filing — [runbook](../runbooks/alloggiati.md) |
+| `AlloggiatiAdapter` port + mock | ✅ | Contract suite; the mock validates record width rather than accepting anything |
+| `alloggiati_submissions` audit trail | ✅ | Exact payload, checksum and receipt retained |
+| Auto-file on arrival, manual file always | ✅ | E2.3 requires the override; the property is the declarant |
+| T-20h overdue alert | ✅ | In the exceptions inbox, linking to the arrival screen |
+| Document deletion on acknowledgement (E2.4) | ✅ | Object first, row second; a failed delete leaves the row honest |
+| Contract mirror | 🟨 **drafted, not reviewed** | [alloggiati-responsibility.md](../contracts/alloggiati-responsibility.md) — five open questions for counsel |
+| **A real channel** | ⬜ **blocked** | Direct web service vs certified intermediary (04 §0 item 5) |
+
 ## CI gates
 
 All five exist as separate jobs in `.github/workflows/ci.yml`, named so a

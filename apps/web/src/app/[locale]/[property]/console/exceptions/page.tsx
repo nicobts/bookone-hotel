@@ -71,9 +71,19 @@ async function ExceptionRow({
 }) {
   const t = await getTranslations('console.exceptions')
 
-  const isUnreflected = item.kind === 'unreflected-reservation'
-  const title = isUnreflected ? t('unreflectedTitle') : t('discrepancyTitle')
-  const body = isUnreflected ? t('unreflectedBody') : t('discrepancyBody')
+  const title =
+    item.kind === 'unreflected-reservation'
+      ? t('unreflectedTitle')
+      : item.kind === 'alloggiati-overdue'
+        ? t('alloggiatiTitle')
+        : t('discrepancyTitle')
+
+  const body =
+    item.kind === 'unreflected-reservation'
+      ? t('unreflectedBody')
+      : item.kind === 'alloggiati-overdue'
+        ? t('alloggiatiBody')
+        : t('discrepancyBody')
 
   return (
     <li className="bg-card flex items-start gap-3 rounded-lg border p-4">
@@ -111,7 +121,16 @@ async function ExceptionRow({
           and stays disabled: a button that does nothing is worse than one that
           says what it will do.
         */}
-        {item.retryable ? (
+        {item.kind === 'alloggiati-overdue' ? (
+          // Opens the arrival screen rather than firing a retry from here. A
+          // late filing is usually late because the party is incomplete, and
+          // that screen is where the missing fields are listed.
+          <Button asChild variant="outline" size="sm">
+            <a href={`/${context.locale}/${context.slug}/console/arrivals/${item.subject}`}>
+              {t('review')}
+            </a>
+          </Button>
+        ) : item.retryable ? (
           <form action={retryReflectionAction.bind(null, context)}>
             <input type="hidden" name="reservationId" value={item.subject} />
             <Button type="submit" variant="outline" size="sm">

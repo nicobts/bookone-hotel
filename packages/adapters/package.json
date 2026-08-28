@@ -9,7 +9,8 @@
     "./pms": "./src/pms/index.ts",
     "./mock-ericsoft": "./src/mock-ericsoft/index.ts",
     "./payment": "./src/payment/index.ts",
-    "./mock-payment": "./src/mock-payment/index.ts"
+    "./mock-payment": "./src/mock-payment/index.ts",
+    "./mock-alloggiati": "./src/mock-alloggiati/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

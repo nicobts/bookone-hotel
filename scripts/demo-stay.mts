@@ -9,7 +9,7 @@
  * Goes through the same core functions the surface does: hold, attach guest,
  * confirm. Nothing here is a shortcut past the domain logic.
  *
- *   pnpm tsx scripts/demo-stay.mts hotel-sonja 1
+ *   pnpm tsx scripts/demo-stay.mts hotel-sonja 1 en
  */
 import postgres from 'postgres'
 import { attachGuest, confirmReservation, createHold } from '../packages/core/src/booking'
@@ -22,6 +22,8 @@ const sql = postgres(process.env.DATABASE_URL ?? '', { prepare: false, onnotice:
 
 const slug = process.argv[2] ?? 'hotel-sonja'
 const inDays = Number(process.argv[3] ?? 1)
+/** The locale the demo links are printed in. English by default. */
+const locale = process.argv[4] ?? 'en'
 
 const arrival = isoDate(Date.now() + inDays * 86_400_000)
 const departure = isoDate(Date.now() + (inDays + 2) * 86_400_000)
@@ -60,7 +62,7 @@ if (hold.status !== 'held') throw new Error(`hold failed: ${hold.reason}`)
 await attachGuest({
   propertyId: setup.propertyId,
   reservationId: hold.reservationId,
-  guest: { name: 'Anna Huber', email: 'anna.huber@example.test', locale: 'de' },
+  guest: { name: 'Anna Huber', email: 'anna.huber@example.test', locale },
 })
 
 const confirmed = await confirmReservation({
@@ -79,7 +81,7 @@ console.log(`reservation  ${hold.reservationId}`)
 console.log(`reference    ${hold.reference}`)
 console.log(`arriving     ${arrival} -> ${departure}`)
 console.log('')
-console.log(`stay link    http://localhost:3000/de/stay/${token}`)
+console.log(`stay link    http://localhost:3000/${locale}/stay/${token}`)
 
 await sql.end()
 process.exit(0)

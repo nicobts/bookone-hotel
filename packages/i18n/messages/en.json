@@ -100,7 +100,29 @@
       "retry": "Retry now",
       "review": "Review",
       "reason": "Reason",
-      "waiting": "Waiting to be sent"
+      "waiting": "Waiting to be sent",
+      "alloggiatiTitle": "Police registration overdue",
+      "alloggiatiBody": "This guest arrived more than 20 hours ago and the filing is not confirmed."
+    },
+    "arrival": {
+      "title": "Arrival",
+      "confirmArrival": "Guest has arrived",
+      "arrived": "Arrived",
+      "party": "Party",
+      "filing": "Police registration",
+      "notFiled": "Not filed yet",
+      "staged": "Ready to file",
+      "submitted": "Filed, awaiting confirmation",
+      "acknowledged": "Confirmed by the authority",
+      "failed": "Filing failed",
+      "submitNow": "File now",
+      "missing": "Missing before this can be filed:",
+      "guest": "Guest {n}",
+      "documentHeld": "Document held",
+      "documentDeleted": "Document deleted",
+      "simulated": "No channel is connected — nothing is actually filed with any authority.",
+      "receipt": "Receipt held",
+      "checksum": "Payload checksum"
     }
   },
   "noProperty": {
@@ -313,7 +335,6 @@
       "heading": "Who is travelling",
       "lead": "Lead guest",
       "guest": "Guest {n}",
-      "fullName": "Full name",
       "birthDate": "Date of birth",
       "nationality": "Nationality",
       "documentType": "Document type",
@@ -322,7 +343,18 @@
       "idCard": "Identity card",
       "drivingLicence": "Driving licence",
       "save": "Save and continue",
-      "hint": "The property is legally required to register every guest staying in the room."
+      "hint": "The property is legally required to register every guest staying in the room.",
+      "surname": "Surname",
+      "givenName": "Given name",
+      "sex": "Sex",
+      "male": "Male",
+      "female": "Female",
+      "birthPlace": "Place of birth",
+      "birthCountry": "Country of birth",
+      "citizenship": "Citizenship",
+      "documentIssuer": "Issued by",
+      "countryHint": "Two-letter country code, e.g. IT, AT, DE, SI",
+      "required": "The property must file these with the police, so all of them are required."
     },
     "documents": {
       "heading": "Identity documents",

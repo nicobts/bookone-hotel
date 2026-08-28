@@ -161,11 +161,13 @@ export default async function StayPage({
       <section>
         <h2 className="text-foreground font-medium">{t('party.heading')}</h2>
         <p className="text-muted-foreground mt-1 text-xs">{t('party.hint')}</p>
+        <p className="text-muted-foreground mt-1 text-xs">{t('party.required')}</p>
 
         <form action={submitParty.bind(null, context)} className="mt-5 space-y-6">
           {Array.from({ length: partySize }, (_, index) => {
             const member = stay.party.find((entry) => entry.guestIndex === index)
-            const prefilledName = index === 0 ? (stay.leadGuestName ?? '') : ''
+            const prefilled =
+              index === 0 ? splitName(stay.leadGuestName) : { surname: '', givenName: '' }
 
             return (
               <fieldset key={index} className="space-y-3">
@@ -173,18 +175,48 @@ export default async function StayPage({
                   {index === 0 ? t('party.lead') : t('party.guest', { n: index + 1 })}
                 </legend>
 
-                <div className="grid gap-2">
-                  <Label htmlFor={`name-${index}`}>{t('party.fullName')}</Label>
-                  <Input
-                    id={`name-${index}`}
-                    name={`name-${index}`}
-                    autoComplete={index === 0 ? 'name' : 'off'}
-                    defaultValue={readString(member?.data.fullName) || prefilledName}
-                    required={index === 0}
-                  />
+                {/*
+                  Surname and given name separately, because the registry files
+                  them separately (E2.3) — and splitting a free-text full name
+                  is a guess that gets Spanish and Hungarian names wrong.
+                */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label htmlFor={`surname-${index}`}>{t('party.surname')}</Label>
+                    <Input
+                      id={`surname-${index}`}
+                      name={`surname-${index}`}
+                      autoComplete={index === 0 ? 'family-name' : 'off'}
+                      defaultValue={readString(member?.data.surname) || prefilled.surname}
+                      required={index === 0}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor={`given-${index}`}>{t('party.givenName')}</Label>
+                    <Input
+                      id={`given-${index}`}
+                      name={`given-${index}`}
+                      autoComplete={index === 0 ? 'given-name' : 'off'}
+                      defaultValue={readString(member?.data.givenName) || prefilled.givenName}
+                      required={index === 0}
+                    />
+                  </div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label htmlFor={`sex-${index}`}>{t('party.sex')}</Label>
+                    <select
+                      id={`sex-${index}`}
+                      name={`sex-${index}`}
+                      defaultValue={readString(member?.data.sex)}
+                      className="border-input bg-transparent focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
+                    >
+                      <option value="">—</option>
+                      <option value="m">{t('party.male')}</option>
+                      <option value="f">{t('party.female')}</option>
+                    </select>
+                  </div>
                   <div className="grid gap-2">
                     <Label htmlFor={`birth-${index}`}>{t('party.birthDate')}</Label>
                     <Input
@@ -194,14 +226,39 @@ export default async function StayPage({
                       defaultValue={readString(member?.data.birthDate)}
                     />
                   </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div className="grid gap-2">
-                    <Label htmlFor={`nationality-${index}`}>{t('party.nationality')}</Label>
+                    <Label htmlFor={`birthPlace-${index}`}>{t('party.birthPlace')}</Label>
                     <Input
-                      id={`nationality-${index}`}
-                      name={`nationality-${index}`}
-                      defaultValue={readString(member?.data.nationality)}
+                      id={`birthPlace-${index}`}
+                      name={`birthPlace-${index}`}
+                      defaultValue={readString(member?.data.birthPlace)}
                     />
                   </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor={`birthCountry-${index}`}>{t('party.birthCountry')}</Label>
+                    <Input
+                      id={`birthCountry-${index}`}
+                      name={`birthCountry-${index}`}
+                      maxLength={2}
+                      placeholder="IT"
+                      defaultValue={readString(member?.data.birthCountry)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor={`citizenship-${index}`}>{t('party.citizenship')}</Label>
+                  <Input
+                    id={`citizenship-${index}`}
+                    name={`citizenship-${index}`}
+                    maxLength={2}
+                    placeholder="IT"
+                    defaultValue={readString(member?.data.citizenship)}
+                  />
+                  <p className="text-muted-foreground text-xs">{t('party.countryHint')}</p>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -215,8 +272,8 @@ export default async function StayPage({
                     >
                       <option value="">—</option>
                       <option value="passport">{t('party.passport')}</option>
-                      <option value="id_card">{t('party.idCard')}</option>
-                      <option value="driving_licence">{t('party.drivingLicence')}</option>
+                      <option value="idCard">{t('party.idCard')}</option>
+                      <option value="drivingLicence">{t('party.drivingLicence')}</option>
                     </select>
                   </div>
                   <div className="grid gap-2">
@@ -359,6 +416,23 @@ async function Task({ done, label }: { done: boolean; label: string }) {
       {done && <span className="sr-only">{t('done')}</span>}
     </li>
   )
+}
+
+/**
+ * A best-effort split of the name captured at booking.
+ *
+ * Only ever a *prefill* — the guest sees both fields and corrects them. The
+ * last word is treated as the surname, which is right for German and Italian
+ * and wrong for plenty of names, and that is exactly why the split is never
+ * stored: what the guest confirms is what gets filed.
+ */
+function splitName(full: string | null): { surname: string; givenName: string } {
+  const parts = (full ?? '').trim().split(/\s+/).filter(Boolean)
+
+  if (parts.length === 0) return { surname: '', givenName: '' }
+  if (parts.length === 1) return { surname: parts[0]!, givenName: '' }
+
+  return { surname: parts[parts.length - 1]!, givenName: parts.slice(0, -1).join(' ') }
 }
 
 function readString(value: unknown): string {

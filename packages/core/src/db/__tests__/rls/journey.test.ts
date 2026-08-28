@@ -181,8 +181,8 @@ describe('pre-arrival (E2.1)', () => {
       propertyId: fixture.alpha.propertyId,
       reservationId,
       members: [
-        { guestIndex: 0, fullName: 'Rosa Weber', nationality: 'AT' },
-        { guestIndex: 1, fullName: 'Hans Weber', nationality: 'AT' },
+        { guestIndex: 0, surname: 'Weber', givenName: 'Rosa', citizenship: 'AT' },
+        { guestIndex: 1, surname: 'Weber', givenName: 'Hans', citizenship: 'AT' },
       ],
     })
 
@@ -203,16 +203,16 @@ describe('pre-arrival (E2.1)', () => {
     await saveParty({
       propertyId: fixture.alpha.propertyId,
       reservationId,
-      members: [{ guestIndex: 0, fullName: 'Rosa Wber' }],
+      members: [{ guestIndex: 0, surname: 'Wber', givenName: 'Rosa' }],
     })
 
     await saveParty({
       propertyId: fixture.alpha.propertyId,
       reservationId,
-      members: [{ guestIndex: 0, fullName: 'Rosa Weber' }],
+      members: [{ guestIndex: 0, surname: 'Weber', givenName: 'Rosa' }],
     })
 
-    const records = await db.execute<{ data: { fullName: string } }>(
+    const records = await db.execute<{ data: { fullName: string; surname: string } }>(
       sql`select data from registration_records where reservation_id = ${reservationId}`,
     )
 
@@ -220,6 +220,7 @@ describe('pre-arrival (E2.1)', () => {
     // compliance problem, not a cosmetic one.
     expect(records).toHaveLength(1)
     expect(records[0]?.data.fullName).toBe('Rosa Weber')
+    expect(records[0]?.data.surname).toBe('Weber')
   })
 
   it('refuses a party with nobody in it', async () => {
@@ -228,7 +229,7 @@ describe('pre-arrival (E2.1)', () => {
     const outcome = await saveParty({
       propertyId: fixture.alpha.propertyId,
       reservationId,
-      members: [{ guestIndex: 0, fullName: '   ' }],
+      members: [{ guestIndex: 0, surname: '   ', givenName: '  ' }],
     })
 
     expect(outcome.status).toBe('rejected')
@@ -240,7 +241,7 @@ describe('pre-arrival (E2.1)', () => {
     await saveParty({
       propertyId: fixture.alpha.propertyId,
       reservationId,
-      members: [{ guestIndex: 0, fullName: 'Rosa Weber' }],
+      members: [{ guestIndex: 0, surname: 'Weber', givenName: 'Rosa' }],
     })
 
     const outcome = await recordDocument({
@@ -262,7 +263,7 @@ describe('pre-arrival (E2.1)', () => {
     await saveParty({
       propertyId: fixture.alpha.propertyId,
       reservationId,
-      members: [{ guestIndex: 0, fullName: 'Rosa Weber' }],
+      members: [{ guestIndex: 0, surname: 'Weber', givenName: 'Rosa' }],
     })
 
     await db.execute(
@@ -424,7 +425,7 @@ describe('the T-48h invitation (E2.1)', () => {
     await saveParty({
       propertyId: fixture.alpha.propertyId,
       reservationId,
-      members: [{ guestIndex: 0, fullName: 'Rosa Weber' }],
+      members: [{ guestIndex: 0, surname: 'Weber', givenName: 'Rosa' }],
     })
 
     const outcome = await sendPrecheckinInvite({

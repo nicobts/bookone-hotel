@@ -5,6 +5,7 @@ import { PageShell } from '@/components/shell/page-shell'
 import { requireProperty } from '@/lib/auth/current-property'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import Link from 'next/link'
 import { roomName } from '@/components/booking/format'
 
 /**
@@ -95,9 +96,15 @@ export default async function TodayPage({
                 </span>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-foreground truncate text-sm font-medium">
+                  {/* The whole row is the target in spirit, but a link on the
+                      name keeps the badge and the time selectable — a desk
+                      reads this list as much as it clicks it. */}
+                  <Link
+                    href={`/${locale}/${slug}/console/arrivals/${row.reservationId}`}
+                    className="text-foreground truncate text-sm font-medium hover:underline"
+                  >
                     {row.guestName ?? row.reference}
-                  </p>
+                  </Link>
                   <p className="text-muted-foreground mt-0.5 truncate text-xs">
                     <span className="num">{row.reference}</span>
                     {' · '}

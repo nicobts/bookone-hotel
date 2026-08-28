@@ -19,7 +19,9 @@
     "./sync": "./src/sync/index.ts",
     "./booking": "./src/booking/index.ts",
     "./notifications": "./src/notifications/index.ts",
-    "./payments": "./src/payments/index.ts"
+    "./payments": "./src/payments/index.ts",
+    "./alloggiati": "./src/alloggiati/index.ts",
+    "./storage": "./src/storage/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

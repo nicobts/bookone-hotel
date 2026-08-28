@@ -100,7 +100,29 @@
       "retry": "Poskusi znova",
       "review": "Preglej",
       "reason": "Razlog",
-      "waiting": "Čaka na pošiljanje"
+      "waiting": "Čaka na pošiljanje",
+      "alloggiatiTitle": "Prijava policiji zamuja",
+      "alloggiatiBody": "Ta gost je prispel pred več kot 20 urami, prijava pa ni potrjena."
+    },
+    "arrival": {
+      "title": "Prihod",
+      "confirmArrival": "Gost je prispel",
+      "arrived": "Prispel",
+      "party": "Gostje",
+      "filing": "Prijava policiji",
+      "notFiled": "Še ni prijavljeno",
+      "staged": "Pripravljeno za prijavo",
+      "submitted": "Prijavljeno, čakamo potrditev",
+      "acknowledged": "Potrdil organ",
+      "failed": "Prijava ni uspela",
+      "submitNow": "Prijavi zdaj",
+      "missing": "Manjka pred prijavo:",
+      "guest": "Gost {n}",
+      "documentHeld": "Dokument shranjen",
+      "documentDeleted": "Dokument izbrisan",
+      "simulated": "Noben kanal ni povezan — nič se ne pošlje nobenemu organu.",
+      "receipt": "Potrdilo shranjeno",
+      "checksum": "Kontrolna vsota"
     }
   },
   "noProperty": {
@@ -313,7 +335,6 @@
       "heading": "Kdo potuje",
       "lead": "Glavni gost",
       "guest": "Gost {n}",
-      "fullName": "Ime in priimek",
       "birthDate": "Datum rojstva",
       "nationality": "Državljanstvo",
       "documentType": "Vrsta dokumenta",
@@ -322,7 +343,18 @@
       "idCard": "Osebna izkaznica",
       "drivingLicence": "Vozniško dovoljenje",
       "save": "Shrani in nadaljuj",
-      "hint": "Nastanitev mora po zakonu prijaviti vsakega gosta v sobi."
+      "hint": "Nastanitev mora po zakonu prijaviti vsakega gosta v sobi.",
+      "surname": "Priimek",
+      "givenName": "Ime",
+      "sex": "Spol",
+      "male": "Moški",
+      "female": "Ženska",
+      "birthPlace": "Kraj rojstva",
+      "birthCountry": "Država rojstva",
+      "citizenship": "Državljanstvo",
+      "documentIssuer": "Izdal",
+      "countryHint": "Dvočrkovna oznaka države, npr. IT, AT, DE, SI",
+      "required": "Nastanitev jih mora sporočiti policiji, zato so vsi obvezni."
     },
     "documents": {
       "heading": "Osebni dokumenti",

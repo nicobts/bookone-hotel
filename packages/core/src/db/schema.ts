@@ -119,6 +119,19 @@ export const arrivalState = pgEnum('arrival_state', ['pending', 'expected', 'con
 export const departureState = pgEnum('departure_state', ['pending', 'settled', 'closed'])
 
 /**
+ * How one submission ended.
+ *
+ * `acknowledged` is the only state that permits destroying the documents
+ * (E2.4). Anything else and the property still needs them.
+ */
+export const submissionStatus = pgEnum('submission_status', [
+  'staged',
+  'submitted',
+  'acknowledged',
+  'failed',
+])
+
+/**
  * What a payment row is for.
  *
  * `deposit` and `balance` are money in; `refund` is money out and carries a
@@ -1176,6 +1189,101 @@ export const registrationRecords = pgTable(
     check(
       'registration_records_deleted_has_no_path',
       sql`${t.deletedAt} is null or ${t.documentPath} is null`,
+    ),
+  ],
+)
+
+// ---------------------------------------------------------------------------
+// Alloggiati (E2.3, E2.4)
+// ---------------------------------------------------------------------------
+
+/**
+ * One submission of a stay to the accommodated-persons registry (E2.3).
+ *
+ * Italian law requires an accommodation provider to report every guest to the
+ * Questura within 24 hours of arrival. **The obligation is the property's, not
+ * ours** — we build the payload and carry it, they remain the declarant. The
+ * contract mirror in docs/contracts says so in the words counsel approves.
+ *
+ * ## Why the payload is stored, and why that is not duplication
+ *
+ * `payload` is the exact text that was transmitted, and `payload_checksum` its
+ * digest. Keeping it looks redundant next to `registration_records` until the
+ * first time somebody asks what was actually filed for a guest whose details
+ * were later corrected — at which point the records say one thing and the
+ * authority holds another, and only this column can answer.
+ *
+ * It is also what makes E2.4 possible: once the receipt is in, the identity
+ * *documents* are destroyed, and this row is the entire remaining evidence that
+ * the property met its obligation.
+ *
+ * Not fiscal, under any reading (D11). This is public-security registration —
+ * it issues no document, computes no tax, and touches no revenue.
+ */
+export const alloggiatiSubmissions = pgTable(
+  'alloggiati_submissions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+
+    /**
+     * `restrict`, not `cascade`. This row is the evidence a legal obligation
+     * was met; deleting the reservation must never take it with them.
+     */
+    reservationId: uuid('reservation_id')
+      .notNull()
+      .references(() => reservations.id, { onDelete: 'restrict' }),
+
+    status: submissionStatus('status').notNull().default('staged'),
+
+    /** How many people this submission covers. One line each. */
+    guestCount: smallint('guest_count').notNull(),
+
+    /** The exact text transmitted. See the note above. */
+    payload: text('payload').notNull(),
+
+    /** SHA-256 of the payload. PRD B2 asks for a checksum per the spec. */
+    payloadChecksum: text('payload_checksum').notNull(),
+
+    /**
+     * What the authority sent back.
+     *
+     * Retained after the documents are destroyed (E2.4) — it is the receipt,
+     * and a property that cannot produce one has no defence that it filed.
+     */
+    receipt: jsonb('receipt'),
+
+    /** Why it failed, in words a person can act on. */
+    lastError: text('last_error'),
+
+    attempts: smallint('attempts').notNull().default(0),
+
+    /** Which channel carried it: `mock`, `alloggiati-web`, an intermediary. */
+    channel: text('channel').notNull(),
+
+    submittedAt: timestamp('submitted_at', { withTimezone: true }),
+    acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('alloggiati_submissions_property_status_idx').on(t.propertyId, t.status),
+    index('alloggiati_submissions_reservation_idx').on(t.reservationId),
+    /**
+     * One live submission per stay per channel.
+     *
+     * A retried job must not file the same guests twice: a duplicate schedina
+     * is a compliance problem for the property, and the authority has no
+     * interest in our retry policy. Re-filing after a genuine correction is a
+     * different act and gets its own decision, not an accidental second row.
+     */
+    unique('alloggiati_submissions_reservation_channel').on(t.reservationId, t.channel),
+    check('alloggiati_submissions_guest_count', sql`${t.guestCount} > 0`),
+    /** An acknowledgement without a receipt is not an acknowledgement. */
+    check(
+      'alloggiati_submissions_ack_has_receipt',
+      sql`${t.status} <> 'acknowledged' or ${t.receipt} is not null`,
     ),
   ],
 )

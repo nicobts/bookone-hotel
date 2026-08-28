@@ -3,6 +3,8 @@ import type { Logger } from 'pino'
 import type { JobQueue } from '@bookone/core/jobs'
 import type { PmsAdapter } from '@bookone/core/adapters'
 import { cancelBooking, quoteCancellation } from '@bookone/core/booking'
+import { applyJourneyCommand } from '@bookone/core/journey'
+import { userActor } from '@bookone/core/events'
 import {
   applyPaymentEvent,
   startCheckout,
@@ -367,6 +369,81 @@ export function createApp(deps: {
         if (!quote) return c.json({ error: 'unknown reservation' }, 404)
 
         return c.json(quote)
+      })
+
+      /**
+       * The guest has arrived (E3.1).
+       *
+       * Only reservation-scoped triggers are accepted — a staff tap in the
+       * console today, a guest tap on the stay surface, and later a door event
+       * from Rooms. All three become the same journey command, which is the
+       * whole point of ADR-013: a new trigger source plugs in without the
+       * journey changing.
+       *
+       * Confirming arrival is what starts the Alloggiati filing. That coupling
+       * lives here rather than inside the command because enqueuing is the
+       * worker's job and core must not know the queue exists (ADR-005).
+       */
+      .post('/jobs/arrival-confirm', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          reservationId?: string
+          userId?: string
+        }>()
+
+        if (!body.propertyId || !body.reservationId) {
+          return c.json({ error: 'propertyId and reservationId are required' }, 400)
+        }
+
+        const outcome = await applyJourneyCommand({
+          propertyId: body.propertyId,
+          reservationId: body.reservationId,
+          command: { type: 'arrival.confirm' },
+          // Named, when a person did it. "Who marked this guest arrived" is a
+          // question that gets asked, and `system` would be a small lie.
+          ...(body.userId ? { actor: userActor(body.userId) } : {}),
+        })
+
+        if (outcome.status === 'applied' || outcome.status === 'no-op') {
+          await queue.send(
+            'alloggiati.file',
+            { propertyId: body.propertyId, reservationId: body.reservationId },
+            { singletonKey: `alloggiati:${body.reservationId}` },
+          )
+        }
+
+        logger.info(
+          { reservationId: body.reservationId, outcome: outcome.status },
+          'arrival confirmed',
+        )
+
+        return c.json({ status: outcome.status })
+      })
+
+      /**
+       * File this stay now (E2.3).
+       *
+       * The manual submit the acceptance criterion requires to be always
+       * present. Automation that cannot be overridden is automation an owner
+       * cannot answer for — and they are the declarant.
+       *
+       * Safe to press repeatedly: the singleton key collapses duplicates, and
+       * the domain refuses to re-file something already submitted.
+       */
+      .post('/jobs/alloggiati-submit', async (c) => {
+        const body = await c.req.json<{ propertyId?: string; reservationId?: string }>()
+
+        if (!body.propertyId || !body.reservationId) {
+          return c.json({ error: 'propertyId and reservationId are required' }, 400)
+        }
+
+        const id = await queue.send(
+          'alloggiati.file',
+          { propertyId: body.propertyId, reservationId: body.reservationId },
+          { singletonKey: `alloggiati:${body.reservationId}` },
+        )
+
+        return c.json({ enqueued: id })
       })
 
       /**

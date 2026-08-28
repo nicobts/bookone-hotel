@@ -1,5 +1,12 @@
 import 'server-only'
 import { createClient } from '@supabase/supabase-js'
+import {
+  ALLOWED_DOCUMENT_TYPES,
+  DOCUMENT_BUCKET,
+  documentPath,
+  isAllowedDocumentType,
+  MAX_DOCUMENT_BYTES,
+} from '@bookone/core/storage'
 
 /**
  * Identity documents in EU Storage (E2.1, D9).
@@ -27,18 +34,10 @@ import { createClient } from '@supabase/supabase-js'
  * photograph.
  */
 
-/** Matches the bucket created in the journey migration. */
-const BUCKET = 'identity-documents'
-
-/** 10 MB, matching the bucket. A phone photo of a passport is 2–5 MB. */
-export const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024
-
-export const ALLOWED_DOCUMENT_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'application/pdf',
-] as const
+// The bucket name, the size cap, the allowed types and the path convention all
+// come from `@bookone/core/storage`. The worker deletes from the same bucket,
+// and two copies of a path convention is one deletion job that finds nothing.
+export { ALLOWED_DOCUMENT_TYPES, MAX_DOCUMENT_BYTES }
 
 function client() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -78,7 +77,7 @@ export async function storeIdentityDocument(input: {
   // Checked here as well as on the bucket. The bucket is the boundary that
   // cannot be bypassed; this one produces a message a guest can act on rather
   // than a storage error they cannot.
-  if (!ALLOWED_DOCUMENT_TYPES.includes(file.type as (typeof ALLOWED_DOCUMENT_TYPES)[number])) {
+  if (!isAllowedDocumentType(file.type)) {
     return { status: 'rejected', reason: 'wrong-type' }
   }
 
@@ -88,7 +87,7 @@ export async function storeIdentityDocument(input: {
   const path = documentPath(input)
 
   const { error } = await supabase.storage
-    .from(BUCKET)
+    .from(DOCUMENT_BUCKET)
     .upload(path, file, { upsert: true, contentType: file.type })
 
   if (error) return { status: 'failed', reason: error.message }
@@ -107,7 +106,9 @@ export async function signedDocumentUrl(path: string, seconds = 120): Promise<st
   const supabase = client()
   if (!supabase) return null
 
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, seconds)
+  const { data, error } = await supabase.storage
+    .from(DOCUMENT_BUCKET)
+    .createSignedUrl(path, seconds)
 
   return error ? null : (data?.signedUrl ?? null)
 }
@@ -123,22 +124,7 @@ export async function deleteIdentityDocument(path: string): Promise<boolean> {
   const supabase = client()
   if (!supabase) return false
 
-  const { error } = await supabase.storage.from(BUCKET).remove([path])
+  const { error } = await supabase.storage.from(DOCUMENT_BUCKET).remove([path])
 
   return !error
-}
-
-/**
- * Where one person's document lives.
- *
- * Property first, so a mis-scoped listing is visibly wrong rather than subtly
- * mixed. No guest name and no document number in the path — an object key is
- * not a place to put personal data, because keys turn up in logs.
- */
-function documentPath(input: {
-  propertyId: string
-  reservationId: string
-  guestIndex: number
-}): string {
-  return `${input.propertyId}/${input.reservationId}/${input.guestIndex}`
 }

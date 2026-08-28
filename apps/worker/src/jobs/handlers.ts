@@ -9,6 +9,14 @@ import {
 } from '@bookone/core/notifications'
 import { replayLostPayments, type PaymentAdapter } from '@bookone/core/payments'
 import { listPrecheckinDue, sendPrecheckinInvite } from '@bookone/core/journey'
+import {
+  checkPendingAcknowledgements,
+  deleteDocumentsForStay,
+  listDocumentsToDelete,
+  stageAlloggiati,
+  submitAlloggiati,
+  type AlloggiatiAdapter,
+} from '@bookone/core/alloggiati'
 import { runAgent } from '@bookone/agents/runner'
 import type { Logger } from 'pino'
 
@@ -26,6 +34,15 @@ export interface HandlerDeps {
   adapter: PmsAdapter
   notifications: NotificationProvider
   payments: PaymentAdapter
+  alloggiati: AlloggiatiAdapter
+  /**
+   * Destroys one stored object (E2.4).
+   *
+   * Injected rather than imported because core does not know what a bucket is
+   * and the worker does — and because a job that deletes files should be
+   * testable without a storage service.
+   */
+  deleteObject: (path: string) => Promise<boolean>
   logger: Logger
 }
 
@@ -60,7 +77,7 @@ const PAYMENT_REPLAY_AFTER_SECONDS = 5 * 60
 const PRECHECKIN_WINDOW_HOURS = 50
 
 export async function registerHandlers(deps: HandlerDeps): Promise<void> {
-  const { queue, adapter, notifications, payments, logger } = deps
+  const { queue, adapter, notifications, payments, alloggiati, deleteObject, logger } = deps
 
   await queue.work('reservation.reflect', async (job) => {
     const { propertyId, reservationId } = job.data
@@ -259,6 +276,83 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
         { propertyId, notificationId: outcome.notificationId },
         { singletonKey: `notify:${outcome.notificationId}` },
       )
+    }
+  })
+
+  await queue.work('alloggiati.file', async (job) => {
+    const { propertyId, reservationId } = job.data
+
+    const staged = await stageAlloggiati({ propertyId, reservationId, channel: alloggiati.channel })
+
+    if (staged.status === 'incomplete') {
+      // Not an error and not retryable: the party is missing a field only the
+      // guest can supply. It surfaces in the exceptions inbox with the list.
+      logger.warn(
+        { jobId: job.id, reservationId, issues: staged.issues.length },
+        'alloggiati.file — party incomplete',
+      )
+      return
+    }
+
+    if (staged.status === 'rejected') {
+      logger.warn({ jobId: job.id, reservationId, reason: staged.reason }, 'alloggiati.file')
+      return
+    }
+
+    const filed = await submitAlloggiati({ adapter: alloggiati }, { propertyId, reservationId })
+
+    logger.info(
+      { jobId: job.id, reservationId, outcome: filed.status, channel: alloggiati.channel },
+      'alloggiati.file',
+    )
+
+    // Rethrown so the queue retries. A rejected payload is not retryable and is
+    // already recorded on the row for the console to show.
+    if (filed.status === 'failed' && filed.retryable) throw new Error(filed.reason)
+
+    if (filed.status === 'acknowledged') {
+      await queue.send('documents.purge', {}, { singletonKey: 'documents-purge' })
+    }
+  })
+
+  await queue.work('alloggiati.check', async (job) => {
+    const result = await checkPendingAcknowledgements(
+      { adapter: alloggiati },
+      { limit: SWEEP_BATCH },
+    )
+
+    if (result.checked > 0) {
+      logger.info(
+        { jobId: job.id, checked: result.checked, acknowledged: result.acknowledged },
+        'alloggiati.check',
+      )
+    }
+
+    if (result.acknowledged > 0) {
+      await queue.send('documents.purge', {}, { singletonKey: 'documents-purge' })
+    }
+  })
+
+  await queue.work('documents.purge', async (job) => {
+    const due = await listDocumentsToDelete({ limit: SWEEP_BATCH })
+
+    let deleted = 0
+    let failed = 0
+
+    for (const stay of due) {
+      const outcome = await deleteDocumentsForStay(
+        { deleteObject },
+        { propertyId: stay.propertyId, reservationId: stay.reservationId },
+      )
+
+      deleted += outcome.deleted
+      failed += outcome.failed
+    }
+
+    // Always logged when it did anything. This job destroys personal data on
+    // purpose (E2.4), and a silent one is a job nobody can show worked.
+    if (deleted > 0 || failed > 0) {
+      logger.info({ jobId: job.id, stays: due.length, deleted, failed }, 'documents.purge')
     }
   })
 

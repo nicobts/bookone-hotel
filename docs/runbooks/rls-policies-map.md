@@ -67,6 +67,7 @@ only (`user_property_ids_admin()`).
 | `fee_events` | member | — ¹⁸ | — ¹⁸ | — ¹⁸ | 2026-08-28 |
 | `journey_states` | member | — ¹⁹ | — ¹⁹ | — ¹⁹ | 2026-08-28 |
 | `registration_records` | member | — ²⁰ | — ²⁰ | — ²¹ | 2026-08-28 |
+| `alloggiati_submissions` | member | — ²² | — ²² | — ²³ | 2026-08-29 |
 
 1. `with check (true)`. A new property has no members yet, so nothing else could
    pass; the `on_property_created` trigger makes the creator its owner in the
@@ -131,6 +132,14 @@ only (`user_property_ids_admin()`).
     the row: the retention job nulls `document_path`, stamps `deleted_at` and
     emits an event. Deleting the row would destroy the audit trail proving the
     deletion happened.
+22. Written by the staging and submission paths, which validate the party
+    first. A hand-written row would assert a filing that does not exist, and a
+    hand-edited acknowledgement is worse than none because it looks like proof.
+    The property is the declarant — this row is what they would produce to show
+    they complied.
+23. After the identity documents are destroyed under E2.4, this row is the only
+    remaining evidence that the filing happened. Deleting it would leave a
+    property that met its obligation unable to show it.
 
 ## Exceptions — not property-scoped, and why
 

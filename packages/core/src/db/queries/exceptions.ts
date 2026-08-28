@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, isNull, lt, notExists, sql } from 'drizzle-orm'
 import { withUser } from '../session'
 import { discrepancies, domainEvents, externalRefs, reservations } from '../schema'
+import { listOverdueAlloggiati } from './arrivals'
 
 /**
  * The exceptions inbox (PRD C1, D15).
@@ -13,7 +14,7 @@ import { discrepancies, domainEvents, externalRefs, reservations } from '../sche
  * come back (ADR-018).
  */
 
-export type ExceptionKind = 'unreflected-reservation' | 'discrepancy'
+export type ExceptionKind = 'unreflected-reservation' | 'discrepancy' | 'alloggiati-overdue'
 
 export interface ExceptionItem {
   id: string
@@ -38,6 +39,15 @@ export interface ExceptionItem {
  * and an inbox that cries wolf gets ignored, which costs more than the delay.
  */
 export const UNREFLECTED_AFTER_SECONDS = 60
+
+/**
+ * When a registry filing counts as overdue (E2.3).
+ *
+ * The obligation is 24 hours from arrival. Twenty leaves four hours to act — an
+ * alert that fires after the deadline is a notification of a breach rather than
+ * a chance to avoid one, and this inbox exists to be actionable (D15).
+ */
+export const ALLOGGIATI_OVERDUE_HOURS = 20
 
 interface FailureDetail {
   code: string
@@ -206,10 +216,40 @@ export async function listOpenDiscrepancies(
 
 /** Everything needing a person at this property, newest first. */
 export async function listExceptions(userId: string, propertyId: string): Promise<ExceptionItem[]> {
-  const [unreflected, open] = await Promise.all([
+  const [unreflected, open, overdue] = await Promise.all([
     listUnreflectedReservations(userId, propertyId),
     listOpenDiscrepancies(userId, propertyId),
+    listOverdueFilings(userId, propertyId),
   ])
 
-  return [...unreflected, ...open].sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime())
+  return [...unreflected, ...open, ...overdue].sort(
+    (a, b) => b.occurredAt.getTime() - a.occurredAt.getTime(),
+  )
+}
+
+/**
+ * Registry filings that are late (E2.3, PRD C1).
+ *
+ * The obligation is the property's and the deadline is 24 hours from arrival,
+ * so this is the one exception class where the cost of ignoring it is a fine
+ * rather than an annoyed guest. It is retryable — pressing the action files
+ * again — because the common causes are a channel that was down and a party
+ * that was incomplete when the guest arrived.
+ */
+async function listOverdueFilings(userId: string, propertyId: string): Promise<ExceptionItem[]> {
+  const rows = await listOverdueAlloggiati(userId, propertyId, {
+    hoursAfterArrival: ALLOGGIATI_OVERDUE_HOURS,
+  })
+
+  return rows.map((row) => ({
+    id: `alloggiati:${row.reservationId}`,
+    kind: 'alloggiati-overdue' as const,
+    subject: row.reservationId,
+    code: row.state,
+    detail: row.reference || null,
+    // The arrival day, because that is what the deadline runs from and what an
+    // owner sorts by when several are late.
+    occurredAt: new Date(`${row.arrivalDate}T00:00:00Z`),
+    retryable: true,
+  }))
 }

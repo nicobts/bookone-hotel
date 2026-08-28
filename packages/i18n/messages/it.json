@@ -100,7 +100,29 @@
       "retry": "Riprova ora",
       "review": "Esamina",
       "reason": "Motivo",
-      "waiting": "In attesa di invio"
+      "waiting": "In attesa di invio",
+      "alloggiatiTitle": "Comunicazione alla questura in ritardo",
+      "alloggiatiBody": "Questo ospite è arrivato da più di 20 ore e l'invio non è confermato."
+    },
+    "arrival": {
+      "title": "Arrivo",
+      "confirmArrival": "L'ospite è arrivato",
+      "arrived": "Arrivato",
+      "party": "Ospiti",
+      "filing": "Comunicazione alla questura",
+      "notFiled": "Non ancora inviata",
+      "staged": "Pronta per l'invio",
+      "submitted": "Inviata, in attesa di conferma",
+      "acknowledged": "Confermata dall'autorità",
+      "failed": "Invio non riuscito",
+      "submitNow": "Invia ora",
+      "missing": "Manca prima di poter inviare:",
+      "guest": "Ospite {n}",
+      "documentHeld": "Documento conservato",
+      "documentDeleted": "Documento eliminato",
+      "simulated": "Nessun canale è collegato — non viene inviato nulla ad alcuna autorità.",
+      "receipt": "Ricevuta conservata",
+      "checksum": "Checksum del file"
     }
   },
   "noProperty": {
@@ -313,7 +335,6 @@
       "heading": "Chi viaggia",
       "lead": "Ospite principale",
       "guest": "Ospite {n}",
-      "fullName": "Nome e cognome",
       "birthDate": "Data di nascita",
       "nationality": "Cittadinanza",
       "documentType": "Tipo di documento",
@@ -322,7 +343,18 @@
       "idCard": "Carta d'identità",
       "drivingLicence": "Patente di guida",
       "save": "Salva e continua",
-      "hint": "La struttura è tenuta per legge a registrare ogni ospite che soggiorna in camera."
+      "hint": "La struttura è tenuta per legge a registrare ogni ospite che soggiorna in camera.",
+      "surname": "Cognome",
+      "givenName": "Nome",
+      "sex": "Sesso",
+      "male": "Maschio",
+      "female": "Femmina",
+      "birthPlace": "Luogo di nascita",
+      "birthCountry": "Stato di nascita",
+      "citizenship": "Cittadinanza",
+      "documentIssuer": "Rilasciato da",
+      "countryHint": "Codice stato di due lettere, es. IT, AT, DE, SI",
+      "required": "La struttura deve comunicarli alla questura, quindi sono tutti obbligatori."
     },
     "documents": {
       "heading": "Documenti d'identità",

@@ -46,16 +46,28 @@ export async function submitParty(context: Context, formData: FormData): Promise
   const members: PartyInput[] = []
 
   for (let index = 0; index < size; index += 1) {
-    const fullName = String(formData.get(`name-${index}`) ?? '').trim()
-    if (!fullName) continue
+    const surname = String(formData.get(`surname-${index}`) ?? '').trim()
+    const givenName = String(formData.get(`given-${index}`) ?? '').trim()
+
+    // A person needs both halves to be filed at all. One without the other is
+    // an incomplete row, not half a guest — skipping keeps the form resumable
+    // and the console tells the owner exactly who is still missing.
+    if (!surname || !givenName) continue
+
+    const sex = String(formData.get(`sex-${index}`) ?? '')
 
     members.push({
       guestIndex: index,
-      fullName,
+      surname,
+      givenName,
+      ...(sex === 'm' || sex === 'f' ? { sex } : {}),
       ...optional(formData, `birth-${index}`, 'birthDate'),
-      ...optional(formData, `nationality-${index}`, 'nationality'),
+      ...optional(formData, `birthPlace-${index}`, 'birthPlace'),
+      ...optional(formData, `birthCountry-${index}`, 'birthCountry'),
+      ...optional(formData, `citizenship-${index}`, 'citizenship'),
       ...optional(formData, `docType-${index}`, 'documentType'),
       ...optional(formData, `docNumber-${index}`, 'documentNumber'),
+      ...optional(formData, `docIssuer-${index}`, 'documentIssuer'),
     })
   }
 
@@ -129,11 +141,16 @@ export async function submitArrivalTime(context: Context, formData: FormData): P
   redirect(stayUrl(context, outcome.status === 'set' ? '?saved=arrival' : '?error=arrival'))
 }
 
-function optional(
-  formData: FormData,
-  field: string,
-  key: 'birthDate' | 'nationality' | 'documentType' | 'documentNumber',
-): Partial<PartyInput> {
+type OptionalField =
+  | 'birthDate'
+  | 'birthPlace'
+  | 'birthCountry'
+  | 'citizenship'
+  | 'documentType'
+  | 'documentNumber'
+  | 'documentIssuer'
+
+function optional(formData: FormData, field: string, key: OptionalField): Partial<PartyInput> {
   const value = String(formData.get(field) ?? '').trim()
 
   return value ? ({ [key]: value } as Partial<PartyInput>) : {}

@@ -65,6 +65,24 @@ const PAYMENT_REPLAY = '*/2 * * * *'
  */
 const PRECHECKIN_SWEEP = '7 * * * *'
 
+/**
+ * Chases acknowledgements the channel has not returned yet (E2.3).
+ *
+ * Every ten minutes. Only meaningful for a channel that queues — Alloggiati Web
+ * acknowledges on upload — and the channel is not chosen yet, so it has to be
+ * correct for both.
+ */
+const ALLOGGIATI_CHECK = '*/10 * * * *'
+
+/**
+ * Destroys identity documents whose filing was acknowledged (E2.4).
+ *
+ * Hourly. Nothing about the guest's experience depends on it running sooner,
+ * and it deletes personal data — a job like that should be predictable rather
+ * than eager.
+ */
+const DOCUMENT_PURGE = '23 * * * *'
+
 export async function registerSchedules(deps: { queue: JobQueue; logger: Logger }): Promise<void> {
   const { queue, logger } = deps
 
@@ -125,6 +143,8 @@ export async function registerSchedules(deps: { queue: JobQueue; logger: Logger 
   await queue.schedule('notification.sweep', NOTIFICATION_SWEEP, {})
   await queue.schedule('payment.replay', PAYMENT_REPLAY, {})
   await queue.schedule('precheckin.sweep', PRECHECKIN_SWEEP, {})
+  await queue.schedule('alloggiati.check', ALLOGGIATI_CHECK, {})
+  await queue.schedule('documents.purge', DOCUMENT_PURGE, {})
 
   logger.info(
     {
@@ -136,6 +156,8 @@ export async function registerSchedules(deps: { queue: JobQueue; logger: Logger 
       notificationSweep: NOTIFICATION_SWEEP,
       paymentReplay: PAYMENT_REPLAY,
       precheckinSweep: PRECHECKIN_SWEEP,
+      alloggiatiCheck: ALLOGGIATI_CHECK,
+      documentPurge: DOCUMENT_PURGE,
     },
     'schedules registered',
   )

@@ -338,3 +338,61 @@ export async function requestCancellation(input: {
     return { status: 'rejected' }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Arrival and Alloggiati (E2.3, E3.1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Marks a guest arrived, which starts the registry filing.
+ *
+ * Routed through the worker because confirming arrival enqueues work, and the
+ * queue lives there. The command itself is the journey machine's — the console
+ * is one trigger source among several (ADR-013), not a special one.
+ */
+export async function confirmArrival(input: {
+  propertyId: string
+  reservationId: string
+  userId: string
+}): Promise<boolean> {
+  return post('/jobs/arrival-confirm', input)
+}
+
+/**
+ * Files this stay now (E2.3).
+ *
+ * The manual submit the acceptance criterion requires to be always present.
+ * The property is the declarant; automation they cannot override is automation
+ * they cannot answer for.
+ */
+export async function submitAlloggiatiNow(input: {
+  propertyId: string
+  reservationId: string
+}): Promise<boolean> {
+  return post('/jobs/alloggiati-submit', input)
+}
+
+async function post(path: string, body: unknown): Promise<boolean> {
+  const base = workerUrl()
+  const secret = token()
+
+  if (!base || !secret) {
+    console.warn(`[worker] not configured; cannot call ${path}`)
+    return false
+  }
+
+  try {
+    const response = await fetch(`${base}${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${secret}` },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(8000),
+    })
+
+    return response.ok
+  } catch (error) {
+    console.warn(`[worker] could not reach ${path}`, error)
+
+    return false
+  }
+}

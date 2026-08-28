@@ -100,7 +100,29 @@
       "retry": "Jetzt erneut senden",
       "review": "Prüfen",
       "reason": "Grund",
-      "waiting": "Wartet auf Übertragung"
+      "waiting": "Wartet auf Übertragung",
+      "alloggiatiTitle": "Polizeiliche Meldung überfällig",
+      "alloggiatiBody": "Dieser Gast ist vor über 20 Stunden angekommen und die Meldung ist nicht bestätigt."
+    },
+    "arrival": {
+      "title": "Anreise",
+      "confirmArrival": "Gast ist angekommen",
+      "arrived": "Angekommen",
+      "party": "Gäste",
+      "filing": "Polizeiliche Meldung",
+      "notFiled": "Noch nicht gemeldet",
+      "staged": "Meldebereit",
+      "submitted": "Gemeldet, Bestätigung ausstehend",
+      "acknowledged": "Von der Behörde bestätigt",
+      "failed": "Meldung fehlgeschlagen",
+      "submitNow": "Jetzt melden",
+      "missing": "Fehlt noch für die Meldung:",
+      "guest": "Gast {n}",
+      "documentHeld": "Dokument vorhanden",
+      "documentDeleted": "Dokument gelöscht",
+      "simulated": "Kein Kanal angebunden — es wird nichts an eine Behörde gemeldet.",
+      "receipt": "Bestätigung vorhanden",
+      "checksum": "Prüfsumme"
     }
   },
   "noProperty": {
@@ -313,7 +335,6 @@
       "heading": "Wer reist mit",
       "lead": "Hauptgast",
       "guest": "Gast {n}",
-      "fullName": "Vor- und Nachname",
       "birthDate": "Geburtsdatum",
       "nationality": "Staatsangehörigkeit",
       "documentType": "Dokumentart",
@@ -322,7 +343,18 @@
       "idCard": "Personalausweis",
       "drivingLicence": "Führerschein",
       "save": "Speichern und weiter",
-      "hint": "Das Haus ist gesetzlich verpflichtet, jeden Gast im Zimmer zu melden."
+      "hint": "Das Haus ist gesetzlich verpflichtet, jeden Gast im Zimmer zu melden.",
+      "surname": "Nachname",
+      "givenName": "Vorname",
+      "sex": "Geschlecht",
+      "male": "Männlich",
+      "female": "Weiblich",
+      "birthPlace": "Geburtsort",
+      "birthCountry": "Geburtsland",
+      "citizenship": "Staatsangehörigkeit",
+      "documentIssuer": "Ausgestellt von",
+      "countryHint": "Zweibuchstabiger Ländercode, z. B. IT, AT, DE, SI",
+      "required": "Das Haus muss diese Angaben der Polizei melden, daher sind alle erforderlich."
     },
     "documents": {
       "heading": "Ausweisdokumente",

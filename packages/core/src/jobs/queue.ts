@@ -40,6 +40,12 @@ export const jobNames = [
   'precheckin.sweep',
   /** Send one invitation. Fanned out by the sweep, one per stay. */
   'precheckin.invite',
+  /** Build and file one stay with the registry (E2.3). */
+  'alloggiati.file',
+  /** Ask the channel about filings it has not answered yet. */
+  'alloggiati.check',
+  /** Destroy identity documents for stays whose filing was acknowledged (E2.4). */
+  'documents.purge',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -88,6 +94,14 @@ export interface JobPayloads {
   'payment.replay': Record<string, never>
   'precheckin.sweep': Record<string, never>
   'precheckin.invite': { propertyId: string; reservationId: string }
+  /**
+   * Stages *and* files, because they are one intention: a guest arrived, so
+   * declare them. The two steps stay separate inside the domain because they
+   * fail for different reasons — see `stageAlloggiati`.
+   */
+  'alloggiati.file': { propertyId: string; reservationId: string }
+  'alloggiati.check': Record<string, never>
+  'documents.purge': Record<string, never>
 }
 
 export interface SendOptions {

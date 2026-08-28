@@ -100,10 +100,16 @@ try {
   // The two properties are deliberately themed differently. One property
   // looking like the other is how per-property theming passes review while
   // being broken.
+  //
+  // Hotel Sonja defaults to English and Garni Alpin to Italian, so both
+  // readable locales are exercised by default. German and Slovenian are still
+  // reachable by changing the URL segment — the point of the four-locale
+  // support is that any of them works, not that development happens in one
+  // nobody on the team reads.
   const [sonja] = await sql`
     insert into properties (slug, name, locale_default, languages, timezone, settings)
     values (
-      'hotel-sonja', 'Hotel Sonja', 'de', '["de","it","en"]'::jsonb, 'Europe/Rome',
+      'hotel-sonja', 'Hotel Sonja', 'en', '["en","de","it"]'::jsonb, 'Europe/Rome',
       '{
         "theme": {"primary": "#1F6F5C", "accent": "#E0A458"},
         "contact": {"email": "reception@hotel-sonja.test", "phone": "+39 0471 000001"},
@@ -160,8 +166,10 @@ try {
   console.log('Seeded 2 properties, 2 accounts, 6 room types, 2 events.')
   console.log('')
   console.log('  Booking surfaces (prices arrive once the worker refreshes availability):')
-  console.log('    http://localhost:3000/de/book/hotel-sonja')
-  console.log('    http://localhost:3000/it/book/garni-alpin')
+  console.log('    http://localhost:3000/en/book/hotel-sonja   (English)')
+  console.log('    http://localhost:3000/it/book/garni-alpin   (Italian)')
+  console.log('')
+  console.log('  Any locale works on any property — swap the first segment for de or sl.')
   console.log('')
   console.log('  Hotel Sonja takes a 30% deposit (simulated payment — no money moves);')
   console.log('  Garni Alpin takes none, so both paths are reachable.')

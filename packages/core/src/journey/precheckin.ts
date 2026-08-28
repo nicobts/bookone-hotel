@@ -200,13 +200,32 @@ export async function resolveStay(token: string, now: Date = new Date()): Promis
   })
 }
 
+/**
+ * What the pre-arrival form collects for one person.
+ *
+ * Shaped by what the property is legally required to file (E2.3), not by what
+ * is pleasant to type. Surname and given name are separate because the registry
+ * files them separately and splitting a free-text full name is a guess that
+ * gets Spanish and Hungarian names wrong; sex and citizenship are there because
+ * a filing without them is rejected.
+ *
+ * Everything except the name is optional *here* and required at staging. That
+ * split is deliberate: a guest who fills in half the form on a train has their
+ * half saved, and the console tells the owner exactly what is still missing
+ * rather than the form refusing to save anything.
+ */
 export interface PartyInput {
   guestIndex: number
-  fullName: string
+  surname: string
+  givenName: string
+  sex?: 'm' | 'f'
   birthDate?: string
-  nationality?: string
+  birthPlace?: string
+  birthCountry?: string
+  citizenship?: string
   documentType?: string
   documentNumber?: string
+  documentIssuer?: string
 }
 
 export type SavePartyOutcome =
@@ -230,7 +249,9 @@ export async function saveParty(input: {
 }): Promise<SavePartyOutcome> {
   const { propertyId, reservationId } = input
 
-  const members = input.members.filter((member) => member.fullName.trim().length > 0)
+  const members = input.members.filter(
+    (member) => member.surname.trim().length > 0 && member.givenName.trim().length > 0,
+  )
 
   if (members.length === 0) {
     return { status: 'rejected', reason: 'at least one guest name is required' }
@@ -245,11 +266,20 @@ export async function saveParty(input: {
     db.transaction(async (tx) => {
       for (const member of members) {
         const data = {
-          fullName: member.fullName.trim(),
+          surname: member.surname.trim(),
+          givenName: member.givenName.trim(),
+          // Composed once, here, so every surface that shows a name shows the
+          // same one. Deriving it per screen is how two screens end up
+          // disagreeing about what somebody is called.
+          fullName: `${member.givenName.trim()} ${member.surname.trim()}`,
+          ...(member.sex ? { sex: member.sex } : {}),
           ...(member.birthDate ? { birthDate: member.birthDate } : {}),
-          ...(member.nationality ? { nationality: member.nationality } : {}),
+          ...(member.birthPlace ? { birthPlace: member.birthPlace } : {}),
+          ...(member.birthCountry ? { birthCountry: member.birthCountry.toUpperCase() } : {}),
+          ...(member.citizenship ? { citizenship: member.citizenship.toUpperCase() } : {}),
           ...(member.documentType ? { documentType: member.documentType } : {}),
           ...(member.documentNumber ? { documentNumber: member.documentNumber } : {}),
+          ...(member.documentIssuer ? { documentIssuer: member.documentIssuer } : {}),
         }
 
         await tx
