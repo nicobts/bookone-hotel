@@ -4,6 +4,7 @@ import { MockEricsoftAdapter } from '@bookone/adapters/mock-ericsoft'
 import { createApp } from './app'
 import { loadEnv } from './env'
 import { registerHandlers } from './jobs/handlers'
+import { registerSchedules } from './jobs/schedules'
 import { PgBossQueue } from './queue/pg-boss-queue'
 
 // ADR-003: persistent Node process. Not edge, not serverless — see README.
@@ -30,6 +31,7 @@ const server = serve({ fetch: app.fetch, port: env.WORKER_PORT }, (info) => {
 
 await queue.start()
 await registerHandlers({ queue, adapter, logger })
+await registerSchedules({ queue, logger })
 logger.info({ adapter: adapter.system }, 'queue started, handlers registered')
 
 /**

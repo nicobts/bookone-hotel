@@ -17,9 +17,9 @@ worse than none, because it is read as current.
 | 008 | Mock-first connector | ✅ as-built | `MockEricsoftAdapter` with counted failure injection, plus the shared contract suite the real adapter must pass before the swap. Verified by negative control: removing the idempotency guard fails the contract |
 | 009 | Voice hard tool boundaries | ⬜ WS-B | Not this workstream |
 | 010 | Stripe behind `PaymentAdapter` | ⬜ not yet | Sprint 4 |
-| 011 | Agents as first-class workers, tiered autonomy | 🟨 partial | `agent_runs` exists and is policed (no session insert — a human-recorded run would be a forged audit entry). Runner is Sprint 2 |
+| 011 | Agents as first-class workers, tiered autonomy | ✅ as-built | Registry, runner and typed tools; AG-05 live on reconciliation. The runner refuses an ungranted tool, scopes to one property, and records every run — including the ones that fail |
 | 012 | `LlmProvider` abstraction; no vendor SDK imports | ✅ as-built | Interface and registry in `src/llm`; registration refuses any provider without declared EU processing, a region, a sub-processor register entry and a verification under a year old. No provider registered yet — that waits for a real requirement |
-| 013 | Journey state machine is the single source of stay truth | ⬜ not yet | Sprint 2 |
+| 013 | Journey state machine is the single source of stay truth | ⬜ not yet | `journey_states` and the evented commands land with the pre-arrival journey in Sprint 5 |
 | 014 | Reference implementations over blank-page design | ⬜ not yet | First design note is due with the booking surface (Sprint 3). The console shell follows the BookOne design system, which is our own and needs no note |
 | 015 | Pricing in €/room/month equivalence | ⬜ not yet | Sprint 8 reporting |
 | 016 | Property is a URL segment | ✅ as-built | `/[locale]/[property]/console/…`; verified in a browser that a non-member typing another slug gets a 404, not a redirect |

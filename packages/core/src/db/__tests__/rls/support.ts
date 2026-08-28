@@ -138,9 +138,26 @@ export async function seed(): Promise<Fixture> {
           returning id`,
     )
 
+    // Room types, and a reservation that actually points at one. Without them
+    // the reconciliation fixture cannot diverge on room type and the
+    // availability refresh has nothing to match a connector code against —
+    // both would pass by finding nothing rather than by working.
+    const [roomType] = await db.execute<{ id: string }>(
+      sql`insert into room_types (property_id, code, capacity)
+          values (${propertyId}, 'DBL', 2)
+          returning id`,
+    )
+
+    await db.execute(
+      sql`insert into room_types (property_id, code, capacity)
+          values (${propertyId}, 'SGL', 1)`,
+    )
+
     const [reservation] = await db.execute<{ id: string }>(
-      sql`insert into reservations (property_id, guest_id, arrival_date, departure_date, status)
-          values (${propertyId}, ${guest!.id}, '2026-09-01', '2026-09-04', 'confirmed')
+      sql`insert into reservations (property_id, guest_id, room_type_id, arrival_date,
+                                    departure_date, status)
+          values (${propertyId}, ${guest!.id}, ${roomType!.id}, '2026-09-01', '2026-09-04',
+                  'confirmed')
           returning id`,
     )
 

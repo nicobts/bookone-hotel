@@ -13,8 +13,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "vitest run --exclude 'src/evals/**'",
-    "test:evals": "vitest run --dir src/evals"
+    "test": "vitest run",
+    "test:evals": "vitest run --config vitest.evals.config.ts"
   },
   "dependencies": {
     "@bookone/core": "workspace:*",

@@ -42,7 +42,18 @@ export interface JobPayloads {
    */
   'reservation.reflect': { propertyId: string; reservationId: string }
   'reconcile.nightly': { propertyId: string; domain: string }
-  'agent.run': { propertyId: string; agent: string; triggerEventId?: string }
+  /**
+   * `input` is what the agent is being asked about. Carried on the job rather
+   * than re-read by the handler: a fanned-out run must classify the values the
+   * comparison actually saw, not whatever the row says by the time the job is
+   * picked up.
+   */
+  'agent.run': {
+    propertyId: string
+    agent: string
+    triggerEventId?: string
+    input?: Record<string, unknown>
+  }
 }
 
 export interface SendOptions {
