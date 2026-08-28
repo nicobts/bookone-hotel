@@ -12,6 +12,13 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   WORKER_PORT: z.coerce.number().int().positive().default(8787),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+
+  /**
+   * Required, with no default. pg-boss would otherwise fail on its first poll
+   * — a minute after boot, in a log nobody is reading — instead of here, where
+   * the process refuses to start and says why.
+   */
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required for the job queue'),
 })
 
 export type Env = z.infer<typeof envSchema>

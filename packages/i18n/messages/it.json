@@ -84,7 +84,16 @@
     "exceptions": {
       "title": "Eccezioni",
       "subtitle": "Solo ciò che richiede una persona. Il resto si è gestito da sé.",
-      "empty": "Non serve il tuo intervento al momento."
+      "empty": "Non serve il tuo intervento al momento.",
+      "items": "{count, plural, =0 {Niente} one {# elemento} other {# elementi}}",
+      "unreflectedTitle": "Prenotazione non ancora nel PMS",
+      "unreflectedBody": "Creata qui e non ancora confermata dal gestionale della struttura.",
+      "discrepancyTitle": "I due sistemi non concordano",
+      "discrepancyBody": "Rilevato dalla riconciliazione notturna.",
+      "retry": "Riprova ora",
+      "review": "Esamina",
+      "reason": "Motivo",
+      "waiting": "In attesa di invio"
     }
   },
   "noProperty": {

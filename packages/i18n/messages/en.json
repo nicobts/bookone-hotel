@@ -84,7 +84,16 @@
     "exceptions": {
       "title": "Exceptions",
       "subtitle": "Only what needs a person. Everything else has handled itself.",
-      "empty": "Nothing needs you right now."
+      "empty": "Nothing needs you right now.",
+      "items": "{count, plural, =0 {Nothing} one {# item} other {# items}}",
+      "unreflectedTitle": "Reservation not yet in the PMS",
+      "unreflectedBody": "Created here and not acknowledged by the property management system.",
+      "discrepancyTitle": "The two systems disagree",
+      "discrepancyBody": "Found by the nightly reconciliation.",
+      "retry": "Retry now",
+      "review": "Review",
+      "reason": "Reason",
+      "waiting": "Waiting to be sent"
     }
   },
   "noProperty": {

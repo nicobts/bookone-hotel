@@ -53,6 +53,8 @@ only (`user_property_ids_admin()`).
 | `external_refs` | member | — ⁶ | — ⁶ | — ⁶ | 2026-08-28 |
 | `domain_events` | member | member | — ⁷ | — ⁷ | 2026-08-28 |
 | `agent_runs` | member | — ⁸ | member ⁹ | — | 2026-08-28 |
+| `reconciliation_runs` | member | — ¹⁰ | — ¹⁰ | — ¹¹ | 2026-08-28 |
+| `discrepancies` | member | — ¹² | member ¹³ | — ¹¹ | 2026-08-28 |
 
 1. `with check (true)`. A new property has no members yet, so nothing else could
    pass; the `on_property_created` trigger makes the creator its owner in the
@@ -75,6 +77,15 @@ only (`user_property_ids_admin()`).
 9. Accepting or rejecting a T2 proposal writes `outcome` and `reviewed_by` —
    the evidence a tier may widen (06 §4), so the reviewing human must be able to
    write it.
+10. Written by the nightly job under the service role. A run recorded by a
+    person would be a fabricated parity measurement, and these rows are the
+    evidence D11's condition C2 asks for.
+11. A discrepancy explained away and then deleted leaves a parity ratio nobody
+    can reproduce — and that ratio is the number the fiscal-core gate turns on.
+12. A discrepancy is an observation that two systems disagree. A person cannot
+    observe that into existence.
+13. Resolving one writes `status`, `explanation`, `resolved_by` and
+    `resolved_at` — the one-tap action the exceptions inbox offers (PRD C1).
 
 ## Exceptions — not property-scoped, and why
 

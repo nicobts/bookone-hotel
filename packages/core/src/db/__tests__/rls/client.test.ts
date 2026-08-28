@@ -88,3 +88,29 @@ describe('the anonymous key alone', () => {
     expect(rows).toEqual([])
   })
 })
+
+describe('the reconciliation surface over PostgREST', () => {
+  it('shows only the caller’s own discrepancies', async () => {
+    const rows = (await selectAs(fx.alpha.user, 'discrepancies', 'select=id')) as { id: string }[]
+
+    expect(rows.map((r) => r.id)).toEqual([fx.alpha.discrepancyId])
+  })
+
+  it('shows only the caller’s own reconciliation runs', async () => {
+    const rows = (await selectAs(fx.alpha.user, 'reconciliation_runs', 'select=id')) as {
+      id: string
+    }[]
+
+    expect(rows.map((r) => r.id)).toEqual([fx.alpha.runId])
+  })
+
+  it('gets zero rows naming another property’s discrepancy by id', async () => {
+    const rows = await selectAs(
+      fx.alpha.user,
+      'discrepancies',
+      `select=id&id=eq.${fx.beta.discrepancyId}`,
+    )
+
+    expect(rows).toEqual([])
+  })
+})

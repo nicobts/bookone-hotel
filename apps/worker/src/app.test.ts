@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { app } from './app'
+import { createApp } from './app'
+
+/** Stand-ins: these tests exercise routing, not the queue or the connector. */
+const deps = {
+  queue: {
+    send: async () => 'job-1',
+    work: async () => undefined,
+    schedule: async () => undefined,
+    start: async () => undefined,
+    stop: async () => undefined,
+  },
+  adapter: {
+    system: 'mock',
+    healthCheck: async () => ({ healthy: true, checkedAt: new Date() }),
+  },
+  logger: { info: () => undefined },
+} as never
+
+const app = createApp(deps)
 
 describe('worker http surface', () => {
   it('reports health', async () => {

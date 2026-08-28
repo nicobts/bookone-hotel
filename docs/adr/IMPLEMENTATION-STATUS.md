@@ -11,7 +11,7 @@ worse than none, because it is read as current.
 | 002 | Fiscal core gated | ✅ as-built | Nothing fiscal exists, and the authority router refuses to grant the domain to the platform whatever a property row says — a row is data, so "we would never configure that" is not a control |
 | 003 | Two deployables; worker is persistent | ✅ as-built | `apps/web`, `apps/worker`; constraint stated in the worker README |
 | 004 | Hono on `@hono/node-server` | ✅ as-built | `apps/worker/src/app.ts` |
-| 005 | pg-boss behind a `JobQueue` interface | ⬜ not yet | Dependency installed; the interface and wiring land with the sync jobs in Sprint 2 |
+| 005 | pg-boss behind a `JobQueue` interface | ✅ as-built | `JobQueue` port in core, `PgBossQueue` the only file importing pg-boss. Verified live: enqueue to reflected in 780ms, against a 60s requirement |
 | 006 | Supabase EU; Drizzle for domain access | 🟨 partial | Schema, access layer and Auth built on local Supabase. Cloud EU project not yet provisioned |
 | 007 | RLS on every client-reachable table, tested in CI | ✅ as-built | 10/10 tables, both suites green, negative control verified, and now a CI job of its own |
 | 008 | Mock-first connector | ✅ as-built | `MockEricsoftAdapter` with counted failure injection, plus the shared contract suite the real adapter must pass before the swap. Verified by negative control: removing the idempotency guard fails the contract |

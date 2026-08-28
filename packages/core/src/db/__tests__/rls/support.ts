@@ -97,8 +97,16 @@ export async function selectAs(
 }
 
 export interface Fixture {
-  alpha: { propertyId: string; user: TestUser; reservationId: string }
-  beta: { propertyId: string; user: TestUser; reservationId: string }
+  alpha: PropertyFixture
+  beta: PropertyFixture
+}
+
+export interface PropertyFixture {
+  propertyId: string
+  user: TestUser
+  reservationId: string
+  runId: string
+  discrepancyId: string
 }
 
 /**
@@ -136,7 +144,30 @@ export async function seed(): Promise<Fixture> {
           returning id`,
     )
 
-    return { propertyId, user, reservationId: reservation!.id }
+    // A reconciliation run and one open discrepancy, so the isolation suite
+    // covers the reconciliation surface too. A table added without a matching
+    // fixture is a table nobody proves is isolated.
+    const [run] = await db.execute<{ id: string }>(
+      sql`insert into reconciliation_runs (property_id, domain, parity_ratio, compared_count,
+                                           discrepancies_count)
+          values (${propertyId}, 'booking', 0.9990, 100, 1)
+          returning id`,
+    )
+
+    const [discrepancy] = await db.execute<{ id: string }>(
+      sql`insert into discrepancies (property_id, run_id, entity_ref, class, ours, theirs)
+          values (${propertyId}, ${run!.id}, ${'reservation:' + reservation!.id}, 'rounding',
+                  '{"totalCents":36000}'::jsonb, '{"totalCents":36001}'::jsonb)
+          returning id`,
+    )
+
+    return {
+      propertyId,
+      user,
+      reservationId: reservation!.id,
+      runId: run!.id,
+      discrepancyId: discrepancy!.id,
+    }
   }
 
   return {

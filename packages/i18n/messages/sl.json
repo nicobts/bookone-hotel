@@ -84,7 +84,16 @@
     "exceptions": {
       "title": "Izjeme",
       "subtitle": "Samo tisto, kar potrebuje človeka. Vse drugo se je uredilo samo.",
-      "empty": "Trenutno vas nič ne potrebuje."
+      "empty": "Trenutno vas nič ne potrebuje.",
+      "items": "{count, plural, =0 {Nič} one {# postavka} other {# postavk}}",
+      "unreflectedTitle": "Rezervacija še ni v PMS",
+      "unreflectedBody": "Ustvarjena tukaj in je hotelski sistem še ni potrdil.",
+      "discrepancyTitle": "Sistema se ne ujemata",
+      "discrepancyBody": "Odkrito ob nočnem usklajevanju.",
+      "retry": "Poskusi znova",
+      "review": "Preglej",
+      "reason": "Razlog",
+      "waiting": "Čaka na pošiljanje"
     }
   },
   "noProperty": {

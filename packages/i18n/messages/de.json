@@ -84,7 +84,16 @@
     "exceptions": {
       "title": "Ausnahmen",
       "subtitle": "Nur was einen Menschen braucht. Alles andere hat sich selbst erledigt.",
-      "empty": "Im Moment ist nichts zu tun."
+      "empty": "Im Moment ist nichts zu tun.",
+      "items": "{count, plural, =0 {Nichts} one {# Eintrag} other {# Einträge}}",
+      "unreflectedTitle": "Reservierung noch nicht im PMS",
+      "unreflectedBody": "Hier angelegt und vom Hotelprogramm noch nicht bestätigt.",
+      "discrepancyTitle": "Die beiden Systeme widersprechen sich",
+      "discrepancyBody": "Vom nächtlichen Abgleich gefunden.",
+      "retry": "Jetzt erneut senden",
+      "review": "Prüfen",
+      "reason": "Grund",
+      "waiting": "Wartet auf Übertragung"
     }
   },
   "noProperty": {

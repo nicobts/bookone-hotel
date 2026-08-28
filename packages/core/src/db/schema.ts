@@ -257,11 +257,25 @@ export const externalRefs = pgTable(
   },
   (t) => [
     /**
-     * The idempotency guarantee the reflection job depends on: one external id
-     * maps to exactly one of our entities, so a retried reflect cannot create a
-     * second row.
+     * The idempotency guarantee the reflection job depends on: within one
+     * property, an external id maps to exactly one of our entities, so a
+     * retried reflect cannot create a second row.
+     *
+     * **Scoped by property, deliberately.** The 03 §2 sketch omits
+     * `property_id` here, and that is wrong for a multi-tenant install: every
+     * property runs its own PMS instance, numbering bookings from its own
+     * sequence, so two hotels both having booking `1001` is ordinary rather
+     * than exceptional. A global constraint rejects the second hotel's booking
+     * — a cross-tenant collision that surfaces as "the connector randomly
+     * stops working" for whoever onboarded later. Found by the reflection test
+     * doing exactly that with two properties.
      */
-    unique('external_refs_system_entity').on(t.system, t.entityType, t.externalId),
+    unique('external_refs_property_system_entity').on(
+      t.propertyId,
+      t.system,
+      t.entityType,
+      t.externalId,
+    ),
     index('external_refs_entity_idx').on(t.entityType, t.entityId),
     index('external_refs_property_idx').on(t.propertyId),
   ],
@@ -526,5 +540,126 @@ export const agentRuns = pgTable(
   (t) => [
     index('agent_runs_property_at_idx').on(t.propertyId, t.at),
     index('agent_runs_agent_idx').on(t.agent),
+  ],
+)
+
+// ---------------------------------------------------------------------------
+// Reconciliation (03-ARCHITECTURE §4)
+// ---------------------------------------------------------------------------
+
+/** Classes of divergence. The split is the whole value of the nightly run. */
+export const discrepancyClass = pgEnum('discrepancy_class', [
+  /** Cents apart. Almost always ours or theirs rounding a rate differently. */
+  'rounding',
+  /**
+   * A date or time that disagrees because someone resolved it in the wrong
+   * zone. Expected, and separable from real divergence precisely because it has
+   * its own class — an arrival is a hotel-local calendar date, not an instant.
+   */
+  'tz',
+  /** Neither of the above. Something actually disagrees, and a human decides. */
+  'logic',
+])
+
+export const discrepancyStatus = pgEnum('discrepancy_status', [
+  'open',
+  /** A human, or AG-05 at T2, decided this one is benign and said why. */
+  'explained',
+  /** Cannot be explained away. Pages someone (03 §8 alert classes). */
+  'blocking',
+])
+
+/**
+ * One nightly pass over one domain at one property.
+ *
+ * `parity_ratio` is the number the owner actually watches: the share of
+ * compared entities that matched. It is the evidence D11's condition C2 asks
+ * for — six months of shadow parity ≥99.9% — so these rows are kept, not
+ * rotated. A run with a ratio nobody recorded proves nothing later.
+ */
+export const reconciliationRuns = pgTable(
+  'reconciliation_runs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+
+    /** An AuthorityMap domain name — `booking`, `availability`, … */
+    domain: text('domain').notNull(),
+
+    ranAt: timestamp('ran_at', { withTimezone: true }).notNull().defaultNow(),
+
+    /**
+     * 0.0000–1.0000. Exact numeric, not a float: this is compared against a
+     * 0.999 threshold that gates a decision worth six figures, and a
+     * float comparison that is occasionally off by an epsilon is a threshold
+     * that occasionally lies.
+     */
+    parityRatio: numeric('parity_ratio', { precision: 5, scale: 4 }),
+
+    /** Denormalised from `discrepancies` so the trend chart is one query. */
+    discrepanciesCount: integer('discrepancies_count').notNull().default(0),
+
+    /** How many entities were compared. A ratio without it is unreadable. */
+    comparedCount: integer('compared_count').notNull().default(0),
+  },
+  (t) => [
+    index('reconciliation_runs_property_idx').on(t.propertyId, t.ranAt),
+    check(
+      'reconciliation_runs_parity_range',
+      sql`${t.parityRatio} is null or (${t.parityRatio} >= 0 and ${t.parityRatio} <= 1)`,
+    ),
+  ],
+)
+
+/**
+ * One entity that disagreed.
+ *
+ * Carries `property_id` even though `run_id` could derive it (binding rule 3).
+ * The policy is written against the column, and a policy that has to join is a
+ * policy that gets written wrong.
+ */
+export const discrepancies = pgTable(
+  'discrepancies',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+    runId: uuid('run_id')
+      .notNull()
+      .references(() => reconciliationRuns.id, { onDelete: 'cascade' }),
+
+    /** `reservation:{uuid}`, `availability:{roomType}:{date}` — what disagreed. */
+    entityRef: text('entity_ref').notNull(),
+
+    class: discrepancyClass('class').notNull(),
+
+    /** The two sides, as we and they saw them. Both, always: an explanation */
+    /** written months later needs the values, not a description of them. */
+    ours: jsonb('ours'),
+    theirs: jsonb('theirs'),
+
+    status: discrepancyStatus('status').notNull().default('open'),
+
+    /** Why it was explained away. Required in practice by the console. */
+    explanation: text('explanation'),
+
+    /** Null until someone resolves it. `agent:AG-05` is a valid value here. */
+    resolvedBy: text('resolved_by'),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('discrepancies_property_status_idx').on(t.propertyId, t.status),
+    index('discrepancies_run_idx').on(t.runId),
+    /**
+     * One open row per entity per run. Without this a retried nightly run
+     * doubles every discrepancy, and the count the owner sees — and judges the
+     * connector by — silently inflates.
+     */
+    unique('discrepancies_run_entity').on(t.runId, t.entityRef),
   ],
 )

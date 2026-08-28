@@ -185,3 +185,75 @@ describe('append-only tables', () => {
     expect(commands).toEqual(['INSERT', 'SELECT'])
   })
 })
+
+describe('the reconciliation surface', () => {
+  it('shows a member only their own discrepancies', async () => {
+    const rows = await withUser(fx.alpha.user.id, (tx) =>
+      tx.execute<{ id: string }>(sql`select id from discrepancies`),
+    )
+
+    expect(rows.map((r) => r.id)).toEqual([fx.alpha.discrepancyId])
+  })
+
+  it('shows a member only their own reconciliation runs', async () => {
+    const rows = await withUser(fx.beta.user.id, (tx) =>
+      tx.execute<{ id: string }>(sql`select id from reconciliation_runs`),
+    )
+
+    expect(rows.map((r) => r.id)).toEqual([fx.beta.runId])
+  })
+
+  it('lets a member resolve their own discrepancy', async () => {
+    // The one-tap resolution the exceptions inbox offers (PRD C1). If this
+    // were not writable from a session the console could only ever display.
+    await withUser(fx.alpha.user.id, (tx) =>
+      tx.execute(
+        sql`update discrepancies
+            set status = 'explained', explanation = 'rate rounding', resolved_by = ${'user:' + fx.alpha.user.id}
+            where id = ${fx.alpha.discrepancyId}`,
+      ),
+    )
+
+    const [row] = await withUser(fx.alpha.user.id, (tx) =>
+      tx.execute<{ status: string }>(
+        sql`select status from discrepancies where id = ${fx.alpha.discrepancyId}`,
+      ),
+    )
+
+    expect(row?.status).toBe('explained')
+  })
+
+  it('refuses to resolve another property’s discrepancy', async () => {
+    // Zero rows updated rather than an error: the row is invisible, so the
+    // UPDATE matches nothing. Either way it must not change.
+    await withUser(fx.alpha.user.id, (tx) =>
+      tx.execute(
+        sql`update discrepancies set status = 'explained' where id = ${fx.beta.discrepancyId}`,
+      ),
+    )
+
+    const [row] = await asService((database) =>
+      database.execute<{ status: string }>(
+        sql`select status from discrepancies where id = ${fx.beta.discrepancyId}`,
+      ),
+    )
+
+    expect(row?.status).toBe('open')
+  })
+
+  it('has no insert policy — a person cannot fabricate a discrepancy', async () => {
+    // A discrepancy is an observation that two systems disagree. A person
+    // cannot observe that into existence, and a fabricated one would corrupt
+    // the parity ratio the fiscal-core gate turns on (D11 condition C2).
+    const message = await expectPolicyRefusal(() =>
+      withUser(fx.alpha.user.id, (tx) =>
+        tx.execute(
+          sql`insert into discrepancies (property_id, run_id, entity_ref, class)
+              values (${fx.alpha.propertyId}, ${fx.alpha.runId}, 'made:up', 'logic')`,
+        ),
+      ),
+    )
+
+    expect(message).toMatch(/row-level security policy for table "discrepancies"/)
+  })
+})
