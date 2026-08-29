@@ -16,7 +16,7 @@ import {
 import { asService } from '../db/session'
 import { emit } from '../events/emitter'
 import { systemActor, userActor, type Actor } from '../events/actor'
-import { entryFor } from './data-map'
+import { legalCarveOuts } from './data-map'
 
 /**
  * Erasure (E8.1, Art. 17).
@@ -73,19 +73,21 @@ export interface ErasureOutcome {
   carveOuts: Record<string, string>
 }
 
-/** The carve-outs, read from the map rather than restated here. */
+/**
+ * The carve-outs, read from the map rather than restated here.
+ *
+ * `legalCarveOuts()` and not every `keep`: the desk shows this same list before
+ * the button, and an entry kept because there is nothing left in it once the
+ * guest is anonymised — a journey state, a line on a bill — pads the list the
+ * real ones are on. `fee_events` is out for a different reason: it is about the
+ * property rather than the guest, so it is not a carve-out from *their* request
+ * at all.
+ */
 function carveOuts(): Record<string, string> {
   const kept: Record<string, string> = {}
 
-  for (const table of [
-    'reservations',
-    'payments',
-    'fee_events',
-    'alloggiati_submissions',
-    'privacy_requests',
-  ]) {
-    const entry = entryFor(table)
-    if (entry?.erasure.kind === 'keep') kept[table] = entry.erasure.why
+  for (const entry of legalCarveOuts()) {
+    if (entry.erasure.kind === 'keep') kept[entry.table] = entry.erasure.why
   }
 
   return kept

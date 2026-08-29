@@ -1,8 +1,9 @@
+import { readFileSync } from 'node:fs'
 import { getTableColumns, getTableName, is } from 'drizzle-orm'
 import { getTableConfig, PgTable } from 'drizzle-orm/pg-core'
 import { describe, expect, it } from 'vitest'
 import * as schema from '../../db/schema'
-import { DATA_MAP, DATA_MAP_BY_TABLE, executableRules } from '../data-map'
+import { DATA_MAP, DATA_MAP_BY_TABLE, executableRules, legalCarveOuts } from '../data-map'
 
 /**
  * The test that makes the data map a control rather than a document.
@@ -218,5 +219,33 @@ describe('the declaration is coherent', () => {
     expect(executable.get('messages')).toMatchObject({ kind: 'delete-rows', afterDays: 730 })
     expect(executable.get('reservations')).toMatchObject({ kind: 'delete-rows', afterDays: 3653 })
     expect(executable.get('registration_records')).toMatchObject({ kind: 'purge-columns' })
+  })
+})
+
+describe('the desk can name every carve-out it shows', () => {
+  it('has a label for each in the message catalogue', () => {
+    /*
+     * The confirmation screen renders `console.privacy.tables.<table>` for every
+     * guest-bearing entry whose erasure is `keep`. That key is built from the
+     * map at runtime, so adding a carve-out without a label produces a
+     * confirmation screen reading `console.privacy.tables.stay_extras` — and
+     * next-intl renders the key path rather than throwing, so nothing fails and
+     * an owner is asked to confirm an irreversible operation against a screen
+     * that has visibly broken.
+     *
+     * Only `en` is checked here: `packages/i18n/src/catalogs.test.ts` already
+     * asserts the other three have exactly the same keys.
+     */
+    const messages = JSON.parse(
+      readFileSync(new URL('../../../../i18n/messages/en.json', import.meta.url), 'utf8'),
+    ) as { console: { privacy: { tables: Record<string, string> } } }
+
+    const labelled = new Set(Object.keys(messages.console.privacy.tables))
+
+    const missing = legalCarveOuts()
+      .map((entry) => entry.table)
+      .filter((table) => !labelled.has(table))
+
+    expect(missing).toEqual([])
   })
 })

@@ -4,8 +4,8 @@ import {
   declaredPeriods,
   findSubjects,
   getSubject,
+  legalCarveOuts,
   listRequests,
-  DATA_MAP,
 } from '@bookone/core/privacy'
 import { PageShell } from '@/components/shell/page-shell'
 import { Badge } from '@/components/ui/badge'
@@ -63,10 +63,15 @@ export default async function PrivacyPage({
   const open = requests.filter((request) => request.status === 'open')
   const overdue = open.filter((request) => request.dueBy.getTime() < Date.now())
 
-  /** The carve-outs, read from the data map rather than restated in copy. */
-  const carveOuts = DATA_MAP.filter(
-    (entry) => entry.subject === 'guest' && entry.erasure.kind === 'keep',
-  )
+  /*
+   * The carve-outs, read from the data map rather than restated in copy.
+   *
+   * Only the ones the law keeps. An earlier version listed every `keep` entry,
+   * which put "your journey state" and "a line on your bill" on the same screen
+   * as "we must keep this filing" — and a list padded with the trivial is a list
+   * an owner learns to skim.
+   */
+  const carveOuts = legalCarveOuts()
 
   const context = { locale, slug }
 

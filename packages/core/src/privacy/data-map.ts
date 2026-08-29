@@ -104,7 +104,22 @@ export type Erasure =
   | { kind: 'anonymise'; columns: Record<string, string>; why: string }
   | { kind: 'redact'; columns: Record<string, string>; why: string }
   | { kind: 'delete'; why: string }
-  | { kind: 'keep'; why: string }
+  | {
+      kind: 'keep'
+      why: string
+      /**
+       * True when the law is what keeps it, not merely that there is nothing
+       * left to erase.
+       *
+       * The distinction is the confirmation screen. "We must keep your
+       * reservation for ten years" is something an owner has to be shown before
+       * pressing an irreversible button and may be asked to explain afterwards.
+       * "Your journey state is five enum values with nobody in them" is true,
+       * kept, and noise on that screen — listing it teaches an owner to skim the
+       * list the first kind is on.
+       */
+      retainedByLaw?: true
+    }
   | { kind: 'none' }
 
 /**
@@ -251,6 +266,7 @@ export const DATA_MAP: DataMapEntry[] = [
     erasure: {
       kind: 'keep',
       why: 'Art. 17(3)(b): retention required by law. The guest is anonymised; the transaction is not erasable on request and the desk says so before the button.',
+      retainedByLaw: true,
     },
     exportVia: 'guest',
   },
@@ -323,6 +339,7 @@ export const DATA_MAP: DataMapEntry[] = [
     erasure: {
       kind: 'keep',
       why: 'Art. 17(3)(b), and the one carve-out that leaves a name behind. The transmitted text is the property’s evidence it met an obligation to a public authority, and it names every guest in the party — so honouring one person’s request by deleting it would destroy another person’s record and the property’s compliance evidence together. It goes on the two-year clock above instead, and the desk tells the requester that date rather than implying the filing is gone.',
+      retainedByLaw: true,
     },
     exportVia: 'reservation',
   },
@@ -343,6 +360,7 @@ export const DATA_MAP: DataMapEntry[] = [
     erasure: {
       kind: 'keep',
       why: 'Art. 17(3)(b). Card data never lands here — amounts, statuses and a provider reference do.',
+      retainedByLaw: true,
     },
     exportVia: 'reservation',
   },
@@ -609,6 +627,7 @@ export const DATA_MAP: DataMapEntry[] = [
     erasure: {
       kind: 'keep',
       why: 'Erasing the erasure record would be the one deletion that makes every other one unprovable. Art. 17(3)(b): needed to comply with a legal obligation.',
+      retainedByLaw: true,
     },
     exportVia: 'guest',
   },
@@ -648,6 +667,22 @@ export const DATA_MAP_BY_TABLE: ReadonlyMap<string, DataMapEntry> = new Map(
 
 export function entryFor(table: string): DataMapEntry | undefined {
   return DATA_MAP_BY_TABLE.get(table)
+}
+
+/**
+ * The carve-outs an owner is shown before an erasure, and told about after.
+ *
+ * Not every `keep` — only the ones the law keeps. The rest are entries with
+ * nothing left to erase once the guest is anonymised, and padding the
+ * confirmation screen with those teaches an owner to skim the list the real
+ * ones are on.
+ *
+ * One source for the desk, the erasure outcome and the written response.
+ */
+export function legalCarveOuts(): DataMapEntry[] {
+  return DATA_MAP.filter(
+    (entry) => entry.erasure.kind === 'keep' && entry.erasure.retainedByLaw === true,
+  )
 }
 
 /** Every rule the retention sweep can actually execute, in a stable order. */
