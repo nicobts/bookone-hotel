@@ -79,6 +79,7 @@ only (`user_property_ids_admin()`).
 | `monthly_reports` | member | — ³⁵ | — ³⁵ | — ³⁵ | 2026-08-29 |
 | `fee_disputes` | member | member ³⁶ | — ³⁷ | — ³⁷ | 2026-08-29 |
 | `entitlements` | member | — ³⁸ | — ³⁸ | — ³⁸ | 2026-08-29 |
+| `privacy_requests` | **owner** ³⁹ | — ⁴⁰ | — ⁴⁰ | — ⁴⁰ | 2026-08-29 |
 
 1. `with check (true)`. A new property has no members yet, so nothing else could
    pass; the `on_property_created` trigger makes the creator its owner in the
@@ -219,6 +220,20 @@ only (`user_property_ids_admin()`).
     ever live. Revoking ends a row, so "never had it" and "had it until March"
     stay distinguishable. Members read it because the module line on their
     statement is meant to be checkable.
+39. **Owners, not members** — the only read policy in the table narrowed by
+    role, and the narrowing is about the *subject* rather than the property. A
+    privacy request records that a named guest asked to be forgotten. The
+    receptionist who checked them in has no reason to hold that fact, and E5.5
+    does not put this surface in their console. Verified by query: a staff
+    member of the same property gets zero rows.
+40. Written by the machinery that acts on the request, in the same transaction
+    as the event proving it happened — the same shape as `monthly_reports` and
+    `entitlements`. A hand-inserted row would claim a request was raised with
+    nothing acting on it; a hand-edited one would move `completed_at`, which is
+    the column answering "did you respond within the month" and the only
+    question Art. 12(3) actually asks. Deleting one would erase the evidence
+    that an erasure was carried out, which is the single deletion that makes
+    every other one unprovable.
 
 ## Exceptions — not property-scoped, and why
 

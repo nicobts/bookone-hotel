@@ -619,6 +619,70 @@ export function createApp(deps: {
       })
 
       /**
+       * Apply an erasure request (E8.1).
+       *
+       * Enqueues rather than erasing inline, and the desk shows the request as
+       * open until the job resolves it. Three reasons, all pointing the same
+       * way: it deletes objects from somebody else's storage, it is
+       * irreversible so a retry must be safe rather than quick, and the owner
+       * has already been shown that this is a two-step operation.
+       *
+       * `singletonKey` on the guest, so an owner pressing twice produces one
+       * erasure. Twice is harmless to the data and not harmless to the request
+       * log, which is the evidence a deadline was met.
+       */
+      .post('/jobs/privacy-erase', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          guestId?: string
+          requestId?: string
+          userId?: string
+        }>()
+
+        if (!body.propertyId || !body.guestId) {
+          return c.json({ error: 'propertyId and guestId are required' }, 400)
+        }
+
+        const id = await queue.send(
+          'privacy.erase',
+          {
+            propertyId: body.propertyId,
+            guestId: body.guestId,
+            // Spread rather than assigned: `exactOptionalPropertyTypes` treats
+            // an explicit `undefined` as a different thing from an absent key,
+            // and the payload type says these are absent or a string.
+            ...(body.requestId ? { requestId: body.requestId } : {}),
+            ...(body.userId ? { userId: body.userId } : {}),
+          },
+          { singletonKey: `erase:${body.guestId}` },
+        )
+
+        return c.json({ enqueued: id })
+      })
+
+      /**
+       * Run the retention sweep for one property now (E8.2).
+       *
+       * The runbook's manual trigger, and what the backup-restore drill uses to
+       * check that a restored database still enforces its declared periods. The
+       * schedule is the real path; this exists so "run it and see" does not mean
+       * waiting until 02:15.
+       */
+      .post('/jobs/retention-sweep', async (c) => {
+        const body = await c.req.json<{ propertyId?: string }>()
+
+        if (!body.propertyId) return c.json({ error: 'propertyId is required' }, 400)
+
+        const id = await queue.send(
+          'retention.sweep',
+          { propertyId: body.propertyId },
+          { singletonKey: `retention:${body.propertyId}` },
+        )
+
+        return c.json({ enqueued: id })
+      })
+
+      /**
        * ═══════════════════════════════════════════════════════════════════
        *  MEMO — SIMULATED PAYMENT. Development and staging only.
        * ═══════════════════════════════════════════════════════════════════

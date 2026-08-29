@@ -65,7 +65,8 @@
     "conversations": "Pogovori",
     "report": "Prihodki",
     "setup": "Nastavitev",
-    "knowledge": "Znanje"
+    "knowledge": "Znanje",
+    "privacy": "Zasebnost"
   },
   "property": {
     "switcher": {
@@ -316,6 +317,51 @@
       "create": "Dodaj",
       "newHeading": "Dodaj odgovor",
       "newHint": "Jezik, ki ga pustite praznega, je jezik, za katerega asistent pripelje osebo. Nikoli ne prevaja."
+    },
+    "privacy": {
+      "title": "Zasebnost",
+      "subtitle": "Zahteve gostov za izvoz in izbris podatkov",
+      "openCount": "Odprte: {count}",
+      "overdue": "Zamujene: {count}",
+      "findTitle": "Poišči gosta",
+      "findPlaceholder": "Ime, e-pošta ali telefon",
+      "noMatches": "Ni zadetkov. Poskusite z delom e-poštnega naslova.",
+      "noName": "Ime ni zabeleženo",
+      "alreadyErased": "Izbrisano",
+      "stays": "Bivanja: {count}",
+      "export": "Izvozi",
+      "erase": "Izbriši",
+      "cancel": "Prekliči",
+      "confirmTitle": "Izbrišem {name}?",
+      "confirmBody": "Tega ni mogoče razveljaviti. Ime, kontaktni podatki, sporočila in osebni dokumenti bodo odstranjeni. Nekateri zapisi ostanejo, in tu je razlog — morda boste morali to pojasniti, zato preberite, preden pritisnete.",
+      "confirmErase": "Izbriši tega gosta",
+      "erasureQueued": "Izbris se je začel. Zahteva ostane odprta na tej strani, dokler se ne zaključi, običajno nekaj sekund.",
+      "erasurePending": "Zahteva je zabeležena in rok teče, vendar je ozadnji proces ni prevzel. Nič še ni izbrisano. Sporočite nam: izvesti jo je treba ročno.",
+      "unknownGuest": "Ta gost ne pripada temu objektu.",
+      "requestsTitle": "Zahteve",
+      "requestsBody": "Za odgovor na vsako imate en mesec. Datum je v vrstici.",
+      "noRequests": "Zaenkrat ni zahtev.",
+      "dueBy": "Rok {date}",
+      "answeredOn": "Odgovorjeno {date}",
+      "late": "Zamujeno",
+      "retentionTitle": "Kaj hranimo in kako dolgo",
+      "retentionBody": "Ustvarjeno iz iste izjave, ki jo izvaja opravilo za brisanje — torej to, kar se resnično zgodi, ne to, kar smo nameravali. Kar ni navedeno, ostane, dokler je objekt naša stranka.",
+      "kinds": {
+        "export": "Izvoz",
+        "erasure": "Izbris"
+      },
+      "statuses": {
+        "open": "Odprto",
+        "completed": "Odgovorjeno",
+        "refused": "Zavrnjeno"
+      },
+      "tables": {
+        "reservations": "Sama rezervacija",
+        "payments": "Zapisi o plačilih",
+        "fee_events": "Kar smo zaračunali temu objektu",
+        "alloggiati_submissions": "Prijava policiji (Questura)",
+        "privacy_requests": "Ta zahteva"
+      }
     }
   },
   "noProperty": {

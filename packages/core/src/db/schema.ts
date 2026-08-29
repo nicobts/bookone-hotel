@@ -1265,6 +1265,21 @@ export const alloggiatiSubmissions = pgTable(
 
     submittedAt: timestamp('submitted_at', { withTimezone: true }),
     acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
+
+    /**
+     * When the transmitted text was blanked by the retention sweep (E8.2).
+     *
+     * The payload names every guest in the party, and the paragraph above
+     * argues — correctly — for keeping it: it is the property's evidence that
+     * it filed. That argument has a horizon. Two years past acknowledgement the
+     * checksum, the receipt and the status still prove the filing happened, and
+     * the names in it have stopped serving any purpose at all.
+     *
+     * Stamped rather than inferred from an empty payload, because "purged" and
+     * "we never had one" are different facts and only one of them is a problem.
+     */
+    payloadPurgedAt: timestamp('payload_purged_at', { withTimezone: true }),
+
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -1284,6 +1299,16 @@ export const alloggiatiSubmissions = pgTable(
     check(
       'alloggiati_submissions_ack_has_receipt',
       sql`${t.status} <> 'acknowledged' or ${t.receipt} is not null`,
+    ),
+    /**
+     * A purged row holds no payload. Enforced, not merely intended — the same
+     * treatment `registration_records` gives its deleted documents, and for the
+     * same reason: the value of saying "it is gone" is that it cannot be said
+     * while the data is still there.
+     */
+    check(
+      'alloggiati_submissions_purged_has_no_payload',
+      sql`${t.payloadPurgedAt} is null or length(${t.payload}) = 0`,
     ),
   ],
 )
@@ -2010,5 +2035,117 @@ export const entitlements = pgTable(
       .where(sql`${t.endedAt} is null`),
     check('entitlements_dates_ordered', sql`${t.endedAt} is null or ${t.endedAt} > ${t.grantedAt}`),
     check('entitlements_feature_not_empty', sql`length(btrim(${t.feature})) > 0`),
+  ],
+)
+
+// ---------------------------------------------------------------------------
+// Data-subject requests (E8.1)
+// ---------------------------------------------------------------------------
+
+/**
+ * The two rights the desk can exercise.
+ *
+ * Access and erasure. Not rectification — an owner corrects a guest's details
+ * by editing them, which is the same action with no ceremony around it — and
+ * not portability as a separate kind, because the export bundle already
+ * satisfies Art. 20 and a second button producing the same JSON would only make
+ * an owner choose between two words for one thing.
+ */
+export const privacyRequestKind = pgEnum('privacy_request_kind', ['export', 'erasure'])
+
+/**
+ * `refused` is a first-class outcome, and it is the one that matters.
+ *
+ * A request that cannot be honoured — because the data is under a legal
+ * retention carve-out, or because the person asking is not the data subject —
+ * has to be answerable in writing within the same thirty days. A tool with only
+ * "open" and "done" quietly encourages closing the awkward ones as done.
+ */
+export const privacyRequestStatus = pgEnum('privacy_request_status', [
+  'open',
+  'completed',
+  'refused',
+])
+
+/**
+ * One data-subject request, tracked as a row (E8.1).
+ *
+ * ## Why a row and not an email thread
+ *
+ * Art. 12(3) gives one month. A deadline that lives in somebody's memory is a
+ * deadline that is met until the month somebody is on holiday, and the penalty
+ * attaches to the miss rather than to the intent. The row carries `due_by` so
+ * the console can show it, so the count of overdue requests is a query, and so
+ * "we responded in time" is evidence rather than a recollection.
+ *
+ * ## What is deliberately not here
+ *
+ * No free-text description of the request. The desk records the guest, the
+ * kind and who raised it. A description field on a privacy request is where
+ * somebody pastes the identity document the guest attached to their email, at
+ * which point the DSAR tooling has become an unlawful processing surface of its
+ * own — and it would sit outside every retention rule, because nobody writes a
+ * retention rule for a notes field.
+ *
+ * `outcome` holds counts and rule names, never rows. A log recording which
+ * records were deleted has re-created the data it deleted.
+ */
+export const privacyRequests = pgTable(
+  'privacy_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+
+    /**
+     * The data subject.
+     *
+     * `restrict`, like every other reference to a guest: erasure anonymises the
+     * row rather than removing it, so this never dangles — and the record that
+     * a guest was erased must survive the erasure, or it proves nothing.
+     */
+    guestId: uuid('guest_id')
+      .notNull()
+      .references(() => guests.id, { onDelete: 'restrict' }),
+
+    kind: privacyRequestKind('kind').notNull(),
+    status: privacyRequestStatus('status').notNull().default('open'),
+
+    /** The owner who raised it. Null if their account is later removed. */
+    requestedBy: uuid('requested_by').references(() => authUsers.id, { onDelete: 'set null' }),
+
+    /** Art. 12(3), one month. Computed on insert, stored so it can be queried. */
+    dueBy: timestamp('due_by', { withTimezone: true }).notNull(),
+
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+
+    /**
+     * What was done: counts by table, rule names, the carve-outs that applied.
+     *
+     * Never row contents. This column is read back to a data subject as the
+     * written response Art. 12 requires, and it has to be safe to hand over.
+     */
+    outcome: jsonb('outcome')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('privacy_requests_property_status_idx').on(t.propertyId, t.status),
+    index('privacy_requests_guest_idx').on(t.guestId),
+
+    /**
+     * A finished request has a finish time.
+     *
+     * The column that answers "did we respond within the month" cannot be
+     * optional on the rows where the question is asked.
+     */
+    check(
+      'privacy_requests_resolved_has_time',
+      sql`${t.status} = 'open' or ${t.completedAt} is not null`,
+    ),
+    check('privacy_requests_due_after_created', sql`${t.dueBy} > ${t.createdAt}`),
   ],
 )

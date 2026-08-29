@@ -65,7 +65,8 @@
     "conversations": "Conversazioni",
     "report": "Ricavi",
     "setup": "Configurazione",
-    "knowledge": "Conoscenza"
+    "knowledge": "Conoscenza",
+    "privacy": "Privacy"
   },
   "property": {
     "switcher": {
@@ -316,6 +317,51 @@
       "create": "Aggiungi",
       "newHeading": "Aggiungi una risposta",
       "newHint": "Una lingua lasciata vuota è una lingua per cui l'assistente chiamerà una persona. Non traduce mai."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "subtitle": "Richieste di esportazione e cancellazione dai vostri ospiti",
+      "openCount": "Aperte: {count}",
+      "overdue": "Scadute: {count}",
+      "findTitle": "Trova un ospite",
+      "findPlaceholder": "Nome, email o telefono",
+      "noMatches": "Nessuna corrispondenza. Provate con una parte dell’indirizzo email.",
+      "noName": "Nessun nome registrato",
+      "alreadyErased": "Cancellato",
+      "stays": "Soggiorni: {count}",
+      "export": "Esporta",
+      "erase": "Cancella",
+      "cancel": "Annulla",
+      "confirmTitle": "Cancellare {name}?",
+      "confirmBody": "Non è reversibile. Nome, contatti, messaggi e documenti d’identità vengono rimossi. Alcuni dati restano, e qui trovate il motivo: potrebbe esservi chiesto di spiegarlo, quindi leggetelo prima di procedere.",
+      "confirmErase": "Cancella questo ospite",
+      "erasureQueued": "Cancellazione avviata. La richiesta resta aperta in questa pagina fino al termine, di solito pochi secondi.",
+      "erasurePending": "La richiesta è registrata e il termine decorre, ma il processo in background non l’ha presa in carico. Non è stato cancellato nulla. Segnalatecelo: va eseguita manualmente.",
+      "unknownGuest": "Questo ospite non appartiene a questa struttura.",
+      "requestsTitle": "Richieste",
+      "requestsBody": "Avete un mese per rispondere a ciascuna. La data è sulla riga.",
+      "noRequests": "Nessuna richiesta.",
+      "dueBy": "Scade il {date}",
+      "answeredOn": "Risposta il {date}",
+      "late": "Scaduta",
+      "retentionTitle": "Cosa conserviamo, e per quanto",
+      "retentionBody": "Generato dalla stessa dichiarazione che esegue la cancellazione automatica: è quello che succede davvero, non quello che intendevamo fare. Ciò che non è elencato resta finché la struttura è cliente.",
+      "kinds": {
+        "export": "Esportazione",
+        "erasure": "Cancellazione"
+      },
+      "statuses": {
+        "open": "Aperta",
+        "completed": "Evasa",
+        "refused": "Respinta"
+      },
+      "tables": {
+        "reservations": "La prenotazione",
+        "payments": "I pagamenti",
+        "fee_events": "Quanto abbiamo addebitato alla struttura",
+        "alloggiati_submissions": "La schedina alla Questura",
+        "privacy_requests": "Questa richiesta"
+      }
     }
   },
   "noProperty": {

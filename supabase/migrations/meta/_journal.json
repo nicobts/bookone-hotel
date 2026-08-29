@@ -71,6 +71,13 @@
       "when": 1787997025949,
       "tag": "20260829095025_living_professor_monster",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788007079683,
+      "tag": "20260829123759_gifted_yellowjacket",
+      "breakpoints": true
     }
   ]
 }

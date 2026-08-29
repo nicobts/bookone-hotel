@@ -146,6 +146,22 @@ const ATTRIBUTION_AUDIT = '30 5 * * *'
  */
 const REPORT_GENERATE = '0 6 2 * *'
 
+/**
+ * The retention sweep, per property (E8.2).
+ *
+ * 02:15, deliberately outside the 03:30–06:00 band the rest of the night's work
+ * occupies. Nothing in that band reads data old enough for this to touch, so
+ * the ordering is not a correctness requirement — it is so that a sweep which
+ * one day takes twenty minutes cannot delay the parity measurement that D11's
+ * condition C2 turns on.
+ *
+ * Daily rather than weekly because the periods it enforces are declared to the
+ * day. "We keep messages for 24 months" and "we keep them for 24 months and up
+ * to six more days" are different statements, and only one of them is in the
+ * data map.
+ */
+const RETENTION_SWEEP = '15 2 * * *'
+
 export async function registerSchedules(deps: { queue: JobQueue; logger: Logger }): Promise<void> {
   const { queue, logger } = deps
 
@@ -179,6 +195,13 @@ export async function registerSchedules(deps: { queue: JobQueue; logger: Logger 
       { propertyId: property.id, from: isoDate(today), to: isoDate(horizon) },
       { key: property.id },
     )
+
+    await queue.schedule(
+      'retention.sweep',
+      RETENTION_SWEEP,
+      { propertyId: property.id },
+      { key: property.id },
+    )
   }
 
   // Remove schedules that no longer correspond to a property.
@@ -190,7 +213,7 @@ export async function registerSchedules(deps: { queue: JobQueue; logger: Logger 
   // making the log look like the fix did not work.
   const live = new Set(rows.map((property) => property.id))
 
-  for (const name of ['availability.refresh', 'reconcile.nightly'] as const) {
+  for (const name of ['availability.refresh', 'reconcile.nightly', 'retention.sweep'] as const) {
     for (const schedule of await queue.listSchedules(name)) {
       if (live.has(schedule.key)) continue
 

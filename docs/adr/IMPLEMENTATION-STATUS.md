@@ -18,9 +18,9 @@ worse than none, because it is read as current.
 | 009 | Voice hard tool boundaries | 🟨 discipline applied to chat | Voice is WS-B. The *boundary* is built and measured here: every AG-01 tool returns a pre-formed `phrase`, the reply is that phrase verbatim, and a nightly job re-reads what was sent against the tool outputs of its own run. Zero violations is the gate |
 | 010 | Stripe behind `PaymentAdapter` | 🟨 port built, **provider not connected** | `PaymentAdapter` + `MockPaymentAdapter`, which moves no money. The interface, policy engine, `payments` ledger, `fee_events`, webhook-as-authority, signature check, redelivery idempotency and lost-webhook replay are all real and exercised. Blocked on 04 §0 item 6 (Stripe account, Connect Standard, commercialista). A real adapter must pass `describePaymentAdapterContract` — the suite the mock passes — before the swap, and the worker refuses to boot simulated in production |
 | 011 | Agents as first-class workers, tiered autonomy | ✅ as-built | Registry, runner and typed tools; AG-01, AG-05 and AG-07 live. The runner refuses an ungranted tool, scopes to one property, and records every run — including the ones that fail. AG-07 is the first agent that moves money, and it can only move it **down**: there is no tool that raises a fee, which is the asymmetry that makes a T1 agent near billing defensible |
-| 012 | `LlmProvider` abstraction; no vendor SDK imports | 🟨 port built, **no provider registered** | Interface and registry in `src/llm`; registration refuses any provider without declared EU processing, a region, a sub-processor register entry and a verification under a year old. `LLM_API_KEY` is empty and AG-01 runs as a deterministic router — which is not a stopgap for the tool boundary but the shape it has to keep: a model would widen recall, never authorship (binding rule 7) |
+| 012 | `LlmProvider` abstraction; no vendor SDK imports | 🟨 port built, **no provider registered** | Interface and registry in `src/llm`; registration refuses any provider without declared EU processing, a region, a verification under a year old, and a sub-processor register entry **that exists** — Sprint 10 made that last one a lookup against `privacy/subprocessors.ts` rather than a non-empty-string check, which any typo satisfied. `LLM_API_KEY` is empty and AG-01 runs as a deterministic router — which is not a stopgap for the tool boundary but the shape it has to keep: a model would widen recall, never authorship (binding rule 7) |
 | 013 | Journey state machine is the single source of stay truth | ✅ as-built | Five dimensions, evented commands, `applyJourneyCommand` the only writer. Illegal transitions refused and separated from retries; every transition emits its event in the same transaction, so G1 is computable from the log alone. `journey_states` has no write policy at all — the console's arrival button will take the same command a door sensor will |
-| 014 | Reference implementations over blank-page design | 🟨 as-built, **one note written late** | Four notes in [design-notes/](../design-notes/README.md). Booking and the Sprint 7 surfaces were written before their code; [pre-arrival.md](../design-notes/pre-arrival.md) records a Sprint 5 surface that shipped without one and says so at the top rather than being backdated. 08 §3 had no reference row for in-stay messaging — the note proposes two and the table now carries it |
+| 014 | Reference implementations over blank-page design | 🟨 as-built, **one note written late** | Seven notes in [design-notes/](../design-notes/README.md), all but one written before their surface; [pre-arrival.md](../design-notes/pre-arrival.md) records a Sprint 5 surface that shipped without one and says so at the top rather than being backdated. Three surfaces had no reference row in 08 §3 — in-stay messaging, the monthly report and the privacy desk — and each note proposes its own and argues the deviations. The table now carries all three |
 | 015 | Pricing in €/room/month equivalence | ✅ as-built | On the monthly report, **including the percentage fees** — the number shown is the number billed. Null rather than a guess when the subscription records no room count: `room_types` holds types, not rooms, and a derived figure would be wrong and look authoritative on the one line built for comparison against a competitor's price |
 | 016 | Property is a URL segment | ✅ as-built | `/[locale]/[property]/console/…`; verified in a browser that a non-member typing another slug gets a 404, not a redirect. Sprint 9 adds the same treatment for role: a staff member typing an owner-only URL gets 404, so "you are not a member" and "you may not see this" are indistinguishable from outside |
 | 017 | Identity tables sit outside tenancy | ✅ as-built | `profiles` isolated by `auth.uid()`; asserted separately in the suite |
@@ -203,3 +203,81 @@ plain `select` returned every property's rows — no error, no failing test.
 Both are green, and the second was checked by negative control: removing the
 role-drop fails 8 of 21. A suite that has never been seen to fail is not
 evidence.
+
+## Sprint 10 additions
+
+| Thing | Status | Note |
+|---|---|---|
+| The data map | ✅ | `packages/core/src/privacy/data-map.ts`: every table, whose data, the basis, the period, what erasure does. TypeScript rather than a document because a document does not fail CI — a table missing from it fails a test on the same run as the migration that added it |
+| Export bundle (E8.1) | ✅ | JSON with a manifest covering **every** table in the map, including the empty ones and the three excluded with a reason. Generated on demand, never stored, no cache headers, owner-only |
+| Erasure (E8.1) | ✅ | Anonymise the guest, delete what a guest wrote, redact what quotes them, keep what Art. 17(3)(b) requires with the reason shown before the button. Two steps and a background job |
+| Retention sweep (E8.2) | ✅ | One scheduled job per property at 02:15, driven by the map. Idempotent by predicate, per-rule reporting, one failing rule does not stop the rest |
+| Request desk (E8.1) | ✅ | `privacy_requests`, owner-only by policy, with an Art. 12(3) deadline computed by the database in the same statement as `created_at`. No free-text field, deliberately |
+| Sub-processor register (E8.3) | ✅ | Generated from `privacy/subprocessors.ts` into `docs/legal/`, with `pnpm register:check` as a CI gate. `registerProvider` now asks the register whether an entry id exists |
+| Backup-restore drill | 🟨 **done, and it failed three times first** | [backup-restore.md](../runbooks/backup-restore.md). Logical dump → restore passed on the third attempt. PITR itself is untested and is a GA blocker |
+| Load test | 🟨 **done locally, not on staging** | [load-test.md](../runbooks/load-test.md). 1,520 bookings, zero failures, throughput plateaus ~80/s with latency rising linearly — a saturated pool with a fair queue, not a fault |
+| **Egress proxy** | ⬜ not built | The residual DNS-rebinding risk from Sprint 9's SSRF fix. Network-layer work, and it belongs with the pen test |
+| **External pen test** | ⬜ not started | Nothing in this sprint substitutes for it |
+| **PITR restore drill** | ⬜ not run | Named in the runbook as the next drill and a GA blocker |
+| **Deadline alerting** | ⬜ not built | The desk shows a due date; nothing emails the owner at day 25. Needs notification templates |
+
+### What the erasure suite found
+
+The test plants a distinctive name, email and phone in every table that can hold
+one, erases, then searches **every text and jsonb column in the schema** for
+them. Not the four tables the author remembered — that version passes in exactly
+the situation the feature exists to prevent.
+
+On the first clean run it found two survivors.
+
+`invoice_requests.bill_to` was one, and the data map was wrong rather than the
+test. The map had claimed a carve-out on the grounds that the property issues
+the actual invoice and keeps their own copy — true, and beside the point: ours
+is a routing record, not the fiscal document, and it was sitting there with the
+guest's name in a column called `bill_to`. Now redacted.
+
+`alloggiati_submissions.payload` was the other, and it stays. The transmitted
+text names every guest in the party, so honouring one person's request by
+deleting it would destroy another person's record and the property's evidence of
+a legal filing together (Art. 17(3)(b)). It goes on a two-year clock from
+acknowledgement instead, keeping the checksum and the receipt forever — and the
+desk tells the requester that date rather than implying the filing is gone.
+
+The assertion is therefore an exact list rather than an empty one. An empty
+assertion would have to be weakened the moment a lawful carve-out exists, and a
+weakened assertion is how the next unlawful residue gets through.
+
+### The rule that could not have run
+
+The data map declared `payments`, `fee_events` and `alloggiati_submissions` as
+cascading off a reservation. They are `restrict` — deliberately, because money
+and a filing with a public authority should not vanish because somebody deleted
+a stay — and `external_refs` points at a reservation by id with no foreign key
+at all.
+
+So the ten-year reservation rule would have thrown on its first non-empty run,
+at 02:15, in a job nobody watches, having deleted nothing.
+
+Caught by a test that reads the schema's own foreign keys and compares them
+against what the map claims, rather than checking the map against itself. The
+rule now declares its dependents and the sweep clears them in order; removing
+one from that list fails the test by name.
+
+### The drill that failed three times
+
+Recorded in full in the runbook, because a drill log with only successes in it
+is a log somebody has been editing.
+
+1. The dump carries `pgboss.*` and the restore has nowhere to put it — pg-boss
+   creates its schema at worker boot, not in a migration. The fix is not to
+   create the schema first; it is to never back the queue up. Restoring 65 rows
+   of job history would replay work that already ran, and duplicate Alloggiati
+   filings are not harmless.
+2. The dump carries `storage.buckets`, which a migration also creates. The
+   general form is larger than one bucket: a data-only dump restored over a
+   migrated schema collides with every row the migrations themselves insert.
+3. `supabase db dump` does not produce a standalone restorable schema — it omits
+   the Supabase-managed schemas it assumes are present. This is the one that
+   would otherwise have been discovered during an incident: **you cannot rebuild
+   a Supabase project from a logical dump.** PITR is the recovery mechanism; the
+   dump is the exit path and restores *into* a working project.

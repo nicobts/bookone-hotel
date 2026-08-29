@@ -65,7 +65,8 @@
     "conversations": "Conversations",
     "report": "Revenue",
     "setup": "Setup",
-    "knowledge": "Knowledge"
+    "knowledge": "Knowledge",
+    "privacy": "Privacy"
   },
   "property": {
     "switcher": {
@@ -316,6 +317,51 @@
       "create": "Add",
       "newHeading": "Add an answer",
       "newHint": "A language left empty is a language the assistant will fetch a person for. It never translates."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "subtitle": "Export and erasure requests from your guests",
+      "openCount": "Open: {count}",
+      "overdue": "Overdue: {count}",
+      "findTitle": "Find a guest",
+      "findPlaceholder": "Name, email or phone",
+      "noMatches": "Nobody matches that. Try part of the email address.",
+      "noName": "No name on file",
+      "alreadyErased": "Erased",
+      "stays": "Stays: {count}",
+      "export": "Export",
+      "erase": "Erase",
+      "cancel": "Cancel",
+      "confirmTitle": "Erase {name}?",
+      "confirmBody": "This cannot be undone. Their name, contact details, messages and identity documents go. Some records stay, and here is why — you may be asked to explain this, so read it before you press the button.",
+      "confirmErase": "Erase this guest",
+      "erasureQueued": "Erasure started. The request stays open on this page until it finishes, which is usually seconds.",
+      "erasurePending": "The request is recorded and its deadline is running, but the background worker did not pick it up. Nothing has been erased yet. Tell us — this needs running by hand.",
+      "unknownGuest": "That guest is not at this property.",
+      "requestsTitle": "Requests",
+      "requestsBody": "You have one month to answer each of these. The date is on the row.",
+      "noRequests": "No requests yet.",
+      "dueBy": "Due by {date}",
+      "answeredOn": "Answered {date}",
+      "late": "Overdue",
+      "retentionTitle": "What we keep, and for how long",
+      "retentionBody": "Generated from the same declaration the deletion job runs, so this is what actually happens rather than what we intended. Anything not listed is kept while the property is a customer.",
+      "kinds": {
+        "export": "Export",
+        "erasure": "Erasure"
+      },
+      "statuses": {
+        "open": "Open",
+        "completed": "Answered",
+        "refused": "Refused"
+      },
+      "tables": {
+        "reservations": "The booking itself",
+        "payments": "Payment records",
+        "fee_events": "What we charged this property",
+        "alloggiati_submissions": "The Questura filing",
+        "privacy_requests": "This request"
+      }
     }
   },
   "noProperty": {

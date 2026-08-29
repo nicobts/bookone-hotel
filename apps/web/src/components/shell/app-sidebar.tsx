@@ -8,6 +8,7 @@ import {
   MessageSquareIcon,
   ReceiptIcon,
   SettingsIcon,
+  ShieldIcon,
   SunIcon,
   TriangleAlertIcon,
   UsersIcon,
@@ -111,6 +112,17 @@ export async function AppSidebar({
               { title: t('knowledge'), href: `${base}/knowledge`, icon: <BookOpenIcon /> },
               { title: t('rooms'), href: `${base}/room-types`, icon: <BedDoubleIcon /> },
               { title: t('members'), href: `${base}/members`, icon: <UsersRoundIcon /> },
+              /*
+               * Owner-only, and narrower than the rest of this band.
+               *
+               * A privacy request records that a named guest asked to be
+               * forgotten. That is a fact about a person the receptionist who
+               * checked them in has no reason to hold — so unlike the other
+               * configure items, this one is hidden for a reason about the
+               * *subject* rather than about the property. The RLS policy on
+               * `privacy_requests` says the same thing at the database.
+               */
+              { title: t('privacy'), href: `${base}/privacy`, icon: <ShieldIcon /> },
               { title: t('settings'), href: `${base}/settings`, icon: <SettingsIcon /> },
             ],
           },

@@ -10,7 +10,7 @@ function provider(name: string, residency: Partial<ResidencyDeclaration> = {}): 
     residency: {
       euProcessing: true,
       region: 'eu-central-1',
-      subProcessorRegisterEntry: 'SP-001',
+      subProcessorRegisterEntry: 'SP-006',
       verifiedAt: '2026-07-01',
       ...residency,
     },
@@ -38,6 +38,20 @@ describe('registration enforces EU residency (D9, ADR-012)', () => {
 
   it('refuses a provider with no declared region', () => {
     expect(() => registerProvider(provider('vague', { region: '  ' }), NOW)).toThrow(ResidencyError)
+  })
+
+  it('refuses a register entry that does not exist', () => {
+    /*
+     * The gap the non-empty check left open (E8.3).
+     *
+     * A typo satisfies "is a non-empty string" and produces a provider that
+     * looks disclosed and is not. `SP-999` is not in
+     * `packages/core/src/privacy/subprocessors.ts`, so it is not in the
+     * generated register either, so it is not disclosed to anybody.
+     */
+    expect(() =>
+      registerProvider(provider('typo', { subProcessorRegisterEntry: 'SP-999' }), NOW),
+    ).toThrow(/no entry "SP-999"/)
   })
 
   it('refuses a provider missing its sub-processor register entry', () => {

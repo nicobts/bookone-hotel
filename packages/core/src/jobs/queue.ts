@@ -64,6 +64,10 @@ export const jobNames = [
   'report.generate',
   /** Draft knowledge-base articles from a property's own website (AG-03, E7.1). */
   'onboarding.ingest',
+  /** Erase one guest, honouring the data map's carve-outs (E8.1). */
+  'privacy.erase',
+  /** Apply every executable retention rule to one property (E8.2). */
+  'retention.sweep',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -105,6 +109,28 @@ export interface JobPayloads {
    */
   'notification.sweep': Record<string, never>
   'reservation.expire_holds': Record<string, never>
+  /**
+   * Irreversible, so it carries exactly what it needs and re-reads the rest.
+   *
+   * `requestId` links it back to the desk row it fulfils and is optional
+   * because erasure can also be applied without a tracked request — a property
+   * acting on an obligation they learned about another way. `userId` is the
+   * owner who pressed it, recorded on the event.
+   */
+  'privacy.erase': {
+    propertyId: string
+    guestId: string
+    requestId?: string
+    userId?: string
+  }
+  /**
+   * Scoped to one property, always.
+   *
+   * Binding rule 3 does not relax for maintenance jobs. One property per job
+   * also means a rule that throws costs one hotel's sweep rather than every
+   * hotel's, and the failure is restartable where it happened.
+   */
+  'retention.sweep': { propertyId: string }
   /**
    * No payload, for the same reason as the sweep: a payment whose webhook was
    * lost is exactly the one nothing would name.

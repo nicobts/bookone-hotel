@@ -39,6 +39,12 @@ jobs:
       - run: pnpm lint
       - run: pnpm format:check
 
+      # The sub-processor register is generated from
+      # packages/core/src/privacy/subprocessors.ts (E8.3). A committed file that
+      # has drifted from its source is a disclosure that is wrong — it either
+      # names a provider we do not send data to, or omits one we do.
+      - run: pnpm register:check
+
   test:
     name: vitest
     runs-on: ubuntu-latest

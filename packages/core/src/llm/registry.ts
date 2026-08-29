@@ -1,3 +1,4 @@
+import { isRegisteredSubProcessor } from '../privacy/subprocessors'
 import { ResidencyError, type LlmProvider } from './provider'
 
 /**
@@ -31,6 +32,22 @@ export function registerProvider(provider: LlmProvider, now: Date = new Date()):
   // boolean above is just a field somebody set to true.
   if (!residency.subProcessorRegisterEntry.trim()) {
     throw new ResidencyError(name, 'no sub-processor register entry')
+  }
+
+  /*
+   * And the entry has to exist (E8.3).
+   *
+   * Checking the field is non-empty accepts any typo, and a typo in a register
+   * reference is indistinguishable from a provider nobody disclosed — the field
+   * is set, the check passes, and the register does not mention them. Asking
+   * the register closes that: a provider cannot be in the code and absent from
+   * the document, because the code reads the document's source.
+   */
+  if (!isRegisteredSubProcessor(residency.subProcessorRegisterEntry)) {
+    throw new ResidencyError(
+      name,
+      `sub-processor register has no entry "${residency.subProcessorRegisterEntry}"; add one before registering the provider (D9)`,
+    )
   }
 
   const verifiedAt = new Date(residency.verifiedAt)

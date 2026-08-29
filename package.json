@@ -24,6 +24,8 @@
     "db:studio": "supabase status -o env",
     "db:generate": "pnpm --filter @bookone/core db:generate",
     "db:migrate": "pnpm --filter @bookone/core db:migrate",
+    "register:render": "tsx scripts/render-register.mts",
+    "register:check": "tsx scripts/render-register.mts --check",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

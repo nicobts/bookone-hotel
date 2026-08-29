@@ -443,6 +443,30 @@ export async function submitAlloggiatiNow(input: {
   return post('/jobs/alloggiati-submit', input)
 }
 
+/**
+ * Apply an erasure request (E8.1).
+ *
+ * The one call in this module that is **not** best-effort in the way the header
+ * describes, and it is worth being precise about the difference. The request
+ * row is already committed with its deadline before this runs, so the
+ * obligation survives an unreachable worker — but nothing else will pick the
+ * erasure up on its own. There is no sweep for this and there should not be
+ * one: a job that erases people if it notices an old row is a job that erases
+ * somebody the day the desk has a bug.
+ *
+ * So the return value is used rather than logged. The desk tells the owner
+ * whether it was queued or only recorded, and the runbook says how to run it by
+ * hand.
+ */
+export async function requestErasure(input: {
+  propertyId: string
+  guestId: string
+  requestId: string
+  userId: string
+}): Promise<boolean> {
+  return post('/jobs/privacy-erase', input)
+}
+
 async function post(path: string, body: unknown): Promise<boolean> {
   const base = workerUrl()
   const secret = token()

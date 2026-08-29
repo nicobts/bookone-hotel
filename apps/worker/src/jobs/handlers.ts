@@ -38,6 +38,7 @@ import {
   previousPeriod,
   propertiesWithAttributedFees,
 } from '@bookone/core/billing'
+import { eraseGuest, resolveRequest, runRetention } from '@bookone/core/privacy'
 import { guestActor, systemActor, userActor } from '@bookone/core/events'
 import { runAgent } from '@bookone/agents/runner'
 import { respondToGuestMessage } from '@bookone/agents/concierge'
@@ -780,6 +781,93 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       },
       'onboarding.ingest',
     )
+  })
+
+  /**
+   * Erasure (E8.1).
+   *
+   * A job rather than a synchronous call, for three reasons that all point the
+   * same way: it deletes objects from storage, which can fail on somebody
+   * else's service; it is irreversible, so a retry has to be safe rather than
+   * fast; and the owner who pressed it has already been told it is a two-step
+   * operation. `eraseGuest` is written so that every interruption leaves a
+   * state more erased than before, which is what makes the retry safe.
+   *
+   * The request row is resolved only after the erasure returns. A request
+   * marked complete by a job that then failed is the one outcome nobody could
+   * detect afterwards — the data would be half-gone and the deadline evidence
+   * would say it was handled.
+   */
+  await queue.work('privacy.erase', async (job) => {
+    const { propertyId, guestId, requestId, userId } = job.data
+
+    const outcome = await eraseGuest(
+      { deleteObject },
+      { propertyId, guestId, actor: userId ? userActor(userId) : systemActor },
+    )
+
+    if (requestId) {
+      await resolveRequest({
+        propertyId,
+        requestId,
+        status: 'completed',
+        // Counts and carve-out names. This is read back to the data subject as
+        // the written response Art. 12 requires, so it has to be safe to hand
+        // over — see the schema comment on `privacy_requests.outcome`.
+        outcome: {
+          applied: outcome.applied,
+          documents: outcome.documents,
+          carveOuts: outcome.carveOuts,
+        },
+        actor: userId ? userActor(userId) : systemActor,
+      })
+    }
+
+    logger.info(
+      {
+        jobId: job.id,
+        propertyId,
+        // Never the guest's details. A log line is a copy of the thing we were
+        // just asked to destroy, and it lives outside every retention rule.
+        tables: Object.keys(outcome.applied).length,
+        documents: outcome.documents,
+      },
+      'privacy.erase',
+    )
+  })
+
+  /**
+   * The retention sweep (E8.2).
+   *
+   * One property per job, driven by the data map. It reports per rule rather
+   * than as a single number so that a rule which starts failing — a column
+   * renamed, a constraint added — is visible as itself instead of as a total
+   * that is quietly lower than last night's.
+   */
+  await queue.work('retention.sweep', async (job) => {
+    const { propertyId } = job.data
+
+    const outcome = await runRetention({ propertyId })
+    const failed = outcome.results.filter((result) => result.error)
+
+    if (failed.length > 0) {
+      // Warn rather than throw: the rules that did run were applied, and
+      // failing the job would retry all of them, including the ones that
+      // already deleted what they were meant to.
+      logger.warn({ jobId: job.id, propertyId, failed }, 'retention.sweep had failing rules')
+    }
+
+    if (outcome.total > 0 || failed.length > 0) {
+      logger.info(
+        {
+          jobId: job.id,
+          propertyId,
+          total: outcome.total,
+          rules: outcome.results.filter((result) => result.affected > 0),
+        },
+        'retention.sweep',
+      )
+    }
   })
 
   await queue.work('reservation.expire_holds', async (job) => {

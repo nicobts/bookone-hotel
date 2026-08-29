@@ -65,7 +65,8 @@
     "conversations": "Unterhaltungen",
     "report": "Umsatz",
     "setup": "Einrichtung",
-    "knowledge": "Wissen"
+    "knowledge": "Wissen",
+    "privacy": "Datenschutz"
   },
   "property": {
     "switcher": {
@@ -316,6 +317,51 @@
       "create": "Hinzufügen",
       "newHeading": "Antwort hinzufügen",
       "newHint": "Eine leer gelassene Sprache ist eine Sprache, für die der Assistent eine Person holt. Er übersetzt nie."
+    },
+    "privacy": {
+      "title": "Datenschutz",
+      "subtitle": "Auskunfts- und Löschanfragen Ihrer Gäste",
+      "openCount": "Offen: {count}",
+      "overdue": "Überfällig: {count}",
+      "findTitle": "Gast suchen",
+      "findPlaceholder": "Name, E-Mail oder Telefon",
+      "noMatches": "Kein Treffer. Versuchen Sie einen Teil der E-Mail-Adresse.",
+      "noName": "Kein Name hinterlegt",
+      "alreadyErased": "Gelöscht",
+      "stays": "Aufenthalte: {count}",
+      "export": "Exportieren",
+      "erase": "Löschen",
+      "cancel": "Abbrechen",
+      "confirmTitle": "{name} löschen?",
+      "confirmBody": "Das lässt sich nicht rückgängig machen. Name, Kontaktdaten, Nachrichten und Ausweisdokumente werden entfernt. Einiges bleibt bestehen, und hier steht warum — Sie könnten danach gefragt werden, lesen Sie es also, bevor Sie klicken.",
+      "confirmErase": "Diesen Gast löschen",
+      "erasureQueued": "Löschung gestartet. Die Anfrage bleibt auf dieser Seite offen, bis sie abgeschlossen ist — meist Sekunden.",
+      "erasurePending": "Die Anfrage ist erfasst und die Frist läuft, aber der Hintergrundprozess hat sie nicht übernommen. Es wurde noch nichts gelöscht. Sagen Sie uns Bescheid: das muss von Hand ausgeführt werden.",
+      "unknownGuest": "Dieser Gast gehört nicht zu diesem Haus.",
+      "requestsTitle": "Anfragen",
+      "requestsBody": "Sie haben einen Monat Zeit, jede davon zu beantworten. Das Datum steht in der Zeile.",
+      "noRequests": "Noch keine Anfragen.",
+      "dueBy": "Fällig bis {date}",
+      "answeredOn": "Beantwortet am {date}",
+      "late": "Überfällig",
+      "retentionTitle": "Was wir aufbewahren, und wie lange",
+      "retentionBody": "Erzeugt aus derselben Erklärung, die der Löschauftrag ausführt — also das, was tatsächlich passiert, nicht das, was gemeint war. Was nicht aufgeführt ist, bleibt, solange das Haus Kunde ist.",
+      "kinds": {
+        "export": "Auskunft",
+        "erasure": "Löschung"
+      },
+      "statuses": {
+        "open": "Offen",
+        "completed": "Beantwortet",
+        "refused": "Abgelehnt"
+      },
+      "tables": {
+        "reservations": "Die Buchung selbst",
+        "payments": "Zahlungsdaten",
+        "fee_events": "Was wir diesem Haus berechnet haben",
+        "alloggiati_submissions": "Die Meldung an die Questura",
+        "privacy_requests": "Diese Anfrage"
+      }
     }
   },
   "noProperty": {

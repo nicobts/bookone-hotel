@@ -31,6 +31,7 @@ If a note quotes a competitor's wording, the note is wrong.
 | Arrival & express checkout | Mews Kiosk flows (the check-out half) | [express-checkout.md](express-checkout.md) |
 | Monthly report | *none named in 08 §3* — proposed in the note | [monthly-report.md](monthly-report.md) |
 | Onboarding & self-service | Mews property setup + the self-serve activation checklist (Stripe) | [onboarding.md](onboarding.md) |
+| Data-subject requests | *none named in 08 §3* — proposed in the note | [privacy.md](privacy.md) |
 
 Two notes on the state of this table.
 
@@ -39,10 +40,11 @@ surface that shipped in Sprint 5 without it. The reference was studied and the
 deviations were argued in the code, but the note that makes that auditable was
 skipped, and the note says so at the top rather than being backdated.
 
-**One surface had no reference to name.** 08 §3's table does not cover in-stay
-messaging. [stay-messaging.md](stay-messaging.md) proposes two references and
-argues the deviations from each; 08 §3 now carries the row. A missing row is a
-gap in the policy, not permission to design from a blank page.
+**Three surfaces had no reference to name.** 08 §3's table did not cover in-stay
+messaging, the monthly report or the privacy desk. Each note proposes its own
+references and argues the deviations from them, and 08 §3 now carries all three
+rows. A missing row is a gap in the policy, not permission to design from a
+blank page.
 
 Surfaces still to come, each with its reference already named in 08 §3: the tape
 chart (Mews Operations + Slope), quotes/*preventivi* (Slope), guest profiles

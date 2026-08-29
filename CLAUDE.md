@@ -38,10 +38,15 @@ typecheck · vitest (every P0 AC has a test) · RLS cross-tenant suite · migrat
 ## Conventions and workflows
 - `docs/conventions/` — coding standards, UI component sourcing and theming
 - `docs/runbooks/rls-policies-map.md` — every policy, and when isolation was last verified **by query**
+- `docs/runbooks/privacy.md` — data-subject requests, retention, the register; `backup-restore.md` and `load-test.md` carry the drill logs
 - `.claude/skills/` — `add-table`, `add-ui-component`, `write-adr`: the sequences where skipping a step fails silently. Use them; they are not summaries of this file
 
 ## Current phase
-Sprints 1–9 shipped (04-IMPLEMENTATION-PLAN §1 Phases A–D): engine, booking surface, payments behind a mock, the guest journey, Alloggiati behind a mock, in-stay messaging + express checkout, the attribution/report layer that **is** the invoice basis (D14), and self-service onboarding — setup checklist, knowledge editor, staff role, entitlements. Next is Sprint 10 — GDPR export/erasure and retention (E8), the sub-processor register, a backup-restore drill, a load test on the booking path, and an external pen test.
+Sprints 1–10 shipped (04-IMPLEMENTATION-PLAN §1 Phases A–D): engine, booking surface, payments behind a mock, the guest journey, Alloggiati behind a mock, in-stay messaging + express checkout, the attribution/report layer that **is** the invoice basis (D14), self-service onboarding, and E8 — the data map, export, erasure, retention jobs, the generated sub-processor register, a backup-restore drill and a load test on the booking path.
+
+Everything left before GA is external or infrastructural, and none of it is a feature: the **pen test**, an **egress proxy** for the DNS-rebinding residue Sprint 9's SSRF fix left, a **PITR restore drill** on a real Supabase project, and the load test re-run against staging. `docs/runbooks/backup-restore.md` and `docs/runbooks/load-test.md` name each one as not-yet-done rather than leaving it implied.
+
+**The data map is `packages/core/src/privacy/data-map.ts`.** Export, erasure and retention all read it, and a table missing from it fails a test. If a change touches what the platform stores, it changes the map in the same pull request.
 
 Built-vs-decided, per ADR and per sprint: `docs/adr/IMPLEMENTATION-STATUS.md`. Read it before assuming something works — several things are ports with mocks behind them on purpose.
 
