@@ -82,8 +82,20 @@ export async function proxy(request: NextRequest) {
   if (!user && requiresSession(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = `/${localeOf(request.nextUrl.pathname)}/login`
-    // Where they were heading, so login can send them back.
-    url.searchParams.set('next', request.nextUrl.pathname)
+    /*
+     * Where they were heading, **without the locale prefix**.
+     *
+     * The login form sends them on with the locale-aware router from
+     * `@/i18n/navigation`, which adds the prefix itself. Storing the full
+     * pathname here produced `/en/en/hotel-sonja/console/report` and a 404 —
+     * on exactly the journey that matters, a signed-out person following a deep
+     * link into the console.
+     *
+     * Found by opening a report URL in a fresh browser rather than by clicking
+     * through from an already-signed-in session, which is how everything else
+     * had been exercised.
+     */
+    url.searchParams.set('next', withoutLocale(request.nextUrl.pathname))
     return Response.redirect(url) as never
   }
 
@@ -124,6 +136,24 @@ function requiresSession(pathname: string): boolean {
   if (GUEST_PREFIXES.some((prefix) => withoutLocale.startsWith(prefix))) return false
 
   return true
+}
+
+/**
+ * Strip a leading locale segment, if there is one.
+ *
+ * Returns `/` for a bare locale path, because `''` is not a destination the
+ * router can be handed.
+ */
+function withoutLocale(pathname: string): string {
+  const segments = pathname.split('/')
+  const maybeLocale = segments[1]
+
+  if (maybeLocale && routing.locales.includes(maybeLocale as (typeof routing.locales)[number])) {
+    const rest = `/${segments.slice(2).join('/')}`
+    return rest === '/' ? '/' : rest
+  }
+
+  return pathname
 }
 
 function localeOf(pathname: string): string {

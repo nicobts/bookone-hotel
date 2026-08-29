@@ -62,7 +62,8 @@
     "members": "Team",
     "settings": "Settings",
     "bookingPage": "Booking page",
-    "conversations": "Conversations"
+    "conversations": "Conversations",
+    "report": "Revenue"
   },
   "property": {
     "switcher": {
@@ -179,6 +180,57 @@
           "pending": "In house",
           "settled": "Checked out",
           "closed": "Closed"
+        }
+      }
+    },
+    "report": {
+      "title": "Revenue & fees",
+      "subtitle": "What you are billed, and the evidence behind every line.",
+      "empty": "Nothing to report for this period yet.",
+      "total": "Total this month",
+      "perRoomLabel": "Per room, per month",
+      "perRoom": "{amount} · {rooms} rooms",
+      "perRoomNote": "Includes the percentage fees below. The number shown is the number billed.",
+      "issue": "Accept this statement",
+      "issued": "Accepted",
+      "issuedAt": "Frozen on {at}. Later changes appear on the next statement.",
+      "periods": "Earlier months",
+      "notFiscal": "This is a working statement of what BookOne bills you. It is not an invoice, not a fiscal document, and nothing here is transmitted to any authority.",
+      "sections": {
+        "subscription": "Platform",
+        "direct": "Direct bookings",
+        "attributed": "AI-attributed bookings"
+      },
+      "sectionMath": "{count} bookings · {basis} × {rate}% = {gross}",
+      "sectionEmpty": "None this month.",
+      "ofBasis": "{rate}% of {basis}",
+      "disputeAction": "I disagree with this",
+      "credited": "Credited back: {amount}",
+      "evidence": {
+        "show": "Why this was AI-attributed",
+        "reason": "Rule",
+        "session": "Conversation",
+        "startedAt": "Conversation started",
+        "engineTouches": "Booking-engine visits in the window",
+        "window": "Window opened"
+      },
+      "export": {
+        "action": "Export CSV",
+        "busy": "Preparing",
+        "failed": "The export could not be prepared.",
+        "disclaimer": "Working statement of BookOne platform fees. Not an invoice and not a fiscal document.",
+        "headers": {
+          "section": "Type",
+          "reference": "Reference",
+          "guest": "Guest",
+          "arrival": "Arrival",
+          "departure": "Departure",
+          "basis": "Stay total",
+          "rate": "Rate",
+          "fee": "Fee",
+          "credit": "Credit",
+          "net": "Net",
+          "evidence": "Attribution reason"
         }
       }
     }

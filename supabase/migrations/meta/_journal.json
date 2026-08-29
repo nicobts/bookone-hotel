@@ -57,6 +57,13 @@
       "when": 1787959478317,
       "tag": "20260828232438_flaky_hawkeye",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787993736360,
+      "tag": "20260829085536_lowly_living_lightning",
+      "breakpoints": true
     }
   ]
 }

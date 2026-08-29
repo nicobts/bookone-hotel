@@ -29,6 +29,7 @@ If a note quotes a competitor's wording, the note is wrong.
 | Pre-arrival check-in | Mews Kiosk flows, transposed to the guest's phone | [pre-arrival.md](pre-arrival.md) |
 | In-stay messaging | *none named in 08 §3* — proposed in the note | [stay-messaging.md](stay-messaging.md) |
 | Arrival & express checkout | Mews Kiosk flows (the check-out half) | [express-checkout.md](express-checkout.md) |
+| Monthly report | *none named in 08 §3* — proposed in the note | [monthly-report.md](monthly-report.md) |
 
 Two notes on the state of this table.
 

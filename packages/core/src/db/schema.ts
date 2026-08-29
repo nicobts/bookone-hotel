@@ -1670,3 +1670,271 @@ export const invoiceRequests = pgTable(
     check('invoice_requests_bill_to_not_empty', sql`length(btrim(${t.billTo})) > 0`),
   ],
 )
+
+// ---------------------------------------------------------------------------
+// Attribution, subscriptions and the monthly report (E5.4, D14, ADR-015)
+// ---------------------------------------------------------------------------
+
+/**
+ * Where a booking session came from.
+ *
+ * `engine` is our own booking surface; the two concierge values are the chat
+ * thread (E3.2) and the voice workstream (WS-B). Separate rather than one
+ * `concierge` value because D14 prices AI-attributed business and somebody will
+ * eventually ask which channel earned it — and adding an enum value later is
+ * cheap while splitting a conflated one is not.
+ */
+export const attributionChannel = pgEnum('attribution_channel', [
+  'engine',
+  'concierge_chat',
+  'concierge_voice',
+])
+
+/** Where a report stands. Issued is frozen — see `monthlyReports`. */
+export const reportStatus = pgEnum('report_status', ['draft', 'issued'])
+
+/** A dispute is raised and then credited. There is no "rejected" — see `feeDisputes`. */
+export const disputeStatus = pgEnum('dispute_status', ['open', 'credited'])
+
+/**
+ * A session touching a booking (D14, PRD §6).
+ *
+ * This table exists to answer one question with a timestamp: **did an engine
+ * session precede the concierge session that produced this booking?** D14's
+ * attribution rule is written as a 24-hour window, and Sprint 4 could not
+ * implement it — the reservation carried session *ids* but nothing carried
+ * *when*, so `classifyBooking` used the presence of an engine id as a stricter
+ * proxy and said so in a comment.
+ *
+ * Note the direction of that compromise. The proxy under-attributes: a booking
+ * where the guest browsed the engine three weeks earlier and then booked by
+ * chat was billed at the direct rate. Replacing it with the real window can
+ * only move fees **up**, which is a conversation with an owner rather than a
+ * refund to them — the only direction it was safe to be wrong in.
+ *
+ * ## Why events rather than columns on `reservations`
+ *
+ * Because a session that did not convert is still evidence. "No engine session
+ * preceded it" is a claim about sessions that produced no booking, and a column
+ * on the reservation can only ever record the one that did.
+ */
+export const attributionEvents = pgTable(
+  'attribution_events',
+  {
+    id: bigserial('id', { mode: 'bigint' }).primaryKey(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+
+    /**
+     * The session, as the surface that created it knows it.
+     *
+     * Not a foreign key and not a platform UUID: a session belongs to a browser
+     * or a phone call, exists before any row does, and often never becomes
+     * anything. It is an opaque string we compare to itself.
+     */
+    sessionId: text('session_id').notNull(),
+
+    channel: attributionChannel('channel').notNull(),
+
+    /**
+     * The booking it produced, once it produces one.
+     *
+     * Null for the overwhelming majority of rows, which is the point: those are
+     * the ones that evidence "somebody was already looking".
+     */
+    reservationId: uuid('reservation_id').references(() => reservations.id, {
+      onDelete: 'cascade',
+    }),
+
+    /**
+     * When it happened, from the caller.
+     *
+     * Passed in rather than defaulted, because the window is computed from it
+     * and a row written by a retried job must carry the time of the touch and
+     * not the time of the retry.
+     */
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    /**
+     * The window query: everything this property saw in a time range.
+     *
+     * `(property_id, occurred_at)` rather than `(property_id, session_id)`
+     * because the expensive question is "was there an engine touch in the 24
+     * hours before this one", which is a range scan.
+     */
+    index('attribution_events_property_time_idx').on(t.propertyId, t.occurredAt),
+    index('attribution_events_reservation_idx').on(t.reservationId),
+  ],
+)
+
+/**
+ * What a property pays us for the platform itself (D14 row 1).
+ *
+ * The base fee, €150–400/property/month. One live row per property; history is
+ * kept by ending a row rather than editing it, because the monthly report for
+ * March has to be able to say what March cost even after the price changes in
+ * June.
+ */
+export const subscriptions = pgTable(
+  'subscriptions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+
+    /** Contract label — `starter`, `standard`. Ours, never a competitor's coined name (ADR-014). */
+    plan: text('plan').notNull(),
+
+    baseCents: integer('base_cents').notNull(),
+    currency: text('currency').notNull().default('EUR'),
+
+    /**
+     * How many rooms the per-room equivalence divides by (ADR-015, D20).
+     *
+     * Stored on the subscription rather than counted from `room_types`, and the
+     * difference matters: `room_types` holds *types* with capacities, not a
+     * room count. Deriving "45 rooms" from three room types would produce a
+     * number that is wrong and looks authoritative — on the one line of the
+     * report designed to be compared against a competitor's price.
+     */
+    rooms: integer('rooms'),
+
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Null while live. Ending a subscription never deletes it. */
+    endedAt: timestamp('ended_at', { withTimezone: true }),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('subscriptions_property_idx').on(t.propertyId),
+    check('subscriptions_base_non_negative', sql`${t.baseCents} >= 0`),
+    check('subscriptions_rooms_positive', sql`${t.rooms} is null or ${t.rooms} > 0`),
+    check('subscriptions_currency_iso', sql`${t.currency} ~ '^[A-Z]{3}$'`),
+    /** A subscription that ended before it started is a data-entry accident. */
+    check(
+      'subscriptions_dates_ordered',
+      sql`${t.endedAt} is null or ${t.endedAt} > ${t.startedAt}`,
+    ),
+  ],
+)
+
+/**
+ * One month, frozen (E5.4, PRD C4).
+ *
+ * **This report is the invoice basis**, which is the whole reason it is a table
+ * and not a query. A statement recomputed on read changes when a reservation is
+ * cancelled, a rate card is edited or a dispute is credited — and an invoice
+ * that shows different numbers on two readings is an invoice that gets disputed
+ * and lost (design-notes/monthly-report.md §4A).
+ *
+ * A draft recomputes freely. Issuing writes the numbers down.
+ */
+export const monthlyReports = pgTable(
+  'monthly_reports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+
+    /** First day of the month, in the property's own timezone. */
+    periodStart: date('period_start').notNull(),
+
+    status: reportStatus('status').notNull().default('draft'),
+
+    /**
+     * The whole statement as rendered, at issue time.
+     *
+     * Jsonb rather than a normalised line table, and this is the one place in
+     * the schema where that is the right answer: the value of the snapshot is
+     * precisely that it does **not** join to anything. A line table would
+     * reference `fee_events` and `reservations`, and a report is only frozen if
+     * nothing it points at can change underneath it.
+     */
+    snapshot: jsonb('snapshot')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+
+    /** Denormalized for the list. The snapshot is the authority. */
+    totalCents: integer('total_cents').notNull().default(0),
+    currency: text('currency').notNull().default('EUR'),
+
+    issuedAt: timestamp('issued_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    /** One report per property per month. A second would be a second invoice. */
+    unique('monthly_reports_property_period').on(t.propertyId, t.periodStart),
+    check(
+      'monthly_reports_issued_has_time',
+      sql`${t.status} <> 'issued' or ${t.issuedAt} is not null`,
+    ),
+    check('monthly_reports_period_is_first', sql`extract(day from ${t.periodStart}) = 1`),
+  ],
+)
+
+/**
+ * An owner disagreeing with a fee (E5.4).
+ *
+ * ## Why there is no `rejected` status
+ *
+ * D14: *disputes resolve in the owner's favour*. Implemented literally — raising
+ * one credits it, and the conversation happens afterwards. A workflow with an
+ * adjudication step would be a policy that reads well in a contract and behaves
+ * differently under load, and the first time an owner lost one they would stop
+ * believing the rest of the statement.
+ *
+ * The cost of being wrong is one fee. The cost of the alternative is the owner
+ * deciding the numbers are a negotiation, which is M6 — trust architecture —
+ * failing at exactly the point it was supposed to pay off.
+ *
+ * A rising dispute rate means the attribution rule is wrong. It is a signal to
+ * read, not a queue to work.
+ */
+export const feeDisputes = pgTable(
+  'fee_disputes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+
+    /**
+     * `restrict`, not `cascade`. The dispute is the record that we credited
+     * something back, and it outlives our interest in the fee it was about.
+     */
+    feeEventId: uuid('fee_event_id')
+      .notNull()
+      .references(() => feeEvents.id, { onDelete: 'restrict' }),
+
+    /** The member who raised it. Null once the person is gone; the credit stands. */
+    raisedBy: uuid('raised_by').references(() => authUsers.id, { onDelete: 'set null' }),
+
+    /** The owner's words. Not a category — a category is us framing their complaint. */
+    reason: text('reason'),
+
+    status: disputeStatus('status').notNull().default('open'),
+
+    /** What came off the statement. Set when credited, which is immediately. */
+    creditCents: integer('credit_cents').notNull().default(0),
+
+    creditedAt: timestamp('credited_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('fee_disputes_property_idx').on(t.propertyId),
+    /** One dispute per fee. Disputing twice is the same disagreement. */
+    unique('fee_disputes_fee_event').on(t.feeEventId),
+    check('fee_disputes_credit_non_negative', sql`${t.creditCents} >= 0`),
+    check(
+      'fee_disputes_credited_has_time',
+      sql`${t.status} <> 'credited' or ${t.creditedAt} is not null`,
+    ),
+  ],
+)

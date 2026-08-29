@@ -20,12 +20,20 @@ if (existsSync(new URL('../.env', import.meta.url))) {
 const [, , name, propertyId] = process.argv
 
 /** Sweeps take no payload: they find their own work across every property. */
-const SWEEPS = new Set(['precheckin', 'escalation', 'audit', 'departure', 'invoice'])
+const SWEEPS = new Set([
+  'precheckin',
+  'escalation',
+  'audit',
+  'departure',
+  'invoice',
+  'attribution',
+  'report',
+])
 
 if (!name || (!propertyId && !SWEEPS.has(name))) {
   console.error(
     'usage: enqueue.mts <availability|reconcile|agent> <propertyId>\n' +
-      '       enqueue.mts <precheckin|escalation|audit|departure|invoice>',
+      '       enqueue.mts <precheckin|escalation|audit|departure|invoice|attribution|report>',
   )
   process.exit(1)
 }
@@ -58,6 +66,12 @@ switch (name) {
     break
   case 'invoice':
     await queue.send('invoice.route', {})
+    break
+  case 'attribution':
+    await queue.send('attribution.audit', {})
+    break
+  case 'report':
+    await queue.send('report.generate', {})
     break
   default:
     console.error(`unknown job: ${name}`)

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  classifyBooking,
   computeFee,
   DEFAULT_FEE_RATES,
   monthlyEquivalencePerRoomCents,
@@ -15,53 +14,22 @@ import {
  * asking to trust us.
  */
 
-describe('classifyBooking', () => {
-  it('is AI-attributed only with a concierge session and no engine session', () => {
-    const { kind } = classifyBooking({
-      engineSessionId: null,
-      conciergeSessionId: 'concierge-1',
-    })
-
-    expect(kind).toBe('ai_attributed')
-  })
-
-  it('is a direct booking when an engine session is also present', () => {
-    // The conservative rule (PRD §6): the guest touched the engine, so the
-    // cheaper fee applies. Every ambiguous case resolves in the owner's favour.
-    const { kind } = classifyBooking({
-      engineSessionId: 'engine-1',
-      conciergeSessionId: 'concierge-1',
-    })
-
-    expect(kind).toBe('direct_booking')
-  })
-
-  it('is a direct booking with no sessions at all', () => {
-    expect(classifyBooking({ engineSessionId: null, conciergeSessionId: null }).kind).toBe(
-      'direct_booking',
-    )
-  })
-
-  it('carries the evidence that produced the classification', () => {
-    // Disputes resolve in the owner's favour, so an unevidenced fee is a fee we
-    // drop. The evidence lives with the row and is never reconstructed later
-    // against a database that has moved on.
-    const { evidence } = classifyBooking({
-      engineSessionId: null,
-      conciergeSessionId: 'concierge-1',
-    })
-
-    expect(evidence.rule).toBe('v1-conservative')
-    expect(evidence.conciergeSessionId).toBe('concierge-1')
-  })
-})
+/*
+ * The classification suite used to live here and now lives in
+ * `src/billing/__tests__/attribution.test.ts`.
+ *
+ * It moved because the decision did: Sprint 4 classified from the *presence* of
+ * a session id, which is arithmetic-adjacent enough to sit beside the money.
+ * D14's actual rule is a time window over `attribution_events`, and testing it
+ * here would mean this file needed timestamps to assert a rounding.
+ */
 
 describe('computeFee', () => {
   it('applies the direct rate to the stay total', () => {
     const fee = computeFee(DEFAULT_FEE_RATES, {
       totalCents: 30_000,
-      engineSessionId: 'engine-1',
-      conciergeSessionId: null,
+      kind: 'direct_booking',
+      evidence: {},
     })
 
     // 3% of €300.00
@@ -73,8 +41,8 @@ describe('computeFee', () => {
   it('applies the higher rate to AI-attributed business', () => {
     const fee = computeFee(DEFAULT_FEE_RATES, {
       totalCents: 30_000,
-      engineSessionId: null,
-      conciergeSessionId: 'concierge-1',
+      kind: 'ai_attributed',
+      evidence: {},
     })
 
     expect(fee.kind).toBe('ai_attributed')
@@ -84,7 +52,7 @@ describe('computeFee', () => {
   it('respects a per-booking cap on direct bookings', () => {
     const fee = computeFee(
       { ...DEFAULT_FEE_RATES, directBookingCapCents: 500 },
-      { totalCents: 100_000, engineSessionId: 'engine-1', conciergeSessionId: null },
+      { totalCents: 100_000, kind: 'direct_booking', evidence: {} },
     )
 
     expect(fee.feeCents).toBe(500)
@@ -99,17 +67,31 @@ describe('computeFee', () => {
     // sort of thing that makes an invoice fail to reconcile.
     const fee = computeFee(DEFAULT_FEE_RATES, {
       totalCents: 111,
-      engineSessionId: 'engine-1',
-      conciergeSessionId: null,
+      kind: 'direct_booking',
+      evidence: {},
     })
 
     expect(fee.feeCents).toBe(3)
   })
 
+  it('carries the attribution evidence through onto the fee', () => {
+    // Disputes resolve in the owner's favour, so an unevidenced fee is a fee we
+    // drop. The chain arrives from `decideAttribution` and is stored with the
+    // row rather than reconstructed later against a database that has moved on.
+    const fee = computeFee(DEFAULT_FEE_RATES, {
+      totalCents: 30_000,
+      kind: 'ai_attributed',
+      evidence: { rule: 'd14-v1', reason: 'no engine session before the conversation' },
+    })
+
+    expect(fee.evidence.rule).toBe('d14-v1')
+    expect(fee.evidence.reason).toBe('no engine session before the conversation')
+  })
+
   it('never produces a negative fee', () => {
     const fee = computeFee(
       { directBookingBps: 0, aiAttributedBps: 0 },
-      { totalCents: 30_000, engineSessionId: null, conciergeSessionId: null },
+      { totalCents: 30_000, kind: 'direct_booking', evidence: {} },
     )
 
     expect(fee.feeCents).toBe(0)

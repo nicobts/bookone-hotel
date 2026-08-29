@@ -1,5 +1,6 @@
 import { classifyDivergences } from '@bookone/core/sync'
 import type { PmsReservation } from '@bookone/core/adapters'
+import { billingTools } from './billing'
 import { conciergeTools } from './concierge'
 
 /**
@@ -101,6 +102,7 @@ export const classifyDiscrepancyTool: Tool = {
 export const tools: Record<string, Tool> = {
   [classifyDiscrepancyTool.name]: classifyDiscrepancyTool,
   ...Object.fromEntries(conciergeTools.map((tool) => [tool.name, tool])),
+  ...Object.fromEntries(billingTools.map((tool) => [tool.name, tool])),
 }
 
 export function getTool(name: string): Tool | undefined {

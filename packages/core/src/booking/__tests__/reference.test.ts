@@ -19,12 +19,27 @@ describe('generateReference', () => {
   })
 
   it('does not repeat within a realistic property volume', () => {
-    // 30^6 is ~729 million, so a collision here would mean the generator is not
-    // actually random — which is the failure worth catching. Real collisions are
-    // handled by the unique constraint, per property.
+    /*
+     * The alphabet is 30 characters over 6 positions: ~729 million references.
+     *
+     * This asserted `size === 5000` until it failed twice in one afternoon, and
+     * the comment justifying it was wrong: by the birthday bound, 5000 draws
+     * from that space collide about 1.7% of the time with a *perfect* generator.
+     * The test was not catching a bug, it was reporting one — roughly once every
+     * sixty runs, in CI, on a merge gate.
+     *
+     * What is actually worth catching is a generator that is not random at all:
+     * a constant, a short cycle, a seeded sequence. Those produce collisions by
+     * the thousand, not by the one. So the bar is set where a real fault is far
+     * outside it and ordinary chance is far inside — seeing ten collisions here
+     * is astronomically unlikely, and a broken generator produces far more.
+     *
+     * Genuine collisions in production are handled by the unique constraint,
+     * per property.
+     */
     const references = new Set(Array.from({ length: 5000 }, generateReference))
 
-    expect(references.size).toBe(5000)
+    expect(references.size).toBeGreaterThan(4990)
   })
 })
 

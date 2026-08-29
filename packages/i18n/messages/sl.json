@@ -62,7 +62,8 @@
     "members": "Ekipa",
     "settings": "Nastavitve",
     "bookingPage": "Stran za rezervacije",
-    "conversations": "Pogovori"
+    "conversations": "Pogovori",
+    "report": "Prihodki"
   },
   "property": {
     "switcher": {
@@ -179,6 +180,57 @@
           "pending": "V hiši",
           "settled": "Odjavljen",
           "closed": "Zaključeno"
+        }
+      }
+    },
+    "report": {
+      "title": "Prihodki in provizije",
+      "subtitle": "Kaj vam zaračunamo, z dokazili za vsako postavko.",
+      "empty": "Za to obdobje še ni ničesar za poročati.",
+      "total": "Skupaj ta mesec",
+      "perRoomLabel": "Na sobo, na mesec",
+      "perRoom": "{amount} · {rooms} sob",
+      "perRoomNote": "Vključuje spodnje odstotne provizije. Prikazana številka je zaračunana številka.",
+      "issue": "Sprejmi ta obračun",
+      "issued": "Sprejeto",
+      "issuedAt": "Zamrznjeno {at}. Poznejše spremembe se pokažejo na naslednjem obračunu.",
+      "periods": "Prejšnji meseci",
+      "notFiscal": "To je delovni obračun tega, kar vam zaračuna BookOne. Ni račun, ni davčni dokument in nič od tega ni posredovano nobenemu organu.",
+      "sections": {
+        "subscription": "Platforma",
+        "direct": "Neposredne rezervacije",
+        "attributed": "Rezervacije, pripisane UI"
+      },
+      "sectionMath": "{count} rezervacij · {basis} × {rate}% = {gross}",
+      "sectionEmpty": "Ta mesec nobene.",
+      "ofBasis": "{rate}% od {basis}",
+      "disputeAction": "S tem se ne strinjam",
+      "credited": "Vrnjeno v dobro: {amount}",
+      "evidence": {
+        "show": "Zakaj je bilo pripisano UI",
+        "reason": "Pravilo",
+        "session": "Pogovor",
+        "startedAt": "Začetek pogovora",
+        "engineTouches": "Obiski rezervacijskega sistema v oknu",
+        "window": "Okno se je odprlo"
+      },
+      "export": {
+        "action": "Izvozi CSV",
+        "busy": "Pripravljam",
+        "failed": "Izvoza ni bilo mogoče pripraviti.",
+        "disclaimer": "Delovni obračun provizij platforme BookOne. Ni račun in ni davčni dokument.",
+        "headers": {
+          "section": "Vrsta",
+          "reference": "Sklic",
+          "guest": "Gost",
+          "arrival": "Prihod",
+          "departure": "Odhod",
+          "basis": "Skupaj bivanje",
+          "rate": "Stopnja",
+          "fee": "Provizija",
+          "credit": "Dobropis",
+          "net": "Neto",
+          "evidence": "Razlog pripisa"
         }
       }
     }

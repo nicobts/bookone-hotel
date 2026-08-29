@@ -4,6 +4,7 @@ import {
   CalendarCheckIcon,
   ExternalLinkIcon,
   MessageSquareIcon,
+  ReceiptIcon,
   SettingsIcon,
   SunIcon,
   TriangleAlertIcon,
@@ -68,6 +69,16 @@ export async function AppSidebar({
         },
         { title: t('reservations'), href: `${base}/reservations`, icon: <CalendarCheckIcon /> },
         { title: t('guests'), href: `${base}/guests`, icon: <UsersIcon /> },
+        /*
+         * The report sits last in "Operate" rather than in "Configure".
+         *
+         * It is neither running the house today nor setting it up — it is the
+         * owner reading what they are billed. Of the two bands, that is much
+         * nearer the first: it is read regularly, it is read by the person who
+         * reads Today, and burying an invoice among the settings is a way of
+         * suggesting it is not meant to be looked at.
+         */
+        { title: t('report'), href: `${base}/report`, icon: <ReceiptIcon /> },
       ],
     },
     {

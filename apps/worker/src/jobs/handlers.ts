@@ -32,6 +32,12 @@ import {
   markInvoiceRouted,
   queueInvoiceRequestToProperty,
 } from '@bookone/core/stay'
+import {
+  buildReport,
+  listPropertiesForReports,
+  previousPeriod,
+  propertiesWithAttributedFees,
+} from '@bookone/core/billing'
 import { guestActor, systemActor, userActor } from '@bookone/core/events'
 import { runAgent } from '@bookone/agents/runner'
 import { respondToGuestMessage } from '@bookone/agents/concierge'
@@ -121,6 +127,19 @@ const ESCALATION_SLA_MINUTES = 30
  * violation that is still true, which is the right direction to be wrong in.
  */
 const AUDIT_WINDOW_HOURS = 30
+
+/**
+ * How far back the attribution auditor re-checks (AG-07, E5.4).
+ *
+ * Forty days, so a statement issued in the first week of a month has had every
+ * fee in it checked at least once while the month was still open — and a run
+ * that fails for a night cannot leave a window nothing ever looked at.
+ *
+ * Re-auditing a fee already credited costs one query and changes nothing: the
+ * unique constraint on `fee_disputes.fee_event_id` means the concession is made
+ * once whatever the window is.
+ */
+const ATTRIBUTION_AUDIT_WINDOW_DAYS = 40
 
 export async function registerHandlers(deps: HandlerDeps): Promise<void> {
   const { queue, adapter, notifications, payments, alloggiati, deleteObject, appUrl, logger } = deps
@@ -630,6 +649,105 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       'toolboundary.audit',
     )
   })
+
+  /**
+   * Re-check what we billed at the AI rate (AG-07, E5.4).
+   *
+   * Runs through the agent runner rather than calling `auditAttribution`
+   * directly, and that is not ceremony: it means every night's check leaves an
+   * `agent_runs` row with its tool calls and its findings, which is the record
+   * an owner's accountant would ask for. An audit nobody can audit is not one.
+   *
+   * `mode: 'credit'`, so a fee whose evidence no longer holds comes off before
+   * the property has to notice. The only direction this agent can move money is
+   * down (06 §2).
+   */
+  await queue.work('attribution.audit', async (job) => {
+    const to = new Date()
+    const from = new Date(to.getTime() - ATTRIBUTION_AUDIT_WINDOW_DAYS * 86_400_000)
+
+    const properties = await propertiesWithAttributedFees(from, to)
+
+    let checked = 0
+    let credited = 0
+    let creditedCents = 0
+
+    for (const propertyId of properties) {
+      const run = await runAgent({
+        agent: 'AG-07',
+        propertyId,
+        input: { mode: 'credit', from: from.toISOString(), to: to.toISOString() },
+      })
+
+      if (run.status === 'rejected') {
+        logger.error({ jobId: job.id, propertyId, output: run.output }, 'attribution.audit failed')
+        continue
+      }
+
+      checked += Number(run.output.checked ?? 0)
+      credited += Number(run.output.credited ?? 0)
+      creditedCents += Number(run.output.creditedCents ?? 0)
+
+      if (Number(run.output.credited ?? 0) > 0) {
+        /*
+         * Logged at `warn`, not `info`.
+         *
+         * A credit means the fee path and the audit path disagreed about a
+         * documented rule — which is a bug in one of them, discovered by
+         * refunding a customer. It should be uncomfortable to read.
+         */
+        logger.warn(
+          { jobId: job.id, propertyId, credited: run.output.credited, creditedCents },
+          'attribution.audit — credited unevidenced fees',
+        )
+      }
+    }
+
+    logger.info(
+      { jobId: job.id, properties: properties.length, checked, credited, creditedCents },
+      'attribution.audit',
+    )
+  })
+
+  /**
+   * Build last month's statement for every property (E5.4).
+   *
+   * Builds the draft; it does **not** issue. Issuing is the owner accepting the
+   * statement, and a job that froze it on their behalf would turn "accepted" —
+   * the word the surface uses — into something nobody actually did.
+   *
+   * The period is computed per property in that property's own timezone. A
+   * single period chosen by whatever enqueued this would put a midnight booking
+   * in the wrong month for any house outside the scheduler's zone.
+   */
+  await queue.work('report.generate', async (job) => {
+    const rows = await listPropertiesForReports()
+
+    let built = 0
+
+    for (const property of rows) {
+      const period = previousPeriod(property.timezone)
+      const report = await buildReport({ propertyId: property.id, periodStart: period })
+
+      if (!report) continue
+
+      built += 1
+
+      logger.info(
+        {
+          jobId: job.id,
+          propertyId: property.id,
+          period,
+          totalCents: report.totalCents,
+          status: report.status,
+        },
+        'report.generate',
+      )
+    }
+
+    logger.info({ jobId: job.id, properties: rows.length, built }, 'report.generate')
+  })
+
   await queue.work('reservation.expire_holds', async (job) => {
     const { expired } = await expireHolds()
 

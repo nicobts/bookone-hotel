@@ -17,11 +17,11 @@ worse than none, because it is read as current.
 | 008 | Mock-first connector | ✅ as-built | `MockEricsoftAdapter` with counted failure injection, plus the shared contract suite the real adapter must pass before the swap. Verified by negative control: removing the idempotency guard fails the contract |
 | 009 | Voice hard tool boundaries | 🟨 discipline applied to chat | Voice is WS-B. The *boundary* is built and measured here: every AG-01 tool returns a pre-formed `phrase`, the reply is that phrase verbatim, and a nightly job re-reads what was sent against the tool outputs of its own run. Zero violations is the gate |
 | 010 | Stripe behind `PaymentAdapter` | 🟨 port built, **provider not connected** | `PaymentAdapter` + `MockPaymentAdapter`, which moves no money. The interface, policy engine, `payments` ledger, `fee_events`, webhook-as-authority, signature check, redelivery idempotency and lost-webhook replay are all real and exercised. Blocked on 04 §0 item 6 (Stripe account, Connect Standard, commercialista). A real adapter must pass `describePaymentAdapterContract` — the suite the mock passes — before the swap, and the worker refuses to boot simulated in production |
-| 011 | Agents as first-class workers, tiered autonomy | ✅ as-built | Registry, runner and typed tools; AG-05 live on reconciliation. The runner refuses an ungranted tool, scopes to one property, and records every run — including the ones that fail |
+| 011 | Agents as first-class workers, tiered autonomy | ✅ as-built | Registry, runner and typed tools; AG-01, AG-05 and AG-07 live. The runner refuses an ungranted tool, scopes to one property, and records every run — including the ones that fail. AG-07 is the first agent that moves money, and it can only move it **down**: there is no tool that raises a fee, which is the asymmetry that makes a T1 agent near billing defensible |
 | 012 | `LlmProvider` abstraction; no vendor SDK imports | 🟨 port built, **no provider registered** | Interface and registry in `src/llm`; registration refuses any provider without declared EU processing, a region, a sub-processor register entry and a verification under a year old. `LLM_API_KEY` is empty and AG-01 runs as a deterministic router — which is not a stopgap for the tool boundary but the shape it has to keep: a model would widen recall, never authorship (binding rule 7) |
 | 013 | Journey state machine is the single source of stay truth | ✅ as-built | Five dimensions, evented commands, `applyJourneyCommand` the only writer. Illegal transitions refused and separated from retries; every transition emits its event in the same transaction, so G1 is computable from the log alone. `journey_states` has no write policy at all — the console's arrival button will take the same command a door sensor will |
 | 014 | Reference implementations over blank-page design | 🟨 as-built, **one note written late** | Four notes in [design-notes/](../design-notes/README.md). Booking and the Sprint 7 surfaces were written before their code; [pre-arrival.md](../design-notes/pre-arrival.md) records a Sprint 5 surface that shipped without one and says so at the top rather than being backdated. 08 §3 had no reference row for in-stay messaging — the note proposes two and the table now carries it |
-| 015 | Pricing in €/room/month equivalence | ⬜ not yet | Sprint 8 reporting |
+| 015 | Pricing in €/room/month equivalence | ✅ as-built | On the monthly report, **including the percentage fees** — the number shown is the number billed. Null rather than a guess when the subscription records no room count: `room_types` holds types, not rooms, and a derived figure would be wrong and look authoritative on the one line built for comparison against a competitor's price |
 | 016 | Property is a URL segment | ✅ as-built | `/[locale]/[property]/console/…`; verified in a browser that a non-member typing another slug gets a 404, not a redirect |
 | 017 | Identity tables sit outside tenancy | ✅ as-built | `profiles` isolated by `auth.uid()`; asserted separately in the suite |
 | 018 | RLS enforced on the Drizzle path via `withUser` | ✅ as-built | `packages/core/src/db/session.ts`; removing the role-drop fails 8 of 21 |
@@ -95,6 +95,32 @@ worse than none, because it is read as current.
 | Departure sweep | ✅ | Nightly backstop under `system`, so a guest-confirmed checkout and an inferred one stay distinguishable |
 | **A language model** | ⬜ **not connected** | `LLM_API_KEY` empty; no provider passes D9 registration yet. The eval set is what makes connecting one a measurement rather than a leap |
 | **WhatsApp** | ⬜ **blocked** | BSP verification (04 §0). The thread is stored channel-agnostically; adding it is a provider, not a re-model |
+
+## Sprint 8 additions
+
+| Thing | Status | Note |
+|---|---|---|
+| `attribution_events` + D14's real rule | ✅ | Replaces Sprint 4's proxy. The proxy under-attributed, so the switch can only move fees **up** — a conversation with an owner rather than a refund to one |
+| Monthly report (C4) | ✅ | Three sections with the arithmetic shown, zero lines included rather than dropped |
+| Frozen when issued | ✅ | Verified live: five more bookings landed after issuing and the statement did not move |
+| Evidence drill-down | ✅ | Per attributed line: which conversation, when it started, engine visits in the window **including the ones that did not disqualify it** |
+| Dispute per line (D14) | ✅ | Credited on the spot, no adjudication step. There is no `rejected` status to reach |
+| CSV export | ✅ | Semicolon-delimited and BOM-prefixed, because the market opens it in Excel; first line says it is not a fiscal document |
+| "PDF" | 🟨 **print the page** | Deliberately not a second renderer. Two renderers of one statement can disagree, and the one nobody looks at is the one that gets sent |
+| Subscriptions (D14 row 1) | ✅ | History by ending a row, never editing it — March's report must still say what March cost after June's price change |
+| AG-07 Attribution Auditor | ✅ | Nightly. Verified live: planted a late touch, it credited €72.00 automatically and credited nothing on the rerun |
+| **AG-04 Exception Triage** | ⬜ **not built** | 06 §5 puts it in this sprint. Deferred rather than half-built — see below |
+| **AG-05 full (T2 status changes)** | ⬜ **not built** | Needs the T2 proposal surface, which nothing yet has |
+| **Module / per-room fees (D14 row 4)** | ⬜ not yet | Entitlement flags are Sprint 9; the report line is designed for and unpopulated |
+
+### What was deliberately left
+
+06 §5 lists AG-04 and full AG-05 for this sprint. Both are **T2** — they
+propose and a human taps — and the diff-card surface that a T2 proposal is
+reviewed on does not exist. Building the agents first would produce two agents
+whose output has nowhere to go, and a tier that is enforced by there being no
+button rather than by design. The proposal surface is the honest prerequisite
+and it is Sprint 9 work.
 
 ## CI gates
 

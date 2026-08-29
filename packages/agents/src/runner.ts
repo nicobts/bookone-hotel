@@ -295,6 +295,35 @@ async function execute(
       }
     }
 
+    /**
+     * AG-07 — the attribution auditor (E5.4, D14).
+     *
+     * Two modes, chosen by the caller rather than by the agent: `check` reports
+     * and `credit` acts. The split is deliberate — an operator should be able to
+     * run the audit for a while and read what it says before granting it the
+     * ability to say it to an owner's invoice.
+     *
+     * Everything it can do reduces our own revenue. There is no tool here that
+     * raises a fee, and that asymmetry is the whole reason a T1 agent is allowed
+     * near billing at all.
+     */
+    case 'AG-07': {
+      const credit = input.input.mode === 'credit'
+      const result = await call(credit ? 'credit_unevidenced_fee' : 'audit_attribution', {
+        from: input.input.from,
+        to: input.input.to,
+      })
+
+      if (!result.ok) {
+        throw new Error(String(result.output.error ?? 'attribution audit failed'))
+      }
+
+      return {
+        output: { mode: credit ? 'credit' : 'check', ...result.output },
+        confidence: typeof result.output.confidence === 'number' ? result.output.confidence : null,
+      }
+    }
+
     case 'AG-05': {
       const result = await call('classify_discrepancy', input.input)
 

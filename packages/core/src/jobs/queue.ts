@@ -58,6 +58,10 @@ export const jobNames = [
   'departure.sweep',
   /** Re-read what the concierge said against what its tools returned (E3.2). */
   'toolboundary.audit',
+  /** Re-check AI-attributed fees against their evidence, and credit what fails (AG-07). */
+  'attribution.audit',
+  /** Build last month's statement for every property (E5.4). */
+  'report.generate',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -147,6 +151,16 @@ export interface JobPayloads {
   'invoice.route': Record<string, never>
   'departure.sweep': Record<string, never>
   'toolboundary.audit': Record<string, never>
+  'attribution.audit': Record<string, never>
+  /**
+   * No payload, and deliberately not a period.
+   *
+   * The job computes "last month" per property in that property's own timezone,
+   * because a month boundary is not the same instant in every house we might
+   * one day serve. A period on the payload would be one computed by whatever
+   * enqueued it, in whatever zone that process happened to be in.
+   */
+  'report.generate': Record<string, never>
 }
 
 export interface SendOptions {

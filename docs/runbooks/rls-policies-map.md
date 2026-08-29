@@ -74,6 +74,10 @@ only (`user_property_ids_admin()`).
 | `stay_tasks` | member | member | member | — ³⁰ | 2026-08-29 |
 | `stay_extras` | member | — ³¹ | — ³¹ | — ³¹ | 2026-08-29 |
 | `invoice_requests` | member | — ³² | — ³² | — ³² | 2026-08-29 |
+| `attribution_events` | member | — ³³ | — ³³ | — ³³ | 2026-08-29 |
+| `subscriptions` | member | — ³⁴ | — ³⁴ | — ³⁴ | 2026-08-29 |
+| `monthly_reports` | member | — ³⁵ | — ³⁵ | — ³⁵ | 2026-08-29 |
+| `fee_disputes` | member | member ³⁶ | — ³⁷ | — ³⁷ | 2026-08-29 |
 
 1. `with check (true)`. A new property has no members yet, so nothing else could
    pass; the `on_property_created` trigger makes the creator its owner in the
@@ -183,6 +187,30 @@ only (`user_property_ids_admin()`).
     then routing it as though they had asked for that is the failure this
     forecloses. `routed_at` is stamped by the worker when the request reaches
     the property.
+33. These rows decide whether a booking is billed at 2–4% or at 8–12% (D14). A
+    row writable from a session would let somebody manufacture "an engine
+    session preceded this" to move a fee down, or delete one to move it up —
+    either way the invoice would rest on a table a party to it could edit.
+    Written by the booking surface and the concierge under the service role.
+34. What a property pays for the platform is agreed in a contract, not set in
+    the product. `rooms` lives here too, because it is the divisor in the
+    €/room/month equivalence (ADR-015) — the line an owner compares against a
+    competitor's price, and not a number the billed party should be able to
+    move in either direction.
+35. A draft is recomputed by the generator and an issued report is frozen. The
+    whole value of the snapshot is that it does not change; an update policy
+    would make "frozen" a convention rather than a property of the system.
+    Nothing here is fiscal (D11): it computes no tax, issues no document, and is
+    transmitted to no authority.
+36. The only billing row a member writes, and the only insert policy in that
+    migration. D14 resolves disputes in the owner's favour, and an owner who
+    must open a support ticket to disagree is one whose disagreement is
+    rate-limited by our availability. `raised_by` is pinned to `auth.uid()` for
+    the same reason `messages.author_user_id` is: a dispute attributed to
+    somebody else is a forged record of who objected.
+37. The credit is applied when the dispute is raised, so there is no
+    adjudication step to edit. Withdrawing one is a conversation, not a button
+    that erases the evidence it happened.
 
 ## Exceptions — not property-scoped, and why
 

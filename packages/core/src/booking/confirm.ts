@@ -8,6 +8,7 @@ import { guestActor, systemActor, type Actor } from '../events/actor'
 import { BOOKING_CONFIRMATION, queueNotification } from '../notifications/outbox'
 import { formatMoney, type BookingConfirmationFacts } from '../notifications/templates'
 import { computeFee, readFeeRates } from '../payments/fees'
+import { attributeBookingIn } from '../billing/attribution'
 import { applyJourneyCommandIn } from '../journey/apply'
 import { readTouristTaxPolicy, touristTaxNote } from './quote'
 
@@ -247,10 +248,29 @@ export async function confirmReservation(input: {
       manageUrl: manageUrl(locale, row.propertySlug, row.id),
     }
 
+    /*
+     * Attribution first, then the arithmetic (D14, PRD §6).
+     *
+     * The window query runs on `db` rather than inside the transaction below,
+     * and deliberately: it is a read over `attribution_events`, it decides
+     * which of two rates applies, and holding the confirmation transaction open
+     * across it would serialise every booking behind a range scan.
+     *
+     * The verdict is computed once, here, and stored with the fee. It is never
+     * re-derived on read — the monthly report built on these rows is the
+     * invoice, and a fee that recomputes is an invoice that changes.
+     */
+    const verdict = await attributeBookingIn(db, {
+      propertyId,
+      bookedAt: new Date(),
+      conciergeSessionId: row.conciergeSessionId,
+      engineSessionId: row.engineSessionId,
+    })
+
     const fee = computeFee(readFeeRates(row.propertySettings), {
       totalCents,
-      engineSessionId: row.engineSessionId,
-      conciergeSessionId: row.conciergeSessionId,
+      kind: verdict.kind,
+      evidence: verdict.evidence,
     })
 
     return db.transaction(async (tx) => {

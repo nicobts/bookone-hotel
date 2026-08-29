@@ -62,7 +62,8 @@
     "members": "Team",
     "settings": "Einstellungen",
     "bookingPage": "Buchungsseite",
-    "conversations": "Unterhaltungen"
+    "conversations": "Unterhaltungen",
+    "report": "Umsatz"
   },
   "property": {
     "switcher": {
@@ -179,6 +180,57 @@
           "pending": "Im Haus",
           "settled": "Ausgecheckt",
           "closed": "Abgeschlossen"
+        }
+      }
+    },
+    "report": {
+      "title": "Umsatz & Gebühren",
+      "subtitle": "Was Ihnen berechnet wird, mit dem Nachweis zu jeder Position.",
+      "empty": "Für diesen Zeitraum gibt es noch nichts zu berichten.",
+      "total": "Gesamt in diesem Monat",
+      "perRoomLabel": "Pro Zimmer und Monat",
+      "perRoom": "{amount} · {rooms} Zimmer",
+      "perRoomNote": "Einschließlich der prozentualen Gebühren unten. Die angezeigte Zahl ist die berechnete Zahl.",
+      "issue": "Diese Aufstellung annehmen",
+      "issued": "Angenommen",
+      "issuedAt": "Eingefroren am {at}. Spätere Änderungen erscheinen auf der nächsten Aufstellung.",
+      "periods": "Frühere Monate",
+      "notFiscal": "Dies ist eine Arbeitsaufstellung dessen, was BookOne Ihnen berechnet. Es ist keine Rechnung, kein Steuerdokument, und nichts davon wird an eine Behörde übermittelt.",
+      "sections": {
+        "subscription": "Plattform",
+        "direct": "Direktbuchungen",
+        "attributed": "KI-zugeordnete Buchungen"
+      },
+      "sectionMath": "{count} Buchungen · {basis} × {rate}% = {gross}",
+      "sectionEmpty": "Keine in diesem Monat.",
+      "ofBasis": "{rate}% von {basis}",
+      "disputeAction": "Dem widerspreche ich",
+      "credited": "Gutgeschrieben: {amount}",
+      "evidence": {
+        "show": "Warum das der KI zugeordnet wurde",
+        "reason": "Regel",
+        "session": "Unterhaltung",
+        "startedAt": "Unterhaltung begann",
+        "engineTouches": "Besuche der Buchungsstrecke im Zeitfenster",
+        "window": "Zeitfenster ab"
+      },
+      "export": {
+        "action": "CSV exportieren",
+        "busy": "Wird vorbereitet",
+        "failed": "Der Export konnte nicht erstellt werden.",
+        "disclaimer": "Arbeitsaufstellung der BookOne-Plattformgebühren. Keine Rechnung und kein Steuerdokument.",
+        "headers": {
+          "section": "Art",
+          "reference": "Buchungsnummer",
+          "guest": "Gast",
+          "arrival": "Anreise",
+          "departure": "Abreise",
+          "basis": "Aufenthaltssumme",
+          "rate": "Satz",
+          "fee": "Gebühr",
+          "credit": "Gutschrift",
+          "net": "Netto",
+          "evidence": "Grund der Zuordnung"
         }
       }
     }

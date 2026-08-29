@@ -8,6 +8,7 @@ import { hasSettledPayment } from '../payments/webhook'
 import { generateReference } from './reference'
 import { nightsBetween, quoteStay } from './quote'
 import type { SnapshotNight } from './quote'
+import { recordTouchIn } from '../billing/attribution'
 
 /**
  * The booking hold (E1.3, design note §4A).
@@ -121,6 +122,39 @@ export async function createHold(input: CreateHoldInput): Promise<CreateHoldOutc
         .returning({ id: reservations.id, reference: reservations.reference })
 
       if (!row) throw new Error('reservations insert returned no row')
+
+      /*
+       * Record the touch that produced this hold (D14, PRD §6).
+       *
+       * In the same transaction as the reservation, so a hold cannot exist
+       * without the evidence of where it came from — which is the row that
+       * later decides whether the booking is billed at 2–4% or 8–12%.
+       *
+       * `attribution_events` records touches that never convert too, and those
+       * matter more: "no engine session preceded it" is a claim about sessions
+       * that produced nothing, which no column on this reservation could hold.
+       */
+      const touchedAt = new Date()
+
+      if (input.engineSessionId) {
+        await recordTouchIn(tx, {
+          propertyId,
+          sessionId: input.engineSessionId,
+          channel: 'engine',
+          occurredAt: touchedAt,
+          reservationId: row.id,
+        })
+      }
+
+      if (input.conciergeSessionId) {
+        await recordTouchIn(tx, {
+          propertyId,
+          sessionId: input.conciergeSessionId,
+          channel: 'concierge_chat',
+          occurredAt: touchedAt,
+          reservationId: row.id,
+        })
+      }
 
       await emit(tx, {
         propertyId,

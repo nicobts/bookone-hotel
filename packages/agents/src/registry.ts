@@ -115,9 +115,50 @@ export const AG_01: AgentDefinition = {
   dailyBudgetCents: 0,
 }
 
+/**
+ * AG-07 — Attribution Auditor (06 §2, Sprint 8).
+ *
+ * Re-runs D14's attribution rule against every fee we billed at the AI rate and
+ * asks whether the evidence still supports it. Nightly, per property.
+ *
+ * ## Why a T1 agent is allowed to move money
+ *
+ * Because of which way it can move it. The only action AG-07 has is crediting a
+ * fee back — it cannot raise one, cannot reclassify a booking upward, and has
+ * no tool that would let it. An agent whose entire capability is *reducing its
+ * operator's revenue* has a failure mode of a bad quarter rather than a
+ * defrauded customer, and that asymmetry is what makes acting alone safe here.
+ *
+ * It is also what D14 already commits us to. Disputes resolve in the owner's
+ * favour, so a fee whose evidence does not hold is a fee we drop; the only
+ * question was whether the owner had to notice first. The alternative — a queue
+ * of fees *we* believe are wrong, worked through at our convenience while the
+ * property is invoiced for them — is worse in a way that is hard to defend out
+ * loud.
+ *
+ * `model: 'none'` for the same reason as AG-05: re-running a documented rule
+ * over timestamps is arithmetic. If it ever drafts the explanation an owner
+ * reads, that capability gets a model and this becomes a per-capability
+ * decision.
+ */
+export const AG_07: AgentDefinition = {
+  name: 'AG-07',
+  description: 'Attribution Auditor — re-checks AI-attributed fees against their evidence',
+  tier: 'T1',
+  /*
+   * Two tools, and the missing third is the point: there is no
+   * `reclassify_fee`, no `raise_fee`, nothing that can increase a charge. The
+   * absence is the control (ADR-011).
+   */
+  tools: ['audit_attribution', 'credit_unevidenced_fee'],
+  model: 'none',
+  dailyBudgetCents: 0,
+}
+
 const registry = new Map<string, AgentDefinition>([
   [AG_01.name, AG_01],
   [AG_05.name, AG_05],
+  [AG_07.name, AG_07],
 ])
 
 export function getAgent(name: string): AgentDefinition {

@@ -23,7 +23,8 @@
     "./alloggiati": "./src/alloggiati/index.ts",
     "./storage": "./src/storage/index.ts",
     "./concierge": "./src/concierge/index.ts",
-    "./stay": "./src/stay/index.ts"
+    "./stay": "./src/stay/index.ts",
+    "./billing": "./src/billing/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

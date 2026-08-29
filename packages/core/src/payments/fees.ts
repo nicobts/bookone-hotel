@@ -60,59 +60,29 @@ export interface FeeComputation {
 }
 
 /**
- * Which side of D14 a booking falls on.
+ * Which side of D14 a booking falls on — **decided elsewhere**.
  *
- * The V1 attribution rule, conservatively: AI-attributed only when a concierge
- * session is present **and** no engine session preceded it. Anything else is a
- * direct booking, which is the cheaper fee — so every ambiguous case resolves
- * in the owner's favour, exactly as D14 requires.
+ * This file used to own that decision, with a comment explaining that it was a
+ * stricter proxy than the published rule because nothing recorded *when* a
+ * session touched the property. `attribution_events` now does, and the rule
+ * lives in `packages/core/src/billing/attribution.ts` where the window query
+ * is.
  *
- * The published rule says "within 24h", and this implementation uses a stricter
- * proxy: the presence of an engine session id on the reservation at all. We do
- * not yet store session timestamps, and the honest options were a stricter rule
- * or a guessed one. A stricter rule under-bills; a guessed one bills someone
- * for something we cannot evidence. `attribution_events` in Sprint 8 replaces
- * this with the real window, and it can only ever move fees *up* — which is the
- * direction that requires a conversation rather than a refund.
+ * What stays here is the arithmetic: a kind, a rate, a basis, a cap. Keeping
+ * them apart is what lets the rule be tested against timestamps without a
+ * database and the money be tested without a rule.
  */
-export function classifyBooking(reservation: {
-  engineSessionId: string | null
-  conciergeSessionId: string | null
-}): { kind: FeeKind; evidence: Record<string, unknown> } {
-  const hasConcierge = Boolean(reservation.conciergeSessionId)
-  const hasEngine = Boolean(reservation.engineSessionId)
-
-  if (hasConcierge && !hasEngine) {
-    return {
-      kind: 'ai_attributed',
-      evidence: {
-        rule: 'v1-conservative',
-        conciergeSessionId: reservation.conciergeSessionId,
-        enginePreceded: false,
-        note: 'engine-session window is the Sprint 8 attribution_events job; presence used as the conservative proxy',
-      },
-    }
-  }
-
-  return {
-    kind: 'direct_booking',
-    evidence: {
-      rule: 'v1-conservative',
-      hasConcierge,
-      hasEngine,
-    },
-  }
-}
 
 export function computeFee(
   rates: FeeRates,
   input: {
     totalCents: number
-    engineSessionId: string | null
-    conciergeSessionId: string | null
+    /** From `decideAttribution`. This function does not decide it. */
+    kind: FeeKind
+    evidence: Record<string, unknown>
   },
 ): FeeComputation {
-  const { kind, evidence } = classifyBooking(input)
+  const { kind, evidence } = input
 
   const rateBps = kind === 'ai_attributed' ? rates.aiAttributedBps : rates.directBookingBps
 

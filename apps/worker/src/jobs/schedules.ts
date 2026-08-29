@@ -124,6 +124,28 @@ const DEPARTURE_SWEEP = '30 4 * * *'
  */
 const TOOLBOUNDARY_AUDIT = '0 5 * * *'
 
+/**
+ * Re-checks AI-attributed fees against their evidence (AG-07, E5.4).
+ *
+ * 05:30, after the tool-boundary audit and before anybody opens the console.
+ * Daily rather than monthly, deliberately: finding a fee we should not have
+ * billed on the day it happens is a correction, and finding it on the 1st is a
+ * month of an owner having been overcharged.
+ */
+const ATTRIBUTION_AUDIT = '30 5 * * *'
+
+/**
+ * Builds last month's statement for every property (E5.4).
+ *
+ * 06:00 on the 2nd, not the 1st. A booking confirmed at 23:50 on the last night
+ * of the month has a fee, a reflection and possibly a webhook still in flight;
+ * building the statement an hour later would produce a draft that changes when
+ * the queue drains — on the one screen whose whole value is not changing.
+ *
+ * It builds a draft and stops. Issuing is the owner accepting it.
+ */
+const REPORT_GENERATE = '0 6 2 * *'
+
 export async function registerSchedules(deps: { queue: JobQueue; logger: Logger }): Promise<void> {
   const { queue, logger } = deps
 
@@ -190,6 +212,8 @@ export async function registerSchedules(deps: { queue: JobQueue; logger: Logger 
   await queue.schedule('invoice.route', INVOICE_ROUTE, {})
   await queue.schedule('departure.sweep', DEPARTURE_SWEEP, {})
   await queue.schedule('toolboundary.audit', TOOLBOUNDARY_AUDIT, {})
+  await queue.schedule('attribution.audit', ATTRIBUTION_AUDIT, {})
+  await queue.schedule('report.generate', REPORT_GENERATE, {})
 
   logger.info(
     {

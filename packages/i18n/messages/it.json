@@ -62,7 +62,8 @@
     "members": "Team",
     "settings": "Impostazioni",
     "bookingPage": "Pagina di prenotazione",
-    "conversations": "Conversazioni"
+    "conversations": "Conversazioni",
+    "report": "Ricavi"
   },
   "property": {
     "switcher": {
@@ -179,6 +180,57 @@
           "pending": "In casa",
           "settled": "Check-out fatto",
           "closed": "Chiuso"
+        }
+      }
+    },
+    "report": {
+      "title": "Ricavi e commissioni",
+      "subtitle": "Quanto le viene addebitato, con le prove dietro ogni riga.",
+      "empty": "Ancora nulla da riportare per questo periodo.",
+      "total": "Totale del mese",
+      "perRoomLabel": "Per camera, al mese",
+      "perRoom": "{amount} · {rooms} camere",
+      "perRoomNote": "Include le commissioni percentuali qui sotto. Il numero mostrato è il numero addebitato.",
+      "issue": "Accetta questo prospetto",
+      "issued": "Accettato",
+      "issuedAt": "Congelato il {at}. Le modifiche successive compaiono sul prospetto successivo.",
+      "periods": "Mesi precedenti",
+      "notFiscal": "Questo è un prospetto di lavoro di quanto BookOne le addebita. Non è una fattura, non è un documento fiscale e nulla di quanto contenuto viene trasmesso ad alcuna autorità.",
+      "sections": {
+        "subscription": "Piattaforma",
+        "direct": "Prenotazioni dirette",
+        "attributed": "Prenotazioni attribuite all'AI"
+      },
+      "sectionMath": "{count} prenotazioni · {basis} × {rate}% = {gross}",
+      "sectionEmpty": "Nessuna questo mese.",
+      "ofBasis": "{rate}% di {basis}",
+      "disputeAction": "Non sono d'accordo",
+      "credited": "Riaccreditato: {amount}",
+      "evidence": {
+        "show": "Perché è stata attribuita all'AI",
+        "reason": "Regola",
+        "session": "Conversazione",
+        "startedAt": "Inizio conversazione",
+        "engineTouches": "Visite al motore di prenotazione nella finestra",
+        "window": "Apertura finestra"
+      },
+      "export": {
+        "action": "Esporta CSV",
+        "busy": "Preparazione",
+        "failed": "Non è stato possibile preparare l'esportazione.",
+        "disclaimer": "Prospetto di lavoro delle commissioni della piattaforma BookOne. Non è una fattura né un documento fiscale.",
+        "headers": {
+          "section": "Tipo",
+          "reference": "Riferimento",
+          "guest": "Ospite",
+          "arrival": "Arrivo",
+          "departure": "Partenza",
+          "basis": "Totale soggiorno",
+          "rate": "Aliquota",
+          "fee": "Commissione",
+          "credit": "Accredito",
+          "net": "Netto",
+          "evidence": "Motivo attribuzione"
         }
       }
     }
