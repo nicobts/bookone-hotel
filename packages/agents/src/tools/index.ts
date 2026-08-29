@@ -2,6 +2,7 @@ import { classifyDivergences } from '@bookone/core/sync'
 import type { PmsReservation } from '@bookone/core/adapters'
 import { billingTools } from './billing'
 import { conciergeTools } from './concierge'
+import { draftKnowledgeTool } from './onboarding'
 
 /**
  * Typed domain tools — the complete surface through which agents act.
@@ -103,6 +104,7 @@ export const tools: Record<string, Tool> = {
   [classifyDiscrepancyTool.name]: classifyDiscrepancyTool,
   ...Object.fromEntries(conciergeTools.map((tool) => [tool.name, tool])),
   ...Object.fromEntries(billingTools.map((tool) => [tool.name, tool])),
+  [draftKnowledgeTool.name]: draftKnowledgeTool,
 }
 
 export function getTool(name: string): Tool | undefined {

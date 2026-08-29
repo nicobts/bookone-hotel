@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { NotBuiltYet, PageShell } from '@/components/shell/page-shell'
-import { requireProperty } from '@/lib/auth/current-property'
+import { requireOwner } from '@/lib/auth/current-property'
 
 export default async function Page({
   params,
@@ -9,7 +9,7 @@ export default async function Page({
 }) {
   const { locale, property: slug } = await params
   setRequestLocale(locale)
-  await requireProperty(locale, slug)
+  await requireOwner(locale, slug)
 
   const t = await getTranslations('nav')
 

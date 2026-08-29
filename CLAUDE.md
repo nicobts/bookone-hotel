@@ -41,7 +41,7 @@ typecheck · vitest (every P0 AC has a test) · RLS cross-tenant suite · migrat
 - `.claude/skills/` — `add-table`, `add-ui-component`, `write-adr`: the sequences where skipping a step fails silently. Use them; they are not summaries of this file
 
 ## Current phase
-Sprints 1–8 shipped (04-IMPLEMENTATION-PLAN §1 Phases A–D): engine, booking surface, payments behind a mock, the guest journey, Alloggiati behind a mock, in-stay messaging + express checkout, and the attribution/report layer that **is** the invoice basis (D14). Next is Sprint 9 — onboarding, the KB editor, the staff role and the T2 proposal surface that AG-04 and full AG-05 are waiting on.
+Sprints 1–9 shipped (04-IMPLEMENTATION-PLAN §1 Phases A–D): engine, booking surface, payments behind a mock, the guest journey, Alloggiati behind a mock, in-stay messaging + express checkout, the attribution/report layer that **is** the invoice basis (D14), and self-service onboarding — setup checklist, knowledge editor, staff role, entitlements. Next is Sprint 10 — GDPR export/erasure and retention (E8), the sub-processor register, a backup-restore drill, a load test on the booking path, and an external pen test.
 
 Built-vs-decided, per ADR and per sprint: `docs/adr/IMPLEMENTATION-STATUS.md`. Read it before assuming something works — several things are ports with mocks behind them on purpose.
 

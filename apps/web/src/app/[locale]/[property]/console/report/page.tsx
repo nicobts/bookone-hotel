@@ -3,7 +3,7 @@ import { CheckCircle2Icon, InfoIcon, LockIcon } from 'lucide-react'
 import { buildReport, listReportPeriods, periodOf, type ReportSection } from '@bookone/core/billing'
 import { PageShell } from '@/components/shell/page-shell'
 import { Link } from '@/i18n/navigation'
-import { requireProperty } from '@/lib/auth/current-property'
+import { requireOwner } from '@/lib/auth/current-property'
 import { formatDate, formatMoney } from '@/components/booking/format'
 import { ExportButton } from '@/components/report/export-button'
 import { Badge } from '@/components/ui/badge'
@@ -45,7 +45,7 @@ export default async function ReportPage({
   const { locale, property: slug } = await params
   setRequestLocale(locale)
 
-  const { user, property } = await requireProperty(locale, slug)
+  const { user, property } = await requireOwner(locale, slug)
   void user
 
   const query = await searchParams

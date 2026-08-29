@@ -63,7 +63,9 @@
     "settings": "Nastavitve",
     "bookingPage": "Stran za rezervacije",
     "conversations": "Pogovori",
-    "report": "Prihodki"
+    "report": "Prihodki",
+    "setup": "Nastavitev",
+    "knowledge": "Znanje"
   },
   "property": {
     "switcher": {
@@ -233,6 +235,87 @@
           "evidence": "Razlog pripisa"
         }
       }
+    },
+    "setup": {
+      "title": "Nastavitev",
+      "progress": "{done} od {total} končanih",
+      "required": "Obvezno",
+      "canTransact": "Pripravljeno za rezervacije",
+      "cannotTransact": "Še ni mogoče rezervirati",
+      "canTransactBody": "Vaša nastanitev lahko sprejema rezervacije. Vse spodaj, kar ni označeno kot obvezno, izboljša rezultat in ničesar ne blokira — naredite, ko imate deset minut.",
+      "cannotTransactBody": "Označene kot obvezne so postavke, na katerih bi rezervacija spodletela. Ostalo lahko počaka.",
+      "blockedHeading": "To naredimo mi",
+      "blockedBody": "Teh ne morete dokončati sami. Tu so, da veste, da obstajajo.",
+      "modules": "Vaši moduli",
+      "items": {
+        "identity": {
+          "title": "Ime, jeziki in časovni pas",
+          "done": "Nastavljeno",
+          "todo": "Osnove, ki jih bere vsak drug zaslon."
+        },
+        "rooms": {
+          "title": "Tipi sob",
+          "done": "Pripravljeni",
+          "todo": "Kaj lahko gost rezervira. Brez vsaj enega ne deluje nič."
+        },
+        "availability": {
+          "title": "Aktualne cene",
+          "done": "Prihajajo",
+          "todo": "Cene prihajajo iz vašega sistema. Dokler ne pridejo, stran za rezervacije prikazuje obrazec za povpraševanje."
+        },
+        "contact": {
+          "title": "Kontaktni naslov",
+          "done": "Nastavljen",
+          "todo": "Kam gredo povpraševanja, opozorila o čakajočih gostih in zahteve za račun."
+        },
+        "theming": {
+          "title": "Barve",
+          "done": "Nastavljene",
+          "todo": "Vaša stran za rezervacije je videti kot vi, ne kot mi."
+        },
+        "policy": {
+          "title": "Predplačilo in odpoved",
+          "done": "Nastavljeno",
+          "todo": "Ali vzamete predplačilo in kaj gost dobi nazaj ob odpovedi."
+        },
+        "knowledge": {
+          "title": "Baza znanja",
+          "done": "Napisana",
+          "todo": "Na kaj lahko asistent odgovori. Brez nje gre vsako vprašanje osebi."
+        },
+        "subscription": {
+          "title": "Vaš paket",
+          "done": "Zabeležen",
+          "todo": "Zabeležimo ga ob podpisu pogodbe.",
+          "blocked": "Zabeležimo ga ob podpisu pogodbe."
+        },
+        "payments": {
+          "title": "Plačilni račun",
+          "done": "Povezan",
+          "todo": "Povežemo ga mi. Noben plačilni ponudnik še ni aktiven, zato se nič ne bremeni.",
+          "blocked": "Povežemo ga mi. Noben plačilni ponudnik še ni aktiven, zato se nič ne bremeni."
+        }
+      }
+    },
+    "knowledge": {
+      "title": "Baza znanja",
+      "subtitle": "Kaj sme asistent povedati vašim gostom. Odgovori od tod ali pripelje osebo.",
+      "empty": "Še nič napisanega. Dokler ni, gre vsako vprašanje gosta osebi.",
+      "draft": "Osnutek",
+      "draftsWaiting": "{n} osnutkov za pregled",
+      "missingIn": "Manjka: {locales}",
+      "publish": "Objavi",
+      "unpublish": "Umakni iz uporabe",
+      "topic": "Tema",
+      "topicExample": "zajtrk",
+      "variants": "Kako gostje sprašujejo",
+      "variantsExample": "kdaj je zajtrk\\nod kdaj je zajtrk",
+      "variantsHint": "Eno na vrstico, v katerem koli od vaših jezikov. Primerjajo se s tem, kar napiše gost.",
+      "liveHint": "Shranjevanje učinkuje pri naslednjem vprašanju. Predpomnilnika ni.",
+      "save": "Shrani",
+      "create": "Dodaj",
+      "newHeading": "Dodaj odgovor",
+      "newHint": "Jezik, ki ga pustite praznega, je jezik, za katerega asistent pripelje osebo. Nikoli ne prevaja."
     }
   },
   "noProperty": {

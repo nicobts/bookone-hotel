@@ -324,6 +324,23 @@ async function execute(
       }
     }
 
+    /**
+     * AG-03 — onboarding (E7.1, 06 §2).
+     *
+     * One tool call. Everything it writes is a draft the owner reviews in the
+     * knowledge editor, and there is no tool granted that could publish one.
+     */
+    case 'AG-03': {
+      const result = await call('draft_knowledge', { url: input.input.url })
+
+      if (!result.ok) throw new Error(String(result.output.error ?? 'ingestion failed'))
+
+      return {
+        output: result.output,
+        confidence: typeof result.output.confidence === 'number' ? result.output.confidence : null,
+      }
+    }
+
     case 'AG-05': {
       const result = await call('classify_discrepancy', input.input)
 

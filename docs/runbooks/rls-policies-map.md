@@ -78,6 +78,7 @@ only (`user_property_ids_admin()`).
 | `subscriptions` | member | — ³⁴ | — ³⁴ | — ³⁴ | 2026-08-29 |
 | `monthly_reports` | member | — ³⁵ | — ³⁵ | — ³⁵ | 2026-08-29 |
 | `fee_disputes` | member | member ³⁶ | — ³⁷ | — ³⁷ | 2026-08-29 |
+| `entitlements` | member | — ³⁸ | — ³⁸ | — ³⁸ | 2026-08-29 |
 
 1. `with check (true)`. A new property has no members yet, so nothing else could
    pass; the `on_property_created` trigger makes the creator its owner in the
@@ -211,6 +212,13 @@ only (`user_property_ids_admin()`).
 37. The credit is applied when the dispute is raised, so there is no
     adjudication step to edit. Withdrawing one is a conversation, not a button
     that erases the evidence it happened.
+38. A module is a contract term (D14 row 4). Insert would let a property enable
+    a paid feature for itself; update would let it move `granted_at`, which is
+    the answer to "since when" and the only question that matters in a billing
+    dispute about a module; delete would erase the record that a feature was
+    ever live. Revoking ends a row, so "never had it" and "had it until March"
+    stay distinguishable. Members read it because the module line on their
+    statement is meant to be checkable.
 
 ## Exceptions — not property-scoped, and why
 

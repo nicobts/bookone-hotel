@@ -1938,3 +1938,77 @@ export const feeDisputes = pgTable(
     ),
   ],
 )
+
+// ---------------------------------------------------------------------------
+// Entitlements (E7.3, D14 row 4)
+// ---------------------------------------------------------------------------
+
+/**
+ * What a property has bought (E7.3).
+ *
+ * D14's fourth pricing row is per-room module fees, and modules are sold as
+ * capabilities: Concierge, Rooms, and whatever comes after. A flag per property
+ * per feature is what maps a contract to what the software will do.
+ *
+ * ## Why a table and not a jsonb column on `properties`
+ *
+ * Because these rows decide what a property is charged for, which makes them
+ * the same kind of object as `subscriptions` and `fee_events`: a contract term
+ * that somebody will one day dispute. A jsonb blob has no grant timestamp, no
+ * per-key policy, and no way to answer "since when" — and "since when" is the
+ * whole question in a billing argument.
+ *
+ * It is also the difference between a feature that was *never enabled* and one
+ * that was *turned off in March*. A key vanishing from a blob cannot tell them
+ * apart; a row with an `ended_at` can.
+ *
+ * ## Absence is the default, and the default is off
+ *
+ * There is no row meaning "not entitled". A feature is enabled when a live row
+ * says so, which means a bug in this table's plumbing fails closed — a property
+ * loses a module they paid for, which they will tell us about within the hour,
+ * rather than silently gaining one they did not, which nobody reports.
+ */
+export const entitlements = pgTable(
+  'entitlements',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+
+    /**
+     * The capability, as the code names it: `concierge`, `rooms`, `reporting`.
+     *
+     * Free text rather than an enum, and this is the one place that choice is
+     * right: the set grows with the commercial roster rather than with the
+     * schema, and a migration to sell a module is a migration nobody will
+     * remember to write on the day the contract is signed.
+     */
+    feature: text('feature').notNull(),
+
+    grantedAt: timestamp('granted_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Null while live. Revoking ends a row; it never deletes one. */
+    endedAt: timestamp('ended_at', { withTimezone: true }),
+
+    /** Why, when there is a reason worth keeping — a trial, a contract change. */
+    note: text('note'),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('entitlements_property_idx').on(t.propertyId),
+    /**
+     * One live grant per feature, enforced where it can be.
+     *
+     * Partial, because a property that had `concierge`, lost it, and bought it
+     * again has two legitimate rows — and only one of them is live. A plain
+     * unique would make re-selling a module impossible.
+     */
+    uniqueIndex('entitlements_property_feature_live')
+      .on(t.propertyId, t.feature)
+      .where(sql`${t.endedAt} is null`),
+    check('entitlements_dates_ordered', sql`${t.endedAt} is null or ${t.endedAt} > ${t.grantedAt}`),
+    check('entitlements_feature_not_empty', sql`length(btrim(${t.feature})) > 0`),
+  ],
+)

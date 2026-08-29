@@ -155,8 +155,43 @@ export const AG_07: AgentDefinition = {
   dailyBudgetCents: 0,
 }
 
+/**
+ * AG-03 — Property Onboarding (06 §2, Sprint 9).
+ *
+ * Reads a property's own website and drafts knowledge-base articles from it.
+ *
+ * ## Always T2, and here that is structural rather than procedural
+ *
+ * 06 §2 says the owner reviews a diff-style proposal and accepts per section.
+ * What ships is stronger than a review step: every article it writes is
+ * `published: false`, and `searchKb` refuses to quote an unpublished article.
+ * The agent cannot put a sentence in front of a guest even if the review never
+ * happens. The review surface is the knowledge editor the owner is already in.
+ *
+ * ## What it actually does, versus what 06 §2 describes
+ *
+ * The roster entry describes ingesting a site, PDFs and menus and drafting the
+ * whole configuration. No model is connected, so this is a heuristic: headings
+ * that name a subject a guest asks about, and the prose beneath them. It is
+ * worth having anyway — the bottleneck in the concierge is an empty knowledge
+ * base, and six plausible drafts an owner edits in ten minutes moves that
+ * further than a better matcher over nothing.
+ *
+ * When a provider is registered, what changes is the *extraction*. Drafting,
+ * review and publishing are already the right shape around it.
+ */
+export const AG_03: AgentDefinition = {
+  name: 'AG-03',
+  description: 'Property Onboarding — drafts knowledge-base articles from the property website',
+  tier: 'T2',
+  tools: ['draft_knowledge'],
+  model: 'none',
+  dailyBudgetCents: 0,
+}
+
 const registry = new Map<string, AgentDefinition>([
   [AG_01.name, AG_01],
+  [AG_03.name, AG_03],
   [AG_05.name, AG_05],
   [AG_07.name, AG_07],
 ])

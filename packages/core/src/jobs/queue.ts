@@ -62,6 +62,8 @@ export const jobNames = [
   'attribution.audit',
   /** Build last month's statement for every property (E5.4). */
   'report.generate',
+  /** Draft knowledge-base articles from a property's own website (AG-03, E7.1). */
+  'onboarding.ingest',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -161,6 +163,14 @@ export interface JobPayloads {
    * enqueued it, in whatever zone that process happened to be in.
    */
   'report.generate': Record<string, never>
+  /**
+   * One property, one page, on request (AG-03).
+   *
+   * Not a schedule and not a sweep: an owner asks for it, from a URL they typed,
+   * once. Re-scraping a site nightly would rewrite drafts an owner has already
+   * declined and turn a helpful step into a recurring chore.
+   */
+  'onboarding.ingest': { propertyId: string; url: string; locale: string }
 }
 
 export interface SendOptions {

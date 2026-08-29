@@ -24,7 +24,8 @@
     "./storage": "./src/storage/index.ts",
     "./concierge": "./src/concierge/index.ts",
     "./stay": "./src/stay/index.ts",
-    "./billing": "./src/billing/index.ts"
+    "./billing": "./src/billing/index.ts",
+    "./onboarding": "./src/onboarding/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

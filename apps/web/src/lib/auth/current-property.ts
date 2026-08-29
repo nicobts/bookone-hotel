@@ -46,6 +46,37 @@ export async function requireProperty(locale: string, slug: string) {
 }
 
 /**
+ * The same, for a page only an owner may see (E5.5).
+ *
+ * ## 404, not 403
+ *
+ * A staff member who types the settings URL gets exactly what a non-member
+ * typing another property's slug gets. "This exists and you may not see it" is
+ * more than the URL needs to say, and the two cases should be indistinguishable
+ * from outside — a seasonal receptionist probing what else is there learns
+ * nothing either way.
+ *
+ * ## This is the enforcement; the sidebar is not
+ *
+ * Hiding a nav item is presentation. Every owner-only route calls this, and
+ * every owner-only server action calls it again — a page check does not protect
+ * an action, because an action is a separate request and the form that posts to
+ * it is a string in somebody's browser.
+ *
+ * `property_members.role` is the source. RLS scopes *which properties* a person
+ * sees; it does not express "owner may configure, staff may operate", which is
+ * a product rule about one property rather than an isolation boundary between
+ * two (ADR-016).
+ */
+export async function requireOwner(locale: string, slug: string) {
+  const context = await requireProperty(locale, slug)
+
+  if (context.property.role !== 'owner') notFound()
+
+  return context
+}
+
+/**
  * Where someone lands when they arrive without naming a property — after
  * login, or at `/it` with a session already in place.
  *

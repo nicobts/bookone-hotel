@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, isNull, lt } from 'drizzle-orm'
+import { and, asc, eq, gte, isNull, lt, sql } from 'drizzle-orm'
 import { asService } from '../db/session'
 import { feeDisputes, feeEvents, monthlyReports, subscriptions } from '../db/schema'
 import { emit } from '../events'
@@ -171,7 +171,17 @@ export async function setSubscription(input: {
     db.transaction(async (tx) => {
       await tx
         .update(subscriptions)
-        .set({ endedAt: startedAt })
+        /*
+         * `now()` rather than `startedAt`, for the reason spelled out in
+         * `onboarding/entitlements.ts`: `started_at` on the row being ended was
+         * written by the database, the check constraint compares the two, and
+         * this process's clock is not the database's.
+         *
+         * The new row's `started_at` is still the caller's, deliberately — a
+         * plan can legitimately be backdated to the day a contract began, and
+         * that is a business fact rather than a clock reading.
+         */
+        .set({ endedAt: sql`now()` })
         .where(
           and(
             eq(subscriptions.propertyId, input.propertyId),

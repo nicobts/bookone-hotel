@@ -17,7 +17,26 @@ export interface UserProperty {
   name: string
   localeDefault: string
   timezone: string
+  /**
+   * The languages this property operates in.
+   *
+   * Carried on the console's own property object because two surfaces need to
+   * know it and neither should re-query: the knowledge editor offers one answer
+   * box per language, and the concierge escalates for the rest. Offering a
+   * Slovenian box to an Italian-and-German property is offering a field that
+   * will be empty forever and read as an omission.
+   */
+  languages: string[]
   role: 'owner' | 'staff'
+}
+
+/** Jsonb, so it can be anything. A property with no list operates in its own default. */
+function readLanguages(value: unknown, fallback: string): string[] {
+  if (!Array.isArray(value)) return [fallback]
+
+  const languages = value.filter((entry): entry is string => typeof entry === 'string')
+
+  return languages.length > 0 ? languages : [fallback]
 }
 
 /**
@@ -39,6 +58,7 @@ export async function getUserPropertyBySlug(
         name: properties.name,
         localeDefault: properties.localeDefault,
         timezone: properties.timezone,
+        languages: properties.languages,
         role: propertyMembers.role,
       })
       .from(properties)
@@ -47,7 +67,10 @@ export async function getUserPropertyBySlug(
       .limit(1),
   )
 
-  return rows[0] ?? null
+  const row = rows[0]
+  if (!row) return null
+
+  return { ...row, languages: readLanguages(row.languages, row.localeDefault) }
 }
 
 /**
@@ -58,7 +81,7 @@ export async function getUserPropertyBySlug(
  * alphabetically". Change one and the other stops being true.
  */
 export async function listUserProperties(userId: string): Promise<UserProperty[]> {
-  return withUser(userId, (tx) =>
+  const rows = await withUser(userId, (tx) =>
     tx
       .select({
         id: properties.id,
@@ -66,6 +89,7 @@ export async function listUserProperties(userId: string): Promise<UserProperty[]
         name: properties.name,
         localeDefault: properties.localeDefault,
         timezone: properties.timezone,
+        languages: properties.languages,
         role: propertyMembers.role,
       })
       .from(properties)
@@ -73,4 +97,9 @@ export async function listUserProperties(userId: string): Promise<UserProperty[]
       .where(eq(propertyMembers.userId, userId))
       .orderBy(asc(properties.name)),
   )
+
+  return rows.map((row) => ({
+    ...row,
+    languages: readLanguages(row.languages, row.localeDefault),
+  }))
 }

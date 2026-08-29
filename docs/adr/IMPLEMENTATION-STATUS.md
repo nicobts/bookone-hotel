@@ -22,7 +22,7 @@ worse than none, because it is read as current.
 | 013 | Journey state machine is the single source of stay truth | ✅ as-built | Five dimensions, evented commands, `applyJourneyCommand` the only writer. Illegal transitions refused and separated from retries; every transition emits its event in the same transaction, so G1 is computable from the log alone. `journey_states` has no write policy at all — the console's arrival button will take the same command a door sensor will |
 | 014 | Reference implementations over blank-page design | 🟨 as-built, **one note written late** | Four notes in [design-notes/](../design-notes/README.md). Booking and the Sprint 7 surfaces were written before their code; [pre-arrival.md](../design-notes/pre-arrival.md) records a Sprint 5 surface that shipped without one and says so at the top rather than being backdated. 08 §3 had no reference row for in-stay messaging — the note proposes two and the table now carries it |
 | 015 | Pricing in €/room/month equivalence | ✅ as-built | On the monthly report, **including the percentage fees** — the number shown is the number billed. Null rather than a guess when the subscription records no room count: `room_types` holds types, not rooms, and a derived figure would be wrong and look authoritative on the one line built for comparison against a competitor's price |
-| 016 | Property is a URL segment | ✅ as-built | `/[locale]/[property]/console/…`; verified in a browser that a non-member typing another slug gets a 404, not a redirect |
+| 016 | Property is a URL segment | ✅ as-built | `/[locale]/[property]/console/…`; verified in a browser that a non-member typing another slug gets a 404, not a redirect. Sprint 9 adds the same treatment for role: a staff member typing an owner-only URL gets 404, so "you are not a member" and "you may not see this" are indistinguishable from outside |
 | 017 | Identity tables sit outside tenancy | ✅ as-built | `profiles` isolated by `auth.uid()`; asserted separately in the suite |
 | 018 | RLS enforced on the Drizzle path via `withUser` | ✅ as-built | `packages/core/src/db/session.ts`; removing the role-drop fails 8 of 21 |
 
@@ -121,6 +121,35 @@ reviewed on does not exist. Building the agents first would produce two agents
 whose output has nowhere to go, and a tier that is enforced by there being no
 button rather than by design. The proposal surface is the honest prerequisite
 and it is Sprint 9 work.
+
+## Sprint 9 additions
+
+| Thing | Status | Note |
+|---|---|---|
+| Property setup checklist (E7.1) | ✅ | Derived from the rows the product reads — no `setup_completed` column to drift and tell an owner to redo something |
+| Nothing gated on completion | ✅ | Blocking items are the ones a booking fails on anyway; the surface names them and lets the rest wait |
+| Knowledge editor (E5.3) | ✅ | Per topic, all languages on one screen, version bumped in SQL, live on the next question — no cache to invalidate |
+| Missing languages named | ✅ | Shown as a badge per article. Each one is a language the concierge escalates in, and there is no translate button |
+| Staff role (E5.5) | ✅ | `requireOwner` on every owner-only page *and* action. Verified live: staff sees five nav items, and `/console/knowledge` 404s |
+| Entitlements (E7.3) | ✅ | Absence is the default and the default is off, so a plumbing bug fails closed. Revoking ends a row; "never had it" and "had it until March" stay distinguishable |
+| AG-03 onboarding | 🟨 built, **heuristic not a model** | Fetches the property's site and drafts articles from headings. Verified live: 2 drafts written, an unclassifiable section skipped, existing answers untouched. T2, and structurally so — everything lands unpublished and `searchKb` refuses to quote it |
+| Onboarding runbook | ✅ | [onboarding.md](../runbooks/onboarding.md), written for the ≤5-day DoD |
+| **Stripe Connect onboarding** | ⬜ **blocked** | E7.1 names it; 04 §0 item 6 |
+| **Demo-mode toggle** | ⬜ **deliberately not built** | E7.1 names it. The seed script serves the people who currently need it, and a toggle that generates fake bookings inside a real property's console is a support incident waiting to be filed |
+| **Generic T2 proposal surface** | ⬜ not yet | AG-03's proposals are KB drafts, reviewed in the editor. AG-04 and full AG-05 need diff-cards for proposals that are *not* rows an owner already edits |
+
+### The bug this sprint's suite found
+
+`revokeEntitlement` wrote an app-generated `ended_at` into a column whose
+`granted_at` is written by the database, with a check constraint comparing them.
+This machine's clock is ~600ms behind the database container's, so the revoke
+failed the constraint — intermittently, depending on how much wall-clock time
+passed between grant and revoke. It passed in isolation and failed in a full run.
+
+Both `ended_at` writes now use `now()`. The rule: **two timestamps compared by a
+constraint must come from one clock**, and the database already has one. This is
+the same class as the bug AG-07 caught in Sprint 8, which is the second time it
+has cost something — worth remembering as a class rather than as two incidents.
 
 ## CI gates
 

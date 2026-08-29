@@ -63,7 +63,9 @@
     "settings": "Impostazioni",
     "bookingPage": "Pagina di prenotazione",
     "conversations": "Conversazioni",
-    "report": "Ricavi"
+    "report": "Ricavi",
+    "setup": "Configurazione",
+    "knowledge": "Conoscenza"
   },
   "property": {
     "switcher": {
@@ -233,6 +235,87 @@
           "evidence": "Motivo attribuzione"
         }
       }
+    },
+    "setup": {
+      "title": "Configurazione",
+      "progress": "{done} di {total} completati",
+      "required": "Necessario",
+      "canTransact": "Pronto a ricevere prenotazioni",
+      "cannotTransact": "Non ancora prenotabile",
+      "canTransactBody": "La sua struttura può ricevere prenotazioni. Tutto ciò che qui sotto non è indicato come necessario migliora il risultato e non blocca nulla: lo faccia quando ha dieci minuti.",
+      "cannotTransactBody": "Le voci indicate come necessarie sono quelle su cui una prenotazione fallirebbe. Il resto può aspettare.",
+      "blockedHeading": "Ce ne occupiamo noi",
+      "blockedBody": "Non c'è nulla che lei possa fare per completarle. Sono qui perché lei sappia che esistono.",
+      "modules": "I suoi moduli",
+      "items": {
+        "identity": {
+          "title": "Nome, lingue e fuso orario",
+          "done": "Impostato",
+          "todo": "Le basi che ogni altra schermata legge."
+        },
+        "rooms": {
+          "title": "Tipologie di camera",
+          "done": "Pronte",
+          "todo": "Cosa può prenotare un ospite. Senza almeno una non funziona nulla."
+        },
+        "availability": {
+          "title": "Prezzi aggiornati",
+          "done": "In arrivo",
+          "todo": "I prezzi arrivano dal suo sistema. Finché non arrivano, la pagina di prenotazione mostra un modulo di richiesta."
+        },
+        "contact": {
+          "title": "Indirizzo di contatto",
+          "done": "Impostato",
+          "todo": "Dove arrivano richieste di prenotazione, avvisi di ospiti in attesa e richieste di fattura."
+        },
+        "theming": {
+          "title": "Colori",
+          "done": "Impostati",
+          "todo": "La sua pagina di prenotazione con la sua immagine, non la nostra."
+        },
+        "policy": {
+          "title": "Caparra e cancellazione",
+          "done": "Impostate",
+          "todo": "Se prendere una caparra e cosa viene restituito in caso di cancellazione."
+        },
+        "knowledge": {
+          "title": "Base di conoscenza",
+          "done": "Scritta",
+          "todo": "Cosa può rispondere l'assistente. Senza, ogni domanda passa a una persona."
+        },
+        "subscription": {
+          "title": "Il suo piano",
+          "done": "Registrato",
+          "todo": "Lo registriamo noi alla firma del contratto.",
+          "blocked": "Lo registriamo noi alla firma del contratto."
+        },
+        "payments": {
+          "title": "Conto per i pagamenti",
+          "done": "Collegato",
+          "todo": "Lo colleghiamo noi. Nessun provider di pagamento è attivo, quindi non viene addebitato nulla.",
+          "blocked": "Lo colleghiamo noi. Nessun provider di pagamento è attivo, quindi non viene addebitato nulla."
+        }
+      }
+    },
+    "knowledge": {
+      "title": "Base di conoscenza",
+      "subtitle": "Cosa l'assistente può dire ai suoi ospiti. Risponde da qui oppure chiama una persona.",
+      "empty": "Ancora nulla di scritto. Finché non c'è, ogni domanda degli ospiti passa a una persona.",
+      "draft": "Bozza",
+      "draftsWaiting": "{n} bozze da rivedere",
+      "missingIn": "Mancante: {locales}",
+      "publish": "Pubblica",
+      "unpublish": "Togli dal servizio",
+      "topic": "Argomento",
+      "topicExample": "colazione",
+      "variants": "Come lo chiedono gli ospiti",
+      "variantsExample": "a che ora è la colazione\\nquando si fa colazione",
+      "variantsHint": "Uno per riga, in qualsiasi delle sue lingue. Vengono confrontati con quello che scrive l'ospite.",
+      "liveHint": "Il salvataggio ha effetto dalla domanda successiva. Non c'è nessuna cache.",
+      "save": "Salva",
+      "create": "Aggiungi",
+      "newHeading": "Aggiungi una risposta",
+      "newHint": "Una lingua lasciata vuota è una lingua per cui l'assistente chiamerà una persona. Non traduce mai."
     }
   },
   "noProperty": {

@@ -748,6 +748,40 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     logger.info({ jobId: job.id, properties: rows.length, built }, 'report.generate')
   })
 
+  /**
+   * Draft a property's knowledge base from its own website (AG-03, E7.1).
+   *
+   * Through the runner, so the scrape leaves an `agent_runs` row: what was
+   * fetched, what was found, what was written. An owner asking "where did this
+   * answer come from" gets an answer, and so does anyone reviewing whether the
+   * extraction is worth its KPI (06 §2: ≥70% accepted without edits).
+   *
+   * Everything it writes is unpublished. There is no tool granted that could
+   * publish one, so a failure here costs an owner nothing and reaches no guest.
+   */
+  await queue.work('onboarding.ingest', async (job) => {
+    const { propertyId, url, locale } = job.data
+
+    const run = await runAgent({
+      agent: 'AG-03',
+      propertyId,
+      locale,
+      input: { url },
+    })
+
+    logger.info(
+      {
+        jobId: job.id,
+        propertyId,
+        outcome: run.status,
+        fetched: run.output.fetched ?? false,
+        written: run.output.written ?? 0,
+        skipped: run.output.skipped ?? 0,
+      },
+      'onboarding.ingest',
+    )
+  })
+
   await queue.work('reservation.expire_holds', async (job) => {
     const { expired } = await expireHolds()
 

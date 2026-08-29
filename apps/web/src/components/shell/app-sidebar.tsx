@@ -3,6 +3,8 @@ import {
   BedDoubleIcon,
   CalendarCheckIcon,
   ExternalLinkIcon,
+  BookOpenIcon,
+  ListChecksIcon,
   MessageSquareIcon,
   ReceiptIcon,
   SettingsIcon,
@@ -56,6 +58,20 @@ export async function AppSidebar({
    * console is an exception surface (D15), but a person opening it at 07:00
    * wants the shape of the day before they want the problems in it.
    */
+  /*
+   * Staff see the operating band and nothing else (E5.5).
+   *
+   * This is presentation, not permission. Every configure-band route calls
+   * `requireOwner` and 404s for staff, and so does every action behind it — a
+   * hidden nav item protects nothing, and the check has to live where the
+   * request arrives.
+   *
+   * What hiding it *does* buy is the acceptance criterion: "productive on day
+   * one" means a receptionist opening this on their first shift sees five things
+   * they can act on rather than nine, four of which would refuse them.
+   */
+  const isOwner = active.role === 'owner'
+
   const groups: NavGroup[] = [
     {
       label: t('sections.operate'),
@@ -70,25 +86,36 @@ export async function AppSidebar({
         { title: t('reservations'), href: `${base}/reservations`, icon: <CalendarCheckIcon /> },
         { title: t('guests'), href: `${base}/guests`, icon: <UsersIcon /> },
         /*
-         * The report sits last in "Operate" rather than in "Configure".
+         * The report sits last in "Operate" rather than in "Configure", and
+         * only for owners.
          *
          * It is neither running the house today nor setting it up — it is the
-         * owner reading what they are billed. Of the two bands, that is much
-         * nearer the first: it is read regularly, it is read by the person who
-         * reads Today, and burying an invoice among the settings is a way of
-         * suggesting it is not meant to be looked at.
+         * owner reading what they are billed. Of the two bands that is much
+         * nearer the first: it is read regularly, by the person who reads Today,
+         * and burying an invoice among the settings suggests it is not meant to
+         * be looked at.
+         *
+         * Staff do not see it. Not because the numbers are secret from them,
+         * but because "what the property is charged" is not a thing a seasonal
+         * receptionist should have to have an opinion about.
          */
-        { title: t('report'), href: `${base}/report`, icon: <ReceiptIcon /> },
+        ...(isOwner ? [{ title: t('report'), href: `${base}/report`, icon: <ReceiptIcon /> }] : []),
       ],
     },
-    {
-      label: t('sections.configure'),
-      items: [
-        { title: t('rooms'), href: `${base}/room-types`, icon: <BedDoubleIcon /> },
-        { title: t('members'), href: `${base}/members`, icon: <UsersRoundIcon /> },
-        { title: t('settings'), href: `${base}/settings`, icon: <SettingsIcon /> },
-      ],
-    },
+    ...(isOwner
+      ? [
+          {
+            label: t('sections.configure'),
+            items: [
+              { title: t('setup'), href: `${base}/setup`, icon: <ListChecksIcon /> },
+              { title: t('knowledge'), href: `${base}/knowledge`, icon: <BookOpenIcon /> },
+              { title: t('rooms'), href: `${base}/room-types`, icon: <BedDoubleIcon /> },
+              { title: t('members'), href: `${base}/members`, icon: <UsersRoundIcon /> },
+              { title: t('settings'), href: `${base}/settings`, icon: <SettingsIcon /> },
+            ],
+          },
+        ]
+      : []),
   ]
 
   return (

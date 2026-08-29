@@ -63,7 +63,9 @@
     "settings": "Settings",
     "bookingPage": "Booking page",
     "conversations": "Conversations",
-    "report": "Revenue"
+    "report": "Revenue",
+    "setup": "Setup",
+    "knowledge": "Knowledge"
   },
   "property": {
     "switcher": {
@@ -233,6 +235,87 @@
           "evidence": "Attribution reason"
         }
       }
+    },
+    "setup": {
+      "title": "Setup",
+      "progress": "{done} of {total} done",
+      "required": "Required",
+      "canTransact": "Ready to take bookings",
+      "cannotTransact": "Not yet bookable",
+      "canTransactBody": "Your property can take bookings. Everything below that is not marked required improves the result and blocks nothing — do it when you have a spare ten minutes.",
+      "cannotTransactBody": "The items marked required are the ones a booking would fail on. The rest can wait.",
+      "blockedHeading": "We do these",
+      "blockedBody": "Nothing you can do completes these. They are here so you know they exist.",
+      "modules": "Your modules",
+      "items": {
+        "identity": {
+          "title": "Name, languages and timezone",
+          "done": "Set",
+          "todo": "The basics every other screen reads."
+        },
+        "rooms": {
+          "title": "Room types",
+          "done": "Ready",
+          "todo": "What a guest can book. Nothing works without at least one."
+        },
+        "availability": {
+          "title": "Live prices",
+          "done": "Flowing",
+          "todo": "Prices arrive from your system. Until they do, the booking page shows a request form."
+        },
+        "contact": {
+          "title": "Contact address",
+          "done": "Set",
+          "todo": "Where booking requests, waiting-guest alerts and invoice requests go."
+        },
+        "theming": {
+          "title": "Colours",
+          "done": "Set",
+          "todo": "Your booking page looking like you rather than like us."
+        },
+        "policy": {
+          "title": "Deposit and cancellation",
+          "done": "Set",
+          "todo": "Taking a deposit, and what a guest gets back if they cancel."
+        },
+        "knowledge": {
+          "title": "Knowledge base",
+          "done": "Written",
+          "todo": "What the assistant may answer. Without it, every question goes to a person."
+        },
+        "subscription": {
+          "title": "Your plan",
+          "done": "Recorded",
+          "todo": "We record this when your contract is signed.",
+          "blocked": "We record this when your contract is signed."
+        },
+        "payments": {
+          "title": "Payment account",
+          "done": "Connected",
+          "todo": "We connect this. No payment provider is live yet, so nothing is charged.",
+          "blocked": "We connect this. No payment provider is live yet, so nothing is charged."
+        }
+      }
+    },
+    "knowledge": {
+      "title": "Knowledge base",
+      "subtitle": "What the assistant may tell your guests. It answers from here or it fetches a person.",
+      "empty": "Nothing written yet. Every guest question goes to a person until there is.",
+      "draft": "Draft",
+      "draftsWaiting": "{n} drafts to review",
+      "missingIn": "Missing: {locales}",
+      "publish": "Publish",
+      "unpublish": "Take out of service",
+      "topic": "Topic",
+      "topicExample": "breakfast",
+      "variants": "How guests ask it",
+      "variantsExample": "what time is breakfast\\nwhen is breakfast served",
+      "variantsHint": "One per line, in any of your languages. These are matched against what a guest types.",
+      "liveHint": "Saving takes effect on the next question. Nothing is cached.",
+      "save": "Save",
+      "create": "Add",
+      "newHeading": "Add an answer",
+      "newHint": "A language left empty is a language the assistant will fetch a person for. It never translates."
     }
   },
   "noProperty": {

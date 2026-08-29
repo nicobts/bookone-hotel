@@ -3,15 +3,18 @@
 import { revalidatePath } from 'next/cache'
 import { buildReport, csvFilename, issueReport, raiseDispute, toCsv } from '@bookone/core/billing'
 import { getTranslations } from 'next-intl/server'
-import { requireProperty } from '@/lib/auth/current-property'
+import { requireOwner } from '@/lib/auth/current-property'
 
 /**
  * The three things an owner does with a statement (E5.4).
  *
- * Each resolves the property through `requireProperty`, which resolves it via
- * the signed-in user's memberships — a period or a fee id pasted from another
- * property never resolves for this person, and every core call is scoped to
- * that property anyway.
+ * Each resolves through `requireOwner`. Two things follow: a period or a fee id
+ * pasted from another property never resolves for this person, and a staff
+ * member gets a 404 rather than a statement.
+ *
+ * The role check is repeated here rather than inherited from the page. An
+ * action is a separate request, and the form that posts to it is a string in
+ * somebody's browser — a page-level check protects the page and nothing else.
  */
 
 interface Context {
@@ -23,12 +26,12 @@ interface Context {
 /**
  * Freeze the period.
  *
- * Owner or staff: this is not an administrative act on the property, it is
- * accepting a statement, and the person who reconciles the numbers at a small
- * hotel is frequently not the person whose name is on the company.
+ * Owner only. Accepting a statement is agreeing to be billed from it, and a
+ * seasonal receptionist should not be able to commit the property to a number
+ * — nor be put in a position where they might.
  */
 export async function issue(context: Context): Promise<void> {
-  const { user, property } = await requireProperty(context.locale, context.slug)
+  const { user, property } = await requireOwner(context.locale, context.slug)
 
   await issueReport({
     propertyId: property.id,
@@ -50,7 +53,7 @@ export async function dispute(
   context: Context & { feeEventId: string },
   formData: FormData,
 ): Promise<void> {
-  const { user, property } = await requireProperty(context.locale, context.slug)
+  const { user, property } = await requireOwner(context.locale, context.slug)
 
   const reason = String(formData.get('reason') ?? '').trim()
 
@@ -69,13 +72,13 @@ export async function dispute(
  *
  * Built on the server and returned as text, which the client turns into a
  * download. Not a route handler: the report is per-property and per-period and
- * already behind `requireProperty` here, and a GET endpoint would need the same
- * membership check written a second time.
+ * already behind `requireOwner` here, and a GET endpoint would need the same
+ * membership and role check written a second time.
  */
 export async function exportCsv(
   context: Context,
 ): Promise<{ filename: string; content: string } | null> {
-  const { user, property } = await requireProperty(context.locale, context.slug)
+  const { user, property } = await requireOwner(context.locale, context.slug)
   void user
 
   const report = await buildReport({ propertyId: property.id, periodStart: context.periodStart })

@@ -63,7 +63,9 @@
     "settings": "Einstellungen",
     "bookingPage": "Buchungsseite",
     "conversations": "Unterhaltungen",
-    "report": "Umsatz"
+    "report": "Umsatz",
+    "setup": "Einrichtung",
+    "knowledge": "Wissen"
   },
   "property": {
     "switcher": {
@@ -233,6 +235,87 @@
           "evidence": "Grund der Zuordnung"
         }
       }
+    },
+    "setup": {
+      "title": "Einrichtung",
+      "progress": "{done} von {total} erledigt",
+      "required": "Erforderlich",
+      "canTransact": "Bereit für Buchungen",
+      "cannotTransact": "Noch nicht buchbar",
+      "canTransactBody": "Ihr Haus kann Buchungen annehmen. Alles unten, was nicht als erforderlich markiert ist, verbessert das Ergebnis und blockiert nichts — machen Sie es, wenn Sie zehn Minuten haben.",
+      "cannotTransactBody": "Die als erforderlich markierten Punkte sind die, an denen eine Buchung scheitern würde. Der Rest kann warten.",
+      "blockedHeading": "Das machen wir",
+      "blockedBody": "Sie können nichts tun, um diese abzuschließen. Sie stehen hier, damit Sie wissen, dass es sie gibt.",
+      "modules": "Ihre Module",
+      "items": {
+        "identity": {
+          "title": "Name, Sprachen und Zeitzone",
+          "done": "Gesetzt",
+          "todo": "Die Grundlagen, die jede andere Ansicht liest."
+        },
+        "rooms": {
+          "title": "Zimmerkategorien",
+          "done": "Bereit",
+          "todo": "Was ein Gast buchen kann. Ohne mindestens eine funktioniert nichts."
+        },
+        "availability": {
+          "title": "Aktuelle Preise",
+          "done": "Laufen ein",
+          "todo": "Die Preise kommen aus Ihrem System. Bis dahin zeigt die Buchungsseite ein Anfrageformular."
+        },
+        "contact": {
+          "title": "Kontaktadresse",
+          "done": "Gesetzt",
+          "todo": "Wohin Buchungsanfragen, Hinweise auf wartende Gäste und Rechnungsanfragen gehen."
+        },
+        "theming": {
+          "title": "Farben",
+          "done": "Gesetzt",
+          "todo": "Ihre Buchungsseite sieht nach Ihnen aus, nicht nach uns."
+        },
+        "policy": {
+          "title": "Anzahlung und Stornierung",
+          "done": "Gesetzt",
+          "todo": "Ob Sie eine Anzahlung nehmen und was ein Gast bei Stornierung zurückbekommt."
+        },
+        "knowledge": {
+          "title": "Wissensdatenbank",
+          "done": "Geschrieben",
+          "todo": "Was der Assistent beantworten darf. Ohne sie geht jede Frage an eine Person."
+        },
+        "subscription": {
+          "title": "Ihr Tarif",
+          "done": "Erfasst",
+          "todo": "Den erfassen wir bei Vertragsabschluss.",
+          "blocked": "Den erfassen wir bei Vertragsabschluss."
+        },
+        "payments": {
+          "title": "Zahlungskonto",
+          "done": "Verbunden",
+          "todo": "Das verbinden wir. Es ist noch kein Zahlungsanbieter aktiv, es wird also nichts abgebucht.",
+          "blocked": "Das verbinden wir. Es ist noch kein Zahlungsanbieter aktiv, es wird also nichts abgebucht."
+        }
+      }
+    },
+    "knowledge": {
+      "title": "Wissensdatenbank",
+      "subtitle": "Was der Assistent Ihren Gästen sagen darf. Er antwortet von hier oder holt eine Person.",
+      "empty": "Noch nichts geschrieben. Bis dahin geht jede Gästefrage an eine Person.",
+      "draft": "Entwurf",
+      "draftsWaiting": "{n} Entwürfe zu prüfen",
+      "missingIn": "Fehlt: {locales}",
+      "publish": "Veröffentlichen",
+      "unpublish": "Außer Betrieb nehmen",
+      "topic": "Thema",
+      "topicExample": "fruehstueck",
+      "variants": "Wie Gäste danach fragen",
+      "variantsExample": "wann gibt es frühstück\\nab wann ist frühstück",
+      "variantsHint": "Eine pro Zeile, in jeder Ihrer Sprachen. Sie werden mit dem verglichen, was ein Gast schreibt.",
+      "liveHint": "Das Speichern wirkt ab der nächsten Frage. Es gibt keinen Cache.",
+      "save": "Speichern",
+      "create": "Hinzufügen",
+      "newHeading": "Antwort hinzufügen",
+      "newHint": "Eine leer gelassene Sprache ist eine Sprache, für die der Assistent eine Person holt. Er übersetzt nie."
     }
   },
   "noProperty": {
