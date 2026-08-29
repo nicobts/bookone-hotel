@@ -7,6 +7,7 @@
 // Nothing here gates the console on completion. Blocking items are the ones a
 // booking would fail on anyway, and the surface says which.
 export * from './checklist'
+export * from './egress'
 export * from './entitlements'
 export * from './ingest'
 export * from './knowledge'

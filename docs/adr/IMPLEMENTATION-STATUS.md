@@ -133,10 +133,33 @@ and it is Sprint 9 work.
 | Staff role (E5.5) | ✅ | `requireOwner` on every owner-only page *and* action. Verified live: staff sees five nav items, and `/console/knowledge` 404s |
 | Entitlements (E7.3) | ✅ | Absence is the default and the default is off, so a plumbing bug fails closed. Revoking ends a row; "never had it" and "had it until March" stay distinguishable |
 | AG-03 onboarding | 🟨 built, **heuristic not a model** | Fetches the property's site and drafts articles from headings. Verified live: 2 drafts written, an unclassifiable section skipped, existing answers untouched. T2, and structurally so — everything lands unpublished and `searchKb` refuses to quote it |
+| Egress guard on user-supplied URLs | ✅ | Resolves and refuses any private, loopback, link-local or reserved address, re-checking every redirect hop. Verified against the live Supabase endpoint on this machine, which *was* reachable before it |
 | Onboarding runbook | ✅ | [onboarding.md](../runbooks/onboarding.md), written for the ≤5-day DoD |
 | **Stripe Connect onboarding** | ⬜ **blocked** | E7.1 names it; 04 §0 item 6 |
 | **Demo-mode toggle** | ⬜ **deliberately not built** | E7.1 names it. The seed script serves the people who currently need it, and a toggle that generates fake bookings inside a real property's console is a support incident waiting to be filed |
 | **Generic T2 proposal surface** | ⬜ not yet | AG-03's proposals are KB drafts, reviewed in the editor. AG-04 and full AG-05 need diff-cards for proposals that are *not* rows an owner already edits |
+
+### The SSRF an automated review found
+
+AG-03's `fetchPage` shipped with a scheme check and nothing else. It runs inside
+the worker, against a URL an owner types, and **stores the response where they
+can read it** — so it was a read primitive against everything the worker can
+reach, rendered in the requester's own console. Not blind SSRF; an exfiltration
+path.
+
+Verified before the fix: `http://localhost:54421/rest/v1/` — the Supabase
+endpoint on the same host — returned a body. After: refused, along with
+169.254.169.254, `[::1]`, `metadata.google.internal` and `file://`, while
+`https://example.com/` still fetches.
+
+The guard resolves the hostname and refuses if **any** resolved address is
+private; checking only the first is a bypass that depends on resolver ordering,
+which is to say one that works eventually. A negative control weakening it to
+first-address-only fails exactly the test that asserts it.
+
+Residual: DNS rebinding, because this is check-then-connect and Node's `fetch`
+will not pin to a validated address. The real answer is an egress proxy
+enforcing the allowlist at the network layer — Sprint 10, with the pen test.
 
 ### The bug this sprint's suite found
 

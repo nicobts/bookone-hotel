@@ -131,6 +131,19 @@ with `published = false`, which the concierge already refuses to quote. The
 review surface is the editor the owner is already in, not a separate approval
 queue — a second inbox is a second thing to abandon.
 
+**(I) The URL an owner types is treated as hostile.** AG-03 fetches it from
+inside our worker and stores the response where they can read it, which makes it
+a read primitive against everything the worker can reach — cloud metadata, the
+Supabase endpoint on the same host, any internal service. The first version
+checked only the scheme, which is not a control: `http://169.254.169.254/`
+passes it. Every fetch now resolves the hostname and refuses if *any* address is
+private, loopback, link-local or reserved, and each redirect hop is re-checked.
+
+"An owner is authenticated" is not a mitigation. An owner is trusted with their
+property's data and with nothing about our infrastructure, and those are
+different grants. The residual risk is DNS rebinding, which needs an egress
+proxy rather than a code change — Sprint 10.
+
 ## 5. Deliberately deferred
 
 - **Stripe Connect onboarding** (E7.1 names it) — blocked on 04 §0 item 6.

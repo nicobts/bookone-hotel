@@ -90,6 +90,13 @@ German guest as the property's own words.
 Everything it writes is a **draft**. `searchKb` refuses to quote an unpublished
 article, so nothing reaches a guest until the owner presses publish.
 
+The URL must be a **public** address. Anything resolving to loopback, a private
+range, link-local or a cloud metadata endpoint is refused, because the response
+would be stored and shown back in the console — which would make this a way to
+read our own internal services. That includes `localhost`, so a page served on
+your own machine cannot be used to demo it; put the fixture somewhere public or
+test the extraction with the unit suite.
+
 **Then sit with the owner for twenty minutes** in `/console/knowledge`. The
 questions worth having answers to, roughly in order of how often they arrive:
 breakfast, wifi, parking, check-in and check-out times, pets, and how to get in

@@ -31,7 +31,24 @@
  * D9 entry — nothing of theirs is sent anywhere, and the content comes back to
  * our own worker in the EU. Sending that content *to a model* would be a
  * different question, and is the question to answer before AG-03 gets one.
+ *
+ * It is, however, an outbound request to an address a user chose, made from
+ * inside our infrastructure, whose response we then store and display. Every
+ * such fetch goes through `checkEgress` — see `egress.ts` for what that stops
+ * and what it does not.
  */
+import { checkEgress } from './egress'
+
+/**
+ * How many redirects to follow before giving up.
+ *
+ * Each hop is re-validated, so this is a cost bound rather than a safety one —
+ * but a chain long enough to need a bound is a site we can do without.
+ */
+const MAX_REDIRECTS = 3
+
+/** A page larger than this is not a hotel's front page, and we do not need it. */
+const MAX_PAGE_BYTES = 500_000
 
 /** Topics we know how to recognise, and the words that suggest them. */
 const TOPIC_HINTS: Record<string, string[]> = {
@@ -167,41 +184,70 @@ export interface FetchedPage {
 }
 
 /**
- * Fetch a property's page.
+ * Fetch a property's page, through the egress guard.
  *
- * Refuses anything that is not plain http(s) and bounds both the wait and the
- * size: this is a URL a person typed, pointing at a server we do not control,
- * and a worker that will happily stream a hundred megabytes from it is a worker
- * one bad paste away from falling over.
+ * ## Why the guard is not optional here
+ *
+ * This runs inside our worker, against a URL an owner typed, and the body it
+ * returns is **stored and shown back to them** as knowledge-base drafts. That
+ * makes it a read primitive against everything the worker can reach, with the
+ * output rendered in the requester's own console — cloud metadata, the Supabase
+ * endpoint on the same host, any internal service that answers.
+ *
+ * Flagged by an automated security review after the first version shipped with
+ * only a scheme check. It was right, and the scheme check was never a control:
+ * `http://169.254.169.254/` passes it.
+ *
+ * ## Redirects are followed by hand
+ *
+ * `redirect: 'manual'`, and every hop goes back through `checkEgress`. Letting
+ * `fetch` follow them would validate the first URL and connect to whatever the
+ * last one said — which is the same vulnerability with one extra step, and the
+ * step is a `Location` header the target controls.
+ *
+ * Bounded at three hops. A hotel's website that needs four redirects to serve
+ * its own front page is a website whose content we can live without.
  */
 export async function fetchPage(url: string, timeoutMs = 8_000): Promise<FetchedPage | null> {
-  let parsed: URL
+  let target = url
 
-  try {
-    parsed = new URL(url)
-  } catch {
-    return null
-  }
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+    const allowed = await checkEgress(target)
+    if (!allowed.ok) return null
 
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null
+    let response: Response
 
-  try {
-    const response = await fetch(parsed.toString(), {
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: { accept: 'text/html' },
-    })
+    try {
+      response = await fetch(allowed.url.toString(), {
+        signal: AbortSignal.timeout(timeoutMs),
+        headers: { accept: 'text/html' },
+        redirect: 'manual',
+      })
+    } catch {
+      // A property's website being down is not an error worth propagating: the
+      // owner writes their knowledge base by hand, which they could always do.
+      return null
+    }
+
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location')
+      if (!location) return null
+
+      // Resolved against the current URL, so a relative `Location` works — and
+      // then re-validated from the top of the loop.
+      target = new URL(location, allowed.url).toString()
+      continue
+    }
 
     if (!response.ok) return null
 
     const type = response.headers.get('content-type') ?? ''
     if (!type.includes('text/html')) return null
 
-    const html = (await response.text()).slice(0, 500_000)
+    const html = (await response.text()).slice(0, MAX_PAGE_BYTES)
 
-    return { url: parsed.toString(), html }
-  } catch {
-    // A property's website being down is not an error worth propagating: the
-    // owner writes their knowledge base by hand, which they could always do.
-    return null
+    return { url: allowed.url.toString(), html }
   }
+
+  return null
 }
