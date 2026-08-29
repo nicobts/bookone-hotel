@@ -231,3 +231,179 @@ export function renderPrecheckinInvite(
     body: lines.join('\n'),
   }
 }
+
+/** Template keys. Kept here beside the renderers so a key and its body move together. */
+export const WELCOME = 'stay.welcome'
+export const REVIEW_REQUEST = 'stay.review-request'
+export const INVOICE_REQUEST_ROUTED = 'stay.invoice-request'
+export const ESCALATION_ALERT = 'stay.escalation-alert'
+
+/**
+ * The welcome, sent the moment arrival is confirmed (E3.1).
+ *
+ * Every optional field is genuinely optional, and this is the whole design of
+ * the template: a property that has not recorded a wifi password gets a message
+ * with no wifi line, not a message with a blank one and certainly not a
+ * plausible guess. Binding rule 7 applies to a welcome exactly as it applies to
+ * the concierge — a made-up door code is a guest locked out at midnight.
+ *
+ * The stay link is included because it is now the thread, the checkout and the
+ * key information in one place. A guest who kept the email can get back to all
+ * of it without an account.
+ */
+export interface WelcomeFacts {
+  propertyName: string
+  guestName: string
+  roomName: string | null
+  arrivalDate: string
+  departureDate: string
+  accessNote: string | null
+  wifiName: string | null
+  wifiPassword: string | null
+  stayUrl: string | null
+}
+
+export function renderWelcome(locale: string, facts: WelcomeFacts): RenderedMessage {
+  const resolved: TemplateLocale = isTemplateLocale(locale) ? locale : 'en'
+  const t = catalogues[resolved].notifications.welcome
+
+  const lines = [
+    interpolate(t.greeting, { guestName: facts.guestName }),
+    '',
+    interpolate(t.intro, { property: facts.propertyName }),
+    ...(facts.roomName ? ['', `${t.labels.room}: ${facts.roomName}`] : []),
+    `${t.labels.departure}: ${formatDate(facts.departureDate, resolved)}`,
+    ...(facts.accessNote ? ['', t.labels.access, facts.accessNote] : []),
+    ...(facts.wifiName
+      ? [
+          '',
+          `${t.labels.wifi}: ${facts.wifiName}`,
+          ...(facts.wifiPassword ? [`${t.labels.wifiPassword}: ${facts.wifiPassword}`] : []),
+        ]
+      : []),
+    ...(facts.stayUrl ? ['', interpolate(t.stayLink, { url: facts.stayUrl })] : []),
+    '',
+    t.help,
+    '',
+    t.signOff,
+    interpolate(t.sender, { property: facts.propertyName }),
+  ]
+
+  return {
+    subject: interpolate(t.subject, { property: facts.propertyName }),
+    body: lines.join('\n'),
+  }
+}
+
+/**
+ * The review request, sent after departure is confirmed (E4.1).
+ *
+ * Deliberately *not* on the checkout screen. That is where the response rate
+ * is, and it is also where the answer is least informative and where a request
+ * sitting next to a payment step starts to look like an inducement. It goes
+ * once, afterwards, and it is not conditional on anything the guest said —
+ * asking only the happy ones is review-gating, which the EU rules on review
+ * solicitation take a dim view of and which produces a rating nobody should
+ * trust anyway.
+ */
+export interface ReviewRequestFacts {
+  propertyName: string
+  guestName: string
+  reviewUrl: string
+}
+
+export function renderReviewRequest(locale: string, facts: ReviewRequestFacts): RenderedMessage {
+  const resolved: TemplateLocale = isTemplateLocale(locale) ? locale : 'en'
+  const t = catalogues[resolved].notifications.reviewRequest
+
+  const lines = [
+    interpolate(t.greeting, { guestName: facts.guestName }),
+    '',
+    interpolate(t.intro, { property: facts.propertyName }),
+    '',
+    interpolate(t.cta, { url: facts.reviewUrl }),
+    '',
+    t.signOff,
+    interpolate(t.sender, { property: facts.propertyName }),
+  ]
+
+  return {
+    subject: interpolate(t.subject, { property: facts.propertyName }),
+    body: lines.join('\n'),
+  }
+}
+
+/**
+ * An invoice request, routed to the property (E4.1).
+ *
+ * Goes to the property, in the property's language, and it is the whole of our
+ * involvement: they issue the document through their own certified chain. The
+ * body carries the guest's words unaltered, because editing what somebody asked
+ * for and then forwarding it as though they had asked for that is the failure
+ * this path is arranged to avoid (D11, binding rule 6).
+ */
+export interface InvoiceRequestFacts {
+  guestName: string
+  reference: string
+  billTo: string
+  details: string | null
+}
+
+export function renderInvoiceRequest(locale: string, facts: InvoiceRequestFacts): RenderedMessage {
+  const resolved: TemplateLocale = isTemplateLocale(locale) ? locale : 'en'
+  const t = catalogues[resolved].notifications.invoiceRequest
+
+  const lines = [
+    t.intro,
+    '',
+    `${t.labels.guest}: ${facts.guestName}`,
+    `${t.labels.reference}: ${facts.reference}`,
+    `${t.labels.billTo}: ${facts.billTo}`,
+    ...(facts.details ? ['', `${t.labels.details}:`, facts.details] : []),
+    '',
+    t.note,
+  ]
+
+  return {
+    subject: interpolate(t.subject, { reference: facts.reference }),
+    body: lines.join('\n'),
+  }
+}
+
+/**
+ * A guest has been waiting on a person for too long (E3.2 SLA alert).
+ *
+ * Goes to the property, not the guest. It states how long and links to the
+ * thread; it does not restate the guest's question, because an owner who reads
+ * the summary in an email answers the email instead of the guest.
+ */
+export interface EscalationAlertFacts {
+  guestName: string
+  reference: string
+  minutesWaiting: number
+  threadUrl: string
+}
+
+export function renderEscalationAlert(
+  locale: string,
+  facts: EscalationAlertFacts,
+): RenderedMessage {
+  const resolved: TemplateLocale = isTemplateLocale(locale) ? locale : 'en'
+  const t = catalogues[resolved].notifications.escalationAlert
+
+  const lines = [
+    interpolate(t.intro, {
+      guestName: facts.guestName,
+      minutes: String(facts.minutesWaiting),
+    }),
+    '',
+    `${t.labels.reference}: ${facts.reference}`,
+    '',
+    interpolate(t.cta, { url: facts.threadUrl }),
+  ]
+
+  return {
+    subject: interpolate(t.subject, { guestName: facts.guestName }),
+    body: lines.join('\n'),
+  }
+}

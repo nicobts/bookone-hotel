@@ -1,5 +1,6 @@
 import { classifyDivergences } from '@bookone/core/sync'
 import type { PmsReservation } from '@bookone/core/adapters'
+import { conciergeTools } from './concierge'
 
 /**
  * Typed domain tools — the complete surface through which agents act.
@@ -11,13 +12,28 @@ import type { PmsReservation } from '@bookone/core/adapters'
  * fiscal-adjacent tools do not exist at all — enforced by absence, not policy.
  *
  * Guest-facing tools return pre-formed `phrase` fields so no model ever
- * composes a price, a date or an availability claim (ADR-009). None of the
- * tools here are guest-facing yet.
+ * composes a price, a date or an availability claim (ADR-009). AG-01's tools in
+ * `./concierge` are the first that are guest-facing, and every one of them
+ * returns the exact sentence the guest will read rather than the facts to build
+ * one from. The tool-boundary audit checks that after the fact.
  */
 
 export interface ToolContext {
   /** The runner scopes every call to one property. Cross-tenant is inexpressible. */
   propertyId: string
+  /**
+   * The one stay this run is about, when it is about one (AG-01).
+   *
+   * Set by the runner from its input, never read from anything the agent
+   * produced — so "tell me about booking X" cannot reach a booking that is not
+   * the guest's own. Absent for agents that operate on a property rather than
+   * on a stay, which is why it is optional rather than empty-string.
+   */
+  reservationId?: string
+  /** The conversation, when there is one, so a task can be traced to what asked for it. */
+  threadId?: string
+  /** The guest's language. A phrase exists in it or the tool reports a miss. */
+  locale?: string
 }
 
 export interface ToolResult {
@@ -84,6 +100,7 @@ export const classifyDiscrepancyTool: Tool = {
 
 export const tools: Record<string, Tool> = {
   [classifyDiscrepancyTool.name]: classifyDiscrepancyTool,
+  ...Object.fromEntries(conciergeTools.map((tool) => [tool.name, tool])),
 }
 
 export function getTool(name: string): Tool | undefined {

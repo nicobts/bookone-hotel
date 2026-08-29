@@ -21,7 +21,9 @@
     "./notifications": "./src/notifications/index.ts",
     "./payments": "./src/payments/index.ts",
     "./alloggiati": "./src/alloggiati/index.ts",
-    "./storage": "./src/storage/index.ts"
+    "./storage": "./src/storage/index.ts",
+    "./concierge": "./src/concierge/index.ts",
+    "./stay": "./src/stay/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

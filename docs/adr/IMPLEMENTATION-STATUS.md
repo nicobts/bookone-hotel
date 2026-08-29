@@ -15,12 +15,12 @@ worse than none, because it is read as current.
 | 006 | Supabase EU; Drizzle for domain access | 🟨 partial | Schema, access layer and Auth built on local Supabase. Cloud EU project not yet provisioned |
 | 007 | RLS on every client-reachable table, tested in CI | ✅ as-built | 11/11 tables, both suites green, negative control verified, and a CI job of its own. The public booking surface has no JWT to police, so it runs under `asService` with explicit scoping — asserted by handing each function the other property's ids (`booking.test.ts`) |
 | 008 | Mock-first connector | ✅ as-built | `MockEricsoftAdapter` with counted failure injection, plus the shared contract suite the real adapter must pass before the swap. Verified by negative control: removing the idempotency guard fails the contract |
-| 009 | Voice hard tool boundaries | ⬜ WS-B | Not this workstream |
+| 009 | Voice hard tool boundaries | 🟨 discipline applied to chat | Voice is WS-B. The *boundary* is built and measured here: every AG-01 tool returns a pre-formed `phrase`, the reply is that phrase verbatim, and a nightly job re-reads what was sent against the tool outputs of its own run. Zero violations is the gate |
 | 010 | Stripe behind `PaymentAdapter` | 🟨 port built, **provider not connected** | `PaymentAdapter` + `MockPaymentAdapter`, which moves no money. The interface, policy engine, `payments` ledger, `fee_events`, webhook-as-authority, signature check, redelivery idempotency and lost-webhook replay are all real and exercised. Blocked on 04 §0 item 6 (Stripe account, Connect Standard, commercialista). A real adapter must pass `describePaymentAdapterContract` — the suite the mock passes — before the swap, and the worker refuses to boot simulated in production |
 | 011 | Agents as first-class workers, tiered autonomy | ✅ as-built | Registry, runner and typed tools; AG-05 live on reconciliation. The runner refuses an ungranted tool, scopes to one property, and records every run — including the ones that fail |
-| 012 | `LlmProvider` abstraction; no vendor SDK imports | ✅ as-built | Interface and registry in `src/llm`; registration refuses any provider without declared EU processing, a region, a sub-processor register entry and a verification under a year old. No provider registered yet — that waits for a real requirement |
+| 012 | `LlmProvider` abstraction; no vendor SDK imports | 🟨 port built, **no provider registered** | Interface and registry in `src/llm`; registration refuses any provider without declared EU processing, a region, a sub-processor register entry and a verification under a year old. `LLM_API_KEY` is empty and AG-01 runs as a deterministic router — which is not a stopgap for the tool boundary but the shape it has to keep: a model would widen recall, never authorship (binding rule 7) |
 | 013 | Journey state machine is the single source of stay truth | ✅ as-built | Five dimensions, evented commands, `applyJourneyCommand` the only writer. Illegal transitions refused and separated from retries; every transition emits its event in the same transaction, so G1 is computable from the log alone. `journey_states` has no write policy at all — the console's arrival button will take the same command a door sensor will |
-| 014 | Reference implementations over blank-page design | ✅ as-built | First note written before the first component: [booking-flow.md](../design-notes/booking-flow.md) — Mews + Booking.com studied, six deviations each tied to the wedge. Index and legal-hygiene rules in [design-notes/](../design-notes/README.md) |
+| 014 | Reference implementations over blank-page design | 🟨 as-built, **one note written late** | Four notes in [design-notes/](../design-notes/README.md). Booking and the Sprint 7 surfaces were written before their code; [pre-arrival.md](../design-notes/pre-arrival.md) records a Sprint 5 surface that shipped without one and says so at the top rather than being backdated. 08 §3 had no reference row for in-stay messaging — the note proposes two and the table now carries it |
 | 015 | Pricing in €/room/month equivalence | ⬜ not yet | Sprint 8 reporting |
 | 016 | Property is a URL segment | ✅ as-built | `/[locale]/[property]/console/…`; verified in a browser that a non-member typing another slug gets a 404, not a redirect |
 | 017 | Identity tables sit outside tenancy | ✅ as-built | `profiles` isolated by `auth.uid()`; asserted separately in the suite |
@@ -75,12 +75,36 @@ worse than none, because it is read as current.
 | Contract mirror | 🟨 **drafted, not reviewed** | [alloggiati-responsibility.md](../contracts/alloggiati-responsibility.md) — five open questions for counsel |
 | **A real channel** | ⬜ **blocked** | Direct web service vs certified intermediary (04 §0 item 5) |
 
+## Sprint 7 additions
+
+| Thing | Status | Note |
+|---|---|---|
+| Arrival from three triggers (E3.1) | 🟨 two live, one interface-only | Guest tap and staff tap both take `arrival.confirm`; the door event is a port with a checklist and no vendor (`stay/door.ts`). The actor distinguishes them, because G1 counts the arrivals that needed nobody at a desk |
+| PMS check-in post | ✅ | Through the adapter, and its failure cannot swallow the welcome — a guest without a door code is a different problem from a PMS that is down |
+| Welcome message | ✅ | Facts from rows only. A property that has not recorded a wifi password gets a message with no wifi line, never a guessed one |
+| Thread per stay (E3.2) | ✅ | One conversation, four author kinds, status = who owes the next reply |
+| AG-01 concierge | 🟨 live, **no model connected** | Deterministic router over the property's own KB. Answers or escalates; there is no branch that composes a sentence |
+| Knowledge base | 🟨 schema + seed, **no authoring UI** | E5.3 is Sprint 9. Until then rows are seeded, so the concierge escalates more than it answers — the correct failure direction |
+| Tool-boundary audit | ✅ | Nightly, per property. Two checks: the reply must appear in its own run's tool output, and every number in it must too. Gate is zero |
+| Escalation + one-tap takeover (E3.3) | ✅ | Stay card above the composer; unowned work sorts first and is the only loud badge on the screen |
+| Unanswered-escalation SLA alert | ✅ | 30 minutes, to the property, exactly once — `sla_alerted_at` rather than a recomputation |
+| Requests become tasks (E3.4) | ✅ | P1, built because `create_task` is in AG-01's grant and the alternative is an agent promising into a void. The phrase says *recorded*, never *done* |
+| Express checkout (E4.1) | ✅ | States what it does not know: the folio lives in the PMS, and the screen says so rather than showing a confidently short total |
+| Invoice request | ✅ | **Issues nothing.** Recorded and routed to the property, who issue the fattura through their own certified chain (D11) |
+| Review request | ✅ | After departure is confirmed, once, unconditional on what the guest said — not on the checkout screen beside a payment step |
+| Departure sweep | ✅ | Nightly backstop under `system`, so a guest-confirmed checkout and an inferred one stay distinguishable |
+| **A language model** | ⬜ **not connected** | `LLM_API_KEY` empty; no provider passes D9 registration yet. The eval set is what makes connecting one a measurement rather than a leap |
+| **WhatsApp** | ⬜ **blocked** | BSP verification (04 §0). The thread is stored channel-agnostically; adding it is a provider, not a re-model |
+
 ## CI gates
 
 All five exist as separate jobs in `.github/workflows/ci.yml`, named so a
-failure identifies itself: `static`, `test`, `rls`, `migrations`, `evals`. The
-evals job is green because the roster is empty — the gate is in place before the
-agents are, so none can ship without one.
+failure identifies itself: `static`, `test`, `rls`, `migrations`, `evals`.
+
+The evals gate is no longer green by vacancy. AG-01's golden set asserts in
+pairs — for each capability, one case that must be answered and one adjacent
+case that must **not** be — because a set that only asserts the happy direction
+is satisfied by an agent that says yes to everything.
 
 ## The ADR-007 note — now closed
 

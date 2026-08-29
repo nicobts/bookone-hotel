@@ -60,7 +60,9 @@
     },
     "rooms": "Zimmertypen",
     "members": "Team",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "bookingPage": "Buchungsseite",
+    "conversations": "Unterhaltungen"
   },
   "property": {
     "switcher": {
@@ -123,6 +125,62 @@
       "simulated": "Kein Kanal angebunden — es wird nichts an eine Behörde gemeldet.",
       "receipt": "Bestätigung vorhanden",
       "checksum": "Prüfsumme"
+    },
+    "conversations": {
+      "title": "Unterhaltungen",
+      "subtitle": "Gäste, die auf eine Person warten — am längsten wartende zuerst.",
+      "empty": "Nichts offen.",
+      "unassigned": "Niemand kümmert sich",
+      "answered": "Beantwortet",
+      "waiting": "Wartet seit {since}",
+      "quiet": "Nichts offen",
+      "takeOver": "Übernehmen",
+      "handBack": "Zurückgeben",
+      "stayCard": "Der Aufenthalt",
+      "thread": "Unterhaltung",
+      "escalatedBecause": "An eine Person übergeben: {reason}",
+      "replyLabel": "Ihre Antwort",
+      "replyPlaceholder": "Dem Gast antworten",
+      "send": "Senden",
+      "noModel": "Es ist kein Sprachmodell angebunden. Der Assistent antwortet nur mit dem, was in der Wissensdatenbank des Hauses steht, und gibt alles andere an eine Person weiter.",
+      "facts": {
+        "reference": "Buchungsnummer",
+        "language": "Sprache",
+        "arrival": "Anreise",
+        "precheckin": "Check-in",
+        "alloggiati": "Meldung",
+        "departure": "Abreise"
+      },
+      "authors": {
+        "guest": "Gast",
+        "agent": "Assistent",
+        "staff": "Das Haus",
+        "system": "Hinweis"
+      },
+      "journey": {
+        "precheckin": {
+          "pending": "Nicht begonnen",
+          "invited": "Eingeladen",
+          "submitted": "Erledigt"
+        },
+        "arrival": {
+          "pending": "Nicht angegeben",
+          "expected": "Erwartet",
+          "confirmed": "Angekommen"
+        },
+        "alloggiati": {
+          "pending": "Nicht gemeldet",
+          "staged": "Bereit",
+          "submitted": "Gesendet",
+          "acknowledged": "Bestätigt",
+          "failed": "Fehlgeschlagen"
+        },
+        "departure": {
+          "pending": "Im Haus",
+          "settled": "Ausgecheckt",
+          "closed": "Abgeschlossen"
+        }
+      }
     }
   },
   "noProperty": {
@@ -181,6 +239,49 @@
       "why": "Das Haus ist gesetzlich verpflichtet, jeden Gast zu melden. Jetzt erledigt heißt: nicht an der Rezeption.",
       "signOff": "Bis bald.",
       "sender": "{property}"
+    },
+    "welcome": {
+      "subject": "Ihr Check-in bei {property} ist abgeschlossen",
+      "greeting": "Guten Tag {guestName},",
+      "intro": "Ihr Check-in bei {property} ist abgeschlossen. Alles Wichtige finden Sie unten.",
+      "labels": {
+        "room": "Zimmer",
+        "departure": "Abreise",
+        "access": "So kommen Sie hinein",
+        "wifi": "WLAN-Netz",
+        "wifiPassword": "WLAN-Passwort"
+      },
+      "stayLink": "Ihre Aufenthaltsseite mit Nachrichten und Check-out: {url}",
+      "help": "Brauchen Sie etwas? Antworten Sie auf diese E-Mail oder schreiben Sie uns über Ihre Aufenthaltsseite.",
+      "signOff": "Einen schönen Aufenthalt.",
+      "sender": "{property}"
+    },
+    "reviewRequest": {
+      "subject": "Danke für Ihren Aufenthalt bei {property}",
+      "greeting": "Guten Tag {guestName},",
+      "intro": "Danke für Ihren Aufenthalt bei {property}. Wenn Sie einen Moment haben, würde sich das Haus über Ihre Bewertung freuen.",
+      "cta": "Bewertung schreiben: {url}",
+      "signOff": "Wir würden uns freuen, Sie wiederzusehen.",
+      "sender": "{property}"
+    },
+    "invoiceRequest": {
+      "subject": "Rechnung angefragt für Buchung {reference}",
+      "intro": "Ein Gast hat Sie um eine Rechnung gebeten. BookOne stellt keine Rechnung aus und hat nichts an eine Behörde übermittelt; die Angaben unten sind die Worte des Gastes, unverändert weitergeleitet.",
+      "labels": {
+        "guest": "Gast",
+        "reference": "Buchungsnummer",
+        "billTo": "Rechnung ausstellen an",
+        "details": "Weitere Angaben"
+      },
+      "note": "Stellen Sie die Rechnung über Ihr übliches System aus."
+    },
+    "escalationAlert": {
+      "subject": "{guestName} wartet auf eine Antwort",
+      "intro": "{guestName} wartet seit {minutes} Minuten darauf, dass jemand im Haus antwortet.",
+      "labels": {
+        "reference": "Buchungsnummer"
+      },
+      "cta": "Unterhaltung öffnen: {url}"
     }
   },
   "booking": {
@@ -385,7 +486,53 @@
       "unavailable": "Diese Buchung ist nicht mehr aktiv. Bitte wenden Sie sich an das Haus.",
       "notConfigured": "Der Check-in ist in dieser Umgebung nicht verfügbar.",
       "upload": "Diese Datei konnte nicht angenommen werden. Bitte JPEG, PNG oder PDF unter 10 MB.",
-      "generic": "Etwas ist schiefgegangen. Bitte erneut versuchen."
+      "generic": "Etwas ist schiefgegangen. Bitte erneut versuchen.",
+      "message": "Ihre Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut."
+    },
+    "arrived": {
+      "heading": "Sind Sie da?",
+      "body": "Sagen Sie uns Bescheid, dass Sie angekommen sind, dann können Sie direkt aufs Zimmer. Das Haus wird informiert und Ihre Anmeldung abgeschlossen.",
+      "action": "Ich bin angekommen",
+      "done": "Sie sind eingecheckt",
+      "doneBody": "{property} weiß, dass Sie da sind. Alles Wichtige haben wir Ihnen per E-Mail geschickt, und unten können Sie dem Haus schreiben."
+    },
+    "messages": {
+      "heading": "Nachrichten",
+      "hint": "Fragen Sie das Haus alles zu Ihrem Aufenthalt.",
+      "empty": "Noch keine Nachrichten.",
+      "label": "Ihre Nachricht",
+      "placeholder": "Wann gibt es Frühstück?",
+      "send": "Senden",
+      "isRequest": "Das ist eine Bitte um etwas",
+      "fromAssistant": "Assistent",
+      "fromProperty": "Das Haus",
+      "requests": "Ihre Anliegen",
+      "taskOpen": "Notiert",
+      "taskDone": "Erledigt"
+    },
+    "checkout": {
+      "heading": "Check-out",
+      "body": "Ihre Abreise ist am {departure}. Sie können hier auschecken.",
+      "done": "Sie haben ausgecheckt. Danke für Ihren Aufenthalt.",
+      "paid": "Online bezahlt",
+      "partial": "Was Sie im Haus konsumiert haben — Bar, Restaurant, Minibar — rechnen Sie direkt mit dem Haus ab. Es erscheint hier nicht.",
+      "action": "Auschecken",
+      "invoice": {
+        "heading": "Brauchen Sie eine Rechnung?",
+        "hint": "Die Rechnung stellt das Haus aus. Wir leiten Ihre Angaben weiter und stellen selbst nichts aus.",
+        "billTo": "Rechnung ausstellen an",
+        "taxId": "Steuernummer oder UID (optional)",
+        "address": "Adresse (optional)",
+        "sent": "Ihre Rechnungsanfrage wurde an das Haus weitergeleitet."
+      }
     }
+  },
+  "concierge": {
+    "reservation": "Ihre Buchung {reference} läuft vom {arrival} bis zum {departure}.",
+    "reservationRoom": "Zimmer: {room}.",
+    "taskRecorded": "Ich habe das notiert, das Haus kann es sehen. Falls sich niemand gemeldet hat, sagen Sie es mir noch einmal, dann kümmere ich mich darum.",
+    "escalated": "Hier möchte ich nicht raten, deshalb habe ich die Frage an das Haus weitergegeben. Jemand antwortet Ihnen hier.",
+    "escalatedOutOfHours": "Hier möchte ich nicht raten, deshalb habe ich die Frage an das Haus weitergegeben. Die Rezeption antwortet {hours}, es kann also etwas dauern.",
+    "disclosure": "Sie schreiben mit einem Assistenten. Er antwortet nur mit dem, was das Haus schriftlich hinterlegt hat, und gibt alles andere an eine Person weiter."
   }
 }

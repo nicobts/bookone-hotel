@@ -6,12 +6,24 @@ import type * as schema from '../db/schema'
 import { emit } from '../events'
 import { systemActor } from '../events/actor'
 import {
+  ESCALATION_ALERT,
+  INVOICE_REQUEST_ROUTED,
   renderBookingConfirmation,
   renderBookingRequest,
+  renderEscalationAlert,
+  renderInvoiceRequest,
   renderPrecheckinInvite,
+  renderReviewRequest,
+  renderWelcome,
+  REVIEW_REQUEST,
+  WELCOME,
   type BookingConfirmationFacts,
   type BookingRequestFacts,
+  type EscalationAlertFacts,
+  type InvoiceRequestFacts,
   type PrecheckinInviteFacts,
+  type ReviewRequestFacts,
+  type WelcomeFacts,
 } from './templates'
 import {
   UnsupportedChannelError,
@@ -254,6 +266,22 @@ function render(template: string, locale: string, payload: unknown) {
 
   if (template === PRECHECKIN_INVITE) {
     return renderPrecheckinInvite(locale, payload as PrecheckinInviteFacts)
+  }
+
+  if (template === WELCOME) {
+    return renderWelcome(locale, payload as WelcomeFacts)
+  }
+
+  if (template === REVIEW_REQUEST) {
+    return renderReviewRequest(locale, payload as ReviewRequestFacts)
+  }
+
+  if (template === INVOICE_REQUEST_ROUTED) {
+    return renderInvoiceRequest(locale, payload as InvoiceRequestFacts)
+  }
+
+  if (template === ESCALATION_ALERT) {
+    return renderEscalationAlert(locale, payload as EscalationAlertFacts)
   }
 
   throw new Error(`unknown notification template "${template}"`)

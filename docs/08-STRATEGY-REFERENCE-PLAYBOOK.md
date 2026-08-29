@@ -48,6 +48,7 @@ The question examined: can we treat the Italian market as a protected pocket and
 | Terminology | Slope (Italian), Mews glossary (DE/EN) | Standard hospitality vocabulary; never invent terms — InnSyst's lesson: staff productive within one shift |
 | Guest profiles / repeat recognition | Mews Guest CRM (their signature strength) | Profile model, merge logic, "welcome back" journey triggers — property-scoped only (GDPR boundary stays ours) |
 | Self-service check-in UX | Mews Kiosk flows, transposed to guest phone | Step logic and document-capture ergonomics; we deliberately skip hardware kiosks (phone-native is the small-hotel answer) |
+| In-stay guest messaging | Hotel guest-messaging products (Duve, HiJiffy) + the support-inbox pattern (Intercom) | Thread-per-stay, AI-first-then-human escalation ladder, staff takeover semantics, KB-sourced answers — added Sprint 7; the table had no row for this surface and the design note argues the deviations |
 | Quotes / preventivi | **Slope** (their signature strength) | Quote structure, group/family handling, follow-up cadence |
 | Unified data model narrative | Mews "single data model" positioning | Their $300M-validated pitch language maps 1:1 onto our canonical model + event log — we adopt the narrative frame with our substance |
 | Marketplace/module packaging | Mews Starter/Elevated/Premium tiering, Apaleo Store | Tier naming logic and module boundaries |

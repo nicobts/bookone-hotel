@@ -41,7 +41,11 @@ typecheck · vitest (every P0 AC has a test) · RLS cross-tenant suite · migrat
 - `.claude/skills/` — `add-table`, `add-ui-component`, `write-adr`: the sequences where skipping a step fails silently. Use them; they are not summaries of this file
 
 ## Current phase
-Sprint 1 (04-IMPLEMENTATION-PLAN §1 Phase A): monorepo scaffold ✅, schema v1 + RLS + test harness, auth + console shell, core package (events, AuthorityMap router, LlmProvider), MockEricsoftAdapter, `agent_runs` + agents scaffold, CI with the five gates. Day-1 task list: 04 §6. Built-vs-decided: `docs/adr/IMPLEMENTATION-STATUS.md`.
+Sprints 1–7 shipped (04-IMPLEMENTATION-PLAN §1 Phases A–C): engine, booking surface, payments behind a mock, the guest journey, Alloggiati behind a mock, and in-stay messaging + express checkout. Next is Sprint 8 — attribution and the monthly report that **is** the invoice (D14).
+
+Built-vs-decided, per ADR and per sprint: `docs/adr/IMPLEMENTATION-STATUS.md`. Read it before assuming something works — several things are ports with mocks behind them on purpose.
+
+Four external decisions block real deployment, all in 04 §0 and none of them code: a payment provider (ADR-010), an Alloggiati channel (`docs/runbooks/alloggiati.md`), an ESP and an LLM provider that pass D9 residency, and WhatsApp BSP verification. Each already has its port, its mock and the contract suite a real implementation must pass.
 
 ## Environments
 `local` (Supabase CLI, mock adapter, Stripe test) → `staging` (EU project, seeded demo property) → `prod` (EU, migrations via CI only). EU residency is non-negotiable (D9): no service, endpoint, or region outside the EU without updating the sub-processor register first.

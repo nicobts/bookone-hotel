@@ -4,7 +4,9 @@ import type { JobQueue } from '@bookone/core/jobs'
 import type { PmsAdapter } from '@bookone/core/adapters'
 import { cancelBooking, quoteCancellation } from '@bookone/core/booking'
 import { applyJourneyCommand } from '@bookone/core/journey'
-import { userActor } from '@bookone/core/events'
+import { appendGuestMessage, MessageRejected } from '@bookone/core/concierge'
+import { confirmDeparture, requestInvoice } from '@bookone/core/stay'
+import { guestActor, systemActor, userActor } from '@bookone/core/events'
 import {
   applyPaymentEvent,
   startCheckout,
@@ -389,6 +391,12 @@ export function createApp(deps: {
           propertyId?: string
           reservationId?: string
           userId?: string
+          /**
+           * Which trigger fired. Defaults to `staff`, the conservative reading:
+           * G1 counts the arrivals that were *not* a staff tap, so an unstated
+           * source must never inflate it.
+           */
+          source?: 'guest' | 'staff' | 'door'
         }>()
 
         if (!body.propertyId || !body.reservationId) {
@@ -399,9 +407,22 @@ export function createApp(deps: {
           propertyId: body.propertyId,
           reservationId: body.reservationId,
           command: { type: 'arrival.confirm' },
-          // Named, when a person did it. "Who marked this guest arrived" is a
-          // question that gets asked, and `system` would be a small lie.
-          ...(body.userId ? { actor: userActor(body.userId) } : {}),
+          /*
+           * Named, whoever did it. "Who marked this guest arrived" is a question
+           * that gets asked at a desk with three people on shift.
+           *
+           * The guest branch was missing until this was run end to end: a guest
+           * tapping "I have arrived" holds no session, so there was no `userId`
+           * and the actor fell through to `system` — which reads as "a job did
+           * this" on the one transition where nothing automatic happened at all.
+           * G1 counts the arrivals that needed nobody at a desk, and it is
+           * computed off these events.
+           */
+          actor: body.userId
+            ? userActor(body.userId)
+            : body.source === 'guest'
+              ? guestActor(body.reservationId)
+              : systemActor,
         })
 
         if (outcome.status === 'applied' || outcome.status === 'no-op') {
@@ -409,6 +430,23 @@ export function createApp(deps: {
             'alloggiati.file',
             { propertyId: body.propertyId, reservationId: body.reservationId },
             { singletonKey: `alloggiati:${body.reservationId}` },
+          )
+
+          /*
+           * The check-in post and the welcome (E3.1), queued separately from the
+           * filing because they fail for unrelated reasons and neither should
+           * be able to swallow the other. A guest without a door code is a
+           * different problem from a stay the police registry has not seen.
+           */
+          await queue.send(
+            'arrival.complete',
+            {
+              propertyId: body.propertyId,
+              reservationId: body.reservationId,
+              source: body.source ?? 'staff',
+              ...(body.userId ? { userId: body.userId } : {}),
+            },
+            { singletonKey: `arrival-complete:${body.reservationId}` },
           )
         }
 
@@ -418,6 +456,109 @@ export function createApp(deps: {
         )
 
         return c.json({ status: outcome.status })
+      })
+
+      /**
+       * A guest said something (E3.2).
+       *
+       * Stores the message, then queues the answer. The two are separate on
+       * purpose: the guest's words are safe the moment this returns, and the
+       * reply arrives when the agent is done. A surface that waited for the
+       * agent before acknowledging would lose the message entirely whenever the
+       * agent was slow — the one outcome worse than a slow answer.
+       */
+      .post('/jobs/guest-message', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          reservationId?: string
+          locale?: string
+          message?: string
+          intent?: 'question' | 'request'
+        }>()
+
+        if (!body.propertyId || !body.reservationId || !body.message) {
+          return c.json({ error: 'propertyId, reservationId and message are required' }, 400)
+        }
+
+        try {
+          const { thread, messageId } = await appendGuestMessage({
+            propertyId: body.propertyId,
+            reservationId: body.reservationId,
+            locale: body.locale ?? 'en',
+            body: body.message,
+          })
+
+          await queue.send('concierge.reply', {
+            propertyId: body.propertyId,
+            reservationId: body.reservationId,
+            threadId: thread.id,
+            locale: thread.locale,
+            message: body.message,
+            ...(body.intent ? { intent: body.intent } : {}),
+          })
+
+          return c.json({ threadId: thread.id, messageId })
+        } catch (error) {
+          if (error instanceof MessageRejected) {
+            // A guest's own mistake — empty, or longer than the limit. A 400
+            // with the reason, not a 500: nothing is broken.
+            return c.json({ error: error.message }, 400)
+          }
+          throw error
+        }
+      })
+
+      /**
+       * The guest is leaving (E4.1).
+       *
+       * `/jobs/depart`, not `/jobs/checkout` — that name was taken by the
+       * *payment* checkout in Sprint 4, and Hono matches the first route it
+       * registered. The collision silently answered departure requests with a
+       * payment-intent response, so the guest's checkout appeared to succeed
+       * and nothing was recorded. Found by checking the database after clicking
+       * the button rather than by trusting the 200.
+       *
+       * MEMO — no payment provider is connected, so nothing here moves money.
+       * The journey transition, the invoice request and the review send are the
+       * real path; settlement runs through `MockPaymentAdapter` (ADR-010).
+       */
+      .post('/jobs/depart', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          reservationId?: string
+          billTo?: string
+          details?: Record<string, unknown>
+        }>()
+
+        if (!body.propertyId || !body.reservationId) {
+          return c.json({ error: 'propertyId and reservationId are required' }, 400)
+        }
+
+        // The invoice request first, so a guest whose departure transition is
+        // refused has still asked for their invoice. We issue nothing (D11).
+        if (body.billTo?.trim()) {
+          await requestInvoice({
+            propertyId: body.propertyId,
+            reservationId: body.reservationId,
+            billTo: body.billTo,
+            ...(body.details ? { details: body.details } : {}),
+          })
+
+          await queue.send('invoice.route', {}, { singletonKey: 'invoice-route' })
+        }
+
+        const outcome = await confirmDeparture({
+          propertyId: body.propertyId,
+          reservationId: body.reservationId,
+          reviewUrl: `${appUrl.replace(/\/$/, '')}/review/${body.reservationId}`,
+        })
+
+        logger.info(
+          { reservationId: body.reservationId, outcome: outcome.status },
+          'checkout confirmed',
+        )
+
+        return c.json(outcome)
       })
 
       /**

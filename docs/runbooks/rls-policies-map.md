@@ -68,6 +68,12 @@ only (`user_property_ids_admin()`).
 | `journey_states` | member | — ¹⁹ | — ¹⁹ | — ¹⁹ | 2026-08-28 |
 | `registration_records` | member | — ²⁰ | — ²⁰ | — ²¹ | 2026-08-28 |
 | `alloggiati_submissions` | member | — ²² | — ²² | — ²³ | 2026-08-29 |
+| `kb_articles` | member | member | member | — ²⁴ | 2026-08-29 |
+| `message_threads` | member | — ²⁵ | member ²⁶ | — ²⁷ | 2026-08-29 |
+| `messages` | member | member ²⁸ | — ²⁹ | — ²⁹ | 2026-08-29 |
+| `stay_tasks` | member | member | member | — ³⁰ | 2026-08-29 |
+| `stay_extras` | member | — ³¹ | — ³¹ | — ³¹ | 2026-08-29 |
+| `invoice_requests` | member | — ³² | — ³² | — ³² | 2026-08-29 |
 
 1. `with check (true)`. A new property has no members yet, so nothing else could
    pass; the `on_property_created` trigger makes the creator its owner in the
@@ -140,6 +146,43 @@ only (`user_property_ids_admin()`).
 23. After the identity documents are destroyed under E2.4, this row is the only
     remaining evidence that the filing happened. Deleting it would leave a
     property that met its obligation unable to show it.
+24. An article the concierge has already quoted is evidence of what a guest was
+    told. `published = false` takes it out of service without erasing what it
+    said. Insert and update are open to staff as well as owners, unlike
+    `room_types`: correcting a wrong wifi password is operating the property,
+    not administering it, and an owner who needs a support ticket to fix it will
+    let the concierge keep saying the wrong thing.
+25. A thread is opened by the guest writing, inside the transaction that stores
+    their first message. A staff-created empty thread would be a conversation
+    the guest has never seen, sitting in the queue, waiting for a reply to
+    nothing.
+26. Taking a thread over, handing it back and closing it are session writes
+    rather than worker calls, because the person deciding is looking at the
+    thread when they decide. That is the whole of E3.3's one-tap takeover.
+27. Deleting a thread destroys what a guest was told, which is exactly the
+    record that matters when they say they were told something else.
+28. The only insert policy in the schema that constrains a column other than
+    `property_id`: `author = 'staff'` and `author_user_id = auth.uid()`. A
+    session may write a message only *as itself*. Without it a person could
+    insert a row labelled `agent`, which the tool-boundary audit reads as the
+    software's output and an owner reads as something the product said. Both
+    write paths meet in this table, so this is the only place it stays true.
+29. No update and no delete, with no exception for typos. A message the guest
+    has read is a record of what they were told; a correction is a new message,
+    which is also how it works when somebody says the wrong thing at a desk.
+30. Cancelling a task records that somebody decided not to do it, which is
+    information. Deleting the row makes it look as though nobody ever asked.
+31. An extra typed straight into the table is an amount a guest will be asked to
+    pay that no command produced and no event records. Adding one is a domain
+    command in the worker; when the console gains a "charge this to the room"
+    button, that button calls the command rather than this table gaining a
+    policy.
+32. This row is a *request a guest made*, not a document anyone issued — we
+    assign no number, generate nothing, and transmit nothing to any authority
+    (D11, binding rule 6). No update, because editing what a guest asked for and
+    then routing it as though they had asked for that is the failure this
+    forecloses. `routed_at` is stamped by the worker when the request reaches
+    the property.
 
 ## Exceptions — not property-scoped, and why
 
@@ -161,7 +204,7 @@ surface is server-side code, and it is tested as such.
 | `/[locale]/book/[property]` | the slug in the URL, resolved to one property id server-side | that property's `room_types` and `rate_snapshots` | one `guests`, one `reservations`, one `notifications`, one `payments`, one `fee_events`, all carrying that id |
 | `/[locale]/book/[property]/manage/[reservation]` | the reservation UUID, unguessable and scoped to one booking | that reservation and its refund quote | its cancellation and refund |
 | `/webhooks/payments` (worker) | the provider's payload **signature** — not a bearer token, because a provider cannot hold one | the payment and its reservation | confirms the booking, settles the payment, writes the fee |
-| `/[locale]/stay/[token]` | an HMAC-signed token carrying one reservation id and its own expiry, verified server-side | that reservation, its journey and its party | its `registration_records`, its journey transitions, and one private Storage object per guest |
+| `/[locale]/stay/[token]` | an HMAC-signed token carrying one reservation id and its own expiry, verified server-side | that reservation, its journey, its party, its thread and what it has paid | its `registration_records`, its journey transitions, one private Storage object per guest, its own `messages` and `message_threads` row, its `stay_tasks`, and one `invoice_requests` |
 
 The stay token is stateless: no table, no revocation list. What makes that safe
 is that the resolver **re-reads the reservation on every request**, so a

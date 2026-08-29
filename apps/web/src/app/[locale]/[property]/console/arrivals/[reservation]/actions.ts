@@ -36,6 +36,7 @@ export async function markArrived(context: Context): Promise<void> {
     // Named. "Who marked this guest arrived" is a question that gets asked at
     // a desk with three people on shift.
     userId: user.id,
+    source: 'staff',
   })
 
   revalidatePath(`/${context.locale}/${context.slug}/console/arrivals/${context.reservationId}`)

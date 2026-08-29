@@ -239,3 +239,37 @@ describe('POST /jobs/payment-simulate', () => {
     expect(res.status).toBe(401)
   })
 })
+
+describe('the route table', () => {
+  it('registers no path twice for the same method', () => {
+    /*
+     * Hono matches the first route it registered for a path, so a duplicate is
+     * silent: the second handler never runs and the caller gets a plausible
+     * 200 from the wrong one.
+     *
+     * This is not hypothetical. Sprint 7 added a departure endpoint at
+     * `/jobs/checkout`, which Sprint 4 had already taken for starting a
+     * *payment* — so a guest checking out received a payment-intent response,
+     * the button appeared to work, and nothing was recorded. It was found by
+     * reading the database after clicking, and this test is what makes the next
+     * one fail loudly instead.
+     */
+    const { app } = build()
+
+    const seen = new Set<string>()
+    const duplicates: string[] = []
+
+    for (const route of app.routes) {
+      const key = `${route.method} ${route.path}`
+
+      // Middleware legitimately registers `ALL` across a prefix; only concrete
+      // handlers are being checked for collision here.
+      if (route.method === 'ALL') continue
+
+      if (seen.has(key)) duplicates.push(key)
+      seen.add(key)
+    }
+
+    expect(duplicates).toEqual([])
+  })
+})

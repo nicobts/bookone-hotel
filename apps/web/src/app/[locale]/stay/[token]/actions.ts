@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import {
   recordDocument,
@@ -9,6 +10,7 @@ import {
   type PartyInput,
 } from '@bookone/core/journey'
 import { storeIdentityDocument } from '@/lib/storage'
+import { confirmArrival, confirmCheckout, sendGuestMessage } from '@/lib/worker'
 
 /**
  * The pre-arrival writes (E2.1, E2.2).
@@ -154,4 +156,117 @@ function optional(formData: FormData, field: string, key: OptionalField): Partia
   const value = String(formData.get(field) ?? '').trim()
 
   return value ? ({ [key]: value } as Partial<PartyInput>) : {}
+}
+
+/**
+ * The guest says they have arrived (E3.1).
+ *
+ * One of three trigger sources for the same journey command — this one, a staff
+ * tap in the console, and a door event from Rooms when that exists. None is
+ * privileged; the source is carried so G1 can count the arrivals that needed
+ * nobody at a desk.
+ *
+ * Only offered on the day, which the page decides. Confirming an arrival two
+ * days early would file the party with the registry before they were anywhere
+ * near the building.
+ */
+export async function confirmArrivalNow(context: Context): Promise<void> {
+  const resolved = await resolveStay(context.token)
+  if (!resolved.ok) redirect(stayUrl(context))
+
+  const { stay } = resolved
+
+  await confirmArrival({
+    propertyId: stay.propertyId,
+    reservationId: stay.reservationId,
+    source: 'guest',
+  })
+
+  // Same reason as `sendMessage`: this redirect lands on the page it came from.
+  revalidatePath(stayUrl(context))
+
+  redirect(stayUrl(context))
+}
+
+/**
+ * The guest wrote something (E3.2).
+ *
+ * The only write on this surface that is *not* best-effort. Everything else
+ * here commits before the worker is nudged, so a worker that is down costs a
+ * few seconds; a message that never reached the worker was never stored at all,
+ * and telling the guest it was sent would be false. So this one reports the
+ * failure.
+ */
+export async function sendMessage(context: Context, formData: FormData): Promise<void> {
+  const resolved = await resolveStay(context.token)
+  if (!resolved.ok) redirect(stayUrl(context))
+
+  const { stay } = resolved
+  const message = String(formData.get('message') ?? '').trim()
+
+  if (!message) redirect(stayUrl(context, '#messages'))
+
+  const intent = formData.get('intent') === 'request' ? ('request' as const) : undefined
+
+  const sent = await sendGuestMessage({
+    propertyId: stay.propertyId,
+    reservationId: stay.reservationId,
+    locale: context.locale,
+    message,
+    ...(intent ? { intent } : {}),
+  })
+
+  /*
+   * Revalidate before redirecting, because the redirect target is the page we
+   * are already on.
+   *
+   * Found by sending the first message on a fresh page: the client router had
+   * an RSC entry for this exact URL from the initial load — when the thread did
+   * not exist — and served it. The guest pressed send and the thread still read
+   * "no messages yet", which is the single worst moment for this surface to look
+   * broken: the very first message anybody sends.
+   *
+   * The later messages looked fine, which is what made it easy to miss.
+   */
+  revalidatePath(stayUrl(context))
+
+  redirect(stayUrl(context, sent.ok ? '#messages' : '?error=message#messages'))
+}
+
+/**
+ * The guest is leaving (E4.1).
+ *
+ * MEMO — no payment provider is connected, so nothing here moves money
+ * (ADR-010). What it does do is real: it moves the journey to `settled`,
+ * records any invoice request, and sends the review link afterwards.
+ *
+ * We issue no invoice. `billTo` is routed to the property, who issue the
+ * fattura through their own certified chain (D11, binding rule 6).
+ */
+export async function checkOut(context: Context, formData: FormData): Promise<void> {
+  const resolved = await resolveStay(context.token)
+  if (!resolved.ok) redirect(stayUrl(context))
+
+  const { stay } = resolved
+  const billTo = String(formData.get('billTo') ?? '').trim()
+  const taxId = String(formData.get('taxId') ?? '').trim()
+  const address = String(formData.get('address') ?? '').trim()
+
+  await confirmCheckout({
+    propertyId: stay.propertyId,
+    reservationId: stay.reservationId,
+    ...(billTo ? { billTo } : {}),
+    ...(billTo && (taxId || address)
+      ? {
+          details: {
+            ...(taxId ? { taxId } : {}),
+            ...(address ? { address } : {}),
+          },
+        }
+      : {}),
+  })
+
+  revalidatePath(stayUrl(context))
+
+  redirect(stayUrl(context, '#checkout'))
 }

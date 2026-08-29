@@ -1287,3 +1287,386 @@ export const alloggiatiSubmissions = pgTable(
     ),
   ],
 )
+
+// ---------------------------------------------------------------------------
+// Knowledge base, messaging and departure (E3.2, E3.3, E3.4, E4.1)
+// ---------------------------------------------------------------------------
+
+/** Where a thread stands. The console queue is ordered by this and by waiting time. */
+export const threadStatus = pgEnum('thread_status', [
+  /** Open, and the last word was ours. Nothing is owed. */
+  'open',
+  /** The guest wrote and nobody has answered yet. */
+  'awaiting_reply',
+  /** Handed to a person. Unassigned until somebody takes it. */
+  'escalated',
+  /** Answered and quiet. Reopens the moment the guest writes again. */
+  'answered',
+  /** The stay is over and the thread is done. */
+  'closed',
+])
+
+/**
+ * Who wrote a message.
+ *
+ * `agent` is separate from `staff` on purpose, and it is not cosmetic: the
+ * tool-boundary audit (E3.2) reads exactly the `agent` rows, the transparency
+ * disclosure exists because some rows are `agent`, and an owner reviewing a
+ * thread needs to know which sentences their property is answerable for as
+ * *authored* rather than merely *sent*.
+ */
+export const messageAuthor = pgEnum('message_author', ['guest', 'agent', 'staff', 'system'])
+
+/** A task's life. Small on purpose — see `stayTasks`. */
+export const taskStatus = pgEnum('task_status', ['open', 'done', 'cancelled'])
+
+/** Which side of the folio line an extra came from. See `stayExtras`. */
+export const extraSource = pgEnum('extra_source', ['platform', 'pms'])
+
+/**
+ * A property's answers to the questions guests actually ask (E3.2, E5.3).
+ *
+ * The concierge answers from here or it escalates. There is no third option in
+ * which it composes an answer from general knowledge about hotels — binding
+ * rule 7, and the reason `search_kb` returns a stored string rather than
+ * context for a model to paraphrase.
+ *
+ * ## Why answers are jsonb per locale rather than one row per language
+ *
+ * Because a missing locale must be *visibly* missing. A row per language makes
+ * absence look like any other empty result set, and the tempting fix is to fall
+ * back to the property default and translate it. Translating a property's
+ * breakfast hours into a language nobody at the property has read is a
+ * generated guest-facing fact, which is what rule 7 forbids. Here the key is
+ * simply absent, the lookup returns null, and the concierge escalates.
+ *
+ * Authoring UI is Sprint 9 (E5.3). Until then these rows are seeded and the
+ * runbook says so — which is why the concierge escalates more than it answers
+ * in Sprint 7, and why that is the correct failure direction.
+ */
+export const kbArticles = pgTable(
+  'kb_articles',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+
+    /** `wifi`, `breakfast`, `parking`, `checkin`. Free text; the set is a property's own. */
+    topic: text('topic').notNull(),
+
+    /**
+     * Ways a guest might ask this, in any of the property's languages.
+     *
+     * Plain text, one phrasing per element. Matching is lexical: a stored
+     * phrasing is evidence a human expected this question, which is a stronger
+     * signal than an embedding's opinion and — more to the point — is
+     * inspectable by the owner whose property is answering.
+     */
+    questionVariants: jsonb('question_variants')
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+
+    /** `{ it: "...", de: "..." }`. A missing locale is a missing answer, deliberately. */
+    answers: jsonb('answers')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+
+    /**
+     * Bumped on every edit. The audit needs to name the version that produced a
+     * reply, because "the KB said so" is only a defence if the KB can be shown
+     * as it stood.
+     */
+    version: integer('version').notNull().default(1),
+
+    /** Draft articles are invisible to the concierge. AG-03 writes drafts (Sprint 9). */
+    published: boolean('published').notNull().default(true),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    /*
+     * No separate (property_id, topic) index: the unique constraint below
+     * already builds exactly that one, and a duplicate costs a write on every
+     * insert while answering no query the first cannot.
+     */
+    unique('kb_articles_property_topic').on(t.propertyId, t.topic),
+    check('kb_articles_version_positive', sql`${t.version} >= 1`),
+  ],
+)
+
+/**
+ * One conversation per stay (E3.2).
+ *
+ * Keyed by reservation rather than by guest or by channel. A guest with two
+ * stays has two threads, which is what both they and the property mean: the
+ * question "is my room ready" belongs to one of them.
+ *
+ * ## Why the channel is a column and not a table
+ *
+ * The thread is stored channel-agnostically because WhatsApp is blocked on BSP
+ * verification (04 §0) and will arrive as a transport, not as a second model.
+ * `channel` records where the guest last reached us so a reply goes back the
+ * same way; it is not part of the thread's identity.
+ */
+export const messageThreads = pgTable(
+  'message_threads',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+    reservationId: uuid('reservation_id')
+      .notNull()
+      .references(() => reservations.id, { onDelete: 'cascade' }),
+
+    status: threadStatus('status').notNull().default('open'),
+
+    /** Where the guest last reached us. Web until a BSP is verified. */
+    channel: notificationChannel('channel').notNull().default('email'),
+
+    /** The guest's language for this thread, so a reply is not sent in the property's. */
+    locale: text('locale').notNull(),
+
+    /**
+     * Who has it.
+     *
+     * Null while escalated-and-unowned, which the console shows loudly: unowned
+     * work is how a support surface fails, and a ten-room property has nobody
+     * whose job is to notice.
+     */
+    assignedTo: uuid('assigned_to').references(() => authUsers.id, { onDelete: 'set null' }),
+
+    /** Why the concierge handed over, in words a person can act on. */
+    escalationReason: text('escalation_reason'),
+
+    /**
+     * When the guest last wrote and when we last answered.
+     *
+     * Denormalized from `messages` because the SLA sweep and the console queue
+     * both order by "how long has this been waiting", and computing that from a
+     * join over every message in every thread is the query that gets slow first.
+     */
+    lastGuestMessageAt: timestamp('last_guest_message_at', { withTimezone: true }),
+    lastReplyAt: timestamp('last_reply_at', { withTimezone: true }),
+    escalatedAt: timestamp('escalated_at', { withTimezone: true }),
+
+    /** Set once the SLA alert has fired, so it fires once and not every sweep. */
+    slaAlertedAt: timestamp('sla_alerted_at', { withTimezone: true }),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('message_threads_property_status_idx').on(t.propertyId, t.status),
+    /** One thread per stay. A second would split the history the guest can see. */
+    unique('message_threads_reservation').on(t.reservationId),
+    /** An escalation without a time is one the SLA sweep cannot see. */
+    check(
+      'message_threads_escalated_has_time',
+      sql`${t.status} <> 'escalated' or ${t.escalatedAt} is not null`,
+    ),
+  ],
+)
+
+/**
+ * One message (E3.2).
+ *
+ * Append-only in practice: nothing edits a message, because a thread a guest
+ * has read is a record of what they were told. A correction is a new message.
+ */
+export const messages = pgTable(
+  'messages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+    threadId: uuid('thread_id')
+      .notNull()
+      .references(() => messageThreads.id, { onDelete: 'cascade' }),
+
+    author: messageAuthor('author').notNull(),
+
+    /** Which person, when a person wrote it. Null for guest, agent and system. */
+    authorUserId: uuid('author_user_id').references(() => authUsers.id, { onDelete: 'set null' }),
+
+    body: text('body').notNull(),
+
+    /**
+     * The `agent_runs` row that produced this, when an agent did.
+     *
+     * This is what makes the tool-boundary audit possible at all: the audit
+     * compares a reply against the tool outputs of *its own run*, and without
+     * this column it would be comparing against whatever ran nearby in time.
+     */
+    agentRunId: uuid('agent_run_id').references(() => agentRuns.id, { onDelete: 'set null' }),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('messages_thread_idx').on(t.threadId, t.createdAt),
+    index('messages_property_idx').on(t.propertyId),
+    /** An agent message carries its run; anything else carrying one is a mislabel. */
+    check(
+      'messages_agent_run_only_for_agent',
+      sql`${t.agentRunId} is null or ${t.author} = 'agent'`,
+    ),
+    /** Only a person has a user id. An agent that claimed one would launder its authorship. */
+    check(
+      'messages_author_user_only_for_staff',
+      sql`${t.authorUserId} is null or ${t.author} = 'staff'`,
+    ),
+    check('messages_body_not_empty', sql`length(btrim(${t.body})) > 0`),
+  ],
+)
+
+/**
+ * Something a guest asked for that a person has to do (E3.4).
+ *
+ * P1 in the stories, built now because `create_task` is in AG-01's tool grant
+ * (06 §2) and the alternative is an agent that says "I will let them know" into
+ * a void. The row is the difference between a promise and a record.
+ *
+ * Deliberately thin: no priority, no due date, no assignee, no categories. A
+ * ten-room property does not triage; it does the thing or it does not. Fields
+ * nobody fills in make a list look maintained when it is not.
+ */
+export const stayTasks = pgTable(
+  'stay_tasks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+    reservationId: uuid('reservation_id')
+      .notNull()
+      .references(() => reservations.id, { onDelete: 'cascade' }),
+    /** The conversation it came from, when it came from one. */
+    threadId: uuid('thread_id').references(() => messageThreads.id, { onDelete: 'set null' }),
+
+    /** What was asked, in the guest's own words where possible. */
+    summary: text('summary').notNull(),
+
+    status: taskStatus('status').notNull().default('open'),
+
+    /** `guest`, `staff:{uuid}`, `agent:AG-01` — the actor vocabulary of `domain_events`. */
+    createdBy: text('created_by').notNull(),
+
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('stay_tasks_property_status_idx').on(t.propertyId, t.status),
+    index('stay_tasks_reservation_idx').on(t.reservationId),
+    check('stay_tasks_summary_not_empty', sql`length(btrim(${t.summary})) > 0`),
+    /** Done means done at a time. A completed task with no timestamp cannot be reported on. */
+    check('stay_tasks_done_has_time', sql`${t.status} <> 'done' or ${t.completedAt} is not null`),
+  ],
+)
+
+/**
+ * Something charged to a stay that **we** registered (E4.1).
+ *
+ * Note what this is not: it is not the folio. A PMS owns the minibar, the
+ * restaurant and the spa, and in V1 that is Ericsoft behind an adapter — which
+ * means our view of what a guest owes is partial by construction. The checkout
+ * surface says so in words rather than presenting a total that is confidently
+ * short (docs/design-notes/express-checkout.md §4A).
+ *
+ * `source` records which side of that line a row came from. A `pms` row is
+ * read-through for display and is never settled by us.
+ */
+export const stayExtras = pgTable(
+  'stay_extras',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+    reservationId: uuid('reservation_id')
+      .notNull()
+      .references(() => reservations.id, { onDelete: 'cascade' }),
+
+    description: text('description').notNull(),
+    amountCents: integer('amount_cents').notNull(),
+    currency: text('currency').notNull().default('EUR'),
+
+    source: extraSource('source').notNull().default('platform'),
+
+    /** The settlement that cleared it, when one did. Null while outstanding. */
+    paymentId: uuid('payment_id').references(() => payments.id, { onDelete: 'set null' }),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('stay_extras_reservation_idx').on(t.reservationId),
+    index('stay_extras_property_idx').on(t.propertyId),
+    check('stay_extras_amount_non_negative', sql`${t.amountCents} >= 0`),
+    check('stay_extras_currency_iso', sql`${t.currency} ~ '^[A-Z]{3}$'`),
+    /**
+     * We settle what we registered. A PMS-sourced line carrying one of our
+     * payments would mean we had collected money for a charge the property
+     * raised, which is the property's transaction and not ours to clear.
+     */
+    check(
+      'stay_extras_only_platform_is_settled',
+      sql`${t.paymentId} is null or ${t.source} = 'platform'`,
+    ),
+  ],
+)
+
+/**
+ * A guest asking the property for an invoice (E4.1).
+ *
+ * **This table issues nothing.** It assigns no number, generates no document,
+ * computes no tax and transmits nothing to any authority. It records that a
+ * guest asked, and who they asked it to be made out to, so the request can be
+ * routed to the property and to their PMS — where the *fattura* is issued by
+ * the property's own certified chain, as D11 and binding rule 6 require.
+ *
+ * The distinction is the whole reason this is a separate table with this
+ * comment on it rather than a jsonb blob on a task: someone reading the schema
+ * to check the fiscal gate should be able to see that we hold a request and
+ * issue no document.
+ */
+export const invoiceRequests = pgTable(
+  'invoice_requests',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+    reservationId: uuid('reservation_id')
+      .notNull()
+      .references(() => reservations.id, { onDelete: 'cascade' }),
+
+    /** Who the guest wants it made out to. A person, or a company. */
+    billTo: text('bill_to').notNull(),
+
+    /**
+     * Whatever else the guest supplied — address, tax identifiers, a reference.
+     *
+     * Jsonb because the required set differs by country and by whether the
+     * payer is a person or a business, and because *we do not validate it*: it
+     * is passed through to the party that issues the document, and a validation
+     * rule of ours that rejected a legitimate Austrian UID would be us blocking
+     * a transaction we are not party to.
+     */
+    details: jsonb('details')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+
+    /** When the request was handed to the property. Null while queued. */
+    routedAt: timestamp('routed_at', { withTimezone: true }),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('invoice_requests_property_idx').on(t.propertyId),
+    /** One per stay. A guest who changes the details corrects the request. */
+    unique('invoice_requests_reservation').on(t.reservationId),
+    check('invoice_requests_bill_to_not_empty', sql`length(btrim(${t.billTo})) > 0`),
+  ],
+)

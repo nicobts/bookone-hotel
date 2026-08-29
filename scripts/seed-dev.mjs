@@ -156,6 +156,37 @@ try {
         (${property.id}, 'FAM', '{"de":"Familienzimmer","it":"Camera familiare","en":"Family room","sl":"Družinska soba"}'::jsonb, 4)`
   }
 
+  /*
+   * A small knowledge base, so the concierge has something true to say (E3.2).
+   *
+   * Deliberately thin, and thin in a way that is instructive: Hotel Sonja has
+   * three topics in English and German, Garni Alpin has two in Italian only.
+   * That means a German guest at Garni Alpin escalates, which is the correct
+   * behaviour and the one worth being able to see without setting it up by
+   * hand — the concierge does not translate an answer nobody at the property
+   * has read (binding rule 7).
+   *
+   * The authoring UI is Sprint 9 (E5.3). Until then a property's answers arrive
+   * this way or through AG-03's website ingestion.
+   */
+  await sql`
+    insert into kb_articles (property_id, topic, question_variants, answers) values
+      (${sonja.id}, 'breakfast',
+       '["what time is breakfast","when is breakfast served","wann gibt es fruhstuck"]'::jsonb,
+       '{"en":"Breakfast is served from 07:30 to 10:00 in the dining room on the ground floor.","de":"Fruhstuck gibt es von 07:30 bis 10:00 im Speisesaal im Erdgeschoss."}'::jsonb),
+      (${sonja.id}, 'parking',
+       '["where can i park","is there parking","wo kann ich parken"]'::jsonb,
+       '{"en":"There are four free spaces behind the building. The gate code is 4417.","de":"Hinter dem Haus gibt es vier kostenlose Stellplatze. Der Torcode ist 4417."}'::jsonb),
+      (${sonja.id}, 'checkout',
+       '["what time is checkout","when do i have to leave","wann muss ich auschecken"]'::jsonb,
+       '{"en":"Checkout is by 11:00. You can leave your bags at reception until 18:00.","de":"Check-out ist bis 11:00. Ihr Gepack konnen Sie bis 18:00 an der Rezeption lassen."}'::jsonb),
+      (${alpin.id}, 'breakfast',
+       '["a che ora e la colazione","quando si fa colazione"]'::jsonb,
+       '{"it":"La colazione e servita dalle 08:00 alle 10:00 nella sala al primo piano."}'::jsonb),
+      (${alpin.id}, 'wifi',
+       '["qual e la password del wifi","come mi collego a internet"]'::jsonb,
+       '{"it":"La rete si chiama Alpin-Ospiti e la password e sul cartoncino in camera."}'::jsonb)`
+
   // One event per property, so the log is not empty on first look — Sprint 1's
   // DoD asks for an event log receiving writes.
   await sql`
@@ -163,7 +194,7 @@ try {
       (${sonja.id}, 'property', 'property.created', 'platform', 'system', '{"seed":true}'::jsonb),
       (${alpin.id}, 'property', 'property.created', 'platform', 'system', '{"seed":true}'::jsonb)`
 
-  console.log('Seeded 2 properties, 2 accounts, 6 room types, 2 events.')
+  console.log('Seeded 2 properties, 2 accounts, 6 room types, 5 knowledge-base articles, 2 events.')
   console.log('')
   console.log('  Booking surfaces (prices arrive once the worker refreshes availability):')
   console.log('    http://localhost:3000/en/book/hotel-sonja   (English)')

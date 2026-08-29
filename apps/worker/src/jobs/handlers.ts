@@ -17,7 +17,24 @@ import {
   submitAlloggiati,
   type AlloggiatiAdapter,
 } from '@bookone/core/alloggiati'
+import {
+  alertEscalation,
+  auditToolBoundary,
+  listOverdueEscalations,
+  markSlaAlerted,
+  propertiesWithAgentReplies,
+} from '@bookone/core/concierge'
+import {
+  closeDepartedStay,
+  completeArrival,
+  listDepartedStays,
+  listUnroutedInvoiceRequests,
+  markInvoiceRouted,
+  queueInvoiceRequestToProperty,
+} from '@bookone/core/stay'
+import { guestActor, systemActor, userActor } from '@bookone/core/events'
 import { runAgent } from '@bookone/agents/runner'
+import { respondToGuestMessage } from '@bookone/agents/concierge'
 import type { Logger } from 'pino'
 
 /**
@@ -43,6 +60,14 @@ export interface HandlerDeps {
    * testable without a storage service.
    */
   deleteObject: (path: string) => Promise<boolean>
+  /**
+   * The public base URL, for links a guest or an owner will click.
+   *
+   * Injected rather than read from the environment here, like every other
+   * dependency in this file: a handler that reaches for `process.env` is a
+   * handler that cannot be tested without one.
+   */
+  appUrl: string
   logger: Logger
 }
 
@@ -76,8 +101,29 @@ const PAYMENT_REPLAY_AFTER_SECONDS = 5 * 60
  */
 const PRECHECKIN_WINDOW_HOURS = 50
 
+/**
+ * How long a guest may wait on a person before the property is told (E3.2).
+ *
+ * Thirty minutes, and the number is a judgement about the buyer rather than an
+ * industry benchmark: our escalation target is a phone in an apron pocket, and
+ * the person holding it is legitimately unavailable for stretches. Alerting
+ * after five would be alerting during breakfast service, every day, until they
+ * muted us. Per-property configuration is a Sprint 9 setting; a constant now is
+ * better than a field nobody fills in.
+ */
+const ESCALATION_SLA_MINUTES = 30
+
+/**
+ * How far back the nightly tool-boundary audit looks (E3.2).
+ *
+ * A day and a bit, so a run that is skipped or fails cannot leave a window
+ * nothing ever checked. Re-auditing yesterday costs a query and re-logs a
+ * violation that is still true, which is the right direction to be wrong in.
+ */
+const AUDIT_WINDOW_HOURS = 30
+
 export async function registerHandlers(deps: HandlerDeps): Promise<void> {
-  const { queue, adapter, notifications, payments, alloggiati, deleteObject, logger } = deps
+  const { queue, adapter, notifications, payments, alloggiati, deleteObject, appUrl, logger } = deps
 
   await queue.work('reservation.reflect', async (job) => {
     const { propertyId, reservationId } = job.data
@@ -356,6 +402,234 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
+  /**
+   * Answer a guest (E3.2).
+   *
+   * Queued rather than answered in the request that received the message. The
+   * guest's message is stored and visible the moment they press send; the reply
+   * arrives when it arrives. A surface that waited for the agent before
+   * acknowledging would lose the message entirely if the agent were slow, which
+   * is the one outcome worse than a slow answer.
+   */
+  await queue.work('concierge.reply', async (job) => {
+    const { propertyId, reservationId, threadId, locale, message, intent } = job.data
+
+    const outcome = await respondToGuestMessage({
+      propertyId,
+      reservationId,
+      threadId,
+      locale,
+      message,
+      ...(intent ? { intent } : {}),
+    })
+
+    logger.info(
+      { jobId: job.id, threadId, outcome: outcome.status, runId: outcome.runId },
+      'concierge.reply',
+    )
+
+    if (outcome.status === 'escalated') {
+      // Nudge the SLA sweep's clock into motion rather than waiting up to its
+      // whole interval: the property has a guest waiting from now, not from the
+      // next tick.
+      await queue.send('escalation.sweep', {}, { singletonKey: 'escalation-sweep' })
+    }
+  })
+
+  /**
+   * Tell someone a guest is still waiting (E3.2 SLA alert).
+   *
+   * The alert goes to the property, not the guest, and it fires once per
+   * escalation — `sla_alerted_at` is what makes that true. An alert that
+   * repeated every sweep would be an alert somebody filters.
+   */
+  await queue.work('escalation.sweep', async (job) => {
+    const overdue = await listOverdueEscalations({
+      minutes: ESCALATION_SLA_MINUTES,
+      limit: SWEEP_BATCH,
+    })
+
+    for (const thread of overdue) {
+      const alerted = await alertEscalation({
+        propertyId: thread.propertyId,
+        reservationId: thread.reservationId,
+        threadId: thread.id,
+        escalatedAt: thread.escalatedAt,
+        appUrl,
+      })
+
+      // Stamped whatever the alert did. A property with no address to reach
+      // still has a guest waiting, and retrying an alert we cannot deliver would
+      // spin this sweep forever on the same thread.
+      await markSlaAlerted(thread.propertyId, thread.id)
+
+      if (alerted) {
+        await queue.send('notification.send', {
+          propertyId: thread.propertyId,
+          notificationId: alerted,
+        })
+      }
+    }
+
+    if (overdue.length > 0) {
+      logger.warn({ jobId: job.id, waiting: overdue.length }, 'escalation.sweep')
+    }
+  })
+
+  /**
+   * Finish an arrival (E3.1).
+   *
+   * Separate from the `arrival.confirm` command that precedes it, because the
+   * two fail for unrelated reasons: the command is a state transition that
+   * either applies or does not, and this is two network calls to systems that
+   * are occasionally down. A retry here re-attempts the side effects without
+   * re-asserting a transition that already happened.
+   */
+  await queue.work('arrival.complete', async (job) => {
+    const { propertyId, reservationId, source, userId } = job.data
+
+    const outcome = await completeArrival({
+      propertyId,
+      reservationId,
+      source: source ?? 'staff',
+      // Same reasoning as the endpoint that enqueued this: a guest tap has no
+      // user behind it and is still not `system`.
+      actor: userId
+        ? userActor(userId)
+        : source === 'guest'
+          ? guestActor(reservationId)
+          : systemActor,
+      pms: adapter,
+    })
+
+    logger.info(
+      {
+        jobId: job.id,
+        reservationId,
+        source,
+        checkInPosted: outcome.checkInPosted,
+        ...(outcome.checkInError ? { checkInError: outcome.checkInError } : {}),
+      },
+      'arrival.complete',
+    )
+
+    if (outcome.welcomeNotificationId) {
+      await queue.send('notification.send', {
+        propertyId,
+        notificationId: outcome.welcomeNotificationId,
+      })
+    }
+
+    // Rethrown so the queue retries the PMS post. The welcome has already been
+    // queued by this point, so a retry costs one more call to the PMS and
+    // cannot re-send the message — the outbox constraint sees to that.
+    if (outcome.checkInError && outcome.checkInError !== 'not reflected to the PMS yet') {
+      throw new Error(`check-in post failed: ${outcome.checkInError}`)
+    }
+  })
+
+  /**
+   * Hand an invoice request to the property (E4.1).
+   *
+   * We issue nothing. This forwards what the guest asked for, unaltered, to the
+   * people whose certified chain issues the document (D11, binding rule 6).
+   */
+  await queue.work('invoice.route', async (job) => {
+    const pending = await listUnroutedInvoiceRequests(SWEEP_BATCH)
+
+    for (const request of pending) {
+      const notificationId = await queueInvoiceRequestToProperty({
+        propertyId: request.propertyId,
+        reservationId: request.reservationId,
+      })
+
+      await markInvoiceRouted(request.propertyId, request.reservationId)
+
+      if (notificationId) {
+        await queue.send('notification.send', {
+          propertyId: request.propertyId,
+          notificationId,
+        })
+      }
+    }
+
+    if (pending.length > 0) {
+      logger.info({ jobId: job.id, routed: pending.length }, 'invoice.route')
+    }
+  })
+
+  /**
+   * Close stays that ended and were never checked out of (E4.1).
+   *
+   * The backstop for a guest who left at 06:00 without touching their phone.
+   * It records `system` as the actor, which is what keeps the express-checkout
+   * adoption number honest: a stay closed by a sweep and a stay the guest
+   * closed themselves are different facts.
+   */
+  await queue.work('departure.sweep', async (job) => {
+    const departed = await listDepartedStays({ limit: SWEEP_BATCH })
+
+    let closed = 0
+
+    for (const stay of departed) {
+      const outcome = await closeDepartedStay({
+        propertyId: stay.propertyId,
+        reservationId: stay.reservationId,
+      })
+
+      if (outcome === 'closed') closed += 1
+    }
+
+    if (closed > 0) {
+      logger.info({ jobId: job.id, considered: departed.length, closed }, 'departure.sweep')
+    }
+  })
+
+  /**
+   * The tool-boundary audit (E3.2 acceptance criterion, binding rule 7).
+   *
+   * Runs nightly over what the concierge actually sent. The gate is zero, and
+   * a violation is logged at `error` because it is one: it means the product
+   * told a guest something about a business that the business never said.
+   *
+   * It should find nothing — replies are tool phrases by construction. That is
+   * the reason to run it. A structural guarantee holds only while the structure
+   * does, and the way it stops holding is somebody adding a helpful sentence
+   * eighteen months from now.
+   */
+  await queue.work('toolboundary.audit', async (job) => {
+    const since = new Date(Date.now() - AUDIT_WINDOW_HOURS * 3_600_000)
+    const properties = await propertiesWithAgentReplies(since)
+
+    let checked = 0
+    let violations = 0
+
+    for (const propertyId of properties) {
+      const report = await auditToolBoundary({ propertyId, since })
+
+      checked += report.checked
+      violations += report.violations.length
+
+      for (const violation of report.violations) {
+        logger.error(
+          {
+            jobId: job.id,
+            propertyId,
+            kind: violation.kind,
+            messageId: violation.messageId,
+            threadId: violation.threadId,
+            detail: violation.detail,
+          },
+          'toolboundary.violation',
+        )
+      }
+    }
+
+    logger.info(
+      { jobId: job.id, properties: properties.length, checked, violations },
+      'toolboundary.audit',
+    )
+  })
   await queue.work('reservation.expire_holds', async (job) => {
     const { expired } = await expireHolds()
 

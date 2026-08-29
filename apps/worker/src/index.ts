@@ -140,6 +140,7 @@ await registerHandlers({
   alloggiati: alloggiatiAdapter,
   notifications,
   deleteObject,
+  appUrl: env.APP_URL,
   logger,
 })
 await registerSchedules({ queue, logger })

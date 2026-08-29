@@ -11,9 +11,23 @@
  *
  *   pnpm tsx scripts/demo-stay.mts hotel-sonja 1 en
  */
+import { existsSync } from 'node:fs'
 import postgres from 'postgres'
 import { attachGuest, confirmReservation, createHold } from '../packages/core/src/booking'
 import { signStayToken } from '../packages/core/src/journey'
+
+/*
+ * Load the repo-root .env, the same way inspect.mjs and both apps do.
+ *
+ * Without this the script only ran in a shell that happened to have exported
+ * DATABASE_URL already — which is exactly the failure the apps had in Sprint 3,
+ * where "it works on my machine" meant "my terminal has it and a fresh one does
+ * not". The Windows path fix is because loadEnvFile wants a filesystem path and
+ * a file: URL on Windows produces a leading slash before the drive letter.
+ */
+if (existsSync(new URL('../.env', import.meta.url))) {
+  process.loadEnvFile(new URL('../.env', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'))
+}
 
 // `postgres` directly rather than Drizzle for the two lookups: this file sits
 // outside the workspace packages, so a bare `drizzle-orm` import does not

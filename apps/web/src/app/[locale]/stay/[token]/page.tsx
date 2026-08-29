@@ -1,13 +1,25 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { CheckCircle2Icon, CircleIcon } from 'lucide-react'
+import { CheckCircle2Icon, CircleIcon, InfoIcon } from 'lucide-react'
 import { resolveStay } from '@bookone/core/journey'
+import { getThreadForReservation, listMessages, listStayTasks } from '@bookone/core/concierge'
+import { getCheckoutSummary } from '@bookone/core/stay'
 import { BookingShell } from '@/components/booking/booking-shell'
-import { formatDate, roomName } from '@/components/booking/format'
+import { formatDate, formatMoney, roomName } from '@/components/booking/format'
+import { SimulatedPaymentNotice } from '@/components/booking/payment-notice'
+import { Thread } from '@/components/stay/thread'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { submitArrivalTime, submitParty, uploadDocument } from './actions'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  checkOut,
+  confirmArrivalNow,
+  sendMessage,
+  submitArrivalTime,
+  submitParty,
+  uploadDocument,
+} from './actions'
 
 /**
  * Guest journey surface — pre-arrival (PRD B1, E2.1, E2.2).
@@ -105,6 +117,34 @@ export default async function StayPage({
 
   const complete = stay.outstanding.length === 0 && everyGuestHasDocument
 
+  /*
+   * The conversation, what has been asked for, and what is owed.
+   *
+   * Three reads rather than one, because they answer different questions and a
+   * stay that has never been messaged should not pay for a checkout summary it
+   * will not render. All three are scoped by the property the token resolved
+   * to — the token is the guest's whole authorisation (ADR-007).
+   */
+  const thread = await getThreadForReservation(stay.propertyId, stay.reservationId)
+  const messages = thread ? await listMessages(stay.propertyId, thread.id) : []
+  const tasks = await listStayTasks(stay.propertyId, stay.reservationId)
+  const checkout =
+    stay.journey.arrival === 'confirmed'
+      ? await getCheckoutSummary(stay.propertyId, stay.reservationId)
+      : null
+
+  /*
+   * "I have arrived" appears on the day and not before.
+   *
+   * Confirming two days early would post a check-in and file the party with the
+   * police registry while the guest was still on a train. Compared against the
+   * property's own date string rather than a timestamp: `arrivalDate` is a
+   * calendar day at the property, and converting it to an instant to compare
+   * against `now` is how a guest in another timezone loses the button on the
+   * morning they need it.
+   */
+  const arrivalIsToday = stay.arrivalDate <= todayAt(property.timezone)
+
   return (
     <BookingShell property={property} step={null}>
       <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('title')}</h1>
@@ -151,7 +191,11 @@ export default async function StayPage({
 
       {error && (
         <p role="alert" className="text-destructive mt-6 text-sm">
-          {error === 'upload' ? t('errors.upload') : t('errors.generic')}
+          {error === 'upload'
+            ? t('errors.upload')
+            : error === 'message'
+              ? t('errors.message')
+              : t('errors.generic')}
         </p>
       )}
 
@@ -393,6 +437,181 @@ export default async function StayPage({
           </p>
         )}
       </section>
+
+      <Separator className="my-8" />
+
+      {/* ----------------------------------------------------------- arrival */}
+      {arrivalIsToday && stay.journey.arrival !== 'confirmed' && (
+        <section>
+          <h2 className="text-foreground font-medium">{t('arrived.heading')}</h2>
+          <p className="text-muted-foreground mt-1 text-sm">{t('arrived.body')}</p>
+
+          <form action={confirmArrivalNow.bind(null, context)} className="mt-4">
+            <Button type="submit">{t('arrived.action')}</Button>
+          </form>
+        </section>
+      )}
+
+      {stay.journey.arrival === 'confirmed' && (
+        <section>
+          <h2 className="text-foreground font-medium">{t('arrived.done')}</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {t('arrived.doneBody', { property: stay.propertyName })}
+          </p>
+        </section>
+      )}
+
+      <Separator className="my-8" />
+
+      {/* ---------------------------------------------------------- messages */}
+      <section id="messages">
+        <h2 className="text-foreground font-medium">{t('messages.heading')}</h2>
+        <p className="text-muted-foreground mt-1 text-xs">{t('messages.hint')}</p>
+
+        <Thread messages={messages} locale={locale} />
+
+        {tasks.length > 0 && (
+          <div className="mt-5">
+            <h3 className="text-muted-foreground bo-label mb-2">{t('messages.requests')}</h3>
+            <ul className="space-y-1.5 text-sm">
+              {tasks.map((task) => (
+                <li key={task.id} className="flex items-start justify-between gap-3">
+                  <span className="text-foreground">{task.summary}</span>
+                  {/*
+                    "Recorded" and "done", never "on its way". A guest told a
+                    thing is handled stops chasing it; a guest told it is
+                    written down knows to ask again if nothing happens.
+                  */}
+                  <span className="text-muted-foreground shrink-0 text-xs">
+                    {task.status === 'done' ? t('messages.taskDone') : t('messages.taskOpen')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <form action={sendMessage.bind(null, context)} className="mt-5 flex flex-col gap-2">
+          <Label htmlFor="message" className="sr-only">
+            {t('messages.label')}
+          </Label>
+          <Textarea
+            id="message"
+            name="message"
+            rows={3}
+            required
+            maxLength={4000}
+            placeholder={t('messages.placeholder')}
+          />
+          <div className="flex items-center justify-between gap-3">
+            {/*
+              An explicit request affordance, because intent stated by the
+              person beats intent inferred from their words — and the inference
+              is a word list that will be wrong about somebody's phrasing
+              (packages/core/src/concierge/intent.ts).
+            */}
+            <label className="text-muted-foreground flex items-center gap-2 text-xs">
+              <input type="checkbox" name="intent" value="request" className="accent-current" />
+              {t('messages.isRequest')}
+            </label>
+            <Button type="submit" size="sm">
+              {t('messages.send')}
+            </Button>
+          </div>
+        </form>
+      </section>
+
+      {/* ---------------------------------------------------------- checkout */}
+      {checkout && stay.journey.arrival === 'confirmed' && (
+        <>
+          <Separator className="my-8" />
+
+          <section id="checkout">
+            <h2 className="text-foreground font-medium">{t('checkout.heading')}</h2>
+
+            {checkout.departure === 'pending' ? (
+              <p className="text-muted-foreground mt-1 text-sm">
+                {t('checkout.body', {
+                  departure: formatDate(checkout.departureDate, locale),
+                })}
+              </p>
+            ) : (
+              <p className="text-muted-foreground mt-1 text-sm">{t('checkout.done')}</p>
+            )}
+
+            <dl className="mt-5 space-y-2 text-sm">
+              <div className="flex items-baseline justify-between gap-4">
+                <dt className="text-muted-foreground">{t('checkout.paid')}</dt>
+                <dd className="num text-foreground font-medium">
+                  {formatMoney(checkout.paidCents, checkout.currency, locale)}
+                </dd>
+              </div>
+
+              {checkout.lines.map((line) => (
+                <div key={line.id} className="flex items-baseline justify-between gap-4">
+                  <dt className="text-muted-foreground">{line.description}</dt>
+                  <dd className="num text-foreground">
+                    {formatMoney(line.amountCents, line.currency, locale)}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+
+            {/*
+              The partial view, stated rather than implied (E4.1).
+
+              We do not hold the folio: the minibar, the restaurant and the spa
+              live in the property's PMS. A total that silently omitted them
+              would be confidently short, and the guest would find out at the
+              desk they were trying to walk past.
+            */}
+            {checkout.partialView && (
+              <p className="text-muted-foreground mt-4 flex items-start gap-2 text-xs">
+                <InfoIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                {t('checkout.partial')}
+              </p>
+            )}
+
+            <SimulatedPaymentNotice className="mt-4" />
+
+            {checkout.departure === 'pending' && (
+              <form action={checkOut.bind(null, context)} className="mt-6 space-y-4">
+                <fieldset className="space-y-3">
+                  <legend className="text-muted-foreground text-xs font-medium">
+                    {t('checkout.invoice.heading')}
+                  </legend>
+                  {/*
+                    A request, not a document. We assign no number, generate
+                    nothing and transmit nothing to any authority — the property
+                    issues the fattura through their own certified chain
+                    (D11, binding rule 6).
+                  */}
+                  <p className="text-muted-foreground text-xs">{t('checkout.invoice.hint')}</p>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="billTo">{t('checkout.invoice.billTo')}</Label>
+                    <Input id="billTo" name="billTo" autoComplete="organization" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="taxId">{t('checkout.invoice.taxId')}</Label>
+                    <Input id="taxId" name="taxId" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="address">{t('checkout.invoice.address')}</Label>
+                    <Input id="address" name="address" autoComplete="street-address" />
+                  </div>
+                </fieldset>
+
+                <Button type="submit">{t('checkout.action')}</Button>
+              </form>
+            )}
+
+            {checkout.invoiceRequested && (
+              <p className="text-muted-foreground mt-4 text-xs">{t('checkout.invoice.sent')}</p>
+            )}
+          </section>
+        </>
+      )}
     </BookingShell>
   )
 }
@@ -451,6 +670,18 @@ function readTheme(settings: unknown): { primary?: string; accent?: string } {
     ...(typeof record.primary === 'string' ? { primary: record.primary } : {}),
     ...(typeof record.accent === 'string' ? { accent: record.accent } : {}),
   }
+}
+
+/**
+ * Today, as the property would write it.
+ *
+ * `en-CA` because it formats as `YYYY-MM-DD`, which is what the reservation
+ * stores — a locale used as a formatter rather than as a language, which is
+ * worth saying out loud so nobody "fixes" it to the guest's locale and gets
+ * `03/09/2026` compared against `2026-09-03`.
+ */
+function todayAt(timeZone: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date())
 }
 
 function single(value: string | string[] | undefined): string | undefined {

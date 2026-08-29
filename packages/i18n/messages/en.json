@@ -60,7 +60,9 @@
     },
     "rooms": "Room types",
     "members": "Team",
-    "settings": "Settings"
+    "settings": "Settings",
+    "bookingPage": "Booking page",
+    "conversations": "Conversations"
   },
   "property": {
     "switcher": {
@@ -123,6 +125,62 @@
       "simulated": "No channel is connected — nothing is actually filed with any authority.",
       "receipt": "Receipt held",
       "checksum": "Payload checksum"
+    },
+    "conversations": {
+      "title": "Conversations",
+      "subtitle": "Guests waiting on a person, longest first.",
+      "empty": "Nothing waiting.",
+      "unassigned": "Nobody has this",
+      "answered": "Answered",
+      "waiting": "Waiting since {since}",
+      "quiet": "Nothing outstanding",
+      "takeOver": "Take over",
+      "handBack": "Hand back",
+      "stayCard": "The stay",
+      "thread": "Conversation",
+      "escalatedBecause": "Passed to a person: {reason}",
+      "replyLabel": "Your reply",
+      "replyPlaceholder": "Reply to the guest",
+      "send": "Send",
+      "noModel": "No language model is connected. The assistant answers only from the property knowledge base and passes everything else to a person.",
+      "facts": {
+        "reference": "Reference",
+        "language": "Language",
+        "arrival": "Arrival",
+        "precheckin": "Check-in",
+        "alloggiati": "Registration",
+        "departure": "Departure"
+      },
+      "authors": {
+        "guest": "Guest",
+        "agent": "Assistant",
+        "staff": "The property",
+        "system": "Note"
+      },
+      "journey": {
+        "precheckin": {
+          "pending": "Not started",
+          "invited": "Invited",
+          "submitted": "Done"
+        },
+        "arrival": {
+          "pending": "Not stated",
+          "expected": "Expected",
+          "confirmed": "Arrived"
+        },
+        "alloggiati": {
+          "pending": "Not filed",
+          "staged": "Ready",
+          "submitted": "Sent",
+          "acknowledged": "Confirmed",
+          "failed": "Failed"
+        },
+        "departure": {
+          "pending": "In house",
+          "settled": "Checked out",
+          "closed": "Closed"
+        }
+      }
     }
   },
   "noProperty": {
@@ -181,6 +239,49 @@
       "why": "The property is legally required to register every guest. Doing it now means not doing it at the desk.",
       "signOff": "See you soon.",
       "sender": "{property}"
+    },
+    "welcome": {
+      "subject": "You are checked in at {property}",
+      "greeting": "Hello {guestName},",
+      "intro": "You are checked in at {property}. Everything you need is below.",
+      "labels": {
+        "room": "Room",
+        "departure": "Departure",
+        "access": "Getting in",
+        "wifi": "Wi-Fi network",
+        "wifiPassword": "Wi-Fi password"
+      },
+      "stayLink": "Your stay page, with messages and checkout: {url}",
+      "help": "Need something? Reply to this email or message us from your stay page.",
+      "signOff": "Enjoy your stay.",
+      "sender": "{property}"
+    },
+    "reviewRequest": {
+      "subject": "Thank you for staying at {property}",
+      "greeting": "Hello {guestName},",
+      "intro": "Thank you for staying at {property}. If you have a moment, the property would value your review.",
+      "cta": "Leave a review: {url}",
+      "signOff": "We hope to see you again.",
+      "sender": "{property}"
+    },
+    "invoiceRequest": {
+      "subject": "Invoice requested for booking {reference}",
+      "intro": "A guest has asked you for an invoice. BookOne issues no invoice and has sent nothing to any authority; the details below are the guest's own words, passed to you unaltered.",
+      "labels": {
+        "guest": "Guest",
+        "reference": "Booking reference",
+        "billTo": "Make the invoice out to",
+        "details": "Additional details supplied"
+      },
+      "note": "Issue the invoice through your usual system."
+    },
+    "escalationAlert": {
+      "subject": "{guestName} is waiting for a reply",
+      "intro": "{guestName} has been waiting {minutes} minutes for someone at the property to answer.",
+      "labels": {
+        "reference": "Booking reference"
+      },
+      "cta": "Open the conversation: {url}"
     }
   },
   "booking": {
@@ -385,7 +486,53 @@
       "unavailable": "This booking is no longer active. Please contact the property.",
       "notConfigured": "Check-in is not available in this environment.",
       "upload": "That file could not be accepted. Use a JPEG, PNG or PDF under 10 MB.",
-      "generic": "Something went wrong. Try again."
+      "generic": "Something went wrong. Try again.",
+      "message": "Your message could not be sent. Please try again."
+    },
+    "arrived": {
+      "heading": "Are you here?",
+      "body": "Tell us you have arrived and you can go straight to your room. The property is notified and your registration is completed.",
+      "action": "I have arrived",
+      "done": "You are checked in",
+      "doneBody": "{property} knows you are here. Everything you need was sent to you by email, and you can message the property below."
+    },
+    "messages": {
+      "heading": "Messages",
+      "hint": "Ask the property anything about your stay.",
+      "empty": "No messages yet.",
+      "label": "Your message",
+      "placeholder": "What time is breakfast?",
+      "send": "Send",
+      "isRequest": "This is a request for something",
+      "fromAssistant": "Assistant",
+      "fromProperty": "The property",
+      "requests": "Your requests",
+      "taskOpen": "Recorded",
+      "taskDone": "Done"
+    },
+    "checkout": {
+      "heading": "Checkout",
+      "body": "You are due to leave on {departure}. You can check out from here.",
+      "done": "You have checked out. Thank you for staying.",
+      "paid": "Paid online",
+      "partial": "Anything you charged at the property — the bar, the restaurant, the minibar — is settled with the property directly. It is not shown here.",
+      "action": "Check out",
+      "invoice": {
+        "heading": "Do you need an invoice?",
+        "hint": "The property issues the invoice. We pass your details to them and issue nothing ourselves.",
+        "billTo": "Make the invoice out to",
+        "taxId": "Tax number or VAT ID (optional)",
+        "address": "Address (optional)",
+        "sent": "Your invoice request has been passed to the property."
+      }
     }
+  },
+  "concierge": {
+    "reservation": "Your booking {reference} runs from {arrival} to {departure}.",
+    "reservationRoom": "Room: {room}.",
+    "taskRecorded": "I have written this down and the property can see it. If nobody has come back to you, tell me again and I will make sure someone does.",
+    "escalated": "I do not want to guess at this one, so I have passed it to the property. Someone will reply here.",
+    "escalatedOutOfHours": "I do not want to guess at this one, so I have passed it to the property. The desk answers {hours}, so it may be a little while.",
+    "disclosure": "You are messaging an assistant. It answers from what the property has written down, and passes anything else to a person."
   }
 }

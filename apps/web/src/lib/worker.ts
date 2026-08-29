@@ -353,9 +353,80 @@ export async function requestCancellation(input: {
 export async function confirmArrival(input: {
   propertyId: string
   reservationId: string
-  userId: string
+  /** Absent when the guest tapped it themselves — there is no user. */
+  userId?: string
+  /**
+   * Which trigger fired (E3.1).
+   *
+   * Carried rather than inferred, because G1 counts the arrivals that were
+   * *not* a staff tap and the worker defaults an unstated source to `staff` —
+   * the reading that cannot inflate the metric by accident.
+   */
+  source: 'guest' | 'staff' | 'door'
 }): Promise<boolean> {
   return post('/jobs/arrival-confirm', input)
+}
+
+// ---------------------------------------------------------------------------
+// Messaging and departure (E3.2, E4.1)
+// ---------------------------------------------------------------------------
+
+/**
+ * A guest sent a message (E3.2).
+ *
+ * Unlike everything else in this file, this one is **not** best-effort: if the
+ * worker cannot be reached the message was never stored, and telling the guest
+ * their message was sent would be false. The caller shows an error.
+ */
+export async function sendGuestMessage(input: {
+  propertyId: string
+  reservationId: string
+  locale: string
+  message: string
+  intent?: 'question' | 'request'
+}): Promise<{ ok: true; threadId: string } | { ok: false; error: string }> {
+  const base = workerUrl()
+  const secret = token()
+
+  if (!base || !secret) return { ok: false, error: 'not-configured' }
+
+  try {
+    const response = await fetch(`${base}/jobs/guest-message`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${secret}` },
+      body: JSON.stringify(input),
+      signal: AbortSignal.timeout(8000),
+    })
+
+    if (!response.ok) {
+      const body = (await response.json().catch(() => ({}))) as { error?: string }
+      return { ok: false, error: body.error ?? `worker returned ${response.status}` }
+    }
+
+    const body = (await response.json()) as { threadId: string }
+
+    return { ok: true, threadId: body.threadId }
+  } catch (error) {
+    console.warn('[messaging] could not reach the worker', error)
+
+    return { ok: false, error: 'unreachable' }
+  }
+}
+
+/**
+ * The guest is checking out (E4.1).
+ *
+ * MEMO — no payment provider is connected; nothing here moves money (ADR-010).
+ * We also issue no invoice: `billTo` is a request routed to the property, whose
+ * own certified chain issues the document (D11, binding rule 6).
+ */
+export async function confirmCheckout(input: {
+  propertyId: string
+  reservationId: string
+  billTo?: string
+  details?: Record<string, unknown>
+}): Promise<boolean> {
+  return post('/jobs/depart', input)
 }
 
 /**

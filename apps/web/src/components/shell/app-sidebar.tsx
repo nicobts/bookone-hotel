@@ -2,6 +2,8 @@ import { getTranslations } from 'next-intl/server'
 import {
   BedDoubleIcon,
   CalendarCheckIcon,
+  ExternalLinkIcon,
+  MessageSquareIcon,
   SettingsIcon,
   SunIcon,
   TriangleAlertIcon,
@@ -12,6 +14,7 @@ import type { UserProperty } from '@bookone/core/db'
 import { Logo } from '@/components/brand/logo'
 import { PropertySwitcher } from '@/components/property/property-switcher'
 import { NavMain, type NavGroup } from '@/components/shell/nav-main'
+import { Link } from '@/i18n/navigation'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar'
 
 /**
@@ -58,6 +61,11 @@ export async function AppSidebar({
       items: [
         { title: t('today'), href: `${base}/today`, icon: <SunIcon /> },
         { title: t('exceptions'), href: `${base}/exceptions`, icon: <TriangleAlertIcon /> },
+        {
+          title: t('conversations'),
+          href: `${base}/conversations`,
+          icon: <MessageSquareIcon />,
+        },
         { title: t('reservations'), href: `${base}/reservations`, icon: <CalendarCheckIcon /> },
         { title: t('guests'), href: `${base}/guests`, icon: <UsersIcon /> },
       ],
@@ -88,6 +96,25 @@ export async function AppSidebar({
       </SidebarContent>
 
       <SidebarFooter>
+        {/*
+          The way out to the guest side.
+
+          Not a nav item: it leaves the console for the page a guest sees, and
+          putting it in a band called "Operate" would suggest it is somewhere you
+          work. But it needs to be *somewhere* — an owner who cannot find their
+          own booking page without being told its URL has, as far as they are
+          concerned, no booking page.
+        */}
+        <Link
+          href={`/book/${active.slug}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs opacity-70 transition-opacity hover:opacity-100 group-data-[collapsible=icon]:justify-center"
+        >
+          <ExternalLinkIcon className="size-3.5 shrink-0" aria-hidden />
+          <span className="group-data-[collapsible=icon]:hidden">{t('bookingPage')}</span>
+        </Link>
+
         <p className="px-2 pb-1 text-[10px] leading-none opacity-45 group-data-[collapsible=icon]:hidden">
           RT Holding Group GmbH
         </p>

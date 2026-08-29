@@ -1,6 +1,7 @@
 import { agentRuns, asService } from '@bookone/core/db'
+import { classifyIntent, type GuestIntent } from '@bookone/core/concierge'
 import { getAgent, grantsTool, type AgentDefinition, type AutonomyTier } from './registry'
-import { getTool, type ToolResult } from './tools'
+import { getTool, type ToolContext, type ToolResult } from './tools'
 
 /**
  * The agent runner (06-AI-AGENT-LAYER §3).
@@ -27,6 +28,17 @@ export interface RunInput {
   propertyId: string
   /** The `domain_events` row that triggered this, when one did. */
   triggerEventId?: bigint
+  /**
+   * The stay, conversation and language this run is about (AG-01).
+   *
+   * Part of the *context* rather than of `input` on purpose. The runner passes
+   * these to every tool and the agent cannot change them, which is what makes
+   * "answer about somebody else's booking" inexpressible rather than merely
+   * refused — the same reasoning that puts `propertyId` here.
+   */
+  reservationId?: string
+  threadId?: string
+  locale?: string
   /** What the agent is being asked about. Shape is per-agent. */
   input: Record<string, unknown>
 }
@@ -90,7 +102,18 @@ export async function runAgent(
 
   try {
     const result = await execute(agent, input, (tool, toolInput) =>
-      callTool(agent, input.propertyId, tool, toolInput, toolCalls),
+      callTool(
+        agent,
+        {
+          propertyId: input.propertyId,
+          ...(input.reservationId ? { reservationId: input.reservationId } : {}),
+          ...(input.threadId ? { threadId: input.threadId } : {}),
+          ...(input.locale ? { locale: input.locale } : {}),
+        },
+        tool,
+        toolInput,
+        toolCalls,
+      ),
     )
 
     output = result.output
@@ -131,7 +154,7 @@ export async function runAgent(
 
 async function callTool(
   agent: AgentDefinition,
-  propertyId: string,
+  context: ToolContext,
   tool: string,
   toolInput: Record<string, unknown>,
   log: { tool: string; ok: boolean; output?: Record<string, unknown> }[],
@@ -148,9 +171,9 @@ async function callTool(
     throw new Error(`Tool "${tool}" is granted but not implemented.`)
   }
 
-  // The context is the scoping boundary: one property, fixed by the runner and
-  // not readable from the agent's own input.
-  const result = await implementation.run({ propertyId }, toolInput)
+  // The context is the scoping boundary: one property and at most one stay,
+  // fixed by the runner and not readable from the agent's own input.
+  const result = await implementation.run(context, toolInput)
   log.push({ tool, ok: result.ok, output: result.output })
 
   return result
@@ -161,9 +184,10 @@ type ToolCaller = (tool: string, input: Record<string, unknown>) => Promise<Tool
 /**
  * What each agent actually does.
  *
- * A switch rather than a plugin lookup while there is one agent: the indirection
- * would cost a reader more than it saves, and the second agent is the right time
- * to add it.
+ * A switch rather than a plugin lookup. The second agent has now arrived and
+ * the indirection still costs a reader more than it saves: two cases in one
+ * file is legible, and a registry of implementations would put each agent's
+ * behaviour somewhere a reader has to go and find. Worth revisiting at four.
  */
 async function execute(
   agent: AgentDefinition,
@@ -171,6 +195,106 @@ async function execute(
   call: ToolCaller,
 ): Promise<{ output: Record<string, unknown>; confidence: number | null }> {
   switch (agent.name) {
+    /**
+     * AG-01 — the guest concierge (E3.2).
+     *
+     * A router, not a writer. It decides which tool applies and relays the
+     * `phrase` that tool returned, verbatim. There is no branch in which it
+     * composes a sentence, which is what lets the tool-boundary audit assert
+     * `reply ⊆ tool output` and expect it to hold (binding rule 7, ADR-009).
+     *
+     * The ladder, in order, and the order is the design:
+     *
+     *   1. A request for a *thing* becomes a task, and still goes to a person.
+     *      Recording it is what stops "I will let them know" being a promise
+     *      made to nobody.
+     *   2. A question goes to the knowledge base.
+     *   3. A hit is relayed.
+     *   4. Everything else escalates — including a question whose article
+     *      exists but not in the guest's language, which is the case that most
+     *      tempts a fallback and most deserves a person.
+     *
+     * Escalation is the default rather than the failure. Answering ninety
+     * percent by guessing at the last thirty-five costs a property more than it
+     * saves (design-notes/stay-messaging.md §4B).
+     */
+    case 'AG-01': {
+      const message = typeof input.input.message === 'string' ? input.input.message : ''
+      if (!message.trim()) throw new Error('AG-01 needs a message')
+
+      const businessHours =
+        typeof input.input.businessHours === 'string' ? input.input.businessHours : ''
+
+      // The surface can say so outright when the guest used a "make a request"
+      // affordance. Explicit intent from the person beats anything inferred
+      // from their words, so it is checked first.
+      const intent =
+        input.input.intent === 'request' || input.input.intent === 'question'
+          ? (input.input.intent as GuestIntent)
+          : classifyIntent(message)
+
+      if (intent === 'request') {
+        const task = await call('create_task', { summary: message })
+        const escalated = await call('escalate', {
+          reason: 'guest request needs a person',
+          ...(businessHours ? { businessHours } : {}),
+        })
+
+        return {
+          output: {
+            action: 'task',
+            escalate: true,
+            reason: 'guest request needs a person',
+            taskId: task.output.taskId ?? null,
+            // Two phrases, both from tools, joined by nothing but a newline.
+            // Joining with generated connective tissue is precisely the step
+            // that would put an unsourced sentence in front of a guest.
+            reply: [task.output.phrase, escalated.output.phrase].filter(Boolean).join('\n\n'),
+          },
+          confidence: null,
+        }
+      }
+
+      const found = await call('search_kb', { question: message })
+
+      if (found.ok && found.output.found === true && typeof found.output.phrase === 'string') {
+        return {
+          output: {
+            action: 'answer',
+            escalate: false,
+            reply: found.output.phrase,
+            topic: found.output.topic ?? null,
+            articleId: found.output.articleId ?? null,
+            articleVersion: found.output.version ?? null,
+          },
+          // The match score, reported as-is. It is retrieval confidence and
+          // nothing more — a high score means the property wrote this answer
+          // for this question, not that the answer is right.
+          confidence: typeof found.output.score === 'number' ? found.output.score : null,
+        }
+      }
+
+      const reason =
+        found.ok && typeof found.output.reason === 'string'
+          ? found.output.reason
+          : 'no stored answer matches this question'
+
+      const escalated = await call('escalate', {
+        reason,
+        ...(businessHours ? { businessHours } : {}),
+      })
+
+      return {
+        output: {
+          action: 'escalate',
+          escalate: true,
+          reason,
+          reply: escalated.output.phrase,
+        },
+        confidence: null,
+      }
+    }
+
     case 'AG-05': {
       const result = await call('classify_discrepancy', input.input)
 

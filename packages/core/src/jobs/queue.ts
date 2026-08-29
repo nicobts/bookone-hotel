@@ -46,6 +46,18 @@ export const jobNames = [
   'alloggiati.check',
   /** Destroy identity documents for stays whose filing was acknowledged (E2.4). */
   'documents.purge',
+  /** Answer one guest message with AG-01 (E3.2). */
+  'concierge.reply',
+  /** Tell the property a guest has been waiting on a person too long (E3.2). */
+  'escalation.sweep',
+  /** Post the check-in and send the welcome, after arrival is confirmed (E3.1). */
+  'arrival.complete',
+  /** Hand queued invoice requests to the property. We issue nothing (E4.1, D11). */
+  'invoice.route',
+  /** Close stays that ended and were never checked out of (E4.1). */
+  'departure.sweep',
+  /** Re-read what the concierge said against what its tools returned (E3.2). */
+  'toolboundary.audit',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -102,6 +114,39 @@ export interface JobPayloads {
   'alloggiati.file': { propertyId: string; reservationId: string }
   'alloggiati.check': Record<string, never>
   'documents.purge': Record<string, never>
+  /**
+   * One turn of a conversation (E3.2).
+   *
+   * Carries the message text, which is the only job payload in this file that
+   * does. It is unavoidable — the reply is computed from what the guest wrote —
+   * and it is worth naming: this payload contains something a guest typed, so
+   * it is data and never instructions (06 §4), and the queue's own retention
+   * applies to it like any other row.
+   */
+  'concierge.reply': {
+    propertyId: string
+    reservationId: string
+    threadId: string
+    locale: string
+    message: string
+    intent?: 'question' | 'request'
+  }
+  'escalation.sweep': Record<string, never>
+  /**
+   * The work that follows `arrival.confirm` (E3.1).
+   *
+   * `source` is carried because G1 counts the arrivals that were *not* a staff
+   * tap, and a job that lost that distinction would make the metric a guess.
+   */
+  'arrival.complete': {
+    propertyId: string
+    reservationId: string
+    source?: 'guest' | 'staff' | 'door'
+    userId?: string
+  }
+  'invoice.route': Record<string, never>
+  'departure.sweep': Record<string, never>
+  'toolboundary.audit': Record<string, never>
 }
 
 export interface SendOptions {

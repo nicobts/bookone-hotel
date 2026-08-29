@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { FlaskConicalIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -26,13 +27,16 @@ import { FlaskConicalIcon } from 'lucide-react'
  * When Stripe lands, `simulated` goes false and this disappears on its own. The
  * component then has no callers and should be deleted with the mock.
  */
-export async function SimulatedPaymentNotice() {
+export async function SimulatedPaymentNotice({ className }: { className?: string }) {
   const t = await getTranslations('booking.payment.simulated')
 
   return (
     <div
       role="note"
-      className="border-[color:var(--bo-warning-500)]/50 bg-[color:var(--bo-warning-50)] flex gap-3 rounded-lg border p-4 text-[color:var(--bo-ink)]"
+      className={cn(
+        'border-[color:var(--bo-warning-500)]/50 bg-[color:var(--bo-warning-50)] flex gap-3 rounded-lg border p-4 text-[color:var(--bo-ink)]',
+        className,
+      )}
     >
       <FlaskConicalIcon
         className="mt-0.5 size-4 shrink-0 text-[color:var(--bo-warning-500)]"

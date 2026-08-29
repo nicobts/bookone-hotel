@@ -60,7 +60,9 @@
     },
     "rooms": "Tipi sob",
     "members": "Ekipa",
-    "settings": "Nastavitve"
+    "settings": "Nastavitve",
+    "bookingPage": "Stran za rezervacije",
+    "conversations": "Pogovori"
   },
   "property": {
     "switcher": {
@@ -123,6 +125,62 @@
       "simulated": "Noben kanal ni povezan — nič se ne pošlje nobenemu organu.",
       "receipt": "Potrdilo shranjeno",
       "checksum": "Kontrolna vsota"
+    },
+    "conversations": {
+      "title": "Pogovori",
+      "subtitle": "Gostje, ki čakajo na osebo — najdlje čakajoči najprej.",
+      "empty": "Nič ne čaka.",
+      "unassigned": "Nihče tega nima",
+      "answered": "Odgovorjeno",
+      "waiting": "Čaka od {since}",
+      "quiet": "Nič odprtega",
+      "takeOver": "Prevzemi",
+      "handBack": "Vrni",
+      "stayCard": "Bivanje",
+      "thread": "Pogovor",
+      "escalatedBecause": "Predano osebi: {reason}",
+      "replyLabel": "Vaš odgovor",
+      "replyPlaceholder": "Odgovorite gostu",
+      "send": "Pošlji",
+      "noModel": "Noben jezikovni model ni povezan. Asistent odgovarja samo s tem, kar piše v bazi znanja nastanitve, vse drugo pa preda osebi.",
+      "facts": {
+        "reference": "Sklic",
+        "language": "Jezik",
+        "arrival": "Prihod",
+        "precheckin": "Prijava",
+        "alloggiati": "Registracija",
+        "departure": "Odhod"
+      },
+      "authors": {
+        "guest": "Gost",
+        "agent": "Asistent",
+        "staff": "Nastanitev",
+        "system": "Opomba"
+      },
+      "journey": {
+        "precheckin": {
+          "pending": "Ni začeto",
+          "invited": "Povabljen",
+          "submitted": "Končano"
+        },
+        "arrival": {
+          "pending": "Ni navedeno",
+          "expected": "Pričakovan",
+          "confirmed": "Prispel"
+        },
+        "alloggiati": {
+          "pending": "Ni oddano",
+          "staged": "Pripravljeno",
+          "submitted": "Poslano",
+          "acknowledged": "Potrjeno",
+          "failed": "Neuspešno"
+        },
+        "departure": {
+          "pending": "V hiši",
+          "settled": "Odjavljen",
+          "closed": "Zaključeno"
+        }
+      }
     }
   },
   "noProperty": {
@@ -181,6 +239,49 @@
       "why": "Nastanitev mora po zakonu prijaviti vsakega gosta. Če to storite zdaj, tega ne bo treba na recepciji.",
       "signOff": "Se vidimo kmalu.",
       "sender": "{property}"
+    },
+    "welcome": {
+      "subject": "Prijava v {property} je zaključena",
+      "greeting": "Pozdravljeni {guestName},",
+      "intro": "Prijava v {property} je zaključena. Spodaj je vse, kar potrebujete.",
+      "labels": {
+        "room": "Soba",
+        "departure": "Odhod",
+        "access": "Kako vstopite",
+        "wifi": "Wi-Fi omrežje",
+        "wifiPassword": "Wi-Fi geslo"
+      },
+      "stayLink": "Vaša stran bivanja, s sporočili in odjavo: {url}",
+      "help": "Potrebujete kaj? Odgovorite na to sporočilo ali nam pišite s strani bivanja.",
+      "signOff": "Prijetno bivanje.",
+      "sender": "{property}"
+    },
+    "reviewRequest": {
+      "subject": "Hvala za bivanje v {property}",
+      "greeting": "Pozdravljeni {guestName},",
+      "intro": "Hvala za bivanje v {property}. Če imate trenutek, bi nastanitev vesela vaše ocene.",
+      "cta": "Napišite oceno: {url}",
+      "signOff": "Upamo, da se še vidimo.",
+      "sender": "{property}"
+    },
+    "invoiceRequest": {
+      "subject": "Zahtevan račun za rezervacijo {reference}",
+      "intro": "Gost vas je zaprosil za račun. BookOne ne izdaja računov in ni ničesar poslal nobenemu organu; spodnji podatki so gostove besede, posredovane nespremenjene.",
+      "labels": {
+        "guest": "Gost",
+        "reference": "Sklic rezervacije",
+        "billTo": "Račun izdajte na",
+        "details": "Dodatni podatki"
+      },
+      "note": "Račun izdajte prek svojega običajnega sistema."
+    },
+    "escalationAlert": {
+      "subject": "{guestName} čaka na odgovor",
+      "intro": "{guestName} že {minutes} minut čaka, da nekdo v nastanitvi odgovori.",
+      "labels": {
+        "reference": "Sklic rezervacije"
+      },
+      "cta": "Odpri pogovor: {url}"
     }
   },
   "booking": {
@@ -385,7 +486,53 @@
       "unavailable": "Ta rezervacija ni več aktivna. Obrnite se na nastanitev.",
       "notConfigured": "Prijava v tem okolju ni na voljo.",
       "upload": "Datoteke ni bilo mogoče sprejeti. Uporabite JPEG, PNG ali PDF pod 10 MB.",
-      "generic": "Nekaj je šlo narobe. Poskusite znova."
+      "generic": "Nekaj je šlo narobe. Poskusite znova.",
+      "message": "Sporočila ni bilo mogoče poslati. Poskusite znova."
+    },
+    "arrived": {
+      "heading": "Ste že prispeli?",
+      "body": "Sporočite nam, da ste prispeli, in lahko greste naravnost v sobo. Nastanitev je obveščena in vaša prijava je zaključena.",
+      "action": "Prispel sem",
+      "done": "Prijava je zaključena",
+      "doneBody": "{property} ve, da ste tu. Vse potrebno smo vam poslali po e-pošti, spodaj pa lahko pišete nastanitvi."
+    },
+    "messages": {
+      "heading": "Sporočila",
+      "hint": "Nastanitev lahko vprašate karkoli o svojem bivanju.",
+      "empty": "Še ni sporočil.",
+      "label": "Vaše sporočilo",
+      "placeholder": "Kdaj je zajtrk?",
+      "send": "Pošlji",
+      "isRequest": "To je prošnja za nekaj",
+      "fromAssistant": "Asistent",
+      "fromProperty": "Nastanitev",
+      "requests": "Vaše prošnje",
+      "taskOpen": "Zabeleženo",
+      "taskDone": "Opravljeno"
+    },
+    "checkout": {
+      "heading": "Odjava",
+      "body": "Odhod imate {departure}. Odjavite se lahko tukaj.",
+      "done": "Odjavili ste se. Hvala za bivanje.",
+      "paid": "Plačano prek spleta",
+      "partial": "Kar ste porabili v nastanitvi — bar, restavracija, minibar — poravnate neposredno z nastanitvijo. Tukaj ni prikazano.",
+      "action": "Odjavi se",
+      "invoice": {
+        "heading": "Potrebujete račun?",
+        "hint": "Račun izda nastanitev. Mi posredujemo vaše podatke in sami ne izdamo ničesar.",
+        "billTo": "Račun izdajte na",
+        "taxId": "Davčna številka ali ID za DDV (neobvezno)",
+        "address": "Naslov (neobvezno)",
+        "sent": "Vaša zahteva za račun je bila posredovana nastanitvi."
+      }
     }
+  },
+  "concierge": {
+    "reservation": "Vaša rezervacija {reference} traja od {arrival} do {departure}.",
+    "reservationRoom": "Soba: {room}.",
+    "taskRecorded": "To sem zabeležil in nastanitev to vidi. Če se vam nihče ni oglasil, mi povejte še enkrat in poskrbel bom, da se.",
+    "escalated": "Pri tem ne želim ugibati, zato sem vprašanje predal nastanitvi. Nekdo vam bo odgovoril tukaj.",
+    "escalatedOutOfHours": "Pri tem ne želim ugibati, zato sem vprašanje predal nastanitvi. Recepcija odgovarja {hours}, zato lahko traja nekaj časa.",
+    "disclosure": "Pišete z asistentom. Odgovarja samo s tem, kar je nastanitev zapisala, vse drugo pa preda osebi."
   }
 }

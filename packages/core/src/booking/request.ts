@@ -113,7 +113,15 @@ export async function requestBooking(input: BookingRequestInput): Promise<Bookin
   })
 }
 
-function readContactEmail(settings: unknown): string | null {
+/**
+ * The address a property publishes for its own guests to reach it.
+ *
+ * Exported because three paths now need it — booking requests, the escalation
+ * alert (E3.2) and the routed invoice request (E4.1) — and a second copy is a
+ * second place for "the property has no contact address" to be answered
+ * differently.
+ */
+export function readContactEmail(settings: unknown): string | null {
   if (settings === null || typeof settings !== 'object') return null
 
   const contact = (settings as Record<string, unknown>).contact

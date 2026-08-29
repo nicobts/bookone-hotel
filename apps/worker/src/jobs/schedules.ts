@@ -83,6 +83,47 @@ const ALLOGGIATI_CHECK = '*/10 * * * *'
  */
 const DOCUMENT_PURGE = '23 * * * *'
 
+/**
+ * Checks whether anybody has answered an escalated guest (E3.2).
+ *
+ * Every five minutes. The alert fires once per escalation — `sla_alerted_at`
+ * enforces that — so the cadence only decides how *late* the alert can be,
+ * which is at most five minutes past the thirty-minute window. Running it
+ * minutely would buy four minutes on an alert going to a phone in an apron
+ * pocket, which is not four minutes anybody gains.
+ */
+const ESCALATION_SWEEP = '*/5 * * * *'
+
+/**
+ * Hands queued invoice requests to the property (E4.1).
+ *
+ * Every ten minutes. A guest requesting an invoice at checkout is not waiting
+ * at the desk for it — they asked so they could leave — and the property issues
+ * it on their own schedule. What matters is that the request cannot sit
+ * unrouted overnight.
+ */
+const INVOICE_ROUTE = '*/10 * * * *'
+
+/**
+ * Closes stays that ended and nobody checked out of (E4.1).
+ *
+ * 04:30, an hour after reconciliation, so a stay is closed against a picture
+ * the night's sync has already agreed on. Same reasoning as the 03:30 choice:
+ * doing this while a system is still being typed into produces work for
+ * somebody in the morning.
+ */
+const DEPARTURE_SWEEP = '30 4 * * *'
+
+/**
+ * Re-reads what the concierge said against what its tools returned (E3.2).
+ *
+ * 05:00, after the night's other work, because it is a report rather than a
+ * repair — nothing waits on it. Daily rather than continuous for the same
+ * reason: it should find nothing, and a check that runs constantly and finds
+ * nothing is a check nobody reads the output of.
+ */
+const TOOLBOUNDARY_AUDIT = '0 5 * * *'
+
 export async function registerSchedules(deps: { queue: JobQueue; logger: Logger }): Promise<void> {
   const { queue, logger } = deps
 
@@ -145,6 +186,10 @@ export async function registerSchedules(deps: { queue: JobQueue; logger: Logger 
   await queue.schedule('precheckin.sweep', PRECHECKIN_SWEEP, {})
   await queue.schedule('alloggiati.check', ALLOGGIATI_CHECK, {})
   await queue.schedule('documents.purge', DOCUMENT_PURGE, {})
+  await queue.schedule('escalation.sweep', ESCALATION_SWEEP, {})
+  await queue.schedule('invoice.route', INVOICE_ROUTE, {})
+  await queue.schedule('departure.sweep', DEPARTURE_SWEEP, {})
+  await queue.schedule('toolboundary.audit', TOOLBOUNDARY_AUDIT, {})
 
   logger.info(
     {

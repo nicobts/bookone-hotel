@@ -60,7 +60,9 @@
     },
     "rooms": "Tipologie camera",
     "members": "Team",
-    "settings": "Impostazioni"
+    "settings": "Impostazioni",
+    "bookingPage": "Pagina di prenotazione",
+    "conversations": "Conversazioni"
   },
   "property": {
     "switcher": {
@@ -123,6 +125,62 @@
       "simulated": "Nessun canale è collegato — non viene inviato nulla ad alcuna autorità.",
       "receipt": "Ricevuta conservata",
       "checksum": "Checksum del file"
+    },
+    "conversations": {
+      "title": "Conversazioni",
+      "subtitle": "Ospiti in attesa di una persona, dai più lunghi.",
+      "empty": "Nessuna attesa.",
+      "unassigned": "Nessuno se ne occupa",
+      "answered": "Risposto",
+      "waiting": "In attesa da {since}",
+      "quiet": "Nulla in sospeso",
+      "takeOver": "Prendi in carico",
+      "handBack": "Rilascia",
+      "stayCard": "Il soggiorno",
+      "thread": "Conversazione",
+      "escalatedBecause": "Passata a una persona: {reason}",
+      "replyLabel": "La tua risposta",
+      "replyPlaceholder": "Rispondi all'ospite",
+      "send": "Invia",
+      "noModel": "Nessun modello linguistico è collegato. L'assistente risponde solo con quanto scritto nella base di conoscenza della struttura e passa tutto il resto a una persona.",
+      "facts": {
+        "reference": "Riferimento",
+        "language": "Lingua",
+        "arrival": "Arrivo",
+        "precheckin": "Check-in",
+        "alloggiati": "Registrazione",
+        "departure": "Partenza"
+      },
+      "authors": {
+        "guest": "Ospite",
+        "agent": "Assistente",
+        "staff": "La struttura",
+        "system": "Nota"
+      },
+      "journey": {
+        "precheckin": {
+          "pending": "Non iniziato",
+          "invited": "Invitato",
+          "submitted": "Completato"
+        },
+        "arrival": {
+          "pending": "Non indicato",
+          "expected": "Atteso",
+          "confirmed": "Arrivato"
+        },
+        "alloggiati": {
+          "pending": "Non inviata",
+          "staged": "Pronta",
+          "submitted": "Inviata",
+          "acknowledged": "Confermata",
+          "failed": "Fallita"
+        },
+        "departure": {
+          "pending": "In casa",
+          "settled": "Check-out fatto",
+          "closed": "Chiuso"
+        }
+      }
     }
   },
   "noProperty": {
@@ -181,6 +239,49 @@
       "why": "La struttura è tenuta per legge a registrare ogni ospite. Farlo ora significa non farlo alla reception.",
       "signOff": "A presto.",
       "sender": "{property}"
+    },
+    "welcome": {
+      "subject": "Il check-in a {property} è completato",
+      "greeting": "Buongiorno {guestName},",
+      "intro": "Il check-in a {property} è completato. Qui sotto trova tutto il necessario.",
+      "labels": {
+        "room": "Camera",
+        "departure": "Partenza",
+        "access": "Come entrare",
+        "wifi": "Rete Wi-Fi",
+        "wifiPassword": "Password Wi-Fi"
+      },
+      "stayLink": "La sua pagina soggiorno, con messaggi e check-out: {url}",
+      "help": "Le serve qualcosa? Risponda a questa email o ci scriva dalla pagina del soggiorno.",
+      "signOff": "Buon soggiorno.",
+      "sender": "{property}"
+    },
+    "reviewRequest": {
+      "subject": "Grazie per aver soggiornato a {property}",
+      "greeting": "Buongiorno {guestName},",
+      "intro": "Grazie per aver soggiornato a {property}. Se ha un momento, la struttura sarebbe lieta di ricevere una sua recensione.",
+      "cta": "Lasci una recensione: {url}",
+      "signOff": "Speriamo di rivederla.",
+      "sender": "{property}"
+    },
+    "invoiceRequest": {
+      "subject": "Fattura richiesta per la prenotazione {reference}",
+      "intro": "Un ospite le ha chiesto una fattura. BookOne non emette alcuna fattura e non ha trasmesso nulla ad alcuna autorità; i dati qui sotto sono le parole dell'ospite, inoltrate senza modifiche.",
+      "labels": {
+        "guest": "Ospite",
+        "reference": "Riferimento prenotazione",
+        "billTo": "Intestare la fattura a",
+        "details": "Ulteriori dati forniti"
+      },
+      "note": "Emetta la fattura con il suo sistema abituale."
+    },
+    "escalationAlert": {
+      "subject": "{guestName} sta aspettando una risposta",
+      "intro": "{guestName} aspetta da {minutes} minuti che qualcuno della struttura risponda.",
+      "labels": {
+        "reference": "Riferimento prenotazione"
+      },
+      "cta": "Apri la conversazione: {url}"
     }
   },
   "booking": {
@@ -385,7 +486,53 @@
       "unavailable": "Questa prenotazione non è più attiva. Contatta la struttura.",
       "notConfigured": "Il check-in non è disponibile in questo ambiente.",
       "upload": "Non è stato possibile accettare il file. Usa JPEG, PNG o PDF sotto i 10 MB.",
-      "generic": "Qualcosa è andato storto. Riprova."
+      "generic": "Qualcosa è andato storto. Riprova.",
+      "message": "Non è stato possibile inviare il messaggio. Riprovi."
+    },
+    "arrived": {
+      "heading": "È arrivato?",
+      "body": "Ci dica che è arrivato e potrà andare direttamente in camera. La struttura viene avvisata e la registrazione viene completata.",
+      "action": "Sono arrivato",
+      "done": "Check-in completato",
+      "doneBody": "{property} sa che è arrivato. Tutto il necessario le è stato inviato per email e qui sotto può scrivere alla struttura."
+    },
+    "messages": {
+      "heading": "Messaggi",
+      "hint": "Chieda alla struttura qualsiasi cosa sul suo soggiorno.",
+      "empty": "Ancora nessun messaggio.",
+      "label": "Il suo messaggio",
+      "placeholder": "A che ora è la colazione?",
+      "send": "Invia",
+      "isRequest": "È una richiesta di qualcosa",
+      "fromAssistant": "Assistente",
+      "fromProperty": "La struttura",
+      "requests": "Le sue richieste",
+      "taskOpen": "Registrata",
+      "taskDone": "Fatto"
+    },
+    "checkout": {
+      "heading": "Check-out",
+      "body": "La partenza è prevista per il {departure}. Può fare il check-out da qui.",
+      "done": "Check-out effettuato. Grazie per il soggiorno.",
+      "paid": "Pagato online",
+      "partial": "Quanto ha consumato in struttura — bar, ristorante, minibar — si salda direttamente con la struttura. Non compare qui.",
+      "action": "Fai il check-out",
+      "invoice": {
+        "heading": "Le serve una fattura?",
+        "hint": "La fattura la emette la struttura. Noi trasmettiamo i suoi dati e non emettiamo nulla.",
+        "billTo": "Intestare la fattura a",
+        "taxId": "Codice fiscale o partita IVA (facoltativo)",
+        "address": "Indirizzo (facoltativo)",
+        "sent": "La sua richiesta di fattura è stata trasmessa alla struttura."
+      }
     }
+  },
+  "concierge": {
+    "reservation": "La sua prenotazione {reference} va dal {arrival} al {departure}.",
+    "reservationRoom": "Camera: {room}.",
+    "taskRecorded": "Ho annotato la richiesta e la struttura può vederla. Se nessuno le ha risposto, me lo dica di nuovo e mi assicuro che qualcuno lo faccia.",
+    "escalated": "Su questo non voglio tirare a indovinare, quindi ho passato la domanda alla struttura. Qualcuno le risponderà qui.",
+    "escalatedOutOfHours": "Su questo non voglio tirare a indovinare, quindi ho passato la domanda alla struttura. La reception risponde {hours}, quindi potrebbe volerci un po'.",
+    "disclosure": "Sta scrivendo a un assistente. Risponde solo con quanto la struttura ha messo per iscritto e passa tutto il resto a una persona."
   }
 }

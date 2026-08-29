@@ -26,8 +26,22 @@ If a note quotes a competitor's wording, the note is wrong.
 | Surface | Reference (08 §3) | Note |
 |---|---|---|
 | Booking flow | Mews booking engine + Booking.com mobile flow | [booking-flow.md](booking-flow.md) |
+| Pre-arrival check-in | Mews Kiosk flows, transposed to the guest's phone | [pre-arrival.md](pre-arrival.md) |
+| In-stay messaging | *none named in 08 §3* — proposed in the note | [stay-messaging.md](stay-messaging.md) |
+| Arrival & express checkout | Mews Kiosk flows (the check-out half) | [express-checkout.md](express-checkout.md) |
 
-Surfaces still to come, each with its reference already named in 08 §3:
-pre-arrival check-in (Mews Kiosk flows on the guest's phone), the tape chart
-(Mews Operations + Slope), quotes/*preventivi* (Slope), guest profiles (Mews
-Guest CRM).
+Two notes on the state of this table.
+
+**One note was written late.** [pre-arrival.md](pre-arrival.md) records a
+surface that shipped in Sprint 5 without it. The reference was studied and the
+deviations were argued in the code, but the note that makes that auditable was
+skipped, and the note says so at the top rather than being backdated.
+
+**One surface had no reference to name.** 08 §3's table does not cover in-stay
+messaging. [stay-messaging.md](stay-messaging.md) proposes two references and
+argues the deviations from each; 08 §3 now carries the row. A missing row is a
+gap in the policy, not permission to design from a blank page.
+
+Surfaces still to come, each with its reference already named in 08 §3: the tape
+chart (Mews Operations + Slope), quotes/*preventivi* (Slope), guest profiles
+(Mews Guest CRM).
