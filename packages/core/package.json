@@ -26,7 +26,8 @@
     "./stay": "./src/stay/index.ts",
     "./billing": "./src/billing/index.ts",
     "./onboarding": "./src/onboarding/index.ts",
-    "./privacy": "./src/privacy/index.ts"
+    "./privacy": "./src/privacy/index.ts",
+    "./admin": "./src/admin/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

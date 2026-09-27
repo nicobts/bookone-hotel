@@ -54,6 +54,23 @@ const envSchema = z.object({
     .string()
     .min(24, 'PAYMENT_WEBHOOK_SECRET must be at least 24 characters'),
 
+  /**
+   * Webhook requests per minute per client address (ADR-032 item 5). Far above
+   * any provider's real rate: the limit exists for floods, and providers retry
+   * a 429 with backoff.
+   */
+  WEBHOOK_RATE_LIMIT: z.coerce.number().int().positive().default(120),
+
+  /**
+   * Whether `X-Forwarded-For` names the client — true only behind a proxy we
+   * run (Caddy on the VM, Cloud Run's front end). Otherwise any caller could
+   * choose its own rate-limit key.
+   */
+  TRUST_PROXY: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
+
   /** Where the guest comes back to, and where the simulated checkout lives. */
   APP_URL: z.string().url().default('http://localhost:3000'),
 })

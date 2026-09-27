@@ -7,6 +7,7 @@ the date it was last actually executed, with what went wrong when it was.
 |---|---|---|---|
 | Logical dump → restore, local stack | 2026-08-29 | Domain data, two properties, three stays | **Passed on the third attempt.** Three findings, all below |
 | Supabase PITR restore, staging | — | — | **Not yet run.** See "what this drill does not cover" |
+| Phase 0 host rebuilt from `infra/vm` | — | Compose host only; no guest data on it | **Not yet run.** Required before any pilot guest data (ADR-033). See "the Phase 0 host" |
 
 ---
 
@@ -135,6 +136,39 @@ Named rather than left implied:
 - **Recovery time.** The local restore is instant against three stays and says
   nothing about a real database. RTO and RPO have not been measured and should
   not be quoted until they are.
+
+## The Phase 0 host and the operator trail (WP0.8)
+
+ADR-033 puts `api`, `worker` and `admin` on one EU VM for Phase 0, and adds a
+rule: **no pilot guest data on it without working backups and a completed
+restore drill.** What that drill has to show, written before it is run:
+
+- **The host holds no state worth restoring.** Guest data is in Supabase; the
+  host runs containers from images and reads secrets from Infisical. The drill
+  therefore *rebuilds*, it does not restore: `tofu apply` in `infra/vm/tofu`
+  (from WSL), then `infisical run -- docker compose -f infra/vm/compose.yaml up -d`
+  over the tailnet. Pass criterion: webhooks answer on the public host,
+  `admin` answers on the tailnet only, the worker drains its queues, and the
+  time from `apply` to healthy is written down — that number is the host's RTO.
+- **Nightly snapshots are the fallback, not the plan.** `backups = true` on the
+  server gives provider snapshots; restoring one is the second half of the
+  drill, to prove it works, not the procedure to use.
+- **Two state files live off the host**: Caddy's certificates (re-issued
+  automatically, so losing them costs minutes) and Tailscale's node state
+  (losing it means re-joining with a new key). Neither is guest data.
+
+**`admin_audit` is append-only, and a restore has to respect that.** The
+trigger refuses `UPDATE`, `DELETE` and `TRUNCATE` (migration
+`20260927041310_admin_audit_rls.sql`). A logical restore into a fresh database
+inserts, which is allowed. A restore procedure that *truncates tables before
+loading* — the obvious way to re-run one — fails on this table, deliberately.
+Restore into a fresh database; never disable the trigger to make a script pass.
+PITR brings the table back with everything else.
+
+**Not built yet** (ADR-031): the daily export of `admin_audit` to immutable
+storage. Until it exists, the trail's only copies are the live table and the
+provider's backups — which is why the table refuses edits at the database, not
+in the application.
 
 ## The retention question
 

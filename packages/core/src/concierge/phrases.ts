@@ -82,6 +82,14 @@ export function escalatedPhrase(locale: string): string {
   return catalogues[resolve(locale)].concierge.escalated
 }
 
+/**
+ * Said while an operator has paused the concierge (WP0.8). It claims nothing
+ * about the question — only that it arrived and a person will answer.
+ */
+export function pausedPhrase(locale: string): string {
+  return catalogues[resolve(locale)].concierge.paused
+}
+
 /** The same, when nobody is on shift — see design-notes/stay-messaging.md §4D. */
 export function escalatedOutOfHoursPhrase(locale: string, hours: string): string {
   return interpolate(catalogues[resolve(locale)].concierge.escalatedOutOfHours, { hours })

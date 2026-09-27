@@ -16,7 +16,9 @@ import {
 } from '@bookone/core/payments'
 import type { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
 import { createFeatureCheck, gateOpen, type FeatureCheck } from '@bookone/core/onboarding'
+import { bodyLimit } from 'hono/body-limit'
 import { ROUTE_FEATURE } from './features'
+import { clientKey, rateLimit } from './rate-limit'
 
 /**
  * The worker's HTTP surface.
@@ -64,6 +66,12 @@ export function createApp(deps: {
    * entitlements; injected so tests need no database.
    */
   featureCheck?: () => FeatureCheck
+  /** Webhook requests per minute per client (ADR-032). */
+  webhookRateLimit?: number
+  /** Whether `X-Forwarded-For` is set by a proxy we run. */
+  trustProxy?: boolean
+  /** The socket's address; supplied by the node server, absent in tests. */
+  remoteAddress?: Parameters<typeof rateLimit>[1]
 }) {
   const { queue, adapter, payments, logger, internalToken, appUrl, allowSimulation } = deps
   const featureCheck = deps.featureCheck ?? (() => createFeatureCheck())
@@ -150,6 +158,32 @@ export function createApp(deps: {
        * get a 2xx redelivers for days, and every redelivery re-runs this.
        * Everything downstream is idempotent for exactly that reason.
        */
+      /**
+       * The public ingress's guards, before any route reads a body (ADR-032
+       * item 5): a rate limit per client, then a size cap. Both run before the
+       * signature check, so a flood costs a map lookup rather than an HMAC.
+       * A provider event is a few kilobytes; 256 KiB is generous.
+       */
+      .use(
+        '/webhooks/*',
+        rateLimit(
+          {
+            limit: deps.webhookRateLimit ?? 120,
+            windowMs: 60_000,
+            key: clientKey(deps.trustProxy ?? false),
+            onLimited: (key) => logger.warn({ key }, 'webhook rate limited'),
+          },
+          deps.remoteAddress,
+        ),
+      )
+      .use(
+        '/webhooks/*',
+        bodyLimit({
+          maxSize: 256 * 1024,
+          onError: (c) => c.json({ error: 'payload_too_large' }, 413),
+        }),
+      )
+
       .post('/webhooks/payments', async (c) => {
         const payload = await c.req.text()
         const signature =

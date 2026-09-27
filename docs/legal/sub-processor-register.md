@@ -93,6 +93,81 @@ ADR-003. The worker is a persistent Node process and never serverless, which nar
 
 Enforced in code: `registerProvider` refuses a non-EU provider unless it cites ADR-029 and this entry exists. Reassessed at production with paying properties; moving to EU routing is a base-URL change.
 
+## Chosen, not yet contracted — no data flowing
+
+### SP-009 — Supabase — staff identity project
+
+**Purpose.** Authentication of BookOne operators for the admin console (ADR-031): a separate project from the hotels’ one, so staff and hotel identities never share a store.
+
+**Processing region.** EU (Frankfurt)
+
+**Entity established in.** United States (Supabase Inc.); EU region selected
+
+**Categories of personal data.**
+
+- staff email addresses
+- staff MFA factors
+- staff sign-in metadata
+
+**Contract.** Same vendor and DPA as SP-001, separate project and scope. Locally the console shares the development project; production refuses to start if the two are the same.
+
+**Residency last verified.** — (nothing to verify; no provider chosen)
+
+Holds BookOne staff data only — no guest or hotel-user data.
+
+### SP-010 — Tailscale
+
+**Purpose.** Zero-trust network access to internal surfaces: the admin console, the full api, host SSH (ADR-032 item 1).
+
+**Processing region.** Coordination plane outside the EU; traffic is end-to-end encrypted between our nodes and relays carry only ciphertext
+
+**Entity established in.** Canada
+
+**Categories of personal data.**
+
+- staff device and account identifiers
+- connection metadata
+
+**Contract.** Tailscale DPA with SCCs, to be signed before the Phase 0 host carries pilot data.
+
+**Residency last verified.** — (nothing to verify; no provider chosen)
+
+No guest data passes through Tailscale in readable form; it sees who connected to which node, when.
+
+### SP-011 — Hetzner Online
+
+**Purpose.** The Phase 0 VM running api, worker and admin containers (ADR-033).
+
+**Processing region.** EU (Falkenstein / Nuremberg / Helsinki)
+
+**Entity established in.** Germany
+
+**Categories of personal data.**
+
+- guest and hotel data in memory during request and job processing (stored data stays in SP-001)
+
+**Contract.** Hetzner DPA (Art. 28). The OCI instance in an EU region is the named alternative; whichever is used gets this entry.
+
+**Residency last verified.** — (nothing to verify; no provider chosen)
+
+Compute only. ADR-033: no pilot guest data on the host before working backups and a completed restore drill.
+
+### SP-012 — Infisical
+
+**Purpose.** Secrets management for the Phase 0 host (ADR-032 item 3).
+
+**Processing region.** EU cloud region, or self-hosted on SP-011
+
+**Entity established in.** United States
+
+**Categories of personal data.**
+
+- service credentials and API keys — no personal data
+
+**Contract.** EU cloud with DPA, or self-hosted (no sub-processor at all). Decided when the host is provisioned.
+
+**Residency last verified.** — (nothing to verify; no provider chosen)
+
 ## Not chosen — no data flowing
 
 ### SP-004 — Email service provider — undecided

@@ -1606,6 +1606,47 @@ export const stayTasks = pgTable(
 )
 
 /**
+ * Every operator action, append-only (ADR-031, Guest Desk WP0.8).
+ *
+ * Written by `apps/admin` through `withAdminAudit`, one row per mutation, with
+ * the reason the operator gave and what changed. A trigger refuses UPDATE and
+ * DELETE (see the paired migration): the record of who changed a hotel's
+ * configuration is not itself configurable.
+ *
+ * `property_id` carries no foreign key on purpose. A cascade from a deleted
+ * property would have to delete or null these rows, which is exactly what an
+ * append-only table must not do; the id stays as the record of which property
+ * was touched.
+ *
+ * No client policy: nothing but the admin app's service path reads or writes it.
+ */
+export const adminAudit = pgTable(
+  'admin_audit',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** `staff:{id}` — an identity from the staff IdP, never a hotel user (ADR-031). */
+    actor: text('actor').notNull(),
+    actorEmail: text('actor_email'),
+    /** Verb-noun, e.g. `feature.grant`, `agent.pause`. */
+    action: text('action').notNull(),
+    targetType: text('target_type').notNull(),
+    targetId: text('target_id').notNull(),
+    propertyId: uuid('property_id'),
+    /** Why — required for every mutation. */
+    reason: text('reason').notNull(),
+    before: jsonb('before'),
+    after: jsonb('after'),
+    ip: text('ip'),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('admin_audit_property_idx').on(t.propertyId, t.at),
+    index('admin_audit_actor_idx').on(t.actor, t.at),
+    check('admin_audit_reason_not_empty', sql`length(btrim(${t.reason})) >= 3`),
+  ],
+)
+
+/**
  * A guest's complaint (Guest Desk WP0.3, the `complaints` profile).
  *
  * Not a task. A task records something to do; a complaint records that a guest

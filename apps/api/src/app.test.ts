@@ -10,6 +10,7 @@ function build(
     send?: ReturnType<typeof vi.fn>
     parseWebhook?: ReturnType<typeof vi.fn>
     allowSimulation?: boolean
+    webhookRateLimit?: number
     /** Features property `p1` has. Every feature unless a test says otherwise. */
     features?: readonly string[]
   } = {},
@@ -48,6 +49,7 @@ function build(
     appUrl: 'http://localhost:3000',
     allowSimulation: overrides.allowSimulation ?? true,
     featureCheck: () => async (_propertyId: string, feature: string) => enabled.has(feature),
+    webhookRateLimit: overrides.webhookRateLimit ?? 120,
   } as never
 
   return { app: createApp(deps), send }
@@ -377,5 +379,41 @@ describe('the feature gate (ADR-019)', () => {
     })
 
     expect(res.status).toBe(401)
+  })
+})
+
+describe('webhook ingress guards (ADR-032)', () => {
+  it('rate-limits a flood per client before the signature check', async () => {
+    const parseWebhook = vi.fn(async () => {
+      throw Object.assign(new Error('bad signature'), {
+        name: 'PaymentAdapterError',
+        code: 'invalid_signature',
+      })
+    })
+    const { app } = build({ webhookRateLimit: 3, parseWebhook })
+    const post = () => app.request('/webhooks/payments', { method: 'POST', body: '{}' })
+
+    for (let i = 0; i < 3; i++) expect((await post()).status).toBe(400)
+
+    const limited = await post()
+    expect(limited.status).toBe(429)
+    expect(Number(limited.headers.get('retry-after'))).toBeGreaterThan(0)
+    // The fourth never reached the HMAC.
+    expect(parseWebhook).toHaveBeenCalledTimes(3)
+  })
+
+  it('refuses an oversized payload with 413', async () => {
+    const { app } = build()
+    const res = await app.request('/webhooks/payments', {
+      method: 'POST',
+      headers: { 'content-length': String(300 * 1024) },
+      body: 'x'.repeat(300 * 1024),
+    })
+    expect(res.status).toBe(413)
+  })
+
+  it('leaves the internal surface alone', async () => {
+    const { app } = build({ webhookRateLimit: 1 })
+    for (let i = 0; i < 3; i++) expect((await app.request('/health')).status).toBe(200)
   })
 })

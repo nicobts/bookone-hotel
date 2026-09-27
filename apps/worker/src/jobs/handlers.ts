@@ -502,7 +502,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       'concierge.reply',
     )
 
-    if (outcome.status === 'escalated') {
+    if (outcome.status === 'escalated' || outcome.status === 'paused') {
       // Nudge the SLA sweep's clock into motion rather than waiting up to its
       // whole interval: the property has a guest waiting from now, not from the
       // next tick.

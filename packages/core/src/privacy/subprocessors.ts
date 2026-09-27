@@ -33,6 +33,8 @@ export type SubProcessorStatus =
   | 'in-use'
   /** Contracted and configured, not yet carrying production data. */
   | 'staging'
+  /** Chosen in an ADR, not yet contracted or configured; no data flowing. */
+  | 'planned'
   /** Named in an ADR, no provider chosen, no data anywhere. */
   | 'undecided'
 
@@ -174,6 +176,61 @@ export const SUBPROCESSORS: SubProcessor[] = [
     verifiedAt: null,
     note: 'An intermediary would be a sub-processor handling identity documents, which is the most sensitive flow in the product and the one where this register matters most. A direct integration with the Questura’s own service adds no sub-processor at all — the authority is a recipient, not a processor.',
   },
+  {
+    id: 'SP-009',
+    name: 'Supabase — staff identity project',
+    purpose:
+      'Authentication of BookOne operators for the admin console (ADR-031): a separate project from the hotels’ one, so staff and hotel identities never share a store.',
+    dataCategories: ['staff email addresses', 'staff MFA factors', 'staff sign-in metadata'],
+    region: 'EU (Frankfurt)',
+    established: 'United States (Supabase Inc.); EU region selected',
+    status: 'planned',
+    contract:
+      'Same vendor and DPA as SP-001, separate project and scope. Locally the console shares the development project; production refuses to start if the two are the same.',
+    verifiedAt: null,
+    note: 'Holds BookOne staff data only — no guest or hotel-user data.',
+  },
+  {
+    id: 'SP-010',
+    name: 'Tailscale',
+    purpose:
+      'Zero-trust network access to internal surfaces: the admin console, the full api, host SSH (ADR-032 item 1).',
+    dataCategories: ['staff device and account identifiers', 'connection metadata'],
+    region:
+      'Coordination plane outside the EU; traffic is end-to-end encrypted between our nodes and relays carry only ciphertext',
+    established: 'Canada',
+    status: 'planned',
+    contract: 'Tailscale DPA with SCCs, to be signed before the Phase 0 host carries pilot data.',
+    verifiedAt: null,
+    note: 'No guest data passes through Tailscale in readable form; it sees who connected to which node, when.',
+  },
+  {
+    id: 'SP-011',
+    name: 'Hetzner Online',
+    purpose: 'The Phase 0 VM running api, worker and admin containers (ADR-033).',
+    dataCategories: [
+      'guest and hotel data in memory during request and job processing (stored data stays in SP-001)',
+    ],
+    region: 'EU (Falkenstein / Nuremberg / Helsinki)',
+    established: 'Germany',
+    status: 'planned',
+    contract:
+      'Hetzner DPA (Art. 28). The OCI instance in an EU region is the named alternative; whichever is used gets this entry.',
+    verifiedAt: null,
+    note: 'Compute only. ADR-033: no pilot guest data on the host before working backups and a completed restore drill.',
+  },
+  {
+    id: 'SP-012',
+    name: 'Infisical',
+    purpose: 'Secrets management for the Phase 0 host (ADR-032 item 3).',
+    dataCategories: ['service credentials and API keys — no personal data'],
+    region: 'EU cloud region, or self-hosted on SP-011',
+    established: 'United States',
+    status: 'planned',
+    contract:
+      'EU cloud with DPA, or self-hosted (no sub-processor at all). Decided when the host is provisioned.',
+    verifiedAt: null,
+  },
 ]
 
 export const SUBPROCESSOR_IDS: ReadonlySet<string> = new Set(SUBPROCESSORS.map((sp) => sp.id))
@@ -228,6 +285,7 @@ export function renderRegister(): string {
   const groups: [SubProcessorStatus, string][] = [
     ['in-use', 'In use'],
     ['staging', 'Configured, not carrying production data'],
+    ['planned', 'Chosen, not yet contracted — no data flowing'],
     ['undecided', 'Not chosen — no data flowing'],
   ]
 

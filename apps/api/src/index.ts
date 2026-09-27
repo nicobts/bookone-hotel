@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { serve } from '@hono/node-server'
+import { getConnInfo } from '@hono/node-server/conninfo'
 import { pino } from 'pino'
 import { MockEricsoftAdapter } from '@bookone/adapters/mock-ericsoft'
 import { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
@@ -71,6 +72,9 @@ const app = createApp({
   internalToken: env.WORKER_INTERNAL_TOKEN,
   appUrl: env.APP_URL,
   allowSimulation: env.NODE_ENV !== 'production',
+  webhookRateLimit: env.WEBHOOK_RATE_LIMIT,
+  trustProxy: env.TRUST_PROXY,
+  remoteAddress: (c) => getConnInfo(c).remote.address ?? null,
 })
 
 const server = serve({ fetch: app.fetch, port: env.API_PORT }, (info) => {

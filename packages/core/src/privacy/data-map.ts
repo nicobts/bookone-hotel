@@ -172,6 +172,22 @@ export const DATA_MAP: DataMapEntry[] = [
     exportVia: 'none',
   },
   {
+    table: 'admin_audit',
+    subject: 'staff',
+    categories: ['identity'],
+    basis:
+      'Legitimate interest (Art. 6(1)(f)) and the accountability principle — who operated on a property, when and why (ADR-031).',
+    retention: {
+      kind: 'keep',
+      why: 'Append-only by trigger. The operator trail is the evidence ISO 27001 and a customer audit ask for; it holds BookOne staff identities and configuration, not guest data. Exported daily to immutable storage (ADR-032).',
+    },
+    erasure: {
+      kind: 'keep',
+      why: 'Not a guest table: operations are recorded as configuration changes, never guest content. Out of the guest erasure routine by design.',
+    },
+    exportVia: 'none',
+  },
+  {
     table: 'profiles',
     subject: 'staff',
     categories: ['identity', 'contact'],

@@ -1,0 +1,22 @@
+#cloud-config
+# First boot of the Phase 0 host: Docker, Tailscale (with Tailscale SSH), no
+# password logins, unattended security updates. The app itself arrives with
+# `infisical run -- docker compose up -d`, run over the tailnet.
+hostname: ${hostname}
+package_update: true
+package_upgrade: true
+packages:
+  - ca-certificates
+  - curl
+  - unattended-upgrades
+
+ssh_pwauth: false
+disable_root: true
+
+runcmd:
+  - curl -fsSL https://get.docker.com | sh
+  - curl -fsSL https://tailscale.com/install.sh | sh
+  - tailscale up --authkey=${tailscale_auth_key} --ssh --hostname=${hostname}
+  # Public SSH off once Tailscale SSH is up; the firewall already drops 22.
+  - systemctl disable --now ssh
+  - dpkg-reconfigure -f noninteractive unattended-upgrades

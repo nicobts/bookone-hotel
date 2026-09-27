@@ -9,6 +9,7 @@ import {
   listThreadActions,
   logComplaint,
   markComplaintBreachAlerted,
+  pausedPhrase,
   reverseAction,
   takeOverThread,
 } from '@bookone/core/concierge'
@@ -180,6 +181,45 @@ describe('reversal', () => {
       sql`select status from stay_tasks where property_id = ${propertyId} and summary like 'Change request%'`,
     )
     expect(task!.status).toBe('cancelled')
+  })
+})
+
+describe('the operator kill switch (WP0.8)', () => {
+  it('answers with the paused phrase, hands the thread to a person, and runs no agent', async () => {
+    await db.execute(
+      sql`update properties set settings = coalesce(settings, '{}'::jsonb) || jsonb_build_object('agentPausedAt', now()) where id = ${propertyId}`,
+    )
+    const [{ n: runsBefore }] = (await db.execute<{ n: number }>(
+      sql`select count(*)::int as n from agent_runs where property_id = ${propertyId}`,
+    )) as unknown as [{ n: number }]
+
+    const outcome = await respondToGuestMessage({
+      propertyId,
+      reservationId,
+      threadId,
+      locale: 'it',
+      message: 'A che ora è la colazione?',
+    })
+    expect(outcome.status).toBe('paused')
+
+    const said = await db.execute<{ author: string }>(
+      sql`select author from messages where thread_id = ${threadId} and body = ${pausedPhrase('it')}`,
+    )
+    expect(said.map((m) => m.author)).toEqual(['system'])
+
+    const [thread] = await db.execute<{ status: string }>(
+      sql`select status from message_threads where id = ${threadId}`,
+    )
+    expect(thread!.status).toBe('escalated')
+
+    const [{ n: runsAfter }] = (await db.execute<{ n: number }>(
+      sql`select count(*)::int as n from agent_runs where property_id = ${propertyId}`,
+    )) as unknown as [{ n: number }]
+    expect(runsAfter).toBe(runsBefore)
+
+    await db.execute(
+      sql`update properties set settings = settings - 'agentPausedAt' where id = ${propertyId}`,
+    )
   })
 })
 

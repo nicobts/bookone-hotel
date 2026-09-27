@@ -17,7 +17,7 @@ Historical/context docs live in `docs/annexes/` (technical annexes, Concierge wo
 - `apps/web` — Next.js App Router, shadcn/ui, Tailwind, next-intl (it/de/en/sl). Vercel fra1.
 - `apps/worker` — **Persistent Node process. NEVER edge, NEVER serverless.** Our own EU container (self-hosted VM → Cloud Run, ADR-033). Jobs via **pg-boss** (not Redis/BullMQ — ADR-005); the client is `@bookone/adapters/pg-boss`.
 - `apps/api` (ADR-034) — Hono on @hono/node-server: payment and provider webhooks, `/health*`, the bearer-token `/jobs/*` surface web calls, and the per-property feature gate. Answers and enqueues; persistent process, never edge or serverless. `apps/worker` runs pg-boss jobs only and has **no HTTP ingress**.
-- `apps/admin` (Guest Desk WP0.8, ADR-031/034) — operator console + its Hono admin API in **one container of our own, Tailscale-only, never on a third-party platform**. Staff sign in to a separate Supabase Auth project; never imports tenant-app auth.
+- `apps/admin` (Guest Desk WP0.8, ADR-031/034) — operator console + its admin API (server actions, each through `withAdminAudit` in `packages/core/src/admin`) in **one container of our own, Tailscale-only, never on a third-party platform**. Staff sign in to a separate Supabase Auth project; never imports tenant-app auth.
 - Supabase EU (Frankfurt): Postgres + Auth + Storage. **Drizzle** for all domain access.
 - `packages/core` — canonical domain: schema, types, event emitter, journey state machine, AuthorityMap router, policy engine, `LlmProvider`, adapter interfaces. **All domain logic lives here; neither app reimplements it.**
 - `packages/adapters` — `MockEricsoftAdapter` (with failure injection) until real API access; real adapter must pass the mock's contract-test suite before swap (ADR-008).
@@ -99,7 +99,7 @@ Adding a dependency · changing the router's hard rules · any schema migration 
 
 ### Admin console and ops (ADR-030…033)
 - `apps/admin` holds the UI and the admin API together. The public worker gets no admin routes. Every admin route runs staff auth, then a role check, then audit middleware; the browser never holds a service-role key.
-- `admin_audit` is append-only (a trigger refuses UPDATE/DELETE); never write a migration that loosens that. Every mutation carries a reason. Mutating a property's bookings or payments is not an admin capability.
+- `admin_audit` is append-only (a trigger refuses UPDATE/DELETE/TRUNCATE; client roles hold no privilege on it); never write a migration that loosens that. Every mutation carries a reason. Mutating a property's bookings or payments is not an admin capability.
 - No internal surface (admin, Phoenix, queue dashboards) gets a public ingress: Tailscale only.
 - Secrets come from the secrets manager at runtime; never commit `.env` values; per-property credentials are envelope-encrypted.
 - Webhooks verify signatures and are idempotent on the provider's event id.

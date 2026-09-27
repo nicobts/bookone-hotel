@@ -27,6 +27,8 @@ export interface ReservationFacts {
   guestName: string | null
   /** The property's stated response window, when it has one. */
   businessHours: string | null
+  /** The operator paused the concierge at this property (WP0.8 kill switch). */
+  agentPaused: boolean
   arrival: string
   departure: string
 }
@@ -77,6 +79,7 @@ export async function getReservationFacts(
         : null,
     guestName: row.guestName,
     businessHours: readBusinessHours(row.settings),
+    agentPaused: readAgentPaused(row.settings),
     arrival: row.arrival ?? 'pending',
     departure: row.departure ?? 'pending',
   }
@@ -97,6 +100,15 @@ export function readBusinessHours(settings: unknown): string | null {
   const value = (settings as Record<string, unknown>).businessHours
 
   return typeof value === 'string' && value.trim() ? value.trim() : null
+}
+
+/**
+ * The operator's kill switch (ADR-031, WP0.8). Read per turn from the row, so a
+ * pause takes effect on the very next guest message.
+ */
+export function readAgentPaused(settings: unknown): boolean {
+  if (typeof settings !== 'object' || settings === null) return false
+  return Boolean((settings as Record<string, unknown>).agentPausedAt)
 }
 
 /** `{ it: "Doppia", en: "Double" }` with the guest → English → first chain. */

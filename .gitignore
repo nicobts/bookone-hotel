@@ -44,3 +44,10 @@ next-env.d.ts
 # Local scratch space — notes, keys in transit. Never committed.
 /sratchpad/
 /scratchpad/
+
+# Infrastructure as code (infra/): state and provider caches never enter git
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example

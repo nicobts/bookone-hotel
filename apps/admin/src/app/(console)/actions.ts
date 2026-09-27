@@ -1,0 +1,60 @@
+'use server'
+
+import { AdminRefused, adminSetAgentPaused, adminSetFeature } from '@bookone/core/admin'
+import { FEATURES, type Feature } from '@bookone/core/onboarding'
+import { revalidatePath } from 'next/cache'
+import { requireAdmin } from '@/lib/staff'
+
+export interface ActionState {
+  error: string | null
+  done: boolean
+}
+
+/**
+ * The console's admin API (ADR-031): server actions, each one staff
+ * authentication → role check → `withAdminAudit` in core. Next checks the
+ * Origin of every server action, which is the CSRF half; the reason field is
+ * required here and again in core, so a crafted request cannot skip it.
+ */
+function refusal(error: unknown): ActionState {
+  if (error instanceof AdminRefused) return { error: error.message, done: false }
+  throw error
+}
+
+export async function setFeature(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const staff = await requireAdmin()
+  const propertyId = String(form.get('propertyId') ?? '')
+  const feature = String(form.get('feature') ?? '')
+  const enabled = form.get('enabled') === 'true'
+  const reason = String(form.get('reason') ?? '')
+
+  if (!(FEATURES as readonly string[]).includes(feature)) {
+    return { error: 'Unknown feature.', done: false }
+  }
+
+  try {
+    await adminSetFeature(staff, { propertyId, feature: feature as Feature, enabled, reason })
+  } catch (error) {
+    return refusal(error)
+  }
+
+  revalidatePath(`/properties/${propertyId}`)
+  return { error: null, done: true }
+}
+
+export async function setAgentPaused(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const staff = await requireAdmin()
+  const propertyId = String(form.get('propertyId') ?? '')
+  const paused = form.get('paused') === 'true'
+  const reason = String(form.get('reason') ?? '')
+
+  try {
+    await adminSetAgentPaused(staff, { propertyId, paused, reason })
+  } catch (error) {
+    return refusal(error)
+  }
+
+  revalidatePath(`/properties/${propertyId}`)
+  revalidatePath('/')
+  return { error: null, done: true }
+}

@@ -73,6 +73,7 @@ only (`user_property_ids_admin()`).
 | `messages` | member | member ²⁸ | — ²⁹ | — ²⁹ | 2026-08-29 |
 | `stay_tasks` | member | member | member | — ³⁰ | 2026-08-29 |
 | `complaints` | member | member | member | — (no delete: a resolved complaint is information; erasure runs under the service role) | 2026-09-27 — both paths by query; negative control (select policy opened to `true`) failed the isolation test |
+| `admin_audit` | — | — | — | — (no client privilege at all: `revoke all … from anon, authenticated`, because Supabase's default grants include TRUNCATE and RLS does not govern it; append-only by trigger — UPDATE, DELETE and TRUNCATE raise, even on the service connection) | 2026-09-27 — client path by query as a hotel owner: `permission denied`; negative control (select policy + grant opened) returned the row, then closed; service path sees all rows by design (operators only, via `packages/core/src/admin`); trigger verified in `rls/admin.test.ts` |
 | `stay_extras` | member | — ³¹ | — ³¹ | — ³¹ | 2026-08-29 |
 | `invoice_requests` | member | — ³² | — ³² | — ³² | 2026-08-29 |
 | `attribution_events` | member | — ³³ | — ³³ | — ³³ | 2026-08-29 |

@@ -17,7 +17,14 @@ describe('loadEnv', () => {
       LOG_LEVEL: 'info',
       PAYMENT_PROVIDER: 'mock',
       APP_URL: 'http://localhost:3000',
+      WEBHOOK_RATE_LIMIT: 120,
+      TRUST_PROXY: false,
     })
+  })
+
+  it('trusts X-Forwarded-For only when told to', () => {
+    expect(loadEnv({ ...required, TRUST_PROXY: 'true' }).TRUST_PROXY).toBe(true)
+    expect(() => loadEnv({ ...required, TRUST_PROXY: 'yes' })).toThrow(/TRUST_PROXY/)
   })
 
   it('coerces the port from a string', () => {
