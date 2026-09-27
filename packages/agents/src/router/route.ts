@@ -1,5 +1,6 @@
 import { classifyIntent } from '@bookone/core/concierge'
 import type { LlmProvider } from '@bookone/core/llm'
+import { profiles } from '../profiles'
 import { normalise, type HardRule } from './hard-rules'
 
 /**
@@ -337,10 +338,16 @@ export async function route(
           role: 'system',
           content: [
             'Classify one hotel guest message. You never reply to the guest.',
-            `Pick the profile it belongs to, or "unknown". Profiles: ${candidates.join(', ')}.`,
+            'Pick the one profile it belongs to, or "unknown". The profiles, and what each covers:',
+            // The profile's own description, so the model routes on what a
+            // profile is for rather than on what its id happens to suggest.
+            ...candidates.map((id) => `- ${id}: ${profiles().get(id)?.description ?? id}`),
             '"request" is not a profile: a request for a thing (towels, a taxi, a repair) is "unknown" unless it is a complaint.',
-            'Set emergency when someone may be in danger, money when they want money back, compensation or a discount,',
-            'identity when they ask whether their documents, registration or legal position is accepted or valid.',
+            'Flags. Set one only when its condition is actually met:',
+            '- emergency: someone may be in danger right now (fire, gas, injury, a medical emergency).',
+            '- money: they want money back, compensation or a discount, or dispute a charge. Asking how to pay is not money.',
+            '- identity: they ask whether their documents, registration or legal position is accepted, valid or verified.',
+            '  Asking which documents to send, or how to send them, is not identity.',
           ].join('\n'),
         },
         { role: 'user', content: message },

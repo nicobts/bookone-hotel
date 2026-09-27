@@ -36,7 +36,7 @@ worse than none, because it is read as current.
 | 032 | Ops and security baseline, in priority order | 🟨 partial | Stripe webhook verification + idempotency, retention/export/erasure, register, logical backup drill ✅. Tailscale, secrets manager, OTel, rate limits, PITR drill, IaC ⬜ |
 | 033 | Self-hosted until the first signed contract, then Cloud Run | ⬜ not built (WP0.8) | GCP project, OpenTofu skeleton and signed-image CI are Phase 0 even with nothing on GCP |
 | 034 | `apps/api` split from the worker; worker jobs-only | ⬜ not built | Own small WP after WP0.2: move `apps/worker/src/app.ts` + its boot into `apps/api`, keep `AppType` for web. ADR-F13's JWT-only web, MCP server and package renames were rejected |
-| 024 | Replay conversations extend the evals gate | ✅ as-built (WP0.2) | 57 conversations in `packages/agents/src/evals/conversations/wp0.2/`, replayed by `evals/wp0.2/orchestrator.eval.ts`: unsafe actions 0 (gate), routing ≥ 90%, hard-rule negatives. Negative control: disabling the hard rules fails 13. The rules score is coverage, not generalisation — `EVAL_LIVE=1` with a key replays the same set against the model. Phoenix not yet |
+| 024 | Replay conversations extend the evals gate | ✅ as-built (WP0.2) | 57 conversations in `packages/agents/src/evals/conversations/wp0.2/`, replayed by `evals/wp0.2/orchestrator.eval.ts`: unsafe actions 0 (gate), routing ≥ 90%, hard-rule negatives. Negative control: disabling the hard rules fails 13. The rules score is coverage, not generalisation. **Live, 2026-09-27** (Haiku 4.5 routing, Sonnet 5 actions, via OpenRouter): 85.7% on the first run — invoice/luggage sent to payments, "which documents" flagged as identity — then **100%, 0 unsafe** once the routing prompt carried each profile's description and sharper flag definitions. 35 routed turns written by us: evidence the design works on a model, not a measure of real traffic. Phoenix not yet |
 | 025 | Workflow engine deferred until a named trigger | Proposed | Decided in Phase 1 on observed evidence |
 | 026 | ComplianceAdapter with a manual fallback | ⬜ Phase 1 (WP1.1) | `AlloggiatiAdapter` becomes its first implementation |
 | 027 | BookOne never asserts identity; de visu staff-assisted | ✅ holds (nothing asserts identity); module ⬜ Phase 3, gated | Gate: Viminale guidelines + written legal opinion |
@@ -109,7 +109,7 @@ worse than none, because it is read as current.
 | Invoice request | ✅ | **Issues nothing.** Recorded and routed to the property, who issue the fattura through their own certified chain (D11) |
 | Review request | ✅ | After departure is confirmed, once, unconditional on what the guest said — not on the checkout screen beside a payment step |
 | Departure sweep | ✅ | Nightly backstop under `system`, so a guest-confirmed checkout and an inferred one stay distinguishable |
-| **A language model** | 🟨 **wired, key pending** | OpenRouter under ADR-029; set `OPENROUTER_API_KEY`, `LLM_MODEL_SMALL`, `LLM_MODEL_STRONG`. The eval set is what makes connecting it a measurement rather than a leap |
+| **A language model** | ✅ **connected in development** | OpenRouter under ADR-029: `anthropic/claude-haiku-4.5` (small), `anthropic/claude-sonnet-5` (strong), ZDR endpoints only. Registers at worker boot through the residency gate. Demo data only until the transfer assessment (ADR-029) |
 | **WhatsApp** | ⬜ **blocked** | BSP verification (04 §0). The thread is stored channel-agnostically; adding it is a provider, not a re-model |
 
 ## Sprint 8 additions

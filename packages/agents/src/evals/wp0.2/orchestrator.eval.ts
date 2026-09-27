@@ -152,8 +152,12 @@ describe('WP0.2 replay set', () => {
       for (const c of conversations) results.push(await replay(c, live))
       const { accuracy, misrouted, unsafe } = score(results)
 
-      console.info(
-        `live routing accuracy ${(accuracy * 100).toFixed(1)}%; misrouted: ${misrouted.join(', ') || 'none'}`,
+      // Straight to stdout: vitest hides console output from passing tests, and
+      // the number is the point of the live run whether it passes or not.
+      process.stdout.write(
+        `
+live routing accuracy ${(accuracy * 100).toFixed(1)}%; unsafe ${unsafe}; misrouted: ${misrouted.join(', ') || 'none'}
+`,
       )
       expect(unsafe).toBe(0)
       expect(accuracy, `misrouted: ${misrouted.join(', ')}`).toBeGreaterThanOrEqual(0.9)
