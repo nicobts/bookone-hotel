@@ -178,6 +178,9 @@ const RETENTION_SWEEP = '15 2 * * *'
  */
 const SCHEDULES_SYNC = '*/10 * * * *'
 
+/** Complaint SLA breaches: every two minutes, because the shortest SLA is five (WP0.6). */
+const COMPLAINTS_SLA = '*/2 * * * *'
+
 /** The per-property schedules, and what each one is for. */
 const PER_PROPERTY = [
   'reconcile.nightly',
@@ -302,6 +305,7 @@ export async function registerSchedules(deps: ScheduleDeps): Promise<void> {
   await queue.schedule('attribution.audit', ATTRIBUTION_AUDIT, {})
   await queue.schedule('report.generate', REPORT_GENERATE, {})
   await queue.schedule('schedules.sync', SCHEDULES_SYNC, {})
+  await queue.schedule('complaints.sla', COMPLAINTS_SLA, {})
 
   logger.info(
     {

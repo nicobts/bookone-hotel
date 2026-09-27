@@ -72,6 +72,8 @@ export const jobNames = [
   'schedules.sync',
   /** Read one uploaded identity document with the vision model (WP0.4). */
   'documents.extract',
+  /** Tell the manager about complaints whose SLA ran out unresolved (WP0.6). */
+  'complaints.sla',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -210,6 +212,8 @@ export interface JobPayloads {
   'schedules.sync': Record<string, never>
   /** One guest's document at one stay. The image is read from storage, never carried here. */
   'documents.extract': { propertyId: string; reservationId: string; guestIndex: number }
+  /** Cross-property sweep; filters by the inbox feature in its own query. */
+  'complaints.sla': Record<string, never>
 }
 
 export interface SendOptions {

@@ -68,6 +68,7 @@ export const JOB_FEATURE: Record<JobName, Gate> = {
   // Deletes identity documents. Privacy work is never switched off.
   'documents.purge': 'core',
   'documents.extract': 'document_ocr',
+  'complaints.sla': 'inbox',
   'concierge.reply': 'concierge',
   'escalation.sweep': 'inbox',
   'arrival.complete': 'core',

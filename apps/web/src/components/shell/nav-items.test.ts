@@ -22,6 +22,7 @@ describe('navBands', () => {
       'today',
       'exceptions',
       'conversations',
+      'approvals',
       'reservations',
       'guests',
       'report',
@@ -30,7 +31,7 @@ describe('navBands', () => {
 
   it('gives staff the operating band only, whatever the property has', () => {
     expect(navBands({ isOwner: false, features: new Set(FEATURES) })).toEqual({
-      operate: ['today', 'exceptions', 'conversations', 'reservations', 'guests'],
+      operate: ['today', 'exceptions', 'conversations', 'approvals', 'reservations', 'guests'],
       configure: [],
     })
   })

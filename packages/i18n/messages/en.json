@@ -66,7 +66,8 @@
     "report": "Revenue",
     "setup": "Setup",
     "knowledge": "Knowledge",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "approvals": "Approvals"
   },
   "property": {
     "switcher": {
@@ -172,7 +173,7 @@
       "replyLabel": "Your reply",
       "replyPlaceholder": "Reply to the guest",
       "send": "Send",
-      "noModel": "No language model is connected. The assistant answers only from the property knowledge base and passes everything else to a person.",
+      "noModel": "The assistant answers only from the property's own information and tools, and never writes its own sentences. Everything else comes to a person.",
       "facts": {
         "reference": "Reference",
         "language": "Language",
@@ -210,7 +211,25 @@
           "settled": "Checked out",
           "closed": "Closed"
         }
-      }
+      },
+      "actions": "Assistant actions",
+      "undo": "Undo",
+      "undone": "Undone",
+      "pendingApproval": "waiting for approval",
+      "refused": "refused",
+      "failedAction": "failed",
+      "handoff": "Handed over because: {rule}",
+      "complaints": "Complaints",
+      "slaDue": "respond by {time}",
+      "slaBreached": "response overdue since {time}",
+      "rules": {
+        "emergency": "an emergency",
+        "money": "money, a refund or compensation",
+        "identity": "identity or legal status",
+        "unknown_twice": "the request was not understood twice"
+      },
+      "approved": "approved",
+      "declined": "rejected by staff"
     },
     "report": {
       "title": "Revenue & fees",
@@ -387,6 +406,21 @@
         "fee_events": "What we charged this property",
         "alloggiati_submissions": "The Questura filing",
         "privacy_requests": "This request"
+      }
+    },
+    "approvals": {
+      "title": "Approvals",
+      "subtitle": "Actions the assistant held for a person. Nothing here has happened yet.",
+      "empty": "Nothing is waiting for a decision.",
+      "approve": "Approve",
+      "reject": "Reject",
+      "openThread": "Open the conversation",
+      "rejectNote": "Rejecting sends the guest a reply that a person will follow up.",
+      "failed": "Could not carry this out: {reason}. Nothing was sent to the guest.",
+      "tools": {
+        "cancel_booking": "Cancel the booking",
+        "create_payment_link": "Send a payment link",
+        "request_late_checkout": "Late checkout"
       }
     }
   },
@@ -789,6 +823,10 @@
       "billing": "billing",
       "safety": "safety",
       "other": "other"
-    }
+    },
+    "decisionLateCheckout": "Good news: your checkout at {time} is confirmed.",
+    "decisionCancelled": "Your booking is now cancelled, as you asked.",
+    "decisionPaymentLink": "Here is your payment link: {url}",
+    "decisionRejected": "The property could not approve this request. Someone will reply here with the alternatives."
   }
 }

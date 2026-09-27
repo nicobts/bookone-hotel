@@ -64,21 +64,23 @@ export async function respondToGuestMessage(input: RespondInput): Promise<Respon
    */
   const history = await recentRouting(input.propertyId, input.threadId)
 
+  const thread = await getThreadForReservation(input.propertyId, input.reservationId)
+
+  // A person has taken this conversation ("Prendo io", WP0.6). The guest's
+  // message is stored and theirs to answer; an assistant replying underneath
+  // them would contradict whoever is typing.
+  if (thread?.assignedTo) {
+    return { status: 'silenced', runId: null, reason: 'a person has taken this conversation' }
+  }
+
   /*
    * The emergency rule's "stop replying". After an emergency the thread is with
    * a person until a person hands it back; an assistant cheerfully answering
    * the next message about breakfast would read as not having noticed. Handing
    * back moves the thread out of `escalated`, and the agent resumes.
    */
-  if (history[0]?.hardRule === 'emergency') {
-    const thread = await getThreadForReservation(input.propertyId, input.reservationId)
-    if (thread?.status === 'escalated') {
-      return {
-        status: 'silenced',
-        runId: null,
-        reason: 'emergency on this thread is with a person',
-      }
-    }
+  if (history[0]?.hardRule === 'emergency' && thread?.status === 'escalated') {
+    return { status: 'silenced', runId: null, reason: 'emergency on this thread is with a person' }
   }
 
   const run: RunOutcome = await runAgent({

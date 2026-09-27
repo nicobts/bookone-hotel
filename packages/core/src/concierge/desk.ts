@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, lte, sql } from 'drizzle-orm'
+import { and, asc, eq, gte, lte, sql } from 'drizzle-orm'
 import { asService } from '../db/session'
 import { agentRuns, guests, journeyStates, properties, reservations, roomTypes } from '../db/schema'
 import { outstandingForGuest, type JourneyState } from '../journey/machine'
@@ -189,37 +189,6 @@ export async function listCaptureOutstanding(
       } as JourneyState).filter((item) => item !== 'arrival'),
     }))
     .filter((row) => row.missing.length > 0)
-}
-
-/**
- * Actions the concierge held for a person's approval in the last `days` days
- * (ADR-021). Read from the runs themselves — the approval surface (WP0.6) is
- * what will mark them decided.
- */
-export async function listPendingApprovals(
-  propertyId: string,
-  days = 7,
-): Promise<{ runId: string; tool: string; at: Date }[]> {
-  const rows = await asService((db) =>
-    db
-      .select({ runId: agentRuns.id, toolCalls: agentRuns.toolCalls, at: agentRuns.at })
-      .from(agentRuns)
-      .where(
-        and(
-          eq(agentRuns.propertyId, propertyId),
-          inArray(agentRuns.agent, ['AG-01']),
-          sql`${agentRuns.toolCalls} @> '[{"status":"pending_approval"}]'::jsonb`,
-          sql`${agentRuns.at} > now() - make_interval(days => ${days})`,
-        ),
-      )
-      .orderBy(asc(agentRuns.at)),
-  )
-
-  return rows.flatMap((row) =>
-    (Array.isArray(row.toolCalls) ? (row.toolCalls as { tool?: string; status?: string }[]) : [])
-      .filter((call) => call.status === 'pending_approval' && typeof call.tool === 'string')
-      .map((call) => ({ runId: row.runId, tool: call.tool as string, at: row.at })),
-  )
 }
 
 /**

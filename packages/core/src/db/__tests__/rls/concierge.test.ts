@@ -188,6 +188,30 @@ describe('a thread', () => {
   })
 })
 
+describe('taking over a conversation nobody escalated (WP0.6)', () => {
+  it('works, and stamps the escalation time — it used to fail the check constraint', async () => {
+    const reservationId = await confirmedStay(fixture.alpha.propertyId, 'takeover-fresh')
+    const { thread } = await appendGuestMessage({
+      propertyId: fixture.alpha.propertyId,
+      reservationId,
+      locale: 'en',
+      body: 'Just saying hello',
+    })
+
+    await takeOverThread({
+      propertyId: fixture.alpha.propertyId,
+      threadId: thread.id,
+      userId: fixture.alpha.user.id,
+    })
+
+    const [row] = await db.execute<{ status: string; assigned: string; stamped: boolean }>(
+      sql`select status, assigned_to as assigned, escalated_at is not null as stamped
+          from message_threads where id = ${thread.id}`,
+    )
+    expect(row).toEqual({ status: 'escalated', assigned: fixture.alpha.user.id, stamped: true })
+  })
+})
+
 describe('who owes the next reply', () => {
   it('goes back to awaiting_reply when the guest writes after an answer', async () => {
     const reservationId = await confirmedStay(fixture.alpha.propertyId, 'reopen')

@@ -191,7 +191,15 @@ export async function runAgent(
     // T1 acts on its own, so the outcome is `auto` — there is no human to
     // accept or reject it. A T2 run is recorded without an outcome and gains
     // one when somebody taps the diff-card.
-    outcome: status === 'accepted' && tierApplied === 'T1' ? 'auto' : null,
+    // A run that held an action for a person is not `auto` whatever the
+    // agent's tier: its outcome is decided when somebody approves or rejects
+    // it (WP0.6), and until then it is null — which is what lists it as pending.
+    outcome:
+      status === 'accepted' &&
+      tierApplied === 'T1' &&
+      !toolCalls.some((call) => call.status === 'pending_approval')
+        ? 'auto'
+        : null,
     latencyMs: Date.now() - started,
     // The model that actually answered, when one did; otherwise the declared
     // need. A run routed by rules alone records no model, because none ran.

@@ -66,7 +66,8 @@
     "report": "Umsatz",
     "setup": "Einrichtung",
     "knowledge": "Wissen",
-    "privacy": "Datenschutz"
+    "privacy": "Datenschutz",
+    "approvals": "Freigaben"
   },
   "property": {
     "switcher": {
@@ -172,7 +173,7 @@
       "replyLabel": "Ihre Antwort",
       "replyPlaceholder": "Dem Gast antworten",
       "send": "Senden",
-      "noModel": "Es ist kein Sprachmodell angebunden. Der Assistent antwortet nur mit dem, was in der Wissensdatenbank des Hauses steht, und gibt alles andere an eine Person weiter.",
+      "noModel": "Der Assistent antwortet nur mit den Informationen und Werkzeugen des Hauses und schreibt nie eigene Sätze. Alles andere geht an eine Person.",
       "facts": {
         "reference": "Buchungsnummer",
         "language": "Sprache",
@@ -210,7 +211,25 @@
           "settled": "Ausgecheckt",
           "closed": "Abgeschlossen"
         }
-      }
+      },
+      "actions": "Aktionen des Assistenten",
+      "undo": "Rückgängig",
+      "undone": "Rückgängig gemacht",
+      "pendingApproval": "wartet auf Freigabe",
+      "refused": "abgelehnt",
+      "failedAction": "fehlgeschlagen",
+      "handoff": "Übergeben wegen: {rule}",
+      "complaints": "Beschwerden",
+      "slaDue": "Antwort bis {time}",
+      "slaBreached": "Antwort überfällig seit {time}",
+      "rules": {
+        "emergency": "ein Notfall",
+        "money": "Geld, eine Erstattung oder Entschädigung",
+        "identity": "Identität oder Rechtslage",
+        "unknown_twice": "die Anfrage wurde zweimal nicht verstanden"
+      },
+      "approved": "freigegeben",
+      "declined": "vom Personal abgelehnt"
     },
     "report": {
       "title": "Umsatz & Gebühren",
@@ -387,6 +406,21 @@
         "fee_events": "Was wir diesem Haus berechnet haben",
         "alloggiati_submissions": "Die Meldung an die Questura",
         "privacy_requests": "Diese Anfrage"
+      }
+    },
+    "approvals": {
+      "title": "Freigaben",
+      "subtitle": "Aktionen, die der Assistent einer Person überlassen hat. Nichts davon ist schon geschehen.",
+      "empty": "Nichts wartet auf eine Entscheidung.",
+      "approve": "Freigeben",
+      "reject": "Ablehnen",
+      "openThread": "Gespräch öffnen",
+      "rejectNote": "Ablehnen schickt dem Gast eine Antwort, dass sich jemand meldet.",
+      "failed": "Konnte nicht ausgeführt werden: {reason}. An den Gast wurde nichts gesendet.",
+      "tools": {
+        "cancel_booking": "Buchung stornieren",
+        "create_payment_link": "Zahlungslink senden",
+        "request_late_checkout": "Später Check-out"
       }
     }
   },
@@ -789,6 +823,10 @@
       "billing": "Rechnung",
       "safety": "Sicherheit",
       "other": "Sonstiges"
-    }
+    },
+    "decisionLateCheckout": "Gute Nachricht: Ihr Check-out um {time} ist bestätigt.",
+    "decisionCancelled": "Ihre Buchung ist wie gewünscht storniert.",
+    "decisionPaymentLink": "Hier ist Ihr Zahlungslink: {url}",
+    "decisionRejected": "Das Haus konnte diese Anfrage nicht freigeben. Jemand meldet sich hier mit Alternativen."
   }
 }

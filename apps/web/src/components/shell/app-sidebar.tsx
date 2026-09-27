@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server'
 import {
   BedDoubleIcon,
   CalendarCheckIcon,
+  ClipboardCheckIcon,
   ExternalLinkIcon,
   BookOpenIcon,
   ListChecksIcon,
@@ -103,6 +104,7 @@ export async function AppSidebar({
   const items: Record<NavKey, NavGroup['items'][number]> = {
     today: { title: t('today'), href: `${base}/today`, icon: <SunIcon /> },
     exceptions: { title: t('exceptions'), href: `${base}/exceptions`, icon: <TriangleAlertIcon /> },
+    approvals: { title: t('approvals'), href: `${base}/approvals`, icon: <ClipboardCheckIcon /> },
     conversations: {
       title: t('conversations'),
       href: `${base}/conversations`,

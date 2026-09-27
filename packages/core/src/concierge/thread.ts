@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull, lt, or } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, lt, or, sql } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { asService } from '../db/session'
 import { hasFeatureSql } from '../onboarding/features'
@@ -396,7 +396,17 @@ export async function takeOverThread(input: {
     db.transaction(async (tx) => {
       await tx
         .update(messageThreads)
-        .set({ assignedTo: input.userId, status: 'escalated', updatedAt: new Date() })
+        .set({
+          assignedTo: input.userId,
+          status: 'escalated',
+          // Taking over a conversation the concierge was answering happily is
+          // escalating it — by a person. Before WP0.6 only already-escalated
+          // threads were ever taken over, and doing it to any other violated
+          // `message_threads_escalated_has_time`: a 500 on "Prendo io". An
+          // existing escalation keeps its own time.
+          escalatedAt: sql`coalesce(${messageThreads.escalatedAt}, now())`,
+          updatedAt: new Date(),
+        })
         .where(
           and(
             eq(messageThreads.id, input.threadId),

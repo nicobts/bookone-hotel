@@ -66,7 +66,8 @@
     "report": "Ricavi",
     "setup": "Configurazione",
     "knowledge": "Conoscenza",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "approvals": "Approvazioni"
   },
   "property": {
     "switcher": {
@@ -172,7 +173,7 @@
       "replyLabel": "La tua risposta",
       "replyPlaceholder": "Rispondi all'ospite",
       "send": "Invia",
-      "noModel": "Nessun modello linguistico è collegato. L'assistente risponde solo con quanto scritto nella base di conoscenza della struttura e passa tutto il resto a una persona.",
+      "noModel": "L'assistente risponde solo con le informazioni e gli strumenti della struttura, senza mai scrivere frasi proprie. Tutto il resto arriva a una persona.",
       "facts": {
         "reference": "Riferimento",
         "language": "Lingua",
@@ -210,7 +211,25 @@
           "settled": "Check-out fatto",
           "closed": "Chiuso"
         }
-      }
+      },
+      "actions": "Azioni dell'assistente",
+      "undo": "Annulla",
+      "undone": "Annullata",
+      "pendingApproval": "in attesa di approvazione",
+      "refused": "rifiutata",
+      "failedAction": "non riuscita",
+      "handoff": "Passata a una persona per: {rule}",
+      "complaints": "Reclami",
+      "slaDue": "rispondere entro le {time}",
+      "slaBreached": "risposta in ritardo dalle {time}",
+      "rules": {
+        "emergency": "un'emergenza",
+        "money": "denaro, un rimborso o un risarcimento",
+        "identity": "identità o situazione legale",
+        "unknown_twice": "la richiesta non è stata capita due volte"
+      },
+      "approved": "approvata",
+      "declined": "rifiutata dal personale"
     },
     "report": {
       "title": "Ricavi e commissioni",
@@ -387,6 +406,21 @@
         "fee_events": "Quanto abbiamo addebitato alla struttura",
         "alloggiati_submissions": "La schedina alla Questura",
         "privacy_requests": "Questa richiesta"
+      }
+    },
+    "approvals": {
+      "title": "Approvazioni",
+      "subtitle": "Azioni che l'assistente ha lasciato a una persona. Nulla di tutto questo è ancora avvenuto.",
+      "empty": "Nulla attende una decisione.",
+      "approve": "Approva",
+      "reject": "Rifiuta",
+      "openThread": "Apri la conversazione",
+      "rejectNote": "Rifiutare invia all'ospite una risposta: qualcuno lo ricontatterà.",
+      "failed": "Impossibile eseguire: {reason}. All'ospite non è stato inviato nulla.",
+      "tools": {
+        "cancel_booking": "Cancellare la prenotazione",
+        "create_payment_link": "Inviare un link di pagamento",
+        "request_late_checkout": "Check-out posticipato"
       }
     }
   },
@@ -789,6 +823,10 @@
       "billing": "conto",
       "safety": "sicurezza",
       "other": "altro"
-    }
+    },
+    "decisionLateCheckout": "Buone notizie: il suo check-out alle {time} è confermato.",
+    "decisionCancelled": "La sua prenotazione è stata cancellata, come richiesto.",
+    "decisionPaymentLink": "Ecco il link per il pagamento: {url}",
+    "decisionRejected": "La struttura non ha potuto approvare questa richiesta. Qualcuno le risponderà qui con le alternative."
   }
 }

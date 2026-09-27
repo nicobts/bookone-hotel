@@ -14,6 +14,7 @@ export type NavKey =
   | 'today'
   | 'exceptions'
   | 'conversations'
+  | 'approvals'
   | 'reservations'
   | 'guests'
   | 'report'
@@ -27,9 +28,17 @@ export type NavKey =
 /** Items that belong to a module. Everything else is the platform itself. */
 export const NAV_FEATURE: Partial<Record<NavKey, Feature>> = {
   conversations: 'inbox',
+  approvals: 'concierge',
 }
 
-const OPERATE: NavKey[] = ['today', 'exceptions', 'conversations', 'reservations', 'guests']
+const OPERATE: NavKey[] = [
+  'today',
+  'exceptions',
+  'conversations',
+  'approvals',
+  'reservations',
+  'guests',
+]
 const OWNER_OPERATE: NavKey[] = ['report']
 const CONFIGURE: NavKey[] = ['setup', 'knowledge', 'rooms', 'members', 'privacy', 'settings']
 

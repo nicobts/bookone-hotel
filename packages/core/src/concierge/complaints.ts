@@ -4,6 +4,7 @@ import { complaints, reservations, guests } from '../db/schema'
 import { emit } from '../events'
 import { formatActor, type Actor } from '../events/actor'
 import { MessageRejected } from './thread'
+import { hasFeatureSql } from '../onboarding/features'
 
 /**
  * Complaints (Guest Desk WP0.3).
@@ -139,4 +140,82 @@ export async function listOpenComplaints(propertyId: string, limit = 50): Promis
   )
 
   return rows.map((row) => ({ ...row, status: row.status as 'open' | 'acknowledged' }))
+}
+
+/**
+ * Complaints whose SLA ran out while still open, not yet alerted on (WP0.6).
+ * Cross-property, filtered to properties with the inbox in the query itself —
+ * filtering after the limit would let one property's backlog starve the rest.
+ */
+export async function listBreachedComplaints(limit = 50): Promise<
+  {
+    id: string
+    propertyId: string
+    reservationId: string
+    threadId: string | null
+    slaDueAt: Date
+  }[]
+> {
+  return asService((db) =>
+    db
+      .select({
+        id: complaints.id,
+        propertyId: complaints.propertyId,
+        reservationId: complaints.reservationId,
+        threadId: complaints.threadId,
+        slaDueAt: complaints.slaDueAt,
+      })
+      .from(complaints)
+      .where(
+        and(
+          inArray(complaints.status, ['open', 'acknowledged']),
+          isNull(complaints.breachAlertedAt),
+          sql`${complaints.slaDueAt} < now()`,
+          hasFeatureSql(complaints.propertyId, 'inbox'),
+        ),
+      )
+      .orderBy(asc(complaints.slaDueAt))
+      .limit(limit),
+  )
+}
+
+/** Stamped once the manager has been told the SLA ran out. */
+export async function markComplaintBreachAlerted(
+  propertyId: string,
+  complaintId: string,
+): Promise<void> {
+  await asService((db) =>
+    db
+      .update(complaints)
+      .set({ breachAlertedAt: sql`now()` })
+      .where(
+        and(
+          eq(complaints.propertyId, propertyId),
+          eq(complaints.id, complaintId),
+          isNull(complaints.breachAlertedAt),
+        ),
+      ),
+  )
+}
+
+/** One stay's complaints, open first, for the thread view's SLA timer (WP0.6). */
+export async function listComplaintsForReservation(
+  propertyId: string,
+  reservationId: string,
+): Promise<{ id: string; category: ComplaintCategory; status: string; slaDueAt: Date }[]> {
+  const rows = await asService((db) =>
+    db
+      .select({
+        id: complaints.id,
+        category: complaints.category,
+        status: complaints.status,
+        slaDueAt: complaints.slaDueAt,
+      })
+      .from(complaints)
+      .where(
+        and(eq(complaints.propertyId, propertyId), eq(complaints.reservationId, reservationId)),
+      )
+      .orderBy(asc(complaints.slaDueAt)),
+  )
+  return rows.map((row) => ({ ...row, category: row.category as ComplaintCategory }))
 }

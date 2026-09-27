@@ -66,7 +66,8 @@
     "report": "Prihodki",
     "setup": "Nastavitev",
     "knowledge": "Znanje",
-    "privacy": "Zasebnost"
+    "privacy": "Zasebnost",
+    "approvals": "Odobritve"
   },
   "property": {
     "switcher": {
@@ -172,7 +173,7 @@
       "replyLabel": "Vaš odgovor",
       "replyPlaceholder": "Odgovorite gostu",
       "send": "Pošlji",
-      "noModel": "Noben jezikovni model ni povezan. Asistent odgovarja samo s tem, kar piše v bazi znanja nastanitve, vse drugo pa preda osebi.",
+      "noModel": "Pomočnik odgovarja le s podatki in orodji nastanitve in nikoli ne piše lastnih stavkov. Vse drugo gre k osebi.",
       "facts": {
         "reference": "Sklic",
         "language": "Jezik",
@@ -210,7 +211,25 @@
           "settled": "Odjavljen",
           "closed": "Zaključeno"
         }
-      }
+      },
+      "actions": "Dejanja pomočnika",
+      "undo": "Razveljavi",
+      "undone": "Razveljavljeno",
+      "pendingApproval": "čaka na odobritev",
+      "refused": "zavrnjeno",
+      "failedAction": "ni uspelo",
+      "handoff": "Predano zaradi: {rule}",
+      "complaints": "Pritožbe",
+      "slaDue": "odgovor do {time}",
+      "slaBreached": "odgovor zamuja od {time}",
+      "rules": {
+        "emergency": "nujni primer",
+        "money": "denar, vračilo ali odškodnina",
+        "identity": "identiteta ali pravni status",
+        "unknown_twice": "zahteva dvakrat ni bila razumljena"
+      },
+      "approved": "odobreno",
+      "declined": "zavrnilo osebje"
     },
     "report": {
       "title": "Prihodki in provizije",
@@ -387,6 +406,21 @@
         "fee_events": "Kar smo zaračunali temu objektu",
         "alloggiati_submissions": "Prijava policiji (Questura)",
         "privacy_requests": "Ta zahteva"
+      }
+    },
+    "approvals": {
+      "title": "Odobritve",
+      "subtitle": "Dejanja, ki jih je pomočnik prepustil osebi. Nič od tega se še ni zgodilo.",
+      "empty": "Nič ne čaka na odločitev.",
+      "approve": "Odobri",
+      "reject": "Zavrni",
+      "openThread": "Odpri pogovor",
+      "rejectNote": "Zavrnitev gostu pošlje odgovor, da se bo nekdo oglasil.",
+      "failed": "Ni bilo mogoče izvesti: {reason}. Gostu ni bilo poslano nič.",
+      "tools": {
+        "cancel_booking": "Preklic rezervacije",
+        "create_payment_link": "Pošiljanje povezave za plačilo",
+        "request_late_checkout": "Kasnejša odjava"
       }
     }
   },
@@ -789,6 +823,10 @@
       "billing": "račun",
       "safety": "varnost",
       "other": "drugo"
-    }
+    },
+    "decisionLateCheckout": "Dobra novica: vaša odjava ob {time} je potrjena.",
+    "decisionCancelled": "Vaša rezervacija je preklicana, kot ste želeli.",
+    "decisionPaymentLink": "Tukaj je vaša povezava za plačilo: {url}",
+    "decisionRejected": "Nastanitev te zahteve ni mogla odobriti. Nekdo vam bo tukaj odgovoril z možnostmi."
   }
 }

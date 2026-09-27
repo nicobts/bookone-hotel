@@ -229,6 +229,22 @@ has cost something — worth remembering as a class rather than as two incidents
 | `knowledge_chunks` / embeddings | ⬜ deliberately | See WP0.3 |
 | AG-02 (document extraction) in `agent_runs` | ⬜ | 06 names extraction AG-02. It runs as the `documents.extract` job, audited by `document.read` events; routing it through the runner would put the image or identity fields in `agent_runs`. Decide how to record it before the model sees a real document |
 
+## Guest Desk WP0.6 — the inbox
+
+| Thing | Status | Note |
+|---|---|---|
+| Approvals | ✅ | Console page listing what the concierge held (`agent_runs.outcome` null). Approve carries it out, then records the decision once (`outcome`, `reviewed_by`, `approval.decided`) and tells the guest in their language; reject always sends the guest a reply. Verified in a browser: German guest, Italian owner, confirmation delivered |
+| Runs that hold an action | ✅ fixed | They were recorded `outcome: auto`; now null until a person decides, which is what lists them |
+| Actions in the thread | ✅ | Per reply: each tool, its status and the decision on held ones |
+| "Annulla" | ✅ where real | Cancels the task a date change or late checkout created, once, as its own event linked to the run. Links sent and emails delivered have no undo, and no button pretends otherwise |
+| "Prendo io" silences the agent | ✅ | And a pre-existing bug fixed: taking over a thread nobody had escalated violated `message_threads_escalated_has_time` — a 500 on the button. Regression test in core |
+| Hard rule shown to staff | ✅ | The rule that last handed the thread over, in the stay card |
+| Complaint SLA | ✅ | Deadline and overdue state in the thread; `complaints.sla` sweep (every 2 min, filtered by feature in its query) alerts the manager once via `breach_alerted_at` (additive migration) |
+| `cancel_booking` on approval | ✅ | Through the api's cancel, which applies the refund policy |
+| `create_payment_link` on approval | 🟨 | Calls the booking flow's checkout, which refuses a confirmed stay; staff see the reason. A balance link for an existing booking needs the real payment provider |
+| Owner handoff on WhatsApp within 60 s | ⬜ | Email today; the channel waits on the BSP |
+| Realtime | ⬜ | Supabase Realtime is off in this repo's local setup; pages refresh on action |
+
 ## CI gates
 
 All five exist as separate jobs in `.github/workflows/ci.yml`, named so a

@@ -1648,6 +1648,8 @@ export const complaints = pgTable(
     createdBy: text('created_by').notNull(),
 
     ownerAlertedAt: timestamp('owner_alerted_at', { withTimezone: true }),
+    /** Stamped when the SLA ran out unresolved and the manager was told, so they are told once (WP0.6). */
+    breachAlertedAt: timestamp('breach_alerted_at', { withTimezone: true }),
     resolvedAt: timestamp('resolved_at', { withTimezone: true }),
     resolvedBy: text('resolved_by'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

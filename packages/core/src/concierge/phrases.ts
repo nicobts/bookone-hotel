@@ -141,6 +141,10 @@ export type DeskPhraseKey = Extract<
   | 'ownerComplaintsNone'
   | 'ownerApprovals'
   | 'ownerApprovalsNone'
+  | 'decisionLateCheckout'
+  | 'decisionCancelled'
+  | 'decisionPaymentLink'
+  | 'decisionRejected'
 >
 
 /**

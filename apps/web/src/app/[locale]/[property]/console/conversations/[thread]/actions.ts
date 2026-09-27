@@ -1,7 +1,12 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { appendStaffMessage, handBackThread, takeOverThread } from '@bookone/core/concierge'
+import {
+  appendStaffMessage,
+  handBackThread,
+  reverseAction,
+  takeOverThread,
+} from '@bookone/core/concierge'
 import { requireFeature } from '@/lib/auth/current-property'
 
 /**
@@ -81,6 +86,23 @@ export async function reply(context: Context, formData: FormData): Promise<void>
     threadId: context.threadId,
     userId: user.id,
     body,
+  })
+
+  revalidate(context)
+}
+
+/**
+ * Undo one of the concierge's actions (WP0.6 "Annulla"). Core refuses unless a
+ * real reversal exists; the reversal is its own event, linked to the run.
+ */
+export async function undoAction(context: Context, formData: FormData): Promise<void> {
+  const { user, property } = await requireFeature(context.locale, context.slug, 'inbox')
+
+  await reverseAction({
+    propertyId: property.id,
+    runId: String(formData.get('runId') ?? ''),
+    callIndex: Number(formData.get('callIndex')),
+    userId: user.id,
   })
 
   revalidate(context)

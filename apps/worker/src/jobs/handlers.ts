@@ -26,7 +26,9 @@ import {
 import {
   alertEscalation,
   auditToolBoundary,
+  listBreachedComplaints,
   listOverdueEscalations,
+  markComplaintBreachAlerted,
   markSlaAlerted,
   propertiesWithAgentReplies,
 } from '@bookone/core/concierge'
@@ -975,6 +977,31 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       },
       'documents.extract',
     )
+  })
+
+  /**
+   * Complaint SLA breaches (WP0.6): an open complaint past its deadline tells
+   * the manager, once. A complaint with no conversation still gets stamped, so
+   * it is not re-found every sweep; it stays loud in the console either way.
+   */
+  await work('complaints.sla', async (job) => {
+    const breached = await listBreachedComplaints(SWEEP_BATCH)
+
+    for (const complaint of breached) {
+      if (complaint.threadId) {
+        await alertEscalation({
+          propertyId: complaint.propertyId,
+          reservationId: complaint.reservationId,
+          threadId: complaint.threadId,
+          escalatedAt: complaint.slaDueAt,
+          appUrl,
+        })
+      }
+      await markComplaintBreachAlerted(complaint.propertyId, complaint.id)
+    }
+
+    if (breached.length > 0)
+      logger.info({ jobId: job.id, breached: breached.length }, 'complaints.sla')
   })
 
   /** Re-derive per-property schedules from properties and entitlements (ADR-019). */

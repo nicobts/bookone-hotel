@@ -9,7 +9,12 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
-import { handBack, reply, takeOver } from './actions'
+import { handBack, reply, takeOver, undoAction } from './actions'
+import {
+  listComplaintsForReservation,
+  listThreadActions,
+  recentRouting,
+} from '@bookone/core/concierge'
 
 /**
  * One conversation, from the property's side (E3.3).
@@ -41,7 +46,19 @@ export default async function ThreadPage({
   if (!thread) notFound()
 
   const t = await getTranslations('console.conversations')
+  const categories = await getTranslations('concierge.complaintCategories')
   const context = { locale, slug, threadId }
+
+  // The concierge's actions per run, the hard rule that last handed this over,
+  // and this stay's complaints with their SLA (Guest Desk WP0.6).
+  const [actions, routing, complaints] = await Promise.all([
+    listThreadActions(property.id, threadId),
+    recentRouting(property.id, threadId, 1),
+    listComplaintsForReservation(property.id, thread.reservationId),
+  ])
+  const lastRule = routing[0]?.hardRule ?? null
+  const now = Date.now()
+  const clock = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' })
 
   const mine = thread.assignedTo === user.id
   const time = new Intl.DateTimeFormat(locale, {
@@ -107,6 +124,37 @@ export default async function ThreadPage({
             {t('escalatedBecause', { reason: thread.escalationReason })}
           </p>
         )}
+
+        {lastRule && (
+          <p className="text-foreground mt-2 text-xs font-medium">
+            {t('handoff', { rule: t.has(`rules.${lastRule}`) ? t(`rules.${lastRule}`) : lastRule })}
+          </p>
+        )}
+
+        {complaints.length > 0 && (
+          <div className="mt-3">
+            <p className="text-muted-foreground text-xs">{t('complaints')}</p>
+            <ul className="mt-1 space-y-0.5 text-xs">
+              {complaints.map((complaint) => {
+                const open = complaint.status !== 'resolved'
+                const late = open && complaint.slaDueAt.getTime() < now
+                return (
+                  <li key={complaint.id} className={late ? 'text-destructive' : 'text-foreground'}>
+                    {categories.has(complaint.category)
+                      ? categories(complaint.category)
+                      : complaint.category}
+                    {open &&
+                      ` · ${
+                        late
+                          ? t('slaBreached', { time: clock.format(complaint.slaDueAt) })
+                          : t('slaDue', { time: clock.format(complaint.slaDueAt) })
+                      }`}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )}
       </section>
 
       <Separator />
@@ -142,6 +190,42 @@ export default async function ThreadPage({
               >
                 {message.body}
               </p>
+
+              {message.agentRunId && actions.get(message.agentRunId) && (
+                <ul className="mt-1.5 flex flex-wrap gap-1.5" aria-label={t('actions')}>
+                  {actions.get(message.agentRunId)!.map((action) => (
+                    <li
+                      key={action.callIndex}
+                      className="bg-muted/60 text-muted-foreground flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[11px]"
+                    >
+                      <span className="font-mono">{action.tool}</span>
+                      {action.status === 'pending_approval' && (
+                        <span>
+                          ·{' '}
+                          {action.decision === 'accepted'
+                            ? t('approved')
+                            : action.decision === 'rejected'
+                              ? t('declined')
+                              : t('pendingApproval')}
+                        </span>
+                      )}
+                      {action.status === 'refused' && <span>· {t('refused')}</span>}
+                      {action.status === 'failed' && <span>· {t('failedAction')}</span>}
+                      {action.reversedAt ? (
+                        <span>· {t('undone')}</span>
+                      ) : action.canReverse ? (
+                        <form action={undoAction.bind(null, context)}>
+                          <input type="hidden" name="runId" value={action.runId} />
+                          <input type="hidden" name="callIndex" value={action.callIndex} />
+                          <button type="submit" className="text-foreground underline">
+                            {t('undo')}
+                          </button>
+                        </form>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ol>
@@ -158,7 +242,7 @@ export default async function ThreadPage({
           </div>
         </form>
 
-        {/* MEMO: disappears when an LlmProvider is registered. */}
+        {/* How the assistant speaks (ADR-022), stated where staff read its replies. */}
         <p className="text-muted-foreground mt-4 flex items-start gap-2 text-xs">
           <FlaskConicalIcon
             className="mt-0.5 size-3.5 shrink-0 text-[color:var(--bo-warning-500)]"

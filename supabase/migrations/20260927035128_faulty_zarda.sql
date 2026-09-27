@@ -1,0 +1,1 @@
+ALTER TABLE "complaints" ADD COLUMN "breach_alerted_at" timestamp with time zone;
