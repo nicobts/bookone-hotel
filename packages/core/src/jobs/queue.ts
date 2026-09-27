@@ -78,6 +78,8 @@ export const jobNames = [
   'owner.ask',
   /** The owner wrote to the property's WhatsApp/SMS number (AG-06, ADR-035). */
   'owner.message',
+  /** An owner or staff member tries the concierge from the console (ADR-038). */
+  'agent.preview',
   /** Send a thread's pending replies to the guest on WhatsApp/SMS (ADR-035). */
   'channel.deliver',
   /** Catch replies written outside a concierge turn: staff, approvals, sweeps (ADR-035). */
@@ -227,7 +229,27 @@ export interface JobPayloads {
   /** Cross-property sweep; filters by the inbox feature in its own query. */
   'complaints.sla': Record<string, never>
   /** Identity is the owner's console session, checked by the caller (`requireOwner`). */
-  'owner.ask': { propertyId: string; userId: string; message: string; locale: string }
+  'owner.ask': {
+    propertyId: string
+    userId: string
+    message: string
+    locale: string
+    /** Recorded as the run's `input_ref`, so the console's chat can read the answer back. */
+    requestId?: string
+  }
+  /**
+   * A console preview of the concierge (ADR-038): read tools run, everything
+   * else is simulated. `reservationId`, when given, lets booking tools read one
+   * of the property's current stays; nothing is written to it.
+   */
+  'agent.preview': {
+    propertyId: string
+    userId: string
+    message: string
+    locale: string
+    requestId: string
+    reservationId?: string
+  }
   /** Identity is the recorded owner number, checked again by `respondToOwner`. */
   'owner.message': {
     propertyId: string

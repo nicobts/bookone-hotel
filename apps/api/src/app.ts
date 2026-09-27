@@ -786,6 +786,7 @@ export function createApp(deps: {
           userId?: string
           message?: string
           locale?: string
+          requestId?: string
         }>()
 
         const message = body.message?.trim().slice(0, 500)
@@ -798,7 +799,46 @@ export function createApp(deps: {
           userId: body.userId,
           message,
           locale: body.locale ?? 'it',
+          ...(body.requestId ? { requestId: body.requestId } : {}),
         })
+
+        return c.json({ enqueued: id })
+      })
+
+      /**
+       * A console preview of the concierge (ADR-038). The caller — the web
+       * console, with the member's session already checked — gets the answer
+       * back by reading the run whose `input_ref` is `requestId`. Nothing here
+       * or in the worker writes anything a guest, a report or an approval list
+       * can see.
+       */
+      .post('/jobs/agent-preview', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          userId?: string
+          message?: string
+          locale?: string
+          requestId?: string
+          reservationId?: string
+        }>()
+
+        const message = body.message?.trim().slice(0, 1000)
+        if (!body.propertyId || !body.userId || !message || !body.requestId) {
+          return c.json({ error: 'propertyId, userId, requestId and message are required' }, 400)
+        }
+
+        const id = await queue.send(
+          'agent.preview',
+          {
+            propertyId: body.propertyId,
+            userId: body.userId,
+            message,
+            locale: body.locale ?? 'it',
+            requestId: body.requestId,
+            ...(body.reservationId ? { reservationId: body.reservationId } : {}),
+          },
+          { singletonKey: `preview:${body.requestId}` },
+        )
 
         return c.json({ enqueued: id })
       })

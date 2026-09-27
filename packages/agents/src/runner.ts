@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto'
 import { agentRuns, asService } from '@bookone/core/db'
-import { findCompletedToolCall } from '@bookone/core/concierge'
+import { findCompletedToolCall, previewSimulatedPhrase } from '@bookone/core/concierge'
 import type { RoutingTurn } from '@bookone/core/concierge'
 import { listProviders, type LlmProvider } from '@bookone/core/llm'
 import { createFeatureCheck, gateOpen, type FeatureCheck } from '@bookone/core/onboarding'
 import { getAgent, grantsTool, type AgentDefinition, type AutonomyTier } from './registry'
-import { getTool, type ToolContext, type ToolResult } from './tools'
+import { getTool, READ_ONLY_TOOLS, type ToolContext, type ToolResult } from './tools'
 import { orchestrate, type ExecuteTool, type NoteToolCall } from './orchestrator'
 import { executeOwner } from './owner'
 
@@ -49,6 +49,14 @@ export interface RunInput {
   appUrl?: string
   /** What the agent is being asked about. Shape is per-agent. */
   input: Record<string, unknown>
+  /**
+   * A preview turn (ADR-038): only `READ_ONLY_TOOLS` execute; every other tool
+   * is simulated and recorded as such. Nothing a guest, a report or an approval
+   * list can see is written.
+   */
+  preview?: boolean
+  /** Recorded as `agent_runs.input_ref`, so a caller can find this run again. */
+  inputRef?: string
 }
 
 /**
@@ -75,6 +83,7 @@ export interface AgentRunRecord {
   outcome: 'auto' | null
   latencyMs: number
   model: string | null
+  inputRef?: string
 }
 
 /**
@@ -90,7 +99,8 @@ export interface AgentRunRecord {
 export interface ToolCallRecord {
   tool: string
   ok: boolean
-  status: 'done' | 'failed' | 'refused' | 'pending_approval'
+  /** `simulated`: a preview turn recorded the call without executing it (ADR-038). */
+  status: 'done' | 'failed' | 'refused' | 'pending_approval' | 'simulated'
   /** The profile that chose the call, when the orchestrator ran one. */
   profile?: string | null
   input: Record<string, unknown>
@@ -156,12 +166,14 @@ export async function runAgent(
 
     const result = await execute(agent, input, {
       call: (tool, toolInput, profile) =>
-        callTool(agent, context, tool, toolInput, toolCalls, profile),
+        callTool(agent, context, tool, toolInput, toolCalls, profile, input.preview === true),
       note: (entry) =>
         toolCalls.push({
           tool: entry.tool,
           ok: false,
-          status: entry.status,
+          // A preview never leaves an action waiting for a person (ADR-038):
+          // `pending_approval` is what puts a call on the approvals list.
+          status: input.preview && entry.status === 'pending_approval' ? 'simulated' : entry.status,
           profile: entry.profile,
           input: entry.input,
           reversible: getTool(entry.tool)?.reversible ?? false,
@@ -169,7 +181,7 @@ export async function runAgent(
       llm,
     })
 
-    output = result.output
+    output = input.preview ? { ...result.output, preview: true } : result.output
     confidence = result.confidence
   } catch (error) {
     // Recorded, not swallowed. A refused tool call and a crashed agent are both
@@ -204,6 +216,7 @@ export async function runAgent(
     // The model that actually answered, when one did; otherwise the declared
     // need. A run routed by rules alone records no model, because none ran.
     model: typeof output.model === 'string' ? output.model : null,
+    ...(input.inputRef ? { inputRef: input.inputRef } : {}),
   })
 
   return {
@@ -222,6 +235,7 @@ async function callTool(
   toolInput: Record<string, unknown>,
   log: ToolCallRecord[],
   profile: string | null = null,
+  preview = false,
 ): Promise<ToolResult> {
   const reversible = getTool(tool)?.reversible ?? false
   const entry = { tool, profile, input: toolInput, reversible }
@@ -236,6 +250,20 @@ async function callTool(
   if (!implementation) {
     log.push({ ...entry, ok: false, status: 'failed' })
     throw new Error(`Tool "${tool}" is granted but not implemented.`)
+  }
+
+  /*
+   * Preview (ADR-038): anything not known to be read-only is simulated — not
+   * called, recorded as `simulated`, and its phrase says so. Fail-closed: a
+   * tool nobody classified lands here.
+   */
+  if (preview && !READ_ONLY_TOOLS.has(tool)) {
+    const output = {
+      simulated: true,
+      phrase: previewSimulatedPhrase(context.locale ?? 'en', tool),
+    }
+    log.push({ ...entry, ok: true, status: 'simulated', output })
+    return { ok: true, output }
   }
 
   /*
@@ -442,6 +470,7 @@ async function recordToDatabase(row: AgentRunRecord): Promise<string> {
         costCents: 0,
         latencyMs: row.latencyMs,
         model: row.model,
+        ...(row.inputRef ? { inputRef: row.inputRef } : {}),
       })
       .returning({ id: agentRuns.id })
 

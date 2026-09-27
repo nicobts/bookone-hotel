@@ -107,6 +107,22 @@ export function ownerNotUnderstoodPhrase(locale: string): string {
   return catalogues[resolve(locale)].console.assistant.notUnderstood
 }
 
+/**
+ * What a preview turn says in place of an action it did not take (ADR-038).
+ * It names the action (`would`: the phrase that fits "the assistant would …" in
+ * each language), and says nothing was done:
+ * a preview must never read as though a guest had been answered or a request
+ * filed. The label comes from the agents page's own catalogue; an unlisted
+ * tool shows its id.
+ */
+export function previewSimulatedPhrase(locale: string, tool: string): string {
+  const catalogue = catalogues[resolve(locale)]
+  const tools = (catalogue.console as { agents?: { tools?: Record<string, { would?: string }> } })
+    .agents?.tools
+  const action = tools?.[tool]?.would ?? tool
+  return interpolate(catalogue.concierge.previewSimulated, { action })
+}
+
 /** The same, when nobody is on shift — see design-notes/stay-messaging.md §4D. */
 export function escalatedOutOfHoursPhrase(locale: string, hours: string): string {
   return interpolate(catalogues[resolve(locale)].concierge.escalatedOutOfHours, { hours })

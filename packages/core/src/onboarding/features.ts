@@ -71,6 +71,7 @@ export const JOB_FEATURE: Record<JobName, Gate> = {
   'complaints.sla': 'inbox',
   'owner.ask': 'concierge',
   'owner.message': 'concierge',
+  'agent.preview': 'concierge',
   // The channel features are checked per thread inside these handlers and
   // queries: one job serves both WhatsApp and SMS.
   'channel.deliver': 'core',

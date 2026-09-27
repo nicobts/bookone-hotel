@@ -127,3 +127,5 @@ export const tools: Record<string, Tool> = {
 export function getTool(name: string): Tool | undefined {
   return tools[name]
 }
+
+export { READ_ONLY_TOOLS } from './read-only'

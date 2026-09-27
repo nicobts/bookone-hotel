@@ -1,5 +1,7 @@
 import { sql } from 'drizzle-orm'
-import { asService } from '../db/session'
+import { asService, withUser } from '../db/session'
+import { emit } from '../events'
+import { userActor } from '../events/actor'
 
 /**
  * Reads for the agent playground (ADR-037). Demo properties only: the
@@ -157,4 +159,172 @@ export async function getPreviewRun(propertyId: string, runId: string): Promise<
       reversible: call.reversible ?? false,
     })),
   }
+}
+
+// ------------------------------------------------------------ console preview (ADR-038)
+
+/** Who tried the concierge from the console, as an event on the run. */
+export async function recordPreview(input: {
+  propertyId: string
+  userId: string
+  runId: string
+}): Promise<void> {
+  await asService((db) =>
+    db.transaction(async (tx) => {
+      await emit(tx, {
+        propertyId: input.propertyId,
+        entityType: 'agent_run',
+        entityId: input.runId,
+        eventType: 'agent.previewed',
+        origin: 'platform',
+        actor: userActor(input.userId),
+      })
+    }),
+  )
+}
+
+export interface ConsoleRun {
+  runId: string
+  agent: string
+  reply: string
+  outcome: 'answered' | 'escalated' | 'failed' | 'not-understood'
+  profile: string | null
+  hardRule: string | null
+  tier: string | null
+  routeSource: string | null
+  model: string | null
+  tools: { tool: string; status: string }[]
+}
+
+/**
+ * The run a console chat turn produced, read back as the signed-in member —
+ * RLS on `agent_runs` decides visibility, as for everything else the console
+ * reads. Null until the worker has recorded it.
+ */
+export async function readRunByRequest(
+  userId: string,
+  propertyId: string,
+  requestId: string,
+): Promise<ConsoleRun | null> {
+  const [row] = await withUser(userId, (tx) =>
+    tx.execute<{
+      id: string
+      agent: string
+      output: Record<string, unknown> | null
+      tool_calls: { tool?: string; status?: string }[] | null
+    }>(sql`
+      select id, agent, output, tool_calls from agent_runs
+       where property_id = ${propertyId} and input_ref = ${requestId}
+       order by at desc limit 1`),
+  )
+  if (!row) return null
+
+  const out = row.output ?? {}
+  const str = (key: string) => (typeof out[key] === 'string' ? (out[key] as string) : null)
+  const reply = str('reply') ?? ''
+  const outcome: ConsoleRun['outcome'] =
+    typeof out.error === 'string'
+      ? 'failed'
+      : out.escalate === true
+        ? 'escalated'
+        : reply
+          ? 'answered'
+          : 'not-understood'
+
+  return {
+    runId: row.id,
+    agent: row.agent,
+    reply,
+    outcome,
+    profile: str('profile'),
+    hardRule: str('hardRule'),
+    tier: str('tier'),
+    routeSource: str('routeSource'),
+    model: str('model'),
+    tools: (row.tool_calls ?? []).map((call) => ({
+      tool: call.tool ?? '?',
+      status: call.status ?? 'done',
+    })),
+  }
+}
+
+export interface AgentActivity {
+  agent: string
+  turns: number
+  handedOver: number
+  pending: number
+  lastRunAt: Date | null
+}
+
+/**
+ * The last seven days per agent, for the agents page. Previews are left out:
+ * they are the team testing, not the agent working.
+ */
+export async function agentActivity(userId: string, propertyId: string): Promise<AgentActivity[]> {
+  const rows = await withUser(userId, (tx) =>
+    tx.execute<{
+      agent: string
+      turns: number
+      handed_over: number
+      pending: number
+      last_run_at: Date | null
+    }>(sql`
+      select agent,
+             count(*)::int as turns,
+             count(*) filter (where output->>'escalate' = 'true')::int as handed_over,
+             count(*) filter (where outcome is null
+                                and tool_calls @> '[{"status":"pending_approval"}]'::jsonb)::int as pending,
+             max(at) as last_run_at
+        from agent_runs
+       where property_id = ${propertyId}
+         and at > now() - interval '7 days'
+         and coalesce(output->>'preview', 'false') <> 'true'
+       group by agent`),
+  )
+  return [...rows].map((r) => ({
+    agent: r.agent,
+    turns: r.turns,
+    handedOver: r.handed_over,
+    pending: r.pending,
+    lastRunAt: r.last_run_at ? new Date(r.last_run_at) : null,
+  }))
+}
+
+/** Whether an operator paused the concierge here (ADR-031's kill switch). */
+export async function isConciergePaused(propertyId: string): Promise<boolean> {
+  const [row] = await asService((db) =>
+    db.execute<{ paused: boolean }>(
+      sql`select (settings ? 'agentPausedAt') as paused from properties where id = ${propertyId}`,
+    ),
+  )
+  return row?.paused ?? false
+}
+
+export interface ConsoleStay {
+  reservationId: string
+  label: string
+}
+
+/** Current stays a member may speak as in a preview: in house or arriving within a week. */
+export async function listPreviewStays(userId: string, propertyId: string): Promise<ConsoleStay[]> {
+  const rows = await withUser(userId, (tx) =>
+    tx.execute<{
+      id: string
+      reference: string | null
+      name: string | null
+      arrival_date: string
+    }>(sql`
+      select r.id, r.reference, g.name, r.arrival_date::text
+        from reservations r
+        left join guests g on g.id = r.guest_id
+       where r.property_id = ${propertyId}
+         and r.status = 'confirmed'
+         and current_date between r.arrival_date - 7 and r.departure_date
+       order by r.arrival_date
+       limit 25`),
+  )
+  return [...rows].map((r) => ({
+    reservationId: r.id,
+    label: [r.name, r.reference, r.arrival_date].filter(Boolean).join(' · '),
+  }))
 }

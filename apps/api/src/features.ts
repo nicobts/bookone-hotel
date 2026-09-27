@@ -26,6 +26,7 @@ export const ROUTE_FEATURE: Record<string, Gate> = {
   '/jobs/alloggiati-submit': 'alloggiati',
   '/jobs/document-extract': 'document_ocr',
   '/jobs/owner-message': 'concierge',
+  '/jobs/agent-preview': 'concierge',
   // Simulation only, and switched off by `allowSimulation`, not by a flag: the
   // body carries an intent id, not a property, so there is no property to ask.
   '/jobs/payment-intent': 'core',

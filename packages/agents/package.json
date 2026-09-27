@@ -12,7 +12,8 @@
     "./concierge": "./src/concierge.ts",
     "./profiles": "./src/profiles/index.ts",
     "./owner": "./src/owner.ts",
-    "./preview": "./src/preview.ts"
+    "./preview": "./src/preview.ts",
+    "./catalog": "./src/catalog.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -26,6 +27,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@bookone/i18n": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "typescript": "5.9.3",
     "vitest": "^4.1.11"

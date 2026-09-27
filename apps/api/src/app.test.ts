@@ -346,6 +346,7 @@ describe('the feature gate (ADR-019)', () => {
 
   it('with the Phase 0 set, exactly the Phase 0 surface answers', async () => {
     expect(await reachable(PHASE0_FEATURES)).toEqual([
+      '/jobs/agent-preview',
       '/jobs/arrival-confirm',
       '/jobs/cancel',
       '/jobs/cancellation-quote',

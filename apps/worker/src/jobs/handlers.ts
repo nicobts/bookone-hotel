@@ -63,7 +63,12 @@ import {
   threadsWithPendingReplies,
 } from '@bookone/core/channels'
 import { isEntitled } from '@bookone/core/onboarding'
-import { ownerNotUnderstoodPhrase, unmatchedSenderPhrase } from '@bookone/core/concierge'
+import { recordPreview } from '@bookone/core/preview'
+import {
+  getReservationFacts,
+  ownerNotUnderstoodPhrase,
+  unmatchedSenderPhrase,
+} from '@bookone/core/concierge'
 import type { Logger } from 'pino'
 import { traceJob } from '@bookone/core/telemetry'
 import { syncPropertySchedules } from './schedules'
@@ -1096,12 +1101,13 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * answer is the run's own output, which the console reads back.
    */
   await work('owner.ask', async (job) => {
-    const { propertyId, userId, message, locale } = job.data
+    const { propertyId, userId, message, locale, requestId } = job.data
     const run = await runAgent({
       agent: 'AG-06',
       propertyId,
       locale,
       input: { message, askedBy: userId },
+      ...(requestId ? { inputRef: requestId } : {}),
     })
     logger.info({ jobId: job.id, propertyId, runId: run.runId, status: run.status }, 'owner.ask')
   })
@@ -1239,6 +1245,42 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     logger.info(
       { jobId: job.id, propertyId, runId: outcome.runId, status: outcome.status },
       'owner.message',
+    )
+  })
+
+  /**
+   * A console preview of the concierge (ADR-038): the same orchestrator,
+   * profiles, rules and model as a guest gets, with every tool that is not
+   * read-only simulated by the runner. No thread, so no message, no escalation
+   * and no alert. Who tried it is recorded as an event.
+   */
+  await work('agent.preview', async (job) => {
+    const { propertyId, userId, message, locale, requestId, reservationId } = job.data
+
+    const facts = reservationId ? await getReservationFacts(propertyId, reservationId) : null
+
+    const run = await runAgent({
+      agent: 'AG-01',
+      propertyId,
+      locale,
+      appUrl,
+      preview: true,
+      inputRef: requestId,
+      // Only a stay the property actually holds; anything else previews as a
+      // guest without a booking.
+      ...(facts && reservationId ? { reservationId } : {}),
+      input: {
+        message,
+        history: [],
+        hasBooking: Boolean(facts),
+        ...(facts?.businessHours ? { businessHours: facts.businessHours } : {}),
+      },
+    })
+
+    await recordPreview({ propertyId, userId, runId: run.runId })
+    logger.info(
+      { jobId: job.id, propertyId, runId: run.runId, status: run.status },
+      'agent.preview',
     )
   })
 
