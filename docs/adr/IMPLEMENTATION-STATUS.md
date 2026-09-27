@@ -25,6 +25,17 @@ worse than none, because it is read as current.
 | 016 | Property is a URL segment | ✅ as-built | `/[locale]/[property]/console/…`; verified in a browser that a non-member typing another slug gets a 404, not a redirect. Sprint 9 adds the same treatment for role: a staff member typing an owner-only URL gets 404, so "you are not a member" and "you may not see this" are indistinguishable from outside |
 | 017 | Identity tables sit outside tenancy | ✅ as-built | `profiles` isolated by `auth.uid()`; asserted separately in the suite |
 | 018 | RLS enforced on the Drizzle path via `withUser` | ✅ as-built | `packages/core/src/db/session.ts`; removing the role-drop fails 8 of 21 |
+| 019 | Feature flags are entitlements, gated where the property is known | ⬜ not built | `entitlements` exists (E7.3) but has no production caller. WP0.1 Part B widens `FEATURES` and adds the gates listed in the ADR; inventory in [11-inventory.md](../11-inventory.md) §2 |
+| 020 | Statutory registration reporting is not fiscal core | ✅ decided, nothing to build | Scoping record. Imposta *collection* through payments still needs its own ADR before WP1.4 |
+| 021 | One orchestrator, profiles as data, hard rules in code | ⬜ not built | WP0.2. Today AG-01 is a deterministic ladder in `runner.ts` |
+| 022 | The model selects; tools author every guest-facing sentence | 🟨 holds today by absence of a model | Tool-boundary audit unchanged. Becomes a real constraint when ADR-023 connects a model |
+| 023 | AI SDK behind `LlmProvider`, no agent framework | ⬜ not built | Adding `ai` + the OpenRouter provider needs sign-off. Eslint ban to extend to `ai` / `@ai-sdk/*`. No longer blocked on D9 (ADR-029) |
+| 029 | Stored data EU-only; model/vision processing may run outside the EU | ⬜ not built | Needs: OpenRouter register entry (non-EU processing + transfer mechanism), registry exception citing 029, ZDR + no-training on requests, transfer line in privacy notice and DPA template. Reassess EU-only processing at production with paying properties |
+| 024 | Replay conversations extend the evals gate | ⬜ not built | Fixtures under `packages/agents/src/evals/conversations/<wp>/`; Phoenix waits for a register entry |
+| 025 | Workflow engine deferred until a named trigger | Proposed | Decided in Phase 1 on observed evidence |
+| 026 | ComplianceAdapter with a manual fallback | ⬜ Phase 1 (WP1.1) | `AlloggiatiAdapter` becomes its first implementation |
+| 027 | BookOne never asserts identity; de visu staff-assisted | ✅ holds (nothing asserts identity); module ⬜ Phase 3, gated | Gate: Viminale guidelines + written legal opinion |
+| 028 | Region-first expansion, region registry | ⬜ Phase 1 (WP1.1) | FVG first |
 
 ## Sprint 3 additions
 

@@ -45,10 +45,26 @@ split here unchanged; their bodies are verbatim, with only a status line added.
 | [009](ADR-009-voice-hard-tool-boundaries.md) | Voice: speech-to-speech with hard tool boundaries; EU residency as a pre-filter | Accepted |
 | [010](ADR-010-stripe-first-behind-a-payment-adapter.md) | Stripe first, behind a PaymentAdapter | Accepted |
 | [011](ADR-011-agents-are-first-class-workers.md) | Agents are first-class workers with tiered autonomy | Accepted |
-| [012](ADR-012-llm-provider-abstraction.md) | LLM provider abstraction with EU processing requirement | Accepted |
+| [012](ADR-012-llm-provider-abstraction.md) | LLM provider abstraction with EU processing requirement | Accepted · amended by 029 |
 | [013](ADR-013-guest-journey-is-an-evented-state-machine.md) | Guest journey is an evented state machine and the single source of stay truth | Accepted |
 | [014](ADR-014-reference-implementations-over-blank-page-design.md) | Reference implementations over blank-page design | Accepted |
 | [015](ADR-015-pricing-in-per-room-month-equivalence.md) | Pricing displayed in €/room/month equivalence | Accepted |
 | [016](ADR-016-property-in-the-url.md) | The active property is a URL segment | Accepted |
 | [017](ADR-017-identity-tables-outside-tenancy.md) | Identity tables sit outside tenancy | Accepted |
 | [018](ADR-018-rls-enforcement-on-the-drizzle-path.md) | RLS is enforced on the Drizzle path via withUser | Accepted (as-built) |
+| [019](ADR-019-feature-flags-are-entitlements.md) | Per-property feature flags are entitlements, gated where the property is known | Accepted |
+| [020](ADR-020-statutory-registration-is-not-fiscal-core.md) | Statutory guest-registration reporting is not fiscal core | Accepted |
+| [021](ADR-021-one-orchestrator-profiles-as-data.md) | Guest conversations run through one orchestrator routing to profiles defined as data | Accepted |
+| [022](ADR-022-the-model-selects-tools-speak.md) | The model selects; tools author every guest-facing sentence | Accepted |
+| [023](ADR-023-ai-sdk-behind-llm-provider.md) | The agent runtime is the Vercel AI SDK behind LlmProvider, not an agent framework | Accepted · amended by 029 |
+| [024](ADR-024-replay-conversations-extend-the-evals-gate.md) | Replayable guest conversations extend the existing evals gate | Accepted |
+| [025](ADR-025-workflow-engine-deferred.md) | Long-running processes are state columns and pg-boss jobs until a named trigger fires | Proposed |
+| [026](ADR-026-compliance-adapter-contract.md) | Every authority integration is a ComplianceAdapter with a manual fallback | Accepted |
+| [027](ADR-027-bookone-never-asserts-identity.md) | BookOne never asserts a guest's identity; de visu is staff-assisted behind an adapter | Accepted (module gated) |
+| [028](ADR-028-region-first-expansion.md) | Expansion is one region at a time, each a registry entry | Accepted |
+| [029](ADR-029-model-processing-may-leave-the-eu.md) | Stored data stays in the EU; model and vision processing may run outside it | Accepted |
+
+ADR-019 to ADR-028 come from the Guest Desk handoff (`docs/guest_desk_20260927/`, ADR-F1…F9),
+amended where the WP0.1 inventory ([11-inventory.md](../11-inventory.md)) found the handoff's
+premise false for this repo. Each record names its origin. The handoff's F-numbered files are
+source material, not part of this log.
