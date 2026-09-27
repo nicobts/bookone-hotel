@@ -432,6 +432,15 @@
       "ask": "Vprašaj",
       "working": "Iščem …",
       "notUnderstood": "Odgovorim lahko o prihodih, manjkajočih dokumentih, pritožbah in odobritvah."
+    },
+    "settings": {
+      "supportTitle": "Dostopi podpore BookOne",
+      "supportBody": "Vsakič, ko je nekdo iz BookOne odprl pogled samo za branje te nastanitve, z navedenim razlogom. Pogled traja 30 minut in ne more ničesar spremeniti.",
+      "supportNone": "Nihče iz BookOne si te nastanitve ni ogledal.",
+      "supportWho": "Kdo",
+      "supportWhen": "Kdaj",
+      "supportWhy": "Razlog",
+      "supportUntil": "Do"
     }
   },
   "noProperty": {

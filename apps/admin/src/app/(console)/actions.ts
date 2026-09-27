@@ -1,9 +1,15 @@
 'use server'
 
-import { AdminRefused, adminSetAgentPaused, adminSetFeature } from '@bookone/core/admin'
+import {
+  AdminRefused,
+  adminSetAgentPaused,
+  adminSetFeature,
+  startTenantView,
+} from '@bookone/core/admin'
 import { FEATURES, type Feature } from '@bookone/core/onboarding'
 import { revalidatePath } from 'next/cache'
-import { requireAdmin } from '@/lib/staff'
+import { redirect } from 'next/navigation'
+import { requireAdmin, requireStaff } from '@/lib/staff'
 
 export interface ActionState {
   error: string | null
@@ -57,4 +63,19 @@ export async function setAgentPaused(_prev: ActionState, form: FormData): Promis
   revalidatePath(`/properties/${propertyId}`)
   revalidatePath('/')
   return { error: null, done: true }
+}
+
+/** View-as-tenant: any staff role, with a reason; the audit row is the grant (ADR-031). */
+export async function viewAsTenant(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const staff = await requireStaff()
+  const propertyId = String(form.get('propertyId') ?? '')
+  const reason = String(form.get('reason') ?? '')
+
+  try {
+    await startTenantView(staff, { propertyId, reason })
+  } catch (error) {
+    return refusal(error)
+  }
+
+  redirect(`/properties/${propertyId}/view`)
 }

@@ -432,6 +432,15 @@
       "ask": "Fragen",
       "working": "Wird nachgeschlagen …",
       "notUnderstood": "Ich kann zu Anreisen, fehlenden Dokumenten, Beschwerden und Freigaben antworten."
+    },
+    "settings": {
+      "supportTitle": "Zugriffe des BookOne-Supports",
+      "supportBody": "Jedes Mal, wenn jemand von BookOne eine schreibgeschützte Ansicht dieses Hauses geöffnet hat, mit dem angegebenen Grund. Eine Ansicht dauert 30 Minuten und kann nichts ändern.",
+      "supportNone": "Niemand von BookOne hat dieses Haus angesehen.",
+      "supportWho": "Wer",
+      "supportWhen": "Wann",
+      "supportWhy": "Grund",
+      "supportUntil": "Bis"
     }
   },
   "noProperty": {

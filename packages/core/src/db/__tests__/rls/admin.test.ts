@@ -3,8 +3,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { closeConnection, db } from '../../client'
 import { expectPolicyRefusal, seed, selectAs, type Fixture } from './support'
 import {
+  activeTenantView,
   AdminRefused,
   adminSetAgentPaused,
+  listSupportAccess,
+  startTenantView,
+  tenantSnapshot,
   adminSetFeature,
   listAdminAudit,
   listPropertiesForAdmin,
@@ -133,6 +137,57 @@ describe('audited changes', () => {
            order by id`,
     )
     expect(events.map((e) => e.event_type)).toEqual(['agent.paused', 'agent.resumed'])
+  })
+})
+
+describe('view-as-tenant', () => {
+  it('lets support staff open a logged, time-boxed, read-only view', async () => {
+    const { propertyId } = fixture.alpha
+    const before = await auditCount(propertyId)
+
+    expect(await activeTenantView(support, propertyId)).toBeNull()
+    await expect(startTenantView(support, { propertyId, reason: '' })).rejects.toBeInstanceOf(
+      AdminRefused,
+    )
+
+    const { expiresAt } = await startTenantView(support, {
+      propertyId,
+      reason: 'ticket 42: guest says no reply',
+    })
+    const minutes = (expiresAt.getTime() - Date.now()) / 60_000
+    expect(minutes).toBeGreaterThan(29)
+    expect(minutes).toBeLessThanOrEqual(30)
+
+    expect(await activeTenantView(support, propertyId)).not.toBeNull()
+    // The window is per operator and per property.
+    expect(await activeTenantView(admin, propertyId)).toBeNull()
+    expect(await activeTenantView(support, fixture.beta.propertyId)).toBeNull()
+    expect(await auditCount(propertyId)).toBe(before + 1)
+
+    const snapshot = await tenantSnapshot(propertyId)
+    expect(Array.isArray(snapshot.stays)).toBe(true)
+    expect(Array.isArray(snapshot.threads)).toBe(true)
+  })
+
+  it('shows the property who looked and why, and only that property', async () => {
+    const alpha = await listSupportAccess(fixture.alpha.user.id, fixture.alpha.propertyId)
+    expect(alpha[0]).toMatchObject({
+      operator: 'support@bookone.test',
+      reason: 'ticket 42: guest says no reply',
+    })
+
+    // Alpha's owner asking about beta's property sees nothing: RLS decides.
+    expect(await listSupportAccess(fixture.alpha.user.id, fixture.beta.propertyId)).toEqual([])
+  })
+
+  it('ends the window after 30 minutes', async () => {
+    const { propertyId } = fixture.beta
+    await startTenantView(support, { propertyId, reason: 'expiry check' })
+    expect(await activeTenantView(support, propertyId)).not.toBeNull()
+    // The trail is append-only, so the clock is moved by looking from later
+    // rather than by editing the row.
+    const later = new Date(Date.now() + 31 * 60_000)
+    expect(await activeTenantView(support, propertyId, later)).toBeNull()
   })
 })
 

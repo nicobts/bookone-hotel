@@ -432,6 +432,15 @@
       "ask": "Chiedi",
       "working": "Sto cercando…",
       "notUnderstood": "Posso rispondere su arrivi, documenti mancanti, reclami e approvazioni."
+    },
+    "settings": {
+      "supportTitle": "Accessi dell'assistenza BookOne",
+      "supportBody": "Ogni volta che qualcuno di BookOne ha aperto una vista in sola lettura di questa struttura, con il motivo indicato. Una vista dura 30 minuti e non può modificare nulla.",
+      "supportNone": "Nessuno di BookOne ha consultato questa struttura.",
+      "supportWho": "Chi",
+      "supportWhen": "Quando",
+      "supportWhy": "Motivo",
+      "supportUntil": "Fino a"
     }
   },
   "noProperty": {

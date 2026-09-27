@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull, sql } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
-import { asService } from '../db/session'
+import { asService, withUser } from '../db/session'
 import { adminAudit, entitlements, properties } from '../db/schema'
 import type * as schema from '../db/schema'
 import { emit } from '../events'
@@ -62,9 +62,13 @@ export async function withAdminAudit<T>(
     reason: string
   },
   change: (tx: Tx) => Promise<{ before: unknown; after: unknown; result: T }>,
+  options: { allowSupport?: boolean } = {},
 ): Promise<T> {
-  // Support staff read; only admins change a property (ADR-031, read-only by default).
-  if (staff.role !== 'admin') throw new AdminRefused('only an admin can change a property')
+  // Support staff read; only admins change a property (ADR-031, read-only by
+  // default). An audited *read* — view-as-tenant — is open to both.
+  if (staff.role !== 'admin' && !(options.allowSupport && staff.role === 'support')) {
+    throw new AdminRefused('only an admin can change a property')
+  }
 
   const reason = entry.reason.trim()
   if (reason.length < 3) throw new AdminRefused('a reason is required')
@@ -300,5 +304,215 @@ export async function queueHealth(): Promise<QueueHealth[]> {
     active: row.active,
     failedLastDay: row.failed,
     lastCompletedAt: row.last ? new Date(row.last) : null,
+  }))
+}
+
+/**
+ * View-as-tenant (ADR-031): read-only, 30 minutes, a reason, logged, and
+ * visible to the property.
+ *
+ * The grant *is* the audit row. Starting a view writes `tenant.view` with the
+ * reason, and the window is "a `tenant.view` row by this operator for this
+ * property in the last 30 minutes" — no cookie to forge, no token to leak, and
+ * nothing to revoke that the trail does not already show. The property sees
+ * the same event in its own console (`support_access.started`).
+ *
+ * Read-only by construction: the snapshot below is the only thing a view can
+ * reach, and it is select statements under the service role. There is no
+ * impersonation — the operator never holds a hotel user's session.
+ */
+export const TENANT_VIEW_MINUTES = 30
+
+export async function startTenantView(
+  staff: StaffActor,
+  input: { propertyId: string; reason: string },
+): Promise<{ expiresAt: Date }> {
+  return withAdminAudit(
+    staff,
+    {
+      action: 'tenant.view',
+      targetType: 'property',
+      targetId: input.propertyId,
+      propertyId: input.propertyId,
+      reason: input.reason,
+    },
+    async (tx) => {
+      const [row] = await tx
+        .select({ id: properties.id })
+        .from(properties)
+        .where(eq(properties.id, input.propertyId))
+        .limit(1)
+      if (!row) throw new AdminRefused('unknown property')
+
+      const expiresAt = new Date(Date.now() + TENANT_VIEW_MINUTES * 60_000)
+
+      await emit(tx, {
+        propertyId: input.propertyId,
+        entityType: 'property',
+        entityId: input.propertyId,
+        eventType: 'support_access.started',
+        origin: 'platform',
+        actor: operatorActor,
+        payload: {
+          operator: staff.email ?? staffActorId(staff),
+          reason: input.reason.trim(),
+          expiresAt: expiresAt.toISOString(),
+          readOnly: true,
+        },
+      })
+
+      return { before: null, after: { expiresAt: expiresAt.toISOString() }, result: { expiresAt } }
+    },
+    { allowSupport: true },
+  )
+}
+
+/** When this operator's view of this property ends, or null when there is none. */
+export async function activeTenantView(
+  staff: StaffActor,
+  propertyId: string,
+  /** Injectable so the expiry is testable against an append-only trail. */
+  now: Date = new Date(),
+): Promise<Date | null> {
+  const [row] = await asService((db) =>
+    db
+      .select({ at: adminAudit.at })
+      .from(adminAudit)
+      .where(
+        and(
+          eq(adminAudit.actor, staffActorId(staff)),
+          eq(adminAudit.propertyId, propertyId),
+          eq(adminAudit.action, 'tenant.view'),
+          sql`${adminAudit.at} > ${now.toISOString()}::timestamptz - make_interval(mins => ${TENANT_VIEW_MINUTES})`,
+          sql`${adminAudit.at} <= ${now.toISOString()}::timestamptz`,
+        ),
+      )
+      .orderBy(desc(adminAudit.at))
+      .limit(1),
+  )
+  return row ? new Date(row.at.getTime() + TENANT_VIEW_MINUTES * 60_000) : null
+}
+
+export interface TenantSnapshot {
+  stays: {
+    reference: string | null
+    arrivalDate: string
+    departureDate: string
+    status: string
+    guestName: string | null
+  }[]
+  threads: {
+    id: string
+    status: string
+    messages: number
+    lastGuestMessageAt: Date | null
+    escalationReason: string | null
+  }[]
+  runs: { agent: string; outcome: string | null; model: string | null; at: Date }[]
+}
+
+/**
+ * What an operator sees during a view: the next fortnight's stays, the
+ * conversations' state, and the assistant's recent runs. Message bodies and
+ * documents are deliberately absent — "why did the concierge escalate" is
+ * answerable from status and reason, and anything more is a request to the
+ * property, not a support view.
+ */
+export async function tenantSnapshot(propertyId: string): Promise<TenantSnapshot> {
+  return asService(async (db) => {
+    const stays = await db.execute<{
+      reference: string | null
+      arrival_date: string
+      departure_date: string
+      status: string
+      guest_name: string | null
+    }>(sql`
+      select r.reference, r.arrival_date::text, r.departure_date::text, r.status::text, g.name as guest_name
+        from reservations r left join guests g on g.id = r.guest_id
+       where r.property_id = ${propertyId}
+         and r.departure_date >= current_date
+         and r.arrival_date <= current_date + 14
+       order by r.arrival_date
+       limit 50`)
+
+    const threads = await db.execute<{
+      id: string
+      status: string
+      messages: number
+      last_guest_message_at: Date | null
+      escalation_reason: string | null
+    }>(sql`
+      select t.id, t.status::text, t.last_guest_message_at, t.escalation_reason,
+             (select count(*)::int from messages m where m.thread_id = t.id) as messages
+        from message_threads t
+       where t.property_id = ${propertyId}
+       order by t.updated_at desc
+       limit 30`)
+
+    const runs = await db.execute<{
+      agent: string
+      outcome: string | null
+      model: string | null
+      at: Date
+    }>(sql`
+      select agent, outcome::text, model, at
+        from agent_runs
+       where property_id = ${propertyId}
+       order by at desc
+       limit 30`)
+
+    return {
+      stays: [...stays].map((s) => ({
+        reference: s.reference,
+        arrivalDate: s.arrival_date,
+        departureDate: s.departure_date,
+        status: s.status,
+        guestName: s.guest_name,
+      })),
+      threads: [...threads].map((t) => ({
+        id: t.id,
+        status: t.status,
+        messages: t.messages,
+        lastGuestMessageAt: t.last_guest_message_at ? new Date(t.last_guest_message_at) : null,
+        escalationReason: t.escalation_reason,
+      })),
+      runs: [...runs].map((r) => ({
+        agent: r.agent,
+        outcome: r.outcome,
+        model: r.model,
+        at: new Date(r.at),
+      })),
+    }
+  })
+}
+
+export interface SupportAccess {
+  at: Date
+  operator: string
+  reason: string
+  expiresAt: string | null
+}
+
+/**
+ * The property's side of the transparency (ADR-031): every support view of
+ * this property, read as the signed-in hotel user — so RLS on `domain_events`
+ * decides what they may see, exactly as for any other event of theirs.
+ */
+export async function listSupportAccess(
+  userId: string,
+  propertyId: string,
+): Promise<SupportAccess[]> {
+  const rows = await withUser(userId, (tx) =>
+    tx.execute<{ at: Date; payload: Record<string, unknown> }>(sql`
+      select at, payload from domain_events
+       where property_id = ${propertyId} and event_type = 'support_access.started'
+       order by id desc
+       limit 50`),
+  )
+  return [...rows].map((row) => ({
+    at: new Date(row.at),
+    operator: String(row.payload.operator ?? 'BookOne'),
+    reason: String(row.payload.reason ?? ''),
+    expiresAt: typeof row.payload.expiresAt === 'string' ? row.payload.expiresAt : null,
   }))
 }

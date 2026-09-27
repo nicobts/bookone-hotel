@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { requireStaff } from '@/lib/staff'
 import { AuditTable } from '../../audit-table'
 import { ReasonForm } from '../../reason-form'
-import { setAgentPaused, setFeature } from '../../actions'
+import { setAgentPaused, setFeature, viewAsTenant } from '../../actions'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -29,6 +29,23 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
           {property.slug} · {property.id}
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">View as tenant</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-sm">
+          <p className="text-muted-foreground">
+            Read-only, for 30 minutes. The reason is recorded here and shown to the property in its
+            own settings.
+          </p>
+          <ReasonForm
+            action={viewAsTenant}
+            hidden={{ propertyId: property.id }}
+            label="Open a read-only view"
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

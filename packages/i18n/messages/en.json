@@ -432,6 +432,15 @@
       "ask": "Ask",
       "working": "Looking it up…",
       "notUnderstood": "I can answer about arrivals, missing documents, complaints and approvals."
+    },
+    "settings": {
+      "supportTitle": "BookOne support access",
+      "supportBody": "Every time someone at BookOne opened a read-only view of this property, with the reason they gave. A view lasts 30 minutes and cannot change anything.",
+      "supportNone": "Nobody from BookOne has viewed this property.",
+      "supportWho": "Who",
+      "supportWhen": "When",
+      "supportWhy": "Reason",
+      "supportUntil": "Until"
     }
   },
   "noProperty": {
