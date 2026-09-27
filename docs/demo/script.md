@@ -58,7 +58,7 @@ screen except where the screen itself says so (payments, filing).
 | Schedina preview correct from CIE, EU passport, non-EU passport | Step 5 (passport); `mrz.test.ts` covers TD1 (CIE back) and TD3 |
 | Handoff reaches the owner ≤ 60 s and the agent stops | Step 10 (email today); "Prendo io" silences the agent |
 | Demo from a clean tenant in < 20 min without a terminal | This script; reset ≈ 4 s |
-| DPA template and guest privacy notice; notice on first contact | Notice on the stay page (draft, needs counsel); **DPA template: not yet written** |
+| DPA template and guest privacy notice; notice on first contact | Notice on the stay page (draft, needs counsel); **DPA template: draft for counsel** (`docs/legal/dpa-template.md`) |
 
 Rehearse twice with someone who did not build it (WP0.7 AC), and note every
 place they hesitated.

@@ -179,7 +179,7 @@ export const DATA_MAP: DataMapEntry[] = [
       'Legitimate interest (Art. 6(1)(f)) and the accountability principle — who operated on a property, when and why (ADR-031).',
     retention: {
       kind: 'keep',
-      why: 'Append-only by trigger. The operator trail is the evidence ISO 27001 and a customer audit ask for; it holds BookOne staff identities and configuration, not guest data. Exported daily to immutable storage (ADR-032).',
+      why: 'Append-only by trigger. The operator trail is the evidence ISO 27001 and a customer audit ask for; it holds BookOne staff identities and configuration, not guest data. A daily export to immutable storage is decided (ADR-031) and not yet built; until then the database refuses edits and the provider’s backups are the copies.',
     },
     erasure: {
       kind: 'keep',
