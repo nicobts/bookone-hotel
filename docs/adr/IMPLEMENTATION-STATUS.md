@@ -245,6 +245,17 @@ has cost something — worth remembering as a class rather than as two incidents
 | Owner handoff on WhatsApp within 60 s | ⬜ | Email today; the channel waits on the BSP |
 | Realtime | ⬜ | Supabase Realtime is off in this repo's local setup; pages refresh on action |
 
+## Guest Desk WP0.7 — demo collateral
+
+| Thing | Status | Note |
+|---|---|---|
+| Demo script | ✅ | [docs/demo/script.md](../demo/script.md): 12 steps, 20 minutes, no terminal during the run; maps each step to plan §4 and says what the demo does not show |
+| Roadmap slide, one-pager (IT) | ✅ | [roadmap-slide.md](../demo/roadmap-slide.md), [one-pager.it.md](../demo/one-pager.it.md). "EU-hosted", never "EU-processed" (ADR-029); no fiscal or identity claims |
+| `pnpm demo:reset` | ✅ | ≈ 4 s, against a 30 s target |
+| Owner's assistant in the console | ✅ | Owner-only "Assistente" page: the session is the identity (`requireOwner`), the question runs AG-06 through the worker, the answer is read back from the run. How the demo reaches the owner agent without WhatsApp |
+| Rehearsal by someone who did not build it | ⬜ | WP0.7 AC — twice, from reset, under 20 minutes |
+| DPA template | ⬜ | Plan §4 acceptance item; a legal document, not code |
+
 ## CI gates
 
 All five exist as separate jobs in `.github/workflows/ci.yml`, named so a

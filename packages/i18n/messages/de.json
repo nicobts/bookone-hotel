@@ -67,7 +67,8 @@
     "setup": "Einrichtung",
     "knowledge": "Wissen",
     "privacy": "Datenschutz",
-    "approvals": "Freigaben"
+    "approvals": "Freigaben",
+    "assistant": "Assistent"
   },
   "property": {
     "switcher": {
@@ -422,6 +423,15 @@
         "create_payment_link": "Zahlungslink senden",
         "request_late_checkout": "Später Check-out"
       }
+    },
+    "assistant": {
+      "title": "Assistent",
+      "subtitle": "Fragen Sie zu Ihrem Haus: Anreisen, fehlende Dokumente, Beschwerden, Freigaben.",
+      "placeholder": "Wie viele Anreisen morgen?",
+      "examples": "Es antwortet aus Ihren eigenen Daten und ändert nichts.",
+      "ask": "Fragen",
+      "working": "Wird nachgeschlagen …",
+      "notUnderstood": "Ich kann zu Anreisen, fehlenden Dokumenten, Beschwerden und Freigaben antworten."
     }
   },
   "noProperty": {

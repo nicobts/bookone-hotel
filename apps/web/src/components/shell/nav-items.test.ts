@@ -26,6 +26,7 @@ describe('navBands', () => {
       'reservations',
       'guests',
       'report',
+      'assistant',
     ])
   })
 

@@ -345,6 +345,7 @@ describe('the feature gate (ADR-019)', () => {
       '/jobs/checkout',
       '/jobs/depart',
       '/jobs/guest-message',
+      '/jobs/owner-message',
       '/jobs/payment-intent',
       '/jobs/payment-simulate',
       '/jobs/privacy-erase',

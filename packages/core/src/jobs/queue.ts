@@ -74,6 +74,8 @@ export const jobNames = [
   'documents.extract',
   /** Tell the manager about complaints whose SLA ran out unresolved (WP0.6). */
   'complaints.sla',
+  /** The owner asked their assistant a question from the console (AG-06, WP0.7). */
+  'owner.ask',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -214,6 +216,8 @@ export interface JobPayloads {
   'documents.extract': { propertyId: string; reservationId: string; guestIndex: number }
   /** Cross-property sweep; filters by the inbox feature in its own query. */
   'complaints.sla': Record<string, never>
+  /** Identity is the owner's console session, checked by the caller (`requireOwner`). */
+  'owner.ask': { propertyId: string; userId: string; message: string; locale: string }
 }
 
 export interface SendOptions {

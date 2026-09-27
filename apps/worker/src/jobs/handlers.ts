@@ -1004,6 +1004,21 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       logger.info({ jobId: job.id, breached: breached.length }, 'complaints.sla')
   })
 
+  /**
+   * The owner's question from the console (AG-06, WP0.7). Read-only tools; the
+   * answer is the run's own output, which the console reads back.
+   */
+  await work('owner.ask', async (job) => {
+    const { propertyId, userId, message, locale } = job.data
+    const run = await runAgent({
+      agent: 'AG-06',
+      propertyId,
+      locale,
+      input: { message, askedBy: userId },
+    })
+    logger.info({ jobId: job.id, propertyId, runId: run.runId, status: run.status }, 'owner.ask')
+  })
+
   /** Re-derive per-property schedules from properties and entitlements (ADR-019). */
   await work('schedules.sync', async (job) => {
     const outcome = await syncPropertySchedules({ queue, logger, features: featureCheck() })

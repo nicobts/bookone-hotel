@@ -18,6 +18,7 @@ export type NavKey =
   | 'reservations'
   | 'guests'
   | 'report'
+  | 'assistant'
   | 'setup'
   | 'knowledge'
   | 'rooms'
@@ -29,6 +30,7 @@ export type NavKey =
 export const NAV_FEATURE: Partial<Record<NavKey, Feature>> = {
   conversations: 'inbox',
   approvals: 'concierge',
+  assistant: 'concierge',
 }
 
 const OPERATE: NavKey[] = [
@@ -39,7 +41,7 @@ const OPERATE: NavKey[] = [
   'reservations',
   'guests',
 ]
-const OWNER_OPERATE: NavKey[] = ['report']
+const OWNER_OPERATE: NavKey[] = ['report', 'assistant']
 const CONFIGURE: NavKey[] = ['setup', 'knowledge', 'rooms', 'members', 'privacy', 'settings']
 
 export function navBands(input: { isOwner: boolean; features: ReadonlySet<string> }): {

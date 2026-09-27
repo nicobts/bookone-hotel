@@ -329,3 +329,29 @@ export async function reverseAction(input: {
     }),
   )
 }
+
+/** The owner's recent questions to their assistant and its answers (AG-06, WP0.7). */
+export async function listOwnerAnswers(
+  propertyId: string,
+  limit = 10,
+): Promise<{ runId: string; at: Date; question: string; reply: string; understood: boolean }[]> {
+  const rows = await asService((db) =>
+    db
+      .select({ id: agentRuns.id, at: agentRuns.at, output: agentRuns.output })
+      .from(agentRuns)
+      .where(and(eq(agentRuns.propertyId, propertyId), eq(agentRuns.agent, 'AG-06')))
+      .orderBy(desc(agentRuns.at))
+      .limit(limit),
+  )
+
+  return rows.map((row) => {
+    const output = (row.output ?? {}) as Record<string, unknown>
+    return {
+      runId: row.id,
+      at: row.at,
+      question: typeof output.question === 'string' ? output.question : '',
+      reply: typeof output.reply === 'string' ? output.reply : '',
+      understood: output.understood !== false,
+    }
+  })
+}

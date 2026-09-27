@@ -67,7 +67,8 @@
     "setup": "Nastavitev",
     "knowledge": "Znanje",
     "privacy": "Zasebnost",
-    "approvals": "Odobritve"
+    "approvals": "Odobritve",
+    "assistant": "Pomočnik"
   },
   "property": {
     "switcher": {
@@ -422,6 +423,15 @@
         "create_payment_link": "Pošiljanje povezave za plačilo",
         "request_late_checkout": "Kasnejša odjava"
       }
+    },
+    "assistant": {
+      "title": "Pomočnik",
+      "subtitle": "Vprašajte o svoji nastanitvi: prihodi, manjkajoči dokumenti, pritožbe, odobritve.",
+      "placeholder": "Koliko prihodov je jutri?",
+      "examples": "Odgovarja iz vaših podatkov in ničesar ne spreminja.",
+      "ask": "Vprašaj",
+      "working": "Iščem …",
+      "notUnderstood": "Odgovorim lahko o prihodih, manjkajočih dokumentih, pritožbah in odobritvah."
     }
   },
   "noProperty": {

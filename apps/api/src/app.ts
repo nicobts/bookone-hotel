@@ -600,6 +600,34 @@ export function createApp(deps: {
       })
 
       /**
+       * The owner asks their assistant a question from the console (AG-06,
+       * WP0.7). The caller has checked the session is the property's owner;
+       * the worker runs the agent and the console reads the answer from the run.
+       */
+      .post('/jobs/owner-message', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          userId?: string
+          message?: string
+          locale?: string
+        }>()
+
+        const message = body.message?.trim().slice(0, 500)
+        if (!body.propertyId || !body.userId || !message) {
+          return c.json({ error: 'propertyId, userId and message are required' }, 400)
+        }
+
+        const id = await queue.send('owner.ask', {
+          propertyId: body.propertyId,
+          userId: body.userId,
+          message,
+          locale: body.locale ?? 'it',
+        })
+
+        return c.json({ enqueued: id })
+      })
+
+      /**
        * Read one uploaded identity document with the vision model (WP0.4).
        *
        * Gated by `document_ocr` in the middleware (ADR-019): a property without

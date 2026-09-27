@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 import {
   BedDoubleIcon,
+  BotIcon,
   CalendarCheckIcon,
   ClipboardCheckIcon,
   ExternalLinkIcon,
@@ -104,6 +105,7 @@ export async function AppSidebar({
   const items: Record<NavKey, NavGroup['items'][number]> = {
     today: { title: t('today'), href: `${base}/today`, icon: <SunIcon /> },
     exceptions: { title: t('exceptions'), href: `${base}/exceptions`, icon: <TriangleAlertIcon /> },
+    assistant: { title: t('assistant'), href: `${base}/assistant`, icon: <BotIcon /> },
     approvals: { title: t('approvals'), href: `${base}/approvals`, icon: <ClipboardCheckIcon /> },
     conversations: {
       title: t('conversations'),

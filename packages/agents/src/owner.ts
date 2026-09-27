@@ -183,7 +183,7 @@ export async function executeOwner(
   const tool = await chooseOwnerTool(message, llm)
   if (!tool)
     return {
-      output: { profile: 'owner-backoffice', reply: '', understood: false },
+      output: { profile: 'owner-backoffice', question: message, reply: '', understood: false },
       confidence: null,
     }
 
@@ -191,7 +191,15 @@ export async function executeOwner(
   const phrase = typeof result.output.phrase === 'string' ? result.output.phrase : ''
 
   return {
-    output: { profile: 'owner-backoffice', tool, reply: result.ok ? phrase : '', understood: true },
+    // The question is kept beside the answer: the owner's own words about
+    // their own property, shown back to them as history (WP0.7).
+    output: {
+      profile: 'owner-backoffice',
+      question: message,
+      tool,
+      reply: result.ok ? phrase : '',
+      understood: true,
+    },
     confidence: null,
   }
 }

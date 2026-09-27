@@ -480,6 +480,16 @@ export async function requestDocumentExtraction(input: {
   return post('/jobs/document-extract', input)
 }
 
+/** The owner's question to their assistant (AG-06, WP0.7); the answer arrives on the run. */
+export async function askOwnerAssistant(input: {
+  propertyId: string
+  userId: string
+  message: string
+  locale: string
+}): Promise<boolean> {
+  return post('/jobs/owner-message', input)
+}
+
 async function post(path: string, body: unknown): Promise<boolean> {
   const base = workerUrl()
   const secret = token()

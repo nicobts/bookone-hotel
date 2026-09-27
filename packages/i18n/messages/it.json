@@ -67,7 +67,8 @@
     "setup": "Configurazione",
     "knowledge": "Conoscenza",
     "privacy": "Privacy",
-    "approvals": "Approvazioni"
+    "approvals": "Approvazioni",
+    "assistant": "Assistente"
   },
   "property": {
     "switcher": {
@@ -422,6 +423,15 @@
         "create_payment_link": "Inviare un link di pagamento",
         "request_late_checkout": "Check-out posticipato"
       }
+    },
+    "assistant": {
+      "title": "Assistente",
+      "subtitle": "Chieda della sua struttura: arrivi, documenti mancanti, reclami, approvazioni.",
+      "placeholder": "Quanti arrivi domani?",
+      "examples": "Risponde con i suoi dati e non modifica nulla.",
+      "ask": "Chiedi",
+      "working": "Sto cercando…",
+      "notUnderstood": "Posso rispondere su arrivi, documenti mancanti, reclami e approvazioni."
     }
   },
   "noProperty": {

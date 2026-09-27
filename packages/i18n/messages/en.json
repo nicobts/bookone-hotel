@@ -67,7 +67,8 @@
     "setup": "Setup",
     "knowledge": "Knowledge",
     "privacy": "Privacy",
-    "approvals": "Approvals"
+    "approvals": "Approvals",
+    "assistant": "Assistant"
   },
   "property": {
     "switcher": {
@@ -422,6 +423,15 @@
         "create_payment_link": "Send a payment link",
         "request_late_checkout": "Late checkout"
       }
+    },
+    "assistant": {
+      "title": "Assistant",
+      "subtitle": "Ask about your property: arrivals, missing documents, complaints, approvals.",
+      "placeholder": "How many arrivals tomorrow?",
+      "examples": "It answers from your own data and changes nothing.",
+      "ask": "Ask",
+      "working": "Looking it up…",
+      "notUnderstood": "I can answer about arrivals, missing documents, complaints and approvals."
     }
   },
   "noProperty": {

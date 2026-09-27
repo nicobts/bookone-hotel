@@ -69,6 +69,7 @@ export const JOB_FEATURE: Record<JobName, Gate> = {
   'documents.purge': 'core',
   'documents.extract': 'document_ocr',
   'complaints.sla': 'inbox',
+  'owner.ask': 'concierge',
   'concierge.reply': 'concierge',
   'escalation.sweep': 'inbox',
   'arrival.complete': 'core',
