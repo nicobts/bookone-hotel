@@ -3,6 +3,9 @@ import { redirect } from 'next/navigation'
 import { AuthShell } from '@/components/auth/auth-shell'
 import { LoginForm } from '@/components/auth/login-form'
 import { getCurrentUser } from '@/lib/auth/current-user'
+// DEV-LOGIN-HELPER — development only, temporary.
+import { DevLoginHelper } from '@bookone/ui/components/dev-login-helper'
+import { devAccounts } from '@/lib/dev-accounts'
 
 export default async function LoginPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
@@ -19,6 +22,8 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
   return (
     <AuthShell title={t('title')} subtitle={t('subtitle')}>
       <LoginForm />
+      {/* DEV-LOGIN-HELPER — development only, temporary. */}
+      {devAccounts ? <DevLoginHelper accounts={devAccounts} /> : null}
     </AuthShell>
   )
 }

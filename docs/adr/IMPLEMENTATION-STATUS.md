@@ -23,6 +23,11 @@ verification with real accounts and three human tasks.
 | WP0.8: OpenTelemetry in every service | ✅ (ADR-036) | Traces, metrics and logs from all four services, verified end to end locally; backend account (Grafana Cloud EU or self-hosted) and dashboards still to set up (`docs/runbooks/observability.md`) |
 | WP0.8: one UI for both consoles | ✅ | `packages/ui`, shared by `apps/web` and `apps/admin` |
 
+**Temporary, delete before GA:** the development-only "?" on both login pages
+fills in the seeded demo accounts. It renders only when `NODE_ENV` is
+`development`, and no password reaches a client bundle (checked in a production
+build). Remove every piece with `grep -rn DEV-LOGIN-HELPER`.
+
 | ADR | Decision | Built? | Where |
 |---|---|---|---|
 | 001 | Platform UUIDs; external systems via `external_refs` | ✅ as-built | Platform UUIDs everywhere; `external_refs` the only home for a foreign id; AuthorityMap + write-router in `src/authority` with both routes tested per domain (E6.2) |

@@ -1,5 +1,8 @@
 import { AuthShell } from '@/components/auth-shell'
 import { LoginForm } from './login-form'
+// DEV-LOGIN-HELPER — development only, temporary.
+import { DevLoginHelper } from '@bookone/ui/components/dev-login-helper'
+import { devAccounts } from '@/lib/dev-accounts'
 
 export const metadata = { title: 'Sign in' }
 
@@ -18,6 +21,8 @@ export default async function LoginPage({
         </p>
       ) : null}
       <LoginForm />
+      {/* DEV-LOGIN-HELPER — development only, temporary. */}
+      {devAccounts ? <DevLoginHelper accounts={devAccounts} /> : null}
     </AuthShell>
   )
 }
