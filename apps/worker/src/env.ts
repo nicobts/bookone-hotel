@@ -77,6 +77,12 @@ const envSchema = z.object({
     .string()
     .regex(/^\+[1-9]\d{6,14}$/)
     .optional(),
+  /**
+   * The approved WhatsApp template (Twilio Content SID, `HX…`) for the owner's
+   * handover alert: {{1}} who is waiting, {{2}} the link. Needed because an
+   * alert starts the conversation, which WhatsApp allows only as a template.
+   */
+  TWILIO_TEMPLATE_ESCALATION_ALERT: z.string().startsWith('HX').optional(),
   /** `apps/api`'s public URL, for delivery-status callbacks. */
   TWILIO_WEBHOOK_BASE_URL: z.string().url().optional(),
 })

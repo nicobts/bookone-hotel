@@ -4,7 +4,11 @@ import { pino } from 'pino'
 import { MockEricsoftAdapter } from '@bookone/adapters/mock-ericsoft'
 import { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
 import { MockAlloggiatiAdapter } from '@bookone/adapters/mock-alloggiati'
-import { getNotificationProvider, registerNotificationProvider } from '@bookone/core/notifications'
+import {
+  ESCALATION_ALERT,
+  getNotificationProvider,
+  registerNotificationProvider,
+} from '@bookone/core/notifications'
 import { openRouterFromEnv, registerProvider } from '@bookone/core/llm'
 import { loadProfiles } from '@bookone/agents/profiles'
 import { LogNotificationProvider } from './notifications/log-provider'
@@ -176,6 +180,9 @@ await registerHandlers({
   appUrl: env.APP_URL,
   logger,
   messaging,
+  ...(env.TWILIO_TEMPLATE_ESCALATION_ALERT
+    ? { whatsappTemplates: { [ESCALATION_ALERT]: env.TWILIO_TEMPLATE_ESCALATION_ALERT } }
+    : {}),
 })
 await registerSchedules({ queue, logger })
 logger.info(

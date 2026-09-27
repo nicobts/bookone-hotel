@@ -74,9 +74,15 @@ should come back from the owner agent.
       `TWILIO_REGION=ie1` with IE1 credentials and update SP-013's region. If it
       can't, SP-013 says US and the delete-after-final-state behaviour carries
       the weight.
-- [ ] **Templates** for business-initiated messages (owner alerts, pre-arrival
-      invitation), and the template send path. `OutboundMessage.template` exists;
-      nothing uses it yet.
+- [ ] **Templates.** The owner's handover alert is built.
+      - It goes to every number in `ownerPhones` at the moment of handover,
+        through the notification outbox.
+      - It uses the Twilio template in `TWILIO_TEMPLATE_ESCALATION_ALERT`,
+        with {{1}} who is waiting and {{2}} the link. Submit that template to
+        Meta.
+      - Without it, free text is sent, which WhatsApp accepts only inside
+        24 hours of the owner's last message.
+      - Still to do: a template for the pre-arrival invitation.
 - [ ] **Italian SMS sender ID** registration, if SMS is to show a name rather
       than a number.
 - [ ] **Per-property numbers.** Today one sender per deployment

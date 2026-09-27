@@ -12,6 +12,8 @@ import {
   type InboundInput,
 } from '../../../channels'
 import { appendSystemMessage } from '../../../concierge/thread'
+import { alertEscalation } from '../../../concierge/alerts'
+import { sendNotification, type NotificationProvider } from '../../../notifications'
 
 /**
  * WhatsApp/SMS routing and delivery against a real database (ADR-035).
@@ -201,5 +203,96 @@ describe('delivering replies', () => {
       propertyId,
       threadId: thread,
     })
+  })
+})
+
+describe('the owner hears about a handover on their phone (plan §4, ADR-035)', () => {
+  async function threadId(): Promise<string> {
+    const [row] = await db.execute<{ id: string }>(
+      sql`select id from message_threads where reservation_id = ${reservationId}`,
+    )
+    return row!.id
+  }
+
+  const fake = (name: string, channels: NotificationProvider['channels']) => {
+    const sent: Parameters<NotificationProvider['send']>[0][] = []
+    const provider: NotificationProvider = {
+      name,
+      channels,
+      residency: {
+        euProcessing: true,
+        region: 'test',
+        subProcessorRegisterEntry: 'none',
+        verifiedAt: '2026-09-27',
+      },
+      send: async (message) => {
+        sent.push(message)
+        return { providerMessageId: `${name}-1` }
+      },
+    }
+    return { provider, sent }
+  }
+
+  it('queues the owner’s phone, and no email, at the moment of handover', async () => {
+    await db.execute(
+      sql`insert into entitlements (property_id, feature) values (${propertyId}, 'whatsapp')`,
+    )
+    const id = await alertEscalation({
+      propertyId,
+      reservationId,
+      threadId: await threadId(),
+      escalatedAt: new Date(),
+      appUrl: 'http://app.test',
+      reach: 'phone',
+    })
+    expect(id).not.toBeNull()
+
+    const rows = await db.execute<{ channel: string; recipient: string }>(sql`
+      select channel::text as channel, recipient from notifications
+       where property_id = ${propertyId} and template = 'stay.escalation-alert'`)
+    expect([...rows]).toEqual([{ channel: 'whatsapp', recipient: OWNER }])
+  })
+
+  it('sends it through the messaging provider, as the approved template', async () => {
+    const email = fake('email', ['email'])
+    const phone = fake('twilio', ['whatsapp', 'sms'])
+    const [row] = await db.execute<{ id: string }>(sql`
+      select id from notifications where property_id = ${propertyId} and channel = 'whatsapp'`)
+
+    const outcome = await sendNotification(
+      {
+        provider: email.provider,
+        providers: [phone.provider],
+        templateIds: { 'stay.escalation-alert': 'HX123' },
+      },
+      { notificationId: row!.id },
+    )
+
+    expect(outcome).toEqual({ status: 'sent', providerMessageId: 'twilio-1' })
+    expect(email.sent).toEqual([])
+    expect(phone.sent[0]).toMatchObject({
+      channel: 'whatsapp',
+      to: OWNER,
+      template: { id: 'HX123', variables: { '1': 'Eva Test' } },
+    })
+    // The text we keep is the short phone form: who is waiting and the link.
+    expect(phone.sent[0]!.body).toContain('/console/conversations/')
+    expect(phone.sent[0]!.body).not.toContain('0 ')
+  })
+
+  it('reaches no phone when the property has no messaging channel on', async () => {
+    await db.execute(sql`
+      update entitlements set ended_at = now()
+       where property_id = ${propertyId} and feature = 'whatsapp' and ended_at is null`)
+    expect(
+      await alertEscalation({
+        propertyId,
+        reservationId,
+        threadId: await threadId(),
+        escalatedAt: new Date(),
+        appUrl: 'http://app.test',
+        reach: 'phone',
+      }),
+    ).toBeNull()
   })
 })

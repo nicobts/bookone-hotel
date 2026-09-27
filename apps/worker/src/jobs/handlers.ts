@@ -121,6 +121,8 @@ export interface HandlerDeps {
     /** Whether a send error is worth retrying (rate limit, provider down). */
     retryable: (error: unknown) => boolean
   } | null
+  /** Approved WhatsApp template ids by notification template (ADR-035). */
+  whatsappTemplates?: Readonly<Record<string, string>>
 }
 
 /**
@@ -190,6 +192,7 @@ const ATTRIBUTION_AUDIT_WINDOW_DAYS = 40
 export async function registerHandlers(deps: HandlerDeps): Promise<void> {
   const { queue, adapter, notifications, payments, alloggiati, deleteObject, appUrl, logger } = deps
   const featureCheck = deps.featureCheck ?? (() => createFeatureCheck())
+  const messaging = deps.messaging ?? null
 
   /**
    * `queue.work`, gated (ADR-019).
@@ -328,7 +331,14 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
   await work('notification.send', async (job) => {
     const { propertyId, notificationId } = job.data
 
-    const outcome = await sendNotification({ provider: notifications }, { notificationId })
+    const outcome = await sendNotification(
+      {
+        provider: notifications,
+        ...(messaging ? { providers: [messaging.provider] } : {}),
+        ...(deps.whatsappTemplates ? { templateIds: deps.whatsappTemplates } : {}),
+      },
+      { notificationId },
+    )
 
     logger.info(
       { jobId: job.id, propertyId, notificationId, outcome: outcome.status },
@@ -524,6 +534,35 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       { jobId: job.id, threadId, outcome: outcome.status, runId: outcome.runId },
       'concierge.reply',
     )
+
+    // A handover reaches the owner's phone now, not at the SLA reminder
+    // (plan §4: within 60 s). Phone only: the email is the 30-minute reminder.
+    // A paused concierge escalates every message and is excluded — the
+    // operator paused it on purpose and the owner would be paged for each one.
+    if (outcome.status === 'escalated' || outcome.status === 'failed') {
+      await alertEscalation({
+        propertyId,
+        reservationId,
+        threadId,
+        escalatedAt: new Date(),
+        appUrl,
+        reach: 'phone',
+      })
+    }
+
+    // Anything this turn queued for the property — that alert, or one a
+    // complaint tool raised — goes now rather than at the next sweep.
+    for (const row of await listPendingNotifications({
+      olderThanSeconds: -5,
+      limit: SWEEP_BATCH,
+      propertyId,
+    })) {
+      await queue.send(
+        'notification.send',
+        { propertyId: row.propertyId, notificationId: row.id },
+        { singletonKey: `notify:${row.id}` },
+      )
+    }
 
     // Whatever the turn wrote — an answer, the handover phrase, the paused
     // acknowledgement — goes to the guest's phone if that is where they wrote
@@ -1052,8 +1091,6 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     })
     logger.info({ jobId: job.id, propertyId, runId: run.runId, status: run.status }, 'owner.ask')
   })
-
-  const messaging = deps.messaging ?? null
 
   /**
    * Send a thread's pending replies on WhatsApp/SMS (ADR-035). Whoever wrote

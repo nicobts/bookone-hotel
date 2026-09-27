@@ -384,6 +384,36 @@ export interface EscalationAlertFacts {
   threadUrl: string
 }
 
+/**
+ * The same alert for a phone (WhatsApp/SMS, ADR-035): who is waiting and the
+ * link, nothing else. Sent at the moment of handover, so "waiting for 0
+ * minutes" would be noise; the email keeps the count for the SLA reminder.
+ */
+export function renderEscalationAlertShort(
+  locale: string,
+  facts: EscalationAlertFacts,
+): RenderedMessage {
+  const resolved: TemplateLocale = isTemplateLocale(locale) ? locale : 'en'
+  const t = catalogues[resolved].notifications.escalationAlert
+  const subject = interpolate(t.subject, { guestName: facts.guestName })
+  return {
+    subject,
+    body: `${subject}
+${interpolate(t.cta, { url: facts.threadUrl })}`,
+  }
+}
+
+/**
+ * Variables for the approved WhatsApp template of this alert, in the order the
+ * template declares them: {{1}} who is waiting, {{2}} the link. A template is
+ * text Meta approved in advance; only these values change.
+ */
+export function escalationAlertTemplateVariables(
+  facts: EscalationAlertFacts,
+): Record<string, string> {
+  return { '1': facts.guestName, '2': facts.threadUrl }
+}
+
 export function renderEscalationAlert(
   locale: string,
   facts: EscalationAlertFacts,
