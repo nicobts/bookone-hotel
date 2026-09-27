@@ -53,6 +53,17 @@ import { listProviders } from '@bookone/core/llm'
 import { readDocument } from '@bookone/core/alloggiati'
 import { getDocumentPath, recordDocumentReading } from '@bookone/core/journey'
 import { respondToGuestMessage } from '@bookone/agents/concierge'
+import { respondToOwner } from '@bookone/agents/owner'
+import {
+  channelTarget,
+  getPropertyBasics,
+  pendingReplies,
+  recordDelivery,
+  recordDeliveryFailure,
+  threadsWithPendingReplies,
+} from '@bookone/core/channels'
+import { isEntitled } from '@bookone/core/onboarding'
+import { ownerNotUnderstoodPhrase, unmatchedSenderPhrase } from '@bookone/core/concierge'
 import type { Logger } from 'pino'
 import { syncPropertySchedules } from './schedules'
 
@@ -98,6 +109,18 @@ export interface HandlerDeps {
    * entitlements; injected so the gating test needs no database.
    */
   featureCheck?: () => FeatureCheck
+  /**
+   * WhatsApp and SMS (ADR-035), when configured. Provider-neutral on purpose:
+   * the handlers send through the port and ask for a purge, and never learn
+   * which provider that is. Absent, the channel jobs log and do nothing.
+   */
+  messaging?: {
+    provider: NotificationProvider
+    /** Delete a finished message from the provider's log. */
+    purge: (providerMessageId: string) => Promise<void>
+    /** Whether a send error is worth retrying (rate limit, provider down). */
+    retryable: (error: unknown) => boolean
+  } | null
 }
 
 /**
@@ -501,6 +524,17 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       { jobId: job.id, threadId, outcome: outcome.status, runId: outcome.runId },
       'concierge.reply',
     )
+
+    // Whatever the turn wrote — an answer, the handover phrase, the paused
+    // acknowledgement — goes to the guest's phone if that is where they wrote
+    // from (ADR-035). A no-op for stay-page threads.
+    if (messaging && outcome.status !== 'silenced') {
+      await queue.send(
+        'channel.deliver',
+        { propertyId, threadId },
+        { singletonKey: `deliver:${threadId}` },
+      )
+    }
 
     if (outcome.status === 'escalated' || outcome.status === 'paused') {
       // Nudge the SLA sweep's clock into motion rather than waiting up to its
@@ -1017,6 +1051,144 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       input: { message, askedBy: userId },
     })
     logger.info({ jobId: job.id, propertyId, runId: run.runId, status: run.status }, 'owner.ask')
+  })
+
+  const messaging = deps.messaging ?? null
+
+  /**
+   * Send a thread's pending replies on WhatsApp/SMS (ADR-035). Whoever wrote
+   * them — the concierge, a person, the product — this is the one place a
+   * reply leaves for a phone.
+   */
+  await work('channel.deliver', async (job) => {
+    const { propertyId, threadId } = job.data
+    if (!messaging) return
+
+    const target = await channelTarget(propertyId, threadId)
+    if (!target) return
+    if (!(await isEntitled(propertyId, target.channel))) {
+      logger.info({ jobId: job.id, propertyId, channel: target.channel }, 'skipped: channel off')
+      return
+    }
+
+    const pending = await pendingReplies(propertyId, threadId, messaging.provider.name)
+    if (pending.length === 0) return
+
+    if (!target.withinWindow) {
+      // Free text after 24 hours is refused by WhatsApp; it needs a template.
+      // Left pending and visible in the console rather than sent to fail.
+      logger.warn(
+        { jobId: job.id, threadId, pending: pending.length },
+        'channel.deliver: outside window',
+      )
+      return
+    }
+
+    for (const reply of pending) {
+      try {
+        const sent = await messaging.provider.send({
+          channel: target.channel,
+          to: target.to,
+          subject: null,
+          body: reply.body,
+          locale: 'it',
+        })
+        await recordDelivery({
+          propertyId,
+          threadId,
+          messageId: reply.messageId,
+          provider: messaging.provider.name,
+          providerMessageId: sent.providerMessageId ?? `unknown:${reply.messageId}`,
+          channel: target.channel,
+        })
+      } catch (error) {
+        if (messaging.retryable(error)) throw error
+        await recordDeliveryFailure({
+          propertyId,
+          threadId,
+          messageId: reply.messageId,
+          provider: messaging.provider.name,
+          channel: target.channel,
+          reason: error instanceof Error ? error.message : String(error),
+        })
+        logger.warn(
+          { jobId: job.id, threadId, messageId: reply.messageId },
+          'channel.deliver: refused',
+        )
+      }
+    }
+  })
+
+  /** Catches replies written outside a concierge turn (ADR-035). */
+  await work('channel.sweep', async () => {
+    if (!messaging) return
+    for (const { propertyId, threadId } of await threadsWithPendingReplies(
+      messaging.provider.name,
+    )) {
+      await queue.send(
+        'channel.deliver',
+        { propertyId, threadId },
+        { singletonKey: `deliver:${threadId}` },
+      )
+    }
+  })
+
+  /** A sender who is neither the owner nor a current guest (ADR-035). */
+  await work('channel.unmatched', async (job) => {
+    const { propertyId, channel, to, locale } = job.data
+    if (!messaging || !(await isEntitled(propertyId, channel))) return
+
+    const property = await getPropertyBasics(propertyId)
+    if (!property) return
+    await messaging.provider.send({
+      channel,
+      to,
+      subject: null,
+      body: unmatchedSenderPhrase(
+        locale,
+        property.name,
+        `${appUrl.replace(/\/$/, '')}/${locale}/book/${property.slug}`,
+      ),
+      locale,
+    })
+  })
+
+  /** Twilio's copy of a finished message goes (ADR-035). */
+  await work('channel.purge', async (job) => {
+    if (!messaging) return
+    try {
+      await messaging.purge(job.data.providerMessageId)
+    } catch (error) {
+      if (messaging.retryable(error)) throw error
+      logger.warn({ jobId: job.id }, 'channel.purge: refused')
+    }
+  })
+
+  /**
+   * The owner wrote to the property's number (AG-06, ADR-035). `respondToOwner`
+   * checks the number against the recorded owner phones again: the webhook's
+   * routing is not the only thing standing between a guest and this agent.
+   */
+  await work('owner.message', async (job) => {
+    const { propertyId, channel, phone, message, locale } = job.data
+    if (!messaging || !(await isEntitled(propertyId, channel))) return
+
+    const outcome = await respondToOwner({ propertyId, phone, message, locale })
+    if (outcome.status === 'refused') {
+      logger.warn({ jobId: job.id, propertyId }, 'owner.message refused')
+      return
+    }
+    await messaging.provider.send({
+      channel,
+      to: phone,
+      subject: null,
+      body: outcome.status === 'answered' ? outcome.reply : ownerNotUnderstoodPhrase(locale),
+      locale,
+    })
+    logger.info(
+      { jobId: job.id, propertyId, runId: outcome.runId, status: outcome.status },
+      'owner.message',
+    )
   })
 
   /** Re-derive per-property schedules from properties and entitlements (ADR-019). */

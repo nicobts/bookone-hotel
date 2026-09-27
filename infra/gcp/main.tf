@@ -5,8 +5,8 @@ locals {
   # Which secrets each service reads. Least privilege: a service gets an
   # accessor binding only on the secrets listed here.
   secrets = {
-    api    = ["DATABASE_URL", "WORKER_INTERNAL_TOKEN", "PAYMENT_WEBHOOK_SECRET"]
-    worker = ["DATABASE_URL", "PAYMENT_WEBHOOK_SECRET", "SUPABASE_SERVICE_ROLE_KEY", "STAY_TOKEN_SECRET", "OPENROUTER_API_KEY"]
+    api    = ["DATABASE_URL", "WORKER_INTERNAL_TOKEN", "PAYMENT_WEBHOOK_SECRET", "TWILIO_AUTH_TOKEN"]
+    worker = ["DATABASE_URL", "PAYMENT_WEBHOOK_SECRET", "SUPABASE_SERVICE_ROLE_KEY", "STAY_TOKEN_SECRET", "OPENROUTER_API_KEY", "TWILIO_AUTH_TOKEN"]
     admin  = ["DATABASE_URL", "ADMIN_SUPABASE_ANON_KEY"]
   }
 

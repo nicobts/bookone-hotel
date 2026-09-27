@@ -38,6 +38,7 @@ variable "secret_names" {
     "STAY_TOKEN_SECRET",
     "OPENROUTER_API_KEY",
     "ADMIN_SUPABASE_ANON_KEY",
+    "TWILIO_AUTH_TOKEN",
   ]
 }
 

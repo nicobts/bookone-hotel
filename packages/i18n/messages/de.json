@@ -847,6 +847,7 @@
     "decisionLateCheckout": "Gute Nachricht: Ihr Check-out um {time} ist bestätigt.",
     "decisionCancelled": "Ihre Buchung ist wie gewünscht storniert.",
     "decisionPaymentLink": "Hier ist Ihr Zahlungslink: {url}",
-    "decisionRejected": "Das Haus konnte diese Anfrage nicht freigeben. Jemand meldet sich hier mit Alternativen."
+    "decisionRejected": "Das Haus konnte diese Anfrage nicht freigeben. Jemand meldet sich hier mit Alternativen.",
+    "unmatchedSender": "Diese Nummer gehört zu {property}. Wir konnten Ihre Nummer keiner aktuellen Buchung zuordnen, daher wurde nichts weitergeleitet. Wenn Sie gebucht haben, schreiben Sie von der Nummer, die Sie bei der Buchung angegeben haben, oder nutzen Sie den Link in Ihrer Bestätigung. Zum Buchen: {link}"
   }
 }

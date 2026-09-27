@@ -76,6 +76,16 @@ export const jobNames = [
   'complaints.sla',
   /** The owner asked their assistant a question from the console (AG-06, WP0.7). */
   'owner.ask',
+  /** The owner wrote to the property's WhatsApp/SMS number (AG-06, ADR-035). */
+  'owner.message',
+  /** Send a thread's pending replies to the guest on WhatsApp/SMS (ADR-035). */
+  'channel.deliver',
+  /** Catch replies written outside a concierge turn: staff, approvals, sweeps (ADR-035). */
+  'channel.sweep',
+  /** Answer a sender who is neither the owner nor a current guest (ADR-035). */
+  'channel.unmatched',
+  /** Delete a finished message from the provider's log (ADR-035). */
+  'channel.purge',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -218,6 +228,24 @@ export interface JobPayloads {
   'complaints.sla': Record<string, never>
   /** Identity is the owner's console session, checked by the caller (`requireOwner`). */
   'owner.ask': { propertyId: string; userId: string; message: string; locale: string }
+  /** Identity is the recorded owner number, checked again by `respondToOwner`. */
+  'owner.message': {
+    propertyId: string
+    channel: 'whatsapp' | 'sms'
+    phone: string
+    message: string
+    locale: string
+  }
+  'channel.deliver': { propertyId: string; threadId: string }
+  /** Cross-property sweep; filters by each channel's feature in its own query. */
+  'channel.sweep': Record<string, never>
+  'channel.unmatched': {
+    propertyId: string
+    channel: 'whatsapp' | 'sms'
+    to: string
+    locale: string
+  }
+  'channel.purge': { providerMessageId: string }
 }
 
 export interface SendOptions {

@@ -17,6 +17,8 @@ import {
 import type { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
 import { createFeatureCheck, gateOpen, type FeatureCheck } from '@bookone/core/onboarding'
 import { bodyLimit } from 'hono/body-limit'
+import { routeInboundMessage } from '@bookone/core/channels'
+import { parseInbound, parseStatus, verifyTwilioSignature } from '@bookone/adapters/twilio'
 import { ROUTE_FEATURE } from './features'
 import { clientKey, rateLimit } from './rate-limit'
 
@@ -70,6 +72,17 @@ export function createApp(deps: {
   webhookRateLimit?: number
   /** Whether `X-Forwarded-For` is set by a proxy we run. */
   trustProxy?: boolean
+  /**
+   * Twilio's webhooks (ADR-035). Absent, the routes answer 404 — a provider
+   * nobody configured has no endpoint to probe.
+   */
+  twilio?: {
+    authToken: string
+    /** The public base URL Twilio calls; the signature covers it exactly. */
+    publicBaseUrl: string
+  }
+  /** Injected so the webhook's tests need no database. */
+  routeInbound?: typeof routeInboundMessage
   /** The socket's address; supplied by the node server, absent in tests. */
   remoteAddress?: Parameters<typeof rateLimit>[1]
 }) {
@@ -183,6 +196,132 @@ export function createApp(deps: {
           onError: (c) => c.json({ error: 'payload_too_large' }, 413),
         }),
       )
+
+      /**
+       * Inbound WhatsApp and SMS (ADR-035).
+       *
+       * The signature is checked first, against the configured public URL —
+       * the one Twilio signed — and a bad one is a 403 before anything is read.
+       * Routing happens here, synchronously: it is a few indexed reads and one
+       * insert, and it means the message body is written once, to the thread,
+       * rather than also sitting in a job payload.
+       *
+       * Every well-formed message gets a 200 with an empty TwiML response, even
+       * when it is ignored. A 4xx/5xx would make Twilio retry a message that will
+       * be ignored the same way next time.
+       */
+      .post('/webhooks/twilio/inbound', async (c) => {
+        const twilio = deps.twilio
+        if (!twilio) return c.json({ error: 'not found' }, 404)
+
+        const params = Object.fromEntries(new URLSearchParams(await c.req.text()))
+        const valid = verifyTwilioSignature({
+          url: `${twilio.publicBaseUrl.replace(/\/$/, '')}/webhooks/twilio/inbound`,
+          params,
+          signature: c.req.header('x-twilio-signature'),
+          authToken: twilio.authToken,
+        })
+        if (!valid) return c.json({ error: 'invalid signature' }, 403)
+
+        const twiml = () => c.body('<Response/>', 200, { 'content-type': 'text/xml' })
+        const message = parseInbound(params)
+        if (!message) return twiml()
+
+        const route = await (deps.routeInbound ?? routeInboundMessage)({
+          channel: message.channel,
+          provider: 'twilio',
+          providerMessageId: message.messageSid,
+          from: message.from,
+          to: message.to,
+          body: message.body,
+        })
+
+        switch (route.kind) {
+          case 'guest':
+            await queue.send('concierge.reply', {
+              propertyId: route.propertyId,
+              reservationId: route.reservationId,
+              threadId: route.threadId,
+              locale: route.locale,
+              message: message.body,
+            })
+            break
+          case 'owner':
+            await queue.send(
+              'owner.message',
+              {
+                propertyId: route.propertyId,
+                channel: message.channel,
+                phone: route.phone,
+                message: message.body,
+                locale: route.locale,
+              },
+              { singletonKey: `owner-message:${message.messageSid}` },
+            )
+            break
+          case 'unknown':
+            await queue.send(
+              'channel.unmatched',
+              {
+                propertyId: route.propertyId,
+                channel: message.channel,
+                to: message.from,
+                locale: route.locale,
+              },
+              { singletonKey: `unmatched:${message.messageSid}` },
+            )
+            break
+          default:
+            break
+        }
+
+        // Stored (or deliberately not), so Twilio's copy can go (ADR-035).
+        await queue.send(
+          'channel.purge',
+          { providerMessageId: message.messageSid },
+          { singletonKey: `purge:${message.messageSid}` },
+        )
+
+        logger.info(
+          { channel: message.channel, route: route.kind, media: message.media },
+          'twilio inbound',
+        )
+        return twiml()
+      })
+
+      /**
+       * Delivery status for messages we sent. A final state means the message
+       * is finished with, and Twilio's copy of it is deleted (ADR-035).
+       */
+      .post('/webhooks/twilio/status', async (c) => {
+        const twilio = deps.twilio
+        if (!twilio) return c.json({ error: 'not found' }, 404)
+
+        const params = Object.fromEntries(new URLSearchParams(await c.req.text()))
+        const valid = verifyTwilioSignature({
+          url: `${twilio.publicBaseUrl.replace(/\/$/, '')}/webhooks/twilio/status`,
+          params,
+          signature: c.req.header('x-twilio-signature'),
+          authToken: twilio.authToken,
+        })
+        if (!valid) return c.json({ error: 'invalid signature' }, 403)
+
+        const status = parseStatus(params)
+        if (status?.final) {
+          if (status.status !== 'delivered' && status.status !== 'read') {
+            logger.warn(
+              { status: status.status, errorCode: status.errorCode },
+              'twilio message not delivered',
+            )
+          }
+          await queue.send(
+            'channel.purge',
+            { providerMessageId: status.messageSid },
+            { singletonKey: `purge:${status.messageSid}` },
+          )
+        }
+        return c.body(null, 204)
+      })
 
       .post('/webhooks/payments', async (c) => {
         const payload = await c.req.text()

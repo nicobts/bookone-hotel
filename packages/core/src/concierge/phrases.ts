@@ -90,6 +90,23 @@ export function pausedPhrase(locale: string): string {
   return catalogues[resolve(locale)].concierge.paused
 }
 
+/**
+ * To a WhatsApp/SMS sender who is neither the owner nor a guest on a current
+ * stay (ADR-035). It says what happened — nothing was passed on — and the two
+ * ways forward, and it states no fact about any booking.
+ */
+export function unmatchedSenderPhrase(locale: string, property: string, link: string): string {
+  return interpolate(catalogues[resolve(locale)].concierge.unmatchedSender, { property, link })
+}
+
+/**
+ * The owner agent's answer when no read-only tool fits the question — the same
+ * sentence the console's assistant page shows, on WhatsApp (ADR-035).
+ */
+export function ownerNotUnderstoodPhrase(locale: string): string {
+  return catalogues[resolve(locale)].console.assistant.notUnderstood
+}
+
 /** The same, when nobody is on shift — see design-notes/stay-messaging.md §4D. */
 export function escalatedOutOfHoursPhrase(locale: string, hours: string): string {
   return interpolate(catalogues[resolve(locale)].concierge.escalatedOutOfHours, { hours })

@@ -70,6 +70,14 @@ export const JOB_FEATURE: Record<JobName, Gate> = {
   'documents.extract': 'document_ocr',
   'complaints.sla': 'inbox',
   'owner.ask': 'concierge',
+  'owner.message': 'concierge',
+  // The channel features are checked per thread inside these handlers and
+  // queries: one job serves both WhatsApp and SMS.
+  'channel.deliver': 'core',
+  'channel.sweep': 'core',
+  'channel.unmatched': 'core',
+  // Deleting a message from the provider's log is a privacy duty, not a module.
+  'channel.purge': 'core',
   'concierge.reply': 'concierge',
   'escalation.sweep': 'inbox',
   'arrival.complete': 'core',

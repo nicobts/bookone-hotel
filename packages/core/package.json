@@ -27,7 +27,8 @@
     "./billing": "./src/billing/index.ts",
     "./onboarding": "./src/onboarding/index.ts",
     "./privacy": "./src/privacy/index.ts",
-    "./admin": "./src/admin/index.ts"
+    "./admin": "./src/admin/index.ts",
+    "./channels": "./src/channels/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

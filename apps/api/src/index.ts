@@ -75,6 +75,9 @@ const app = createApp({
   webhookRateLimit: env.WEBHOOK_RATE_LIMIT,
   trustProxy: env.TRUST_PROXY,
   remoteAddress: (c) => getConnInfo(c).remote.address ?? null,
+  ...(env.TWILIO_AUTH_TOKEN && env.TWILIO_WEBHOOK_BASE_URL
+    ? { twilio: { authToken: env.TWILIO_AUTH_TOKEN, publicBaseUrl: env.TWILIO_WEBHOOK_BASE_URL } }
+    : {}),
 })
 
 const server = serve({ fetch: app.fetch, port: env.API_PORT }, (info) => {

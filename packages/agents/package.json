@@ -10,7 +10,8 @@
     "./runner": "./src/runner.ts",
     "./tools": "./src/tools/index.ts",
     "./concierge": "./src/concierge.ts",
-    "./profiles": "./src/profiles/index.ts"
+    "./profiles": "./src/profiles/index.ts",
+    "./owner": "./src/owner.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

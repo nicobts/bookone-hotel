@@ -5,7 +5,7 @@ Guest-journey-first hospitality platform for small independent hotels (IT/AT/SI)
 ## Read first, in order
 1. `docs/00-PROJECT-OVERVIEW.md` — scope, decision register D1–D21, non-goals
 2. `docs/03-ARCHITECTURE.md` — topology, schema, conventions (§10 = repo layout)
-3. `docs/adr/` — ADR-001…034, one file each ([index](docs/adr/README.md)); **ADRs override anything conflicting in older annex documents**
+3. `docs/adr/` — ADR-001…035, one file each ([index](docs/adr/README.md)); **ADRs override anything conflicting in older annex documents**
 4. `docs/01-PRD.md` + `docs/02-USER-STORIES.md` — what to build, acceptance criteria
 5. `docs/04-IMPLEMENTATION-PLAN.md` — current sprint scope and DoD
 6. `docs/06-AI-AGENT-LAYER.md` — agent roster, `agent_runs`, autonomy tiers
@@ -53,7 +53,7 @@ Everything left before GA is external or infrastructural, and none of it is a fe
 
 Built-vs-decided, per ADR and per sprint: `docs/adr/IMPLEMENTATION-STATUS.md`. Read it before assuming something works — several things are ports with mocks behind them on purpose.
 
-Four external decisions block real deployment, all in 04 §0 and none of them code: a payment provider (ADR-010; Stripe account in progress), an Alloggiati channel (`docs/runbooks/alloggiati.md`), an ESP that passes D9, and WhatsApp BSP verification. Each already has its port, its mock and the contract suite a real implementation must pass. The LLM and vision provider is no longer one of them: OpenRouter, under ADR-029.
+External decisions still blocking real deployment, all in 04 §0 and none of them code: a payment provider (ADR-010; Stripe account in progress), an Alloggiati channel (`docs/runbooks/alloggiati.md`) and an ESP. Each already has its port, its mock and the contract suite a real implementation must pass. No longer open: the LLM and vision provider (OpenRouter, ADR-029), and WhatsApp/SMS (Twilio, ADR-035). Twilio is built behind the notification port and a webhook in `apps/api`, but Meta Business verification and templates are still needed before a real property uses it (`docs/runbooks/whatsapp.md`).
 
 ## Environments
 `local` (Supabase CLI, mock adapter, Stripe test) → `staging` (EU project, seeded demo property) → `prod` (EU, migrations via CI only).

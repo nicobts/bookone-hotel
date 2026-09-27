@@ -847,6 +847,7 @@
     "decisionLateCheckout": "Buone notizie: il suo check-out alle {time} è confermato.",
     "decisionCancelled": "La sua prenotazione è stata cancellata, come richiesto.",
     "decisionPaymentLink": "Ecco il link per il pagamento: {url}",
-    "decisionRejected": "La struttura non ha potuto approvare questa richiesta. Qualcuno le risponderà qui con le alternative."
+    "decisionRejected": "La struttura non ha potuto approvare questa richiesta. Qualcuno le risponderà qui con le alternative.",
+    "unmatchedSender": "Questo numero è di {property}. Non abbiamo trovato una prenotazione in corso collegata al suo numero, quindi il messaggio non è stato inoltrato. Se ha una prenotazione, scriva dal numero indicato al momento della prenotazione o usi il link nella conferma. Per prenotare: {link}"
   }
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { FEATURES, PHASE0_FEATURES } from '@bookone/core/onboarding'
+import { twilioSignature } from '@bookone/adapters/twilio'
 import { createApp } from './app'
 import { ROUTE_FEATURE } from './features'
 
@@ -11,6 +12,8 @@ function build(
     parseWebhook?: ReturnType<typeof vi.fn>
     allowSimulation?: boolean
     webhookRateLimit?: number
+    twilio?: { authToken: string; publicBaseUrl: string }
+    routeInbound?: ReturnType<typeof vi.fn>
     /** Features property `p1` has. Every feature unless a test says otherwise. */
     features?: readonly string[]
   } = {},
@@ -50,6 +53,8 @@ function build(
     allowSimulation: overrides.allowSimulation ?? true,
     featureCheck: () => async (_propertyId: string, feature: string) => enabled.has(feature),
     webhookRateLimit: overrides.webhookRateLimit ?? 120,
+    ...(overrides.twilio ? { twilio: overrides.twilio } : {}),
+    ...(overrides.routeInbound ? { routeInbound: overrides.routeInbound } : {}),
   } as never
 
   return { app: createApp(deps), send }
@@ -415,5 +420,127 @@ describe('webhook ingress guards (ADR-032)', () => {
   it('leaves the internal surface alone', async () => {
     const { app } = build({ webhookRateLimit: 1 })
     for (let i = 0; i < 3; i++) expect((await app.request('/health')).status).toBe(200)
+  })
+})
+
+describe('Twilio webhooks (ADR-035)', () => {
+  const twilio = { authToken: 'twilio-token', publicBaseUrl: 'https://api.example.test/' }
+  const SID = 'SM' + 'c'.repeat(32)
+  const inbound = {
+    MessageSid: SID,
+    From: 'whatsapp:+393331234567',
+    To: 'whatsapp:+390400000000',
+    Body: 'A che ora è la colazione?',
+  }
+
+  function post(
+    app: ReturnType<typeof build>['app'],
+    path: string,
+    params: Record<string, string>,
+    signature?: string,
+  ) {
+    return app.request(path, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        'x-twilio-signature':
+          signature ?? twilioSignature(`https://api.example.test${path}`, params, twilio.authToken),
+      },
+      body: new URLSearchParams(params).toString(),
+    })
+  }
+
+  it('does not exist when Twilio is not configured', async () => {
+    const { app } = build()
+    expect((await post(app, '/webhooks/twilio/inbound', inbound)).status).toBe(404)
+  })
+
+  it('refuses a bad signature before routing anything', async () => {
+    const routeInbound = vi.fn()
+    const { app, send } = build({ twilio, routeInbound })
+    const res = await post(app, '/webhooks/twilio/inbound', inbound, 'forged')
+    expect(res.status).toBe(403)
+    expect(routeInbound).not.toHaveBeenCalled()
+    expect(send).not.toHaveBeenCalled()
+  })
+
+  it('puts a guest message into the concierge turn and purges Twilio’s copy', async () => {
+    const routeInbound = vi.fn(async () => ({
+      kind: 'guest',
+      propertyId: 'p1',
+      reservationId: 'r1',
+      threadId: 't1',
+      messageId: 'm1',
+      locale: 'it',
+    }))
+    const { app, send } = build({ twilio, routeInbound })
+
+    const res = await post(app, '/webhooks/twilio/inbound', inbound)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('<Response/>')
+    expect(routeInbound).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channel: 'whatsapp',
+        provider: 'twilio',
+        providerMessageId: SID,
+        from: '+393331234567',
+        to: '+390400000000',
+      }),
+    )
+    const jobs = send.mock.calls.map((call) => call[0])
+    expect(jobs).toEqual(['concierge.reply', 'channel.purge'])
+    expect(send.mock.calls[0]![1]).toMatchObject({ threadId: 't1', message: inbound.Body })
+  })
+
+  it('sends the owner to the owner agent and a stranger to the fixed reply', async () => {
+    const owner = build({
+      twilio,
+      routeInbound: vi.fn(async () => ({
+        kind: 'owner',
+        propertyId: 'p1',
+        phone: '+393331234567',
+        locale: 'it',
+      })),
+    })
+    await post(owner.app, '/webhooks/twilio/inbound', inbound)
+    expect(owner.send.mock.calls.map((call) => call[0])).toEqual(['owner.message', 'channel.purge'])
+
+    const stranger = build({
+      twilio,
+      routeInbound: vi.fn(async () => ({ kind: 'unknown', propertyId: 'p1', locale: 'it' })),
+    })
+    await post(stranger.app, '/webhooks/twilio/inbound', inbound)
+    expect(stranger.send.mock.calls.map((call) => call[0])).toEqual([
+      'channel.unmatched',
+      'channel.purge',
+    ])
+  })
+
+  it('answers a redelivery or a switched-off channel with 200 and no work but the purge', async () => {
+    for (const kind of ['duplicate', 'channel-off', 'no-property']) {
+      const { app, send } = build({
+        twilio,
+        routeInbound: vi.fn(async () => ({ kind, propertyId: 'p1' })),
+      })
+      expect((await post(app, '/webhooks/twilio/inbound', inbound)).status).toBe(200)
+      expect(send.mock.calls.map((call) => call[0])).toEqual(['channel.purge'])
+    }
+  })
+
+  it('purges a sent message once it reaches a final state', async () => {
+    const { app, send } = build({ twilio })
+    await post(app, '/webhooks/twilio/status', { MessageSid: SID, MessageStatus: 'sent' })
+    expect(send).not.toHaveBeenCalled()
+
+    const res = await post(app, '/webhooks/twilio/status', {
+      MessageSid: SID,
+      MessageStatus: 'delivered',
+    })
+    expect(res.status).toBe(204)
+    expect(send).toHaveBeenCalledWith(
+      'channel.purge',
+      { providerMessageId: SID },
+      { singletonKey: `purge:${SID}` },
+    )
   })
 })

@@ -133,10 +133,12 @@ export interface ResidencyDeclaration {
   /** ISO date the claim was last verified by a human. */
   verifiedAt: string
   /**
-   * The decision that permits `euProcessing: false` (ADR-029). The only value
-   * the registry accepts; anything else is refused as before.
+   * The decision that permits `euProcessing: false`. Each registry accepts
+   * exactly one: the LLM registry ADR-029 (model processing), the notification
+   * registry ADR-035 (WhatsApp and SMS through Twilio). Anything else is
+   * refused as before.
    */
-  transferException?: 'ADR-029'
+  transferException?: 'ADR-029' | 'ADR-035'
 }
 
 export class ResidencyError extends Error {

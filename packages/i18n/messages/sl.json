@@ -847,6 +847,7 @@
     "decisionLateCheckout": "Dobra novica: vaša odjava ob {time} je potrjena.",
     "decisionCancelled": "Vaša rezervacija je preklicana, kot ste želeli.",
     "decisionPaymentLink": "Tukaj je vaša povezava za plačilo: {url}",
-    "decisionRejected": "Nastanitev te zahteve ni mogla odobriti. Nekdo vam bo tukaj odgovoril z možnostmi."
+    "decisionRejected": "Nastanitev te zahteve ni mogla odobriti. Nekdo vam bo tukaj odgovoril z možnostmi.",
+    "unmatchedSender": "Ta številka pripada nastanitvi {property}. Vaše številke nismo mogli povezati s trenutno rezervacijo, zato sporočilo ni bilo posredovano. Če imate rezervacijo, pišite s številke, ki ste jo navedli ob rezervaciji, ali uporabite povezavo v potrditvi. Za rezervacijo: {link}"
   }
 }

@@ -231,6 +231,25 @@ export const SUBPROCESSORS: SubProcessor[] = [
       'EU cloud with DPA, or self-hosted (no sub-processor at all). Decided when the host is provisioned.',
     verifiedAt: null,
   },
+  {
+    id: 'SP-013',
+    name: 'Twilio (Twilio Ireland Ltd)',
+    purpose:
+      'WhatsApp and SMS: guest conversations on WhatsApp, owner alerts and handoffs to the owner’s phone (ADR-035).',
+    dataCategories: [
+      'guest and owner phone numbers',
+      'message text in transit',
+      'delivery status metadata',
+    ],
+    region:
+      'Ireland (IE1) where the account supports it, otherwise the US; WhatsApp content also passes through Meta’s Cloud API, whose processing may be outside the EU',
+    established: 'Ireland (contracting entity); United States (parent)',
+    status: 'staging',
+    contract:
+      'Twilio DPA with SCCs and Binding Corporate Rules. Meta (WhatsApp Business Platform) is Twilio’s sub-processor for WhatsApp under Meta’s data processing terms. Permitted by ADR-035 as a recorded exception to EU-only processing; storage of conversations stays in the EU (SP-001).',
+    verifiedAt: '2026-09-27',
+    note: 'The adapter deletes each message resource from Twilio once it reaches a final state, so Twilio’s log holds content only in flight. Meta’s transient retention for delivery is outside our control. Re-evaluated against 360dialog (EU) and Cloud API directly (ADR-035).',
+  },
 ]
 
 export const SUBPROCESSOR_IDS: ReadonlySet<string> = new Set(SUBPROCESSORS.map((sp) => sp.id))
@@ -273,8 +292,9 @@ export function renderRegister(): string {
     String(undecided)
 
   lines.push('D9, as amended by ADR-029: stored data stays in the EU, and no service, endpoint or')
-  lines.push('region — in the EU or not — is used without an entry here first. Model processing')
-  lines.push('outside the EU is the one recorded exception, and its entry says so.')
+  lines.push('region — in the EU or not — is used without an entry here first. Two recorded')
+  lines.push('exceptions allow processing outside the EU: model calls (ADR-029) and WhatsApp/SMS')
+  lines.push('messaging (ADR-035). Their entries say so.')
   lines.push(
     `${counted} ${undecided === 1 ? 'entry below is' : 'entries below are'} \`undecided\` on purpose — the external decisions in 04 §0,`,
   )

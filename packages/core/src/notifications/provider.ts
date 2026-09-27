@@ -1,4 +1,5 @@
 import { ResidencyError, type ResidencyDeclaration } from '../llm/provider'
+import { isRegisteredSubProcessor } from '../privacy/subprocessors'
 
 /**
  * The outbound-message port.
@@ -25,6 +26,12 @@ export interface OutboundMessage {
   subject: string | null
   body: string
   locale: string
+  /**
+   * An approved WhatsApp template, for a message the business starts outside
+   * the 24-hour customer-service window (ADR-035). `body` stays the rendered
+   * text we store; the template is what the provider sends. Ignored elsewhere.
+   */
+  template?: { id: string; variables: Record<string, string> }
 }
 
 export interface SendResult {
@@ -76,7 +83,10 @@ export function registerNotificationProvider(
     throw new Error(`notification provider "${name}" declares no channels`)
   }
 
-  if (!residency.euProcessing) {
+  // Messaging channels pass through Meta and the BSP, whose processing may be
+  // outside the EU. ADR-035 permits that for this registry only, declared and
+  // registered; storage stays in the EU either way.
+  if (!residency.euProcessing && residency.transferException !== 'ADR-035') {
     throw new ResidencyError(name, 'EU processing is not declared')
   }
 
@@ -86,6 +96,17 @@ export function registerNotificationProvider(
 
   if (!residency.subProcessorRegisterEntry.trim()) {
     throw new ResidencyError(name, 'no sub-processor register entry')
+  }
+
+  // A transfer outside the EU needs a register entry that exists, not just a
+  // non-empty string: a typo in the reference is otherwise indistinguishable
+  // from a provider nobody disclosed. (The in-process log provider sends
+  // nothing anywhere and has no entry to name.)
+  if (!residency.euProcessing && !isRegisteredSubProcessor(residency.subProcessorRegisterEntry)) {
+    throw new ResidencyError(
+      name,
+      `register entry "${residency.subProcessorRegisterEntry}" does not exist`,
+    )
   }
 
   const verifiedAt = new Date(residency.verifiedAt)

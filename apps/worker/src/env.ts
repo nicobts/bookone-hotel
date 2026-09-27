@@ -59,6 +59,26 @@ const envSchema = z.object({
 
   /** Where the guest comes back to, and where the simulated checkout lives. */
   APP_URL: z.string().url().default('http://localhost:3000'),
+
+  /**
+   * Twilio, for WhatsApp and SMS (ADR-035). All optional: without the account
+   * SID and token nothing is sent on those channels and the jobs log instead.
+   * A channel is offered only when its sender number is set.
+   */
+  TWILIO_ACCOUNT_SID: z.string().startsWith('AC').optional(),
+  TWILIO_AUTH_TOKEN: z.string().min(1).optional(),
+  /** `ie1` keeps Twilio's processing and log in Ireland; needs IE1 credentials. */
+  TWILIO_REGION: z.enum(['us1', 'ie1']).default('us1'),
+  TWILIO_WHATSAPP_FROM: z
+    .string()
+    .regex(/^\+[1-9]\d{6,14}$/)
+    .optional(),
+  TWILIO_SMS_FROM: z
+    .string()
+    .regex(/^\+[1-9]\d{6,14}$/)
+    .optional(),
+  /** `apps/api`'s public URL, for delivery-status callbacks. */
+  TWILIO_WEBHOOK_BASE_URL: z.string().url().optional(),
 })
 
 export type Env = z.infer<typeof envSchema>

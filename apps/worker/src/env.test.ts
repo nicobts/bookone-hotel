@@ -16,7 +16,20 @@ describe('loadEnv', () => {
       NOTIFICATION_PROVIDER: 'log',
       PAYMENT_PROVIDER: 'mock',
       APP_URL: 'http://localhost:3000',
+      TWILIO_REGION: 'us1',
     })
+  })
+
+  it('takes Twilio senders only in E.164 and the account SID only as AC…', () => {
+    expect(
+      loadEnv({ ...required, TWILIO_WHATSAPP_FROM: '+390400000000' }).TWILIO_WHATSAPP_FROM,
+    ).toBe('+390400000000')
+    expect(() => loadEnv({ ...required, TWILIO_WHATSAPP_FROM: '040 0000000' })).toThrow(
+      /TWILIO_WHATSAPP_FROM/,
+    )
+    expect(() => loadEnv({ ...required, TWILIO_ACCOUNT_SID: 'SK123' })).toThrow(
+      /TWILIO_ACCOUNT_SID/,
+    )
   })
 
   it('fails loudly on an unusable value rather than booting degraded', () => {

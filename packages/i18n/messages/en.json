@@ -847,6 +847,7 @@
     "decisionLateCheckout": "Good news: your checkout at {time} is confirmed.",
     "decisionCancelled": "Your booking is now cancelled, as you asked.",
     "decisionPaymentLink": "Here is your payment link: {url}",
-    "decisionRejected": "The property could not approve this request. Someone will reply here with the alternatives."
+    "decisionRejected": "The property could not approve this request. Someone will reply here with the alternatives.",
+    "unmatchedSender": "This number belongs to {property}. We could not match yours to a current booking, so nothing has been passed on. If you have a booking, write from the number you gave when booking or use the link in your confirmation. To book: {link}"
   }
 }

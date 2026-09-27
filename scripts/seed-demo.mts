@@ -46,6 +46,21 @@ const STAFF_EMAIL = 'staff@demo.bookone.test'
 /** Fictional numbers, in the reserved 040 000 range. The owner agent answers only these (ADR-021). */
 const OWNER_PHONES = ['+39 040 0000001']
 
+/**
+ * WhatsApp for the demo (ADR-035), all optional:
+ *   TWILIO_WHATSAPP_FROM — the sender (sandbox or approved number); it becomes
+ *                          the demo property's WhatsApp number.
+ *   DEMO_OWNER_PHONE     — the presenter's phone, added to the owner numbers so
+ *                          they can ask the owner agent on WhatsApp.
+ *   DEMO_GUEST_PHONE     — a second phone, given to the guest arriving tomorrow,
+ *                          so the guest side can be played on WhatsApp.
+ * Real numbers of people who volunteered them, used only on this fictional
+ * property. Unset, the demo is webchat-only, as before.
+ */
+const WHATSAPP_NUMBER = process.env.TWILIO_WHATSAPP_FROM?.trim() || null
+const DEMO_OWNER_PHONE = process.env.DEMO_OWNER_PHONE?.trim() || null
+const DEMO_GUEST_PHONE = process.env.DEMO_GUEST_PHONE?.trim() || null
+
 const apiUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
 if (
@@ -129,7 +144,8 @@ const [property] = await sql`
       },
       fees: { directBookingBps: 300, aiAttributedBps: 1000 },
       documentRetentionDays: 1,
-      ownerPhones: OWNER_PHONES,
+      ownerPhones: DEMO_OWNER_PHONE ? [...OWNER_PHONES, DEMO_OWNER_PHONE] : OWNER_PHONES,
+      ...(WHATSAPP_NUMBER ? { whatsappNumber: WHATSAPP_NUMBER } : {}),
     })}
   )
   returning id`
@@ -181,7 +197,15 @@ for (const article of kb.articles) {
 }
 
 // ---------------------------------------------------------------- features
-for (const feature of [...PHASE0_FEATURES, 'pms_sync', 'booking_engine', 'document_ocr'] as const) {
+// WhatsApp only when a sender is configured: a channel with no number would
+// be a feature that is on and can never be used.
+for (const feature of [
+  ...PHASE0_FEATURES,
+  'pms_sync',
+  'booking_engine',
+  'document_ocr',
+  ...(WHATSAPP_NUMBER ? (['whatsapp'] as const) : []),
+] as const) {
   await grantEntitlement({ propertyId, feature, note: 'seed-demo' })
 }
 
@@ -358,6 +382,12 @@ const counts = made.reduce<Record<string, number>>(
 )
 const arriving = made.find((stay) => stay.stage === 'invited')!
 
+if (DEMO_GUEST_PHONE) {
+  await sql`
+    update guests set phone = ${DEMO_GUEST_PHONE}
+     where id = (select guest_id from reservations where id = ${arriving.reservationId})`
+}
+
 console.log(
   `Seeded ${SLUG}: ${made.length} stays ${JSON.stringify(counts)}, ${kb.articles.length} articles, 2 open complaints.`,
 )
@@ -368,7 +398,14 @@ console.log(`  booking   http://localhost:3000/en/book/${SLUG}`)
 console.log(
   `  guest     http://localhost:3000/${arriving.locale}/stay/${signStayToken(arriving.reservationId, arriving.departure)}  (${arriving.name}, arriving tomorrow)`,
 )
-console.log(`  owner     ${OWNER_PHONES.join(', ')} — the only numbers the owner agent answers`)
+console.log(
+  `  owner     ${[...OWNER_PHONES, ...(DEMO_OWNER_PHONE ? [DEMO_OWNER_PHONE] : [])].join(', ')} — the only numbers the owner agent answers`,
+)
+console.log(
+  WHATSAPP_NUMBER
+    ? `  whatsapp  ${WHATSAPP_NUMBER}${DEMO_GUEST_PHONE ? ` · ${DEMO_GUEST_PHONE} plays ${arriving.name}` : ''}`
+    : '  whatsapp  off (set TWILIO_WHATSAPP_FROM to turn it on for the demo)',
+)
 
 await sql.end()
 await closeConnection()

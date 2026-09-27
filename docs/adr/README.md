@@ -68,6 +68,7 @@ split here unchanged; their bodies are verbatim, with only a status line added.
 | [032](ADR-032-ops-security-baseline.md) | The ops and security baseline is a fixed list delivered in priority order | Accepted |
 | [033](ADR-033-self-hosted-until-first-contract.md) | Our containers run self-hosted until the first signed contract, then on GCP Cloud Run | Accepted |
 | [034](ADR-034-api-split-from-worker.md) | Webhooks and internal endpoints move to `apps/api`; the worker runs jobs only | Accepted |
+| [035](ADR-035-twilio-for-whatsapp-and-sms.md) | WhatsApp and SMS go through Twilio, initially | Accepted |
 
 ADR-019 to ADR-034 come from the Guest Desk handoff (`docs/guest_desk_20260927/`, ADR-F1…F13 and UPGRADE-01),
 amended where the WP0.1 inventory ([11-inventory.md](../11-inventory.md)) found the handoff's

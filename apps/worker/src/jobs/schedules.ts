@@ -111,6 +111,13 @@ const ESCALATION_SWEEP = '*/5 * * * *'
 const INVOICE_ROUTE = '*/10 * * * *'
 
 /**
+ * Replies bound for WhatsApp/SMS that no concierge turn sent: a staff reply,
+ * an approval decided later (ADR-035). Every minute, so a person's answer
+ * reaches the guest's phone about as fast as it reaches the stay page.
+ */
+const CHANNEL_SWEEP = '* * * * *'
+
+/**
  * Closes stays that ended and nobody checked out of (E4.1).
  *
  * 04:30, an hour after reconciliation, so a stay is closed against a picture
@@ -306,6 +313,7 @@ export async function registerSchedules(deps: ScheduleDeps): Promise<void> {
   await queue.schedule('report.generate', REPORT_GENERATE, {})
   await queue.schedule('schedules.sync', SCHEDULES_SYNC, {})
   await queue.schedule('complaints.sla', COMPLAINTS_SLA, {})
+  await queue.schedule('channel.sweep', CHANNEL_SWEEP, {})
 
   logger.info(
     {

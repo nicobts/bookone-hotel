@@ -8,6 +8,7 @@ import { getNotificationProvider, registerNotificationProvider } from '@bookone/
 import { openRouterFromEnv, registerProvider } from '@bookone/core/llm'
 import { loadProfiles } from '@bookone/agents/profiles'
 import { LogNotificationProvider } from './notifications/log-provider'
+import { TwilioClient, TwilioError, TwilioNotificationProvider } from '@bookone/adapters/twilio'
 import { createDocumentDeleter, createDocumentReader } from './storage/documents'
 import { loadEnv } from './env'
 import { registerHandlers } from './jobs/handlers'
@@ -121,6 +122,34 @@ registerNotificationProvider(new LogNotificationProvider(logger))
 const notifications = getNotificationProvider(env.NOTIFICATION_PROVIDER)
 
 /**
+ * WhatsApp and SMS through Twilio (ADR-035), when configured. It passes the
+ * same registration gate, admitted only as ADR-035's recorded exception with
+ * register entry SP-013 — the gate refuses it otherwise.
+ */
+const twilioClient =
+  env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN
+    ? new TwilioClient({
+        accountSid: env.TWILIO_ACCOUNT_SID,
+        authToken: env.TWILIO_AUTH_TOKEN,
+        region: env.TWILIO_REGION,
+      })
+    : null
+const messaging = twilioClient
+  ? {
+      provider: new TwilioNotificationProvider({
+        client: twilioClient,
+        region: env.TWILIO_REGION,
+        ...(env.TWILIO_WHATSAPP_FROM ? { whatsappFrom: env.TWILIO_WHATSAPP_FROM } : {}),
+        ...(env.TWILIO_SMS_FROM ? { smsFrom: env.TWILIO_SMS_FROM } : {}),
+        ...(env.TWILIO_WEBHOOK_BASE_URL ? { webhookBaseUrl: env.TWILIO_WEBHOOK_BASE_URL } : {}),
+      }),
+      purge: (sid: string) => twilioClient.deleteMessage(sid),
+      retryable: (error: unknown) => error instanceof TwilioError && error.retryable,
+    }
+  : null
+if (messaging) registerNotificationProvider(messaging.provider)
+
+/**
  * The concierge's profiles, validated now (ADR-021). A malformed profile stops
  * the process here, naming the file and the reason — not later, as a guest who
  * never gets an answer.
@@ -146,12 +175,16 @@ await registerHandlers({
   readObject,
   appUrl: env.APP_URL,
   logger,
+  messaging,
 })
 await registerSchedules({ queue, logger })
 logger.info(
   {
     adapter: adapter.system,
     notifications: notifications.name,
+    messaging: messaging
+      ? `${messaging.provider.name} (${messaging.provider.channels.join(', ') || 'no sender set'})`
+      : 'none',
     payments: paymentAdapter.provider,
     alloggiati: alloggiatiAdapter.channel,
     alloggiatiSimulated: alloggiatiAdapter.simulated,

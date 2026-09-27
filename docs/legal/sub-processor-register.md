@@ -4,8 +4,9 @@
 CI compares this file against the rendered output and fails when they differ.
 
 D9, as amended by ADR-029: stored data stays in the EU, and no service, endpoint or
-region — in the EU or not — is used without an entry here first. Model processing
-outside the EU is the one recorded exception, and its entry says so.
+region — in the EU or not — is used without an entry here first. Two recorded
+exceptions allow processing outside the EU: model calls (ADR-029) and WhatsApp/SMS
+messaging (ADR-035). Their entries say so.
 Four entries below are `undecided` on purpose — the external decisions in 04 §0,
 listed so this register describes the system as it is rather than as those decisions
 would leave it.
@@ -92,6 +93,26 @@ ADR-003. The worker is a persistent Node process and never serverless, which nar
 **Residency last verified.** 2026-09-27
 
 Enforced in code: `registerProvider` refuses a non-EU provider unless it cites ADR-029 and this entry exists. Reassessed at production with paying properties; moving to EU routing is a base-URL change.
+
+### SP-013 — Twilio (Twilio Ireland Ltd)
+
+**Purpose.** WhatsApp and SMS: guest conversations on WhatsApp, owner alerts and handoffs to the owner’s phone (ADR-035).
+
+**Processing region.** Ireland (IE1) where the account supports it, otherwise the US; WhatsApp content also passes through Meta’s Cloud API, whose processing may be outside the EU
+
+**Entity established in.** Ireland (contracting entity); United States (parent)
+
+**Categories of personal data.**
+
+- guest and owner phone numbers
+- message text in transit
+- delivery status metadata
+
+**Contract.** Twilio DPA with SCCs and Binding Corporate Rules. Meta (WhatsApp Business Platform) is Twilio’s sub-processor for WhatsApp under Meta’s data processing terms. Permitted by ADR-035 as a recorded exception to EU-only processing; storage of conversations stays in the EU (SP-001).
+
+**Residency last verified.** 2026-09-27
+
+The adapter deletes each message resource from Twilio once it reaches a final state, so Twilio’s log holds content only in flight. Meta’s transient retention for delivery is outside our control. Re-evaluated against 360dialog (EU) and Cloud API directly (ADR-035).
 
 ## Chosen, not yet contracted — no data flowing
 

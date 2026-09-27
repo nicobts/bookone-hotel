@@ -41,6 +41,13 @@ export const FEATURES = [
    * real guest's document waits for the transfer assessment: off by default.
    */
   'document_ocr',
+  /**
+   * Guest conversations and owner messages on WhatsApp (ADR-035). Off, the
+   * property's number answers nothing and no reply is sent there.
+   */
+  'whatsapp',
+  /** The same on SMS (ADR-035). */
+  'sms',
   /** Online payment through the PaymentAdapter (deposits, checkout page). */
   'payments',
   /** The public booking engine at `/book/[property]` and self-service cancel. */
