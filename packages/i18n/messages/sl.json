@@ -786,7 +786,7 @@
       "controller": "Za vaše podatke je odgovorna nastanitev {property}. BookOne upravlja to stran v njenem imenu.",
       "purpose": "Vaše podatke in osebne dokumente zbiramo, ker italijanska zakonodaja zahteva prijavo vsakega gosta policiji (člen 109 TULPS).",
       "retention": "Fotografije dokumentov se izbrišejo po opravljeni prijavi ali kmalu po vašem odhodu. Podatki za prijavo se hranijo 30 dni po bivanju; potrdilo o oddaji se hrani, kot zahteva zakon.",
-      "location": "Vse se hrani v EU. Sporočila, ki jih napišete tukaj, lahko prebere samodejni pomočnik, ki lahko deluje zunaj EU; ničesar ne hrani.",
+      "location": "Vse se hrani v EU. Sporočila, ki jih napišete tukaj, in – če nastanitev uporablja samodejno branje – fotografije dokumentov lahko obdela samodejna storitev, ki lahko deluje zunaj EU; ničesar ne hrani.",
       "rights": "Nastanitev lahko prosite za vpogled, popravek ali izbris vaših podatkov."
     }
   },

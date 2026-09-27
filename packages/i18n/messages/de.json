@@ -786,7 +786,7 @@
       "controller": "{property} ist für Ihre Daten verantwortlich. BookOne betreibt diese Seite in seinem Auftrag.",
       "purpose": "Ihre Angaben und Ausweisdokumente werden erhoben, weil das italienische Recht die polizeiliche Meldung jedes Gastes vorschreibt (Art. 109 TULPS).",
       "retention": "Dokumentfotos werden nach der Meldung oder kurz nach Ihrer Abreise gelöscht. Meldedaten werden 30 Tage nach Ihrem Aufenthalt aufbewahrt; der Übermittlungsnachweis wird gesetzlich vorgeschrieben aufbewahrt.",
-      "location": "Alles wird in der EU gespeichert. Nachrichten, die Sie hier schreiben, können von einem automatischen Assistenten gelesen werden, der außerhalb der EU laufen kann; er speichert nichts.",
+      "location": "Alles wird in der EU gespeichert. Nachrichten, die Sie hier schreiben, und – wenn das Haus die automatische Erfassung nutzt – Fotos von Ausweisdokumenten können von einem automatischen Dienst verarbeitet werden, der außerhalb der EU laufen kann; er speichert nichts.",
       "rights": "Sie können das Haus bitten, Ihre Daten einzusehen, zu berichtigen oder zu löschen."
     }
   },

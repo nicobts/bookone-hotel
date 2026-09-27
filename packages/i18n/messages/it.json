@@ -786,7 +786,7 @@
       "controller": "{property} è titolare del trattamento dei suoi dati. BookOne gestisce questa pagina per suo conto.",
       "purpose": "I suoi dati e documenti d'identità sono raccolti perché la legge italiana impone di registrare ogni ospite presso la Questura (art. 109 TULPS).",
       "retention": "Le foto dei documenti vengono eliminate a registrazione avvenuta o poco dopo la partenza. I dati di registrazione sono conservati per 30 giorni dopo il soggiorno; la ricevuta dell'invio è conservata come previsto dalla legge.",
-      "location": "Tutto è conservato nell'UE. I messaggi che scrive qui possono essere letti da un assistente automatico che può operare fuori dall'UE; non conserva nulla.",
+      "location": "Tutto è conservato nell'UE. I messaggi che scrive qui e, se la struttura usa la lettura automatica, le foto dei documenti possono essere elaborati da un servizio automatico che può operare fuori dall'UE; non conserva nulla.",
       "rights": "Può chiedere alla struttura di vedere, correggere o cancellare i suoi dati."
     }
   },

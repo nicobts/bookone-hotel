@@ -786,7 +786,7 @@
       "controller": "{property} is responsible for your data. BookOne runs this page on its behalf.",
       "purpose": "Your details and identity documents are collected because Italian law requires every guest to be registered with the police (TULPS art. 109).",
       "retention": "Document photos are deleted once registration is done, or shortly after you leave. Registration details are kept for 30 days after your stay; the filing receipt is kept as the law requires.",
-      "location": "Everything is stored in the EU. Messages you write here may be read by an automated assistant that can run outside the EU; it keeps nothing.",
+      "location": "Everything is stored in the EU. Messages you write here, and document photos when the property uses automatic reading, may be processed by an automated service that can run outside the EU; it keeps nothing.",
       "rights": "You can ask the property to see, correct or delete your data."
     }
   },
