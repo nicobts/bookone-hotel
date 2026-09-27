@@ -144,6 +144,9 @@ const [property] = await sql`
       },
       fees: { directBookingBps: 300, aiAttributedBps: 1000 },
       documentRetentionDays: 1,
+      // The agent playground runs real turns and refuses any property without
+      // this flag (ADR-037). Only this seed sets it.
+      demo: true,
       ownerPhones: DEMO_OWNER_PHONE ? [...OWNER_PHONES, DEMO_OWNER_PHONE] : OWNER_PHONES,
       ...(WHATSAPP_NUMBER ? { whatsappNumber: WHATSAPP_NUMBER } : {}),
     })}

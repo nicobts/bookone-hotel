@@ -49,13 +49,29 @@ const golden: [string, string, string][] = [
   // own, a pool question matched the seafront answer. The fix was content —
   // the property saying it has no pool — not a looser or stricter matcher.
   ['en', 'Is the swimming pool heated?', 'pool'],
+  // German and Slovenian, added when the agent playground (ADR-037) showed a
+  // German guest escalated on every question: the demo had no answers in
+  // either language. Worded unlike the stored variants, like the rest.
+  ['de', 'Um wie viel Uhr gibt es morgens Frühstück?', 'breakfast'],
+  ['de', 'Ab wann kann ich einchecken?', 'checkin'],
+  ['de', 'Wo kann ich mein Auto parken?', 'parking'],
+  ['de', 'Wie lautet das WLAN Passwort?', 'wifi'],
+  ['de', 'Darf ich meinen Hund mitbringen?', 'pets'],
+  ['sl', 'Ob kateri uri je zajtrk?', 'breakfast'],
+  ['sl', 'Kje lahko parkiram avto?', 'parking'],
+  ['sl', 'Kakšno je geslo za wifi?', 'wifi'],
+  ['sl', 'Kako pridem do letališča?', 'airport'],
+  // A German guest writing Italian gets the German answer: the thread's
+  // language, which is the guest's, decides the answer.
+  ['de', 'A che ora è la colazione?', 'breakfast'],
 ]
 
 describe('WP0.5 · the demo knowledge base', () => {
-  it('has an Italian and an English answer for every article', () => {
+  it('has an answer in all four languages for every article', () => {
     for (const article of articles) {
-      expect(article.answers.it, article.topic).toBeTruthy()
-      expect(article.answers.en, article.topic).toBeTruthy()
+      for (const locale of ['it', 'en', 'de', 'sl']) {
+        expect(article.answers[locale], `${article.topic} [${locale}]`).toBeTruthy()
+      }
     }
   })
 
@@ -68,6 +84,8 @@ describe('WP0.5 · the demo knowledge base', () => {
     ['en', 'Can I get a discount for a week?'],
     ['it', 'Avete una sauna?'],
     ['en', 'Is there a gym in the hotel?'],
+    ['de', 'Habt ihr eine Sauna?'],
+    ['sl', 'Ali imate savno?'],
   ])('[%s] %s → no answer; a person gets it', (locale, question) => {
     expect(matchArticles(kb, question, locale)).toBeNull()
   })

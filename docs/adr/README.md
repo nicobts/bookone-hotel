@@ -70,6 +70,7 @@ split here unchanged; their bodies are verbatim, with only a status line added.
 | [034](ADR-034-api-split-from-worker.md) | Webhooks and internal endpoints move to `apps/api`; the worker runs jobs only | Accepted |
 | [035](ADR-035-twilio-for-whatsapp-and-sms.md) | WhatsApp and SMS go through Twilio, initially | Accepted |
 | [036](ADR-036-opentelemetry-in-every-service.md) | Every service emits OpenTelemetry traces, metrics and logs | Accepted |
+| [037](ADR-037-chat-interface-on-the-ai-sdk-ui-protocol.md) | A shared chat interface on the AI SDK UI protocol, first as an agent preview | Accepted |
 
 ADR-019 to ADR-034 come from the Guest Desk handoff (`docs/guest_desk_20260927/`, ADR-F1…F13 and UPGRADE-01),
 amended where the WP0.1 inventory ([11-inventory.md](../11-inventory.md)) found the handoff's

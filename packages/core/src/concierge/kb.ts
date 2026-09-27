@@ -126,6 +126,15 @@ const STOP_WORDS = new Set([
   'im',
   'am',
   'fur',
+  // "habt ihr…", "gibt es…" — the scaffolding of a question, not its subject.
+  // Found by the WP0.5 negative set: without them "Habt ihr eine Sauna?"
+  // matched the pool article on "habt ihr" alone.
+  'habt',
+  'ihr',
+  'haben',
+  'hat',
+  'gibt',
+  'es',
   // sl
   'je',
   'so',
@@ -137,6 +146,9 @@ const STOP_WORDS = new Set([
   'kako',
   'lahko',
   'ali',
+  // "ali imate…" — the same scaffolding; "imate" alone matched parking.
+  'imate',
+  'ima',
 ])
 
 /**

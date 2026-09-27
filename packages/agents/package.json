@@ -11,7 +11,8 @@
     "./tools": "./src/tools/index.ts",
     "./concierge": "./src/concierge.ts",
     "./profiles": "./src/profiles/index.ts",
-    "./owner": "./src/owner.ts"
+    "./owner": "./src/owner.ts",
+    "./preview": "./src/preview.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

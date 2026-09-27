@@ -4,6 +4,13 @@ import nextPlugin from '@next/eslint-plugin-next'
 import turboPlugin from 'eslint-plugin-turbo'
 import prettier from 'eslint-config-prettier'
 
+/** Where ADR-037 allows the AI SDK's UI protocol (never its model providers). */
+const CHAT_SURFACES = [
+  'packages/ui/src/components/chat/**',
+  'apps/*/src/app/api/**/chat/**',
+  'apps/*/src/app/**/playground/**',
+]
+
 export default tseslint.config(
   {
     ignores: [
@@ -34,8 +41,13 @@ export default tseslint.config(
     // ADR-012 / ADR-023: no agent or domain module may import a model vendor SDK,
     // the AI SDK or a provider package directly.
     // LLM access goes through the LlmProvider abstraction in @bookone/core.
-    files: ['packages/agents/**/*.ts', 'packages/core/**/*.ts', 'apps/**/*.{ts,tsx}'],
-    ignores: ['packages/core/src/llm/**'],
+    files: [
+      'packages/agents/**/*.ts',
+      'packages/core/**/*.ts',
+      'packages/ui/**/*.{ts,tsx}',
+      'apps/**/*.{ts,tsx}',
+    ],
+    ignores: ['packages/core/src/llm/**', ...CHAT_SURFACES],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -58,6 +70,36 @@ export default tseslint.config(
             {
               group: ['@ai-sdk/*', '@openrouter/*'],
               message: 'ADR-023: provider packages live behind LlmProvider in @bookone/core/llm.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // ADR-037: the chat interface and its endpoints speak the AI SDK's UI
+    // protocol (`ai`'s UI-stream helpers, `@ai-sdk/react`). Model access is
+    // still only through LlmProvider: every provider package stays banned here.
+    files: CHAT_SURFACES,
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@anthropic-ai/sdk',
+              message: 'ADR-012: use the LlmProvider abstraction in @bookone/core/llm.',
+            },
+            {
+              name: 'openai',
+              message: 'ADR-012: use the LlmProvider abstraction in @bookone/core/llm.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['@ai-sdk/*', '!@ai-sdk/react', '@openrouter/*'],
+              message:
+                'ADR-037: chat surfaces use the UI protocol only; models go through LlmProvider.',
             },
           ],
         },

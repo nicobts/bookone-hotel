@@ -9,11 +9,17 @@
         "is breakfast included",
         "a che ora è la colazione",
         "quando si fa colazione",
-        "la colazione è inclusa"
+        "la colazione è inclusa",
+        "wann gibt es frühstück",
+        "ist das frühstück inbegriffen",
+        "kdaj je zajtrk",
+        "ali je zajtrk vključen"
       ],
       "answers": {
         "en": "Breakfast is served from 07:00 to 10:30 in the breakfast room on the first floor, and it is included in your rate.",
-        "it": "La colazione è servita dalle 07:00 alle 10:30 nella sala al primo piano ed è inclusa nella tariffa."
+        "it": "La colazione è servita dalle 07:00 alle 10:30 nella sala al primo piano ed è inclusa nella tariffa.",
+        "de": "Das Frühstück gibt es von 07:00 bis 10:30 Uhr im Frühstücksraum im ersten Stock, und es ist in Ihrem Preis inbegriffen.",
+        "sl": "Zajtrk strežemo od 07:00 do 10:30 v jedilnici v prvem nadstropju in je vključen v vašo ceno."
       }
     },
     {
@@ -24,11 +30,17 @@
         "can i arrive early",
         "a che ora è il check in",
         "quando posso fare il check in",
-        "posso arrivare prima"
+        "posso arrivare prima",
+        "ab wann ist check-in",
+        "wann kann ich einchecken",
+        "kdaj je prijava",
+        "od kdaj se lahko prijavim"
       ],
       "answers": {
         "en": "Check-in is from 14:00. If you arrive earlier, we will keep your luggage at reception until your room is ready.",
-        "it": "Il check-in è dalle 14:00. Se arriva prima, teniamo i bagagli in reception finché la camera è pronta."
+        "it": "Il check-in è dalle 14:00. Se arriva prima, teniamo i bagagli in reception finché la camera è pronta.",
+        "de": "Check-in ist ab 14:00 Uhr. Wenn Sie früher ankommen, bewahren wir Ihr Gepäck an der Rezeption auf, bis Ihr Zimmer bereit ist.",
+        "sl": "Prijava je od 14:00. Če prispete prej, vam prtljago shranimo na recepciji, dokler soba ni pripravljena."
       }
     },
     {
@@ -37,11 +49,17 @@
         "what time is checkout",
         "when do i have to leave the room",
         "a che ora è il check out",
-        "entro che ora devo lasciare la camera"
+        "entro che ora devo lasciare la camera",
+        "bis wann ist check-out",
+        "wann muss ich auschecken",
+        "do kdaj je odjava",
+        "kdaj moram oditi"
       ],
       "answers": {
         "en": "Checkout is by 11:00. You can leave your luggage at reception for the rest of the day.",
-        "it": "Il check-out è entro le 11:00. Può lasciare i bagagli in reception per il resto della giornata."
+        "it": "Il check-out è entro le 11:00. Può lasciare i bagagli in reception per il resto della giornata.",
+        "de": "Check-out ist bis 11:00 Uhr. Ihr Gepäck können Sie für den Rest des Tages an der Rezeption lassen.",
+        "sl": "Odjava je do 11:00. Prtljago lahko za preostanek dneva pustite na recepciji."
       }
     },
     {
@@ -52,11 +70,17 @@
         "how much is parking",
         "c'è un parcheggio",
         "dove posso parcheggiare",
-        "quanto costa il parcheggio"
+        "quanto costa il parcheggio",
+        "gibt es einen parkplatz",
+        "wo kann ich parken",
+        "ali imate parkirišče",
+        "kje lahko parkiram"
       ],
       "answers": {
         "en": "We have no car park of our own. The nearest public garage is a five-minute walk away; reception can give you directions.",
-        "it": "Non abbiamo un parcheggio nostro. Il garage pubblico più vicino è a cinque minuti a piedi; la reception le indica la strada."
+        "it": "Non abbiamo un parcheggio nostro. Il garage pubblico più vicino è a cinque minuti a piedi; la reception le indica la strada.",
+        "de": "Wir haben keinen eigenen Parkplatz. Das nächste öffentliche Parkhaus ist fünf Gehminuten entfernt; die Rezeption erklärt Ihnen gern den Weg.",
+        "sl": "Lastnega parkirišča nimamo. Najbližja javna garaža je pet minut hoje stran; na recepciji vam povemo pot."
       }
     },
     {
@@ -67,11 +91,17 @@
         "how do i connect to the internet",
         "qual è la password del wifi",
         "c'è il wifi",
-        "come mi collego a internet"
+        "come mi collego a internet",
+        "wlan passwort",
+        "gibt es wlan",
+        "geslo za wifi",
+        "ali imate wifi"
       ],
       "answers": {
         "en": "The network is DemoHotel-Guests. The password is on the card in your room.",
-        "it": "La rete si chiama DemoHotel-Guests. La password è sul cartoncino in camera."
+        "it": "La rete si chiama DemoHotel-Guests. La password è sul cartoncino in camera.",
+        "de": "Das Netzwerk heißt DemoHotel-Guests. Das Passwort steht auf der Karte in Ihrem Zimmer.",
+        "sl": "Omrežje se imenuje DemoHotel-Guests. Geslo je na kartici v vaši sobi."
       }
     },
     {
@@ -82,11 +112,17 @@
         "are dogs allowed",
         "sono ammessi animali",
         "posso portare il cane",
-        "i cani sono ammessi"
+        "i cani sono ammessi",
+        "sind hunde erlaubt",
+        "darf ich meinen hund mitbringen",
+        "ali so psi dovoljeni",
+        "lahko pripeljem psa"
       ],
       "answers": {
         "en": "Small dogs are welcome for a supplement of 15 euro per night. Please tell us when you book.",
-        "it": "I cani di piccola taglia sono i benvenuti con un supplemento di 15 euro a notte. Ce lo segnali al momento della prenotazione."
+        "it": "I cani di piccola taglia sono i benvenuti con un supplemento di 15 euro a notte. Ce lo segnali al momento della prenotazione.",
+        "de": "Kleine Hunde sind gegen einen Aufpreis von 15 Euro pro Nacht willkommen. Bitte sagen Sie uns bei der Buchung Bescheid.",
+        "sl": "Majhni psi so dobrodošli za doplačilo 15 evrov na noč. Prosimo, povejte nam ob rezervaciji."
       }
     },
     {
@@ -96,11 +132,17 @@
         "what is the tourist tax",
         "how much is the city tax",
         "c'è la tassa di soggiorno",
-        "quanto è la tassa di soggiorno"
+        "quanto è la tassa di soggiorno",
+        "kurtaxe",
+        "wie hoch ist die kurtaxe",
+        "turistična taksa",
+        "koliko je turistična taksa"
       ],
       "answers": {
         "en": "The municipal tourist tax is paid at the hotel at the end of your stay. Children under 14 are exempt; reception will tell you the exact amount.",
-        "it": "L'imposta di soggiorno comunale si paga in hotel a fine soggiorno. Sono esenti i minori di 14 anni; la reception le indica l'importo esatto."
+        "it": "L'imposta di soggiorno comunale si paga in hotel a fine soggiorno. Sono esenti i minori di 14 anni; la reception le indica l'importo esatto.",
+        "de": "Die Kurtaxe der Gemeinde wird am Ende Ihres Aufenthalts im Hotel bezahlt. Kinder unter 14 Jahren sind befreit; die Rezeption nennt Ihnen den genauen Betrag.",
+        "sl": "Turistično takso občine plačate v hotelu ob koncu bivanja. Otroci do 14. leta so oproščeni; točen znesek vam pove recepcija."
       }
     },
     {
@@ -109,11 +151,17 @@
         "how do i get from the train station",
         "how far is the station",
         "come arrivo dalla stazione",
-        "quanto dista la stazione"
+        "quanto dista la stazione",
+        "wie weit ist der bahnhof",
+        "wie komme ich zum bahnhof",
+        "kako daleč je železniška postaja",
+        "kako pridem do postaje"
       ],
       "answers": {
         "en": "Trieste Centrale station is about fifteen minutes on foot, or a short taxi ride.",
-        "it": "La stazione di Trieste Centrale è a circa quindici minuti a piedi, o una breve corsa in taxi."
+        "it": "La stazione di Trieste Centrale è a circa quindici minuti a piedi, o una breve corsa in taxi.",
+        "de": "Der Bahnhof Trieste Centrale ist etwa fünfzehn Gehminuten entfernt, oder eine kurze Taxifahrt.",
+        "sl": "Železniška postaja Trieste Centrale je približno petnajst minut hoje stran ali kratka vožnja s taksijem."
       }
     },
     {
@@ -124,11 +172,17 @@
         "is there an airport shuttle",
         "come arrivo dall'aeroporto",
         "quanto dista l'aeroporto",
-        "c'è una navetta per l'aeroporto"
+        "c'è una navetta per l'aeroporto",
+        "wie komme ich zum flughafen",
+        "gibt es einen flughafentransfer",
+        "kako pridem do letališča",
+        "ali imate prevoz na letališče"
       ],
       "answers": {
         "en": "Trieste Airport is at Ronchi dei Legionari, about forty minutes by car. We do not run a shuttle; reception can book you a taxi.",
-        "it": "L'aeroporto di Trieste si trova a Ronchi dei Legionari, a circa quaranta minuti in auto. Non abbiamo una navetta; la reception può prenotarle un taxi."
+        "it": "L'aeroporto di Trieste si trova a Ronchi dei Legionari, a circa quaranta minuti in auto. Non abbiamo una navetta; la reception può prenotarle un taxi.",
+        "de": "Der Flughafen Triest liegt in Ronchi dei Legionari, etwa vierzig Minuten mit dem Auto. Wir haben keinen Shuttle; die Rezeption bestellt Ihnen gern ein Taxi.",
+        "sl": "Letališče Trst je v kraju Ronchi dei Legionari, približno štirideset minut z avtom. Prevoza nimamo; na recepciji vam naročimo taksi."
       }
     },
     {
@@ -137,11 +191,17 @@
         "how do i visit miramare castle",
         "is miramare castle worth a visit",
         "come si visita il castello di miramare",
-        "vale la pena vedere il castello di miramare"
+        "vale la pena vedere il castello di miramare",
+        "schloss miramare",
+        "wie komme ich nach miramare",
+        "grad miramare",
+        "kako pridem do miramara"
       ],
       "answers": {
         "en": "Miramare Castle stands on the coast just north of the city, with a large public park around it. Reception can show you the bus and the coastal walk.",
-        "it": "Il Castello di Miramare si trova sulla costa appena a nord della città, circondato da un grande parco pubblico. La reception le indica l'autobus e la passeggiata lungo la costa."
+        "it": "Il Castello di Miramare si trova sulla costa appena a nord della città, circondato da un grande parco pubblico. La reception le indica l'autobus e la passeggiata lungo la costa.",
+        "de": "Das Schloss Miramare liegt direkt an der Küste nördlich der Stadt, umgeben von einem großen öffentlichen Park. Die Rezeption zeigt Ihnen den Bus und den Küstenweg.",
+        "sl": "Grad Miramare stoji ob obali severno od mesta, obdan z velikim javnim parkom. Na recepciji vam pokažemo avtobus in obalno pot."
       }
     },
     {
@@ -152,11 +212,17 @@
         "what is there to do in trieste",
         "cosa vedere in città",
         "dov'è piazza unità",
-        "cosa fare a trieste"
+        "cosa fare a trieste",
+        "was sollte ich in triest sehen",
+        "sehenswürdigkeiten",
+        "kaj si ogledati v trstu",
+        "znamenitosti"
       ],
       "answers": {
         "en": "Start at Piazza Unità d'Italia, the great square open to the sea, and walk out along the Molo Audace pier at sunset.",
-        "it": "Parta da Piazza Unità d'Italia, la grande piazza aperta sul mare, e al tramonto passeggi lungo il Molo Audace."
+        "it": "Parta da Piazza Unità d'Italia, la grande piazza aperta sul mare, e al tramonto passeggi lungo il Molo Audace.",
+        "de": "Beginnen Sie auf der Piazza Unità d'Italia, dem großen Platz zum Meer hin, und gehen Sie bei Sonnenuntergang auf der Mole Molo Audace hinaus.",
+        "sl": "Začnite na trgu Piazza Unità d'Italia, velikem trgu ob morju, in se ob sončnem zahodu sprehodite po pomolu Molo Audace."
       }
     },
     {
@@ -165,11 +231,17 @@
         "where can i swim",
         "is there a beach nearby",
         "dove posso fare il bagno",
-        "c'è una spiaggia vicino"
+        "c'è una spiaggia vicino",
+        "wo kann man baden",
+        "gibt es einen strand",
+        "kje se lahko kopam",
+        "ali je tu plaža"
       ],
       "answers": {
         "en": "Locals swim along the Barcola seafront, a short bus ride along the coast. There is no sandy beach in the city itself.",
-        "it": "In città si fa il bagno lungo il lungomare di Barcola, a poche fermate di autobus lungo la costa. In centro non c'è una spiaggia di sabbia."
+        "it": "In città si fa il bagno lungo il lungomare di Barcola, a poche fermate di autobus lungo la costa. In centro non c'è una spiaggia di sabbia.",
+        "de": "Die Einheimischen baden an der Uferpromenade von Barcola, eine kurze Busfahrt entlang der Küste. In der Stadt selbst gibt es keinen Sandstrand.",
+        "sl": "Domačini se kopajo ob obali v Barcoli, kratka vožnja z avtobusom ob obali. V samem mestu peščene plaže ni."
       }
     },
     {
@@ -180,11 +252,17 @@
         "does the hotel have a pool",
         "c'è una piscina",
         "la piscina è riscaldata",
-        "l'hotel ha la piscina"
+        "l'hotel ha la piscina",
+        "habt ihr ein schwimmbad",
+        "gibt es einen pool",
+        "ali imate bazen",
+        "ali je v hotelu bazen"
       ],
       "answers": {
         "en": "We do not have a swimming pool. In summer, locals swim along the Barcola seafront, a short bus ride along the coast.",
-        "it": "Non abbiamo una piscina. D'estate in città si fa il bagno lungo il lungomare di Barcola, a poche fermate di autobus."
+        "it": "Non abbiamo una piscina. D'estate in città si fa il bagno lungo il lungomare di Barcola, a poche fermate di autobus.",
+        "de": "Wir haben kein Schwimmbad. Im Sommer baden die Einheimischen an der Uferpromenade von Barcola, eine kurze Busfahrt entlang der Küste.",
+        "sl": "Bazena nimamo. Poleti se domačini kopajo ob obali v Barcoli, kratka vožnja z avtobusom ob obali."
       }
     }
   ]

@@ -1,4 +1,10 @@
-import { ActivityIcon, Building2Icon, ScrollTextIcon, ShieldCheckIcon } from 'lucide-react'
+import {
+  ActivityIcon,
+  Building2Icon,
+  MessagesSquareIcon,
+  ScrollTextIcon,
+  ShieldCheckIcon,
+} from 'lucide-react'
 import { Logo } from '@bookone/ui/components/logo'
 import {
   Sidebar,
@@ -25,6 +31,10 @@ export function AppSidebar({
         { title: 'Properties', href: '/', icon: <Building2Icon /> },
         { title: 'Health', href: '/health', icon: <ActivityIcon /> },
       ],
+    },
+    {
+      label: 'Agents',
+      items: [{ title: 'Agent playground', href: '/playground', icon: <MessagesSquareIcon /> }],
     },
     {
       label: 'Accountability',

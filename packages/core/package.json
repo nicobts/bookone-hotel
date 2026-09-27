@@ -29,7 +29,8 @@
     "./privacy": "./src/privacy/index.ts",
     "./admin": "./src/admin/index.ts",
     "./channels": "./src/channels/index.ts",
-    "./telemetry": "./src/telemetry/index.ts"
+    "./telemetry": "./src/telemetry/index.ts",
+    "./preview": "./src/preview/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
