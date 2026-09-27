@@ -37,6 +37,8 @@ export interface ChatProps {
   emptyDescription?: string
   suggestions?: string[]
   assistantLabel?: string
+  /** Spoken while the reply is on its way; the dots are what the eye sees. */
+  thinkingLabel?: string
   renderData?: (part: { type: string; data: unknown }) => React.ReactNode
 }
 
@@ -49,6 +51,7 @@ export function Chat({
   emptyDescription,
   suggestions = [],
   assistantLabel = 'AI',
+  thinkingLabel = 'Thinking',
   renderData,
 }: ChatProps) {
   const transport = React.useMemo(
@@ -108,7 +111,18 @@ export function Chat({
                 ))}
                 {status === 'submitted' ? (
                   <MessageScrollerItem messageId="thinking">
-                    <p className="text-muted-foreground animate-pulse px-11 text-sm">Thinking…</p>
+                    <Message align="start">
+                      <MessageAvatar>{assistantLabel}</MessageAvatar>
+                      <MessageContent>
+                        <Bubble variant="muted">
+                          <span role="status" className="bo-typing" aria-label={thinkingLabel}>
+                            <span />
+                            <span />
+                            <span />
+                          </span>
+                        </Bubble>
+                      </MessageContent>
+                    </Message>
                   </MessageScrollerItem>
                 ) : null}
               </MessageScrollerContent>

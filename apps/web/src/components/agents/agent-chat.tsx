@@ -1,6 +1,7 @@
 'use client'
 
 import type { UIMessage } from 'ai'
+import { useTranslations } from 'next-intl'
 import { Chat } from '@bookone/ui/components/chat/chat'
 import { RunDetails, type RunData } from './run-details'
 
@@ -29,6 +30,8 @@ export function AgentChat({
   emptyTitle: string
   emptyDescription: string
 }) {
+  const t = useTranslations('common')
+
   return (
     <Chat
       api="/api/agents/chat"
@@ -39,6 +42,7 @@ export function AgentChat({
       emptyTitle={emptyTitle}
       emptyDescription={emptyDescription}
       assistantLabel="AI"
+      thinkingLabel={t('thinking')}
       renderData={(part) =>
         part.type === 'data-run' ? <RunDetails data={part.data as RunData} /> : null
       }

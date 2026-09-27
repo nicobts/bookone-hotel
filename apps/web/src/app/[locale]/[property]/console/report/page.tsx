@@ -7,7 +7,7 @@ import { requireOwner } from '@/lib/auth/current-property'
 import { formatDate, formatMoney } from '@/components/booking/format'
 import { ExportButton } from '@/components/report/export-button'
 import { Badge } from '@bookone/ui/components/badge'
-import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Separator } from '@bookone/ui/components/separator'
 import { dispute, exportCsv, issue } from './actions'
 
@@ -96,6 +96,7 @@ export default async function ReportPage({
             label={t('export.action')}
             busyLabel={t('export.busy')}
             errorLabel={t('export.failed')}
+            doneLabel={t('export.done')}
           />
           {issued ? (
             <Badge variant="secondary" className="gap-1">
@@ -104,9 +105,7 @@ export default async function ReportPage({
             </Badge>
           ) : (
             <form action={issue.bind(null, context)}>
-              <Button type="submit" size="sm">
-                {t('issue')}
-              </Button>
+              <PendingButton size="sm">{t('issue')}</PendingButton>
             </form>
           )}
         </div>
@@ -316,9 +315,9 @@ async function Section({
                     action={dispute.bind(null, { ...context, feeEventId: item.feeEventId })}
                     className="mt-3"
                   >
-                    <Button type="submit" variant="ghost" size="sm" className="h-7 px-2 text-xs">
+                    <PendingButton variant="ghost" size="sm" className="h-7 px-2 text-xs">
                       {t('disputeAction')}
-                    </Button>
+                    </PendingButton>
                   </form>
                 )
               )}

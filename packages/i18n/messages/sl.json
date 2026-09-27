@@ -4,7 +4,10 @@
     "loading": "Nalaganje",
     "cancel": "Prekliči",
     "save": "Shrani",
-    "retry": "Poskusi znova"
+    "retry": "Poskusi znova",
+    "notifications": "Obvestila",
+    "close": "Zapri",
+    "thinking": "Piše odgovor"
   },
   "auth": {
     "brandLine": "Vsako bivanje, urejeno.",
@@ -117,7 +120,13 @@
       "reason": "Razlog",
       "waiting": "Čaka na pošiljanje",
       "alloggiatiTitle": "Prijava policiji zamuja",
-      "alloggiatiBody": "Ta gost je prispel pred več kot 20 urami, prijava pa ni potrjena."
+      "alloggiatiBody": "Ta gost je prispel pred več kot 20 urami, prijava pa ni potrjena.",
+      "toast": {
+        "retrying": "Nov poskus se je začel",
+        "retryingDescription": "Vrstica izgine, takoj ko rezervacija prispe v vaš PMS.",
+        "unreachable": "Poskus se ni začel",
+        "unreachableDescription": "Storitev se ni odzvala. Poskusite znova čez trenutek."
+      }
     },
     "arrival": {
       "title": "Prihod",
@@ -163,7 +172,19 @@
       "ocrValid": "Dokument prebran: strojno berljivo polje se ujema",
       "ocrInvalid": "Fotografija ni berljiva — gosta prosite za novo",
       "ocrPrinted": "Prebrano samo iz tiska — preverite z dokumentom",
-      "ocrMismatch": "Se razlikuje od dokumenta: {fields}"
+      "ocrMismatch": "Se razlikuje od dokumenta: {fields}",
+      "toast": {
+        "arrived": "Prihod zabeležen",
+        "arrivedDescription": "Bivanje gosta se je začelo.",
+        "unreachable": "To ni uspelo",
+        "unreachableDescription": "Storitev se ni odzvala. Poskusite znova čez trenutek.",
+        "filing": "Prijava se je začela",
+        "filingDescription": "Rezultat se prikaže na tej strani, takoj ko prispe.",
+        "confirmed": "Dokumenti potrjeni",
+        "confirmedDescription": "Potrditev je zabeležena na vaše ime.",
+        "notConfirmed": "Potrditev ni mogoča",
+        "notConfirmedDescription": "Manjka podatek prijavnice ali dokument vsaj enega gosta."
+      }
     },
     "conversations": {
       "title": "Pogovori",
@@ -237,7 +258,17 @@
         "unknown_twice": "zahteva dvakrat ni bila razumljena"
       },
       "approved": "odobreno",
-      "declined": "zavrnilo osebje"
+      "declined": "zavrnilo osebje",
+      "toast": {
+        "takenOver": "Pogovor prevzet",
+        "takenOverDescription": "Pogovor je zdaj vaš.",
+        "handedBack": "Pogovor sproščen",
+        "handedBackDescription": "Spet je med nedodeljenimi.",
+        "sent": "Odgovor poslan",
+        "undone": "Dejanje razveljavljeno",
+        "notUndone": "Razveljavitev ni mogoča",
+        "notUndoneDescription": "Tega dejanja ni več mogoče razveljaviti."
+      }
     },
     "report": {
       "title": "Prihodki in provizije",
@@ -287,7 +318,19 @@
           "credit": "Dobropis",
           "net": "Neto",
           "evidence": "Razlog pripisa"
-        }
+        },
+        "done": "CSV prenesen"
+      },
+      "toast": {
+        "issued": "Obračun potrjen",
+        "issuedDescription": "Obdobje je zaključeno: račun bo sledil tem zneskom.",
+        "alreadyIssued": "Ta obračun je že potrjen.",
+        "notIssued": "Za to obdobje ni obračuna.",
+        "disputed": "Ugovor zabeležen",
+        "disputedDescription": "Znesek je bil dobropisan na obračunu.",
+        "alreadyDisputed": "Tej postavki je že bilo ugovarjano.",
+        "notDisputed": "Ugovor ni mogoč",
+        "notDisputedDescription": "Tej postavki ni mogoče ugovarjati."
       }
     },
     "setup": {
@@ -369,7 +412,23 @@
       "save": "Shrani",
       "create": "Dodaj",
       "newHeading": "Dodaj odgovor",
-      "newHint": "Jezik, ki ga pustite praznega, je jezik, za katerega asistent pripelje osebo. Nikoli ne prevaja."
+      "newHint": "Jezik, ki ga pustite praznega, je jezik, za katerega asistent pripelje osebo. Nikoli ne prevaja.",
+      "toast": {
+        "saved": "Odgovor shranjen",
+        "savedDescription": "Concierge ga uporablja takoj.",
+        "savedDraft": "Osnutek shranjen",
+        "published": "Odgovor objavljen",
+        "publishedDescription": "Concierge ga uporablja takoj.",
+        "unpublished": "Odgovor umaknjen",
+        "unpublishedDescription": "Concierge ga ne uporablja več. Ostane v zgodovini.",
+        "notSaved": "Odgovor ni shranjen",
+        "reasons": {
+          "topicRequired": "Tema je obvezna.",
+          "topicTooLong": "Tema naj bo ena ali dve besedi.",
+          "answerRequired": "Odgovor napišite v vsaj enem jeziku.",
+          "other": "Poskusite znova čez trenutek."
+        }
+      }
     },
     "privacy": {
       "title": "Zasebnost",
@@ -414,6 +473,12 @@
         "fee_events": "Kar smo zaračunali temu objektu",
         "alloggiati_submissions": "Prijava policiji (Questura)",
         "privacy_requests": "Ta zahteva"
+      },
+      "toast": {
+        "exportRecorded": "Zahteva zabeležena: prenos se začenja",
+        "erasureQueued": "Izbris se je začel",
+        "erasurePending": "Izbris zabeležen, še ni izveden",
+        "exportFailed": "Izvoza ni bilo mogoče začeti. Poskusite znova."
       }
     },
     "approvals": {
@@ -424,11 +489,19 @@
       "reject": "Zavrni",
       "openThread": "Odpri pogovor",
       "rejectNote": "Zavrnitev gostu pošlje odgovor, da se bo nekdo oglasil.",
-      "failed": "Ni bilo mogoče izvesti: {reason}. Gostu ni bilo poslano nič.",
       "tools": {
         "cancel_booking": "Preklic rezervacije",
         "create_payment_link": "Pošiljanje povezave za plačilo",
         "request_late_checkout": "Kasnejša odjava"
+      },
+      "toast": {
+        "approved": "Odobreno",
+        "approvedDescription": "Gost je odgovor prejel v pogovoru.",
+        "rejected": "Zavrnjeno",
+        "rejectedDescription": "Gost je bil obveščen, da ga bo nekdo kontaktiral.",
+        "gone": "O tej zahtevi je bilo že odločeno.",
+        "failed": "Dejanja ni bilo mogoče izvesti",
+        "failedDescription": "Razlog: {reason}. Gostu ni bilo poslano nič."
       }
     },
     "assistant": {
@@ -1056,6 +1129,13 @@
       "retention": "Fotografije dokumentov se izbrišejo po opravljeni prijavi ali kmalu po vašem odhodu. Podatki za prijavo se hranijo 30 dni po bivanju; potrdilo o oddaji se hrani, kot zahteva zakon.",
       "location": "Vse se hrani v EU. Sporočila, ki jih napišete tukaj, in – če nastanitev uporablja samodejno branje – fotografije dokumentov lahko obdela samodejna storitev, ki lahko deluje zunaj EU; ničesar ne hrani.",
       "rights": "Nastanitev lahko prosite za vpogled, popravek ali izbris vaših podatkov."
+    },
+    "toast": {
+      "partySaved": "Podatki gostov shranjeni",
+      "documentSaved": "Dokument prejet",
+      "documentSavedDescription": "Nastanitev ga preveri pred vašim prihodom.",
+      "arrivalSaved": "Čas prihoda shranjen",
+      "messageSent": "Sporočilo poslano"
     }
   },
   "concierge": {

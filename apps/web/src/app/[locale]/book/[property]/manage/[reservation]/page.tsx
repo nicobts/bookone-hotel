@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getBookingProperty, getHeldBooking } from '@bookone/core/db'
 import { BookingShell } from '@/components/booking/booking-shell'
-import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Separator } from '@bookone/ui/components/separator'
 import { formatDate, formatMoney, roomName } from '@/components/booking/format'
 import { cancellationQuote } from '@/lib/worker'
@@ -148,9 +148,7 @@ export default async function ManageBookingPage({
               recomputes it from the policy and the ledger — a refund figure
               posted from a browser is a refund figure anyone can raise.
             */}
-            <Button type="submit" variant="destructive">
-              {t('manage.confirmCancel')}
-            </Button>
+            <PendingButton variant="destructive">{t('manage.confirmCancel')}</PendingButton>
             <a
               href={`/${locale}/book/${slug}`}
               className="text-muted-foreground text-sm underline underline-offset-4"

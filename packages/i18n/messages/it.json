@@ -4,7 +4,10 @@
     "loading": "Caricamento",
     "cancel": "Annulla",
     "save": "Salva",
-    "retry": "Riprova"
+    "retry": "Riprova",
+    "notifications": "Notifiche",
+    "close": "Chiudi",
+    "thinking": "Sta scrivendo"
   },
   "auth": {
     "brandLine": "Ogni soggiorno, gestito.",
@@ -117,7 +120,13 @@
       "reason": "Motivo",
       "waiting": "In attesa di invio",
       "alloggiatiTitle": "Comunicazione alla questura in ritardo",
-      "alloggiatiBody": "Questo ospite è arrivato da più di 20 ore e l'invio non è confermato."
+      "alloggiatiBody": "Questo ospite è arrivato da più di 20 ore e l'invio non è confermato.",
+      "toast": {
+        "retrying": "Nuovo tentativo avviato",
+        "retryingDescription": "La riga sparisce appena la prenotazione arriva nel gestionale.",
+        "unreachable": "Il tentativo non è partito",
+        "unreachableDescription": "Il servizio non ha risposto. Riprova tra qualche istante."
+      }
     },
     "arrival": {
       "title": "Arrivo",
@@ -163,7 +172,19 @@
       "ocrValid": "Documento letto: zona a lettura ottica verificata",
       "ocrInvalid": "Foto illeggibile — chiedere una nuova foto all'ospite",
       "ocrPrinted": "Letto solo dalla stampa — verificare con il documento",
-      "ocrMismatch": "Diverso dal documento: {fields}"
+      "ocrMismatch": "Diverso dal documento: {fields}",
+      "toast": {
+        "arrived": "Arrivo registrato",
+        "arrivedDescription": "Il soggiorno dell'ospite risulta iniziato.",
+        "unreachable": "L'operazione non è andata a buon fine",
+        "unreachableDescription": "Il servizio non ha risposto. Riprova tra qualche istante.",
+        "filing": "Invio avviato",
+        "filingDescription": "L'esito compare in questa pagina appena arriva.",
+        "confirmed": "Documenti confermati",
+        "confirmedDescription": "La conferma è registrata a tuo nome.",
+        "notConfirmed": "Non è stato possibile confermare",
+        "notConfirmedDescription": "Manca un dato della scheda o il documento di almeno un ospite."
+      }
     },
     "conversations": {
       "title": "Conversazioni",
@@ -237,7 +258,17 @@
         "unknown_twice": "la richiesta non è stata capita due volte"
       },
       "approved": "approvata",
-      "declined": "rifiutata dal personale"
+      "declined": "rifiutata dal personale",
+      "toast": {
+        "takenOver": "Conversazione presa in carico",
+        "takenOverDescription": "Ora la conversazione è tua.",
+        "handedBack": "Conversazione rilasciata",
+        "handedBackDescription": "Torna tra quelle da assegnare.",
+        "sent": "Risposta inviata",
+        "undone": "Azione annullata",
+        "notUndone": "Non è stato possibile annullare",
+        "notUndoneDescription": "Questa azione non si può più annullare."
+      }
     },
     "report": {
       "title": "Ricavi e commissioni",
@@ -287,7 +318,19 @@
           "credit": "Accredito",
           "net": "Netto",
           "evidence": "Motivo attribuzione"
-        }
+        },
+        "done": "CSV scaricato"
+      },
+      "toast": {
+        "issued": "Prospetto confermato",
+        "issuedDescription": "Il periodo è chiuso: la fattura seguirà questi importi.",
+        "alreadyIssued": "Questo prospetto è già confermato.",
+        "notIssued": "Prospetto non trovato per questo periodo.",
+        "disputed": "Contestazione registrata",
+        "disputedDescription": "L'importo è stato stornato dal prospetto.",
+        "alreadyDisputed": "Questa voce è già contestata.",
+        "notDisputed": "Non è stato possibile contestare",
+        "notDisputedDescription": "Questa voce non si può contestare."
       }
     },
     "setup": {
@@ -369,7 +412,23 @@
       "save": "Salva",
       "create": "Aggiungi",
       "newHeading": "Aggiungi una risposta",
-      "newHint": "Una lingua lasciata vuota è una lingua per cui l'assistente chiamerà una persona. Non traduce mai."
+      "newHint": "Una lingua lasciata vuota è una lingua per cui l'assistente chiamerà una persona. Non traduce mai.",
+      "toast": {
+        "saved": "Risposta salvata",
+        "savedDescription": "Il concierge la usa da subito.",
+        "savedDraft": "Bozza salvata",
+        "published": "Risposta pubblicata",
+        "publishedDescription": "Il concierge la usa da subito.",
+        "unpublished": "Risposta ritirata",
+        "unpublishedDescription": "Il concierge non la usa più. Resta nello storico.",
+        "notSaved": "Risposta non salvata",
+        "reasons": {
+          "topicRequired": "Serve un argomento.",
+          "topicTooLong": "L'argomento dovrebbe essere di una o due parole.",
+          "answerRequired": "Scrivi la risposta in almeno una lingua.",
+          "other": "Riprova tra qualche istante."
+        }
+      }
     },
     "privacy": {
       "title": "Privacy",
@@ -414,6 +473,12 @@
         "fee_events": "Quanto abbiamo addebitato alla struttura",
         "alloggiati_submissions": "La schedina alla Questura",
         "privacy_requests": "Questa richiesta"
+      },
+      "toast": {
+        "exportRecorded": "Richiesta registrata: il download sta partendo",
+        "erasureQueued": "Cancellazione avviata",
+        "erasurePending": "Cancellazione registrata, non ancora applicata",
+        "exportFailed": "Non è stato possibile avviare l'esportazione. Riprova."
       }
     },
     "approvals": {
@@ -424,11 +489,19 @@
       "reject": "Rifiuta",
       "openThread": "Apri la conversazione",
       "rejectNote": "Rifiutare invia all'ospite una risposta: qualcuno lo ricontatterà.",
-      "failed": "Impossibile eseguire: {reason}. All'ospite non è stato inviato nulla.",
       "tools": {
         "cancel_booking": "Cancellare la prenotazione",
         "create_payment_link": "Inviare un link di pagamento",
         "request_late_checkout": "Check-out posticipato"
+      },
+      "toast": {
+        "approved": "Approvato",
+        "approvedDescription": "L'ospite ha ricevuto la risposta nella conversazione.",
+        "rejected": "Rifiutato",
+        "rejectedDescription": "L'ospite è stato avvisato che qualcuno lo ricontatterà.",
+        "gone": "Questa richiesta è già stata decisa.",
+        "failed": "Non è stato possibile eseguire l'azione",
+        "failedDescription": "Motivo: {reason}. All'ospite non è stato inviato nulla."
       }
     },
     "assistant": {
@@ -1056,6 +1129,13 @@
       "retention": "Le foto dei documenti vengono eliminate a registrazione avvenuta o poco dopo la partenza. I dati di registrazione sono conservati per 30 giorni dopo il soggiorno; la ricevuta dell'invio è conservata come previsto dalla legge.",
       "location": "Tutto è conservato nell'UE. I messaggi che scrive qui e, se la struttura usa la lettura automatica, le foto dei documenti possono essere elaborati da un servizio automatico che può operare fuori dall'UE; non conserva nulla.",
       "rights": "Può chiedere alla struttura di vedere, correggere o cancellare i suoi dati."
+    },
+    "toast": {
+      "partySaved": "Dati degli ospiti salvati",
+      "documentSaved": "Documento ricevuto",
+      "documentSavedDescription": "La struttura lo verifica prima del suo arrivo.",
+      "arrivalSaved": "Orario di arrivo salvato",
+      "messageSent": "Messaggio inviato"
     }
   },
   "concierge": {

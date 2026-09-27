@@ -7,6 +7,7 @@ import {
   startTenantView,
 } from '@bookone/core/admin'
 import { FEATURES, type Feature } from '@bookone/core/onboarding'
+import { flash } from '@bookone/ui/lib/flash-server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { logger } from '@/lib/logger'
@@ -22,11 +23,21 @@ export interface ActionState {
  * authentication → role check → `withAdminAudit` in core. Next checks the
  * Origin of every server action, which is the CSRF half; the reason field is
  * required here and again in core, so a crafted request cannot skip it.
+ *
+ * Outcomes are flashed as toasts (`@bookone/ui/lib/flash`); a refusal is also
+ * returned, so the form can keep its input for a second try.
  */
-function refusal(error: unknown): ActionState {
-  if (error instanceof AdminRefused) return { error: error.message, done: false }
+async function refusal(error: unknown): Promise<ActionState> {
+  if (error instanceof AdminRefused) return refused(error.message)
   throw error
 }
+
+async function refused(message: string): Promise<ActionState> {
+  await flash.error('Change refused', message)
+  return { error: message, done: false }
+}
+
+const AUDITED = 'Recorded in the audit log with your reason.'
 
 export async function setFeature(_prev: ActionState, form: FormData): Promise<ActionState> {
   const staff = await requireAdmin()
@@ -36,7 +47,7 @@ export async function setFeature(_prev: ActionState, form: FormData): Promise<Ac
   const reason = String(form.get('reason') ?? '')
 
   if (!(FEATURES as readonly string[]).includes(feature)) {
-    return { error: 'Unknown feature.', done: false }
+    return refused('Unknown feature.')
   }
 
   try {
@@ -49,6 +60,7 @@ export async function setFeature(_prev: ActionState, form: FormData): Promise<Ac
     { action: enabled ? 'feature.grant' : 'feature.revoke', propertyId, feature },
     'admin change',
   )
+  await flash.success(`${feature} ${enabled ? 'enabled' : 'disabled'}`, AUDITED)
   revalidatePath(`/properties/${propertyId}`)
   return { error: null, done: true }
 }
@@ -66,6 +78,7 @@ export async function setAgentPaused(_prev: ActionState, form: FormData): Promis
   }
 
   logger.info({ action: paused ? 'agent.pause' : 'agent.resume', propertyId }, 'admin change')
+  await flash.success(paused ? 'Concierge paused' : 'Concierge resumed', AUDITED)
   revalidatePath(`/properties/${propertyId}`)
   revalidatePath('/')
   return { error: null, done: true }
@@ -84,5 +97,9 @@ export async function viewAsTenant(_prev: ActionState, form: FormData): Promise<
   }
 
   logger.info({ action: 'tenant.view', propertyId }, 'admin view')
+  await flash.info(
+    'Viewing as the property for 30 minutes',
+    'The owner sees this visit, and your reason, in their settings.',
+  )
   redirect(`/properties/${propertyId}/view`)
 }

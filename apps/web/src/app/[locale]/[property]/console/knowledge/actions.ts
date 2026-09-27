@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
+import { flash } from '@bookone/ui/lib/flash-server'
 import { KbRejected, saveArticle, setPublished } from '@bookone/core/onboarding'
 import { requireOwner } from '@/lib/auth/current-property'
 
@@ -26,14 +28,25 @@ interface Context {
 /** The languages an answer can be written in. Kept in step with next-intl's routing. */
 const LOCALES = ['it', 'de', 'en', 'sl'] as const
 
+/** Core's refusals, as the keys the owner reads them under. */
+const REASONS: Record<string, string> = {
+  'a topic is required': 'topicRequired',
+  'a topic should be a word or two': 'topicTooLong',
+  'an article needs an answer in at least one language': 'answerRequired',
+}
+
+function toasts(context: Context) {
+  return getTranslations({ locale: context.locale, namespace: 'console.knowledge.toast' })
+}
+
 /**
- * Returns void, and reports failure through the URL.
+ * Returns void, and reports the outcome as a flash toast.
  *
  * A form `action` must return void or a promise of it, so a rejection cannot
  * come back as a value without making this a client component and threading
  * `useActionState` through it. The failures here are short and few — an empty
- * topic, no answer in any language — so a redirect carrying the reason is the
- * honest amount of machinery, and it survives a page without JavaScript.
+ * topic, no answer in any language — so a translated flash is the honest
+ * amount of machinery, and the form keeps working without JavaScript.
  */
 export async function save(context: Context, formData: FormData): Promise<void> {
   const { user, property } = await requireOwner(context.locale, context.slug)
@@ -55,6 +68,8 @@ export async function save(context: Context, formData: FormData): Promise<void> 
     .map((line) => line.trim())
     .filter(Boolean)
 
+  const published = formData.get('published') !== 'false'
+
   try {
     const { version } = await saveArticle({
       propertyId: property.id,
@@ -64,21 +79,24 @@ export async function save(context: Context, formData: FormData): Promise<void> 
       // Saving a draft publishes it. AG-03's drafts arrive unpublished and the
       // owner reviewing one is deciding to stand behind it, which is the same
       // act as writing it themselves.
-      published: formData.get('published') !== 'false',
+      published,
       actor: { kind: 'user', userId: user.id },
     })
 
     void version
   } catch (error) {
     if (error instanceof KbRejected) {
+      const t = await toasts(context)
+      await flash.error(t('notSaved'), t(`reasons.${REASONS[error.message] ?? 'other'}`))
       revalidatePath(`/${context.locale}/${context.slug}/console/knowledge`)
-      redirect(
-        `/${context.locale}/${context.slug}/console/knowledge?error=${encodeURIComponent(error.message)}`,
-      )
+      redirect(`/${context.locale}/${context.slug}/console/knowledge`)
     }
     throw error
   }
 
+  const t = await toasts(context)
+  if (published) await flash.success(t('saved'), t('savedDescription'))
+  else await flash.success(t('savedDraft'))
   revalidatePath(`/${context.locale}/${context.slug}/console/knowledge`)
 }
 
@@ -100,5 +118,8 @@ export async function togglePublished(
     actor: { kind: 'user', userId: user.id },
   })
 
+  const t = await toasts(context)
+  if (context.published) await flash.success(t('published'), t('publishedDescription'))
+  else await flash.success(t('unpublished'), t('unpublishedDescription'))
   revalidatePath(`/${context.locale}/${context.slug}/console/knowledge`)
 }

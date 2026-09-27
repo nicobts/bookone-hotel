@@ -4,7 +4,10 @@
     "loading": "Wird geladen",
     "cancel": "Abbrechen",
     "save": "Speichern",
-    "retry": "Erneut versuchen"
+    "retry": "Erneut versuchen",
+    "notifications": "Benachrichtigungen",
+    "close": "Schließen",
+    "thinking": "Schreibt eine Antwort"
   },
   "auth": {
     "brandLine": "Jeder Aufenthalt, erledigt.",
@@ -117,7 +120,13 @@
       "reason": "Grund",
       "waiting": "Wartet auf Übertragung",
       "alloggiatiTitle": "Polizeiliche Meldung überfällig",
-      "alloggiatiBody": "Dieser Gast ist vor über 20 Stunden angekommen und die Meldung ist nicht bestätigt."
+      "alloggiatiBody": "Dieser Gast ist vor über 20 Stunden angekommen und die Meldung ist nicht bestätigt.",
+      "toast": {
+        "retrying": "Neuer Versuch gestartet",
+        "retryingDescription": "Die Zeile verschwindet, sobald die Buchung in Ihrem PMS ankommt.",
+        "unreachable": "Der Versuch wurde nicht gestartet",
+        "unreachableDescription": "Der Dienst hat nicht geantwortet. Versuchen Sie es gleich noch einmal."
+      }
     },
     "arrival": {
       "title": "Anreise",
@@ -163,7 +172,19 @@
       "ocrValid": "Dokument gelesen: maschinenlesbare Zone stimmt",
       "ocrInvalid": "Foto unlesbar — den Gast um ein neues bitten",
       "ocrPrinted": "Nur aus dem Druck gelesen — mit dem Dokument abgleichen",
-      "ocrMismatch": "Weicht vom Dokument ab: {fields}"
+      "ocrMismatch": "Weicht vom Dokument ab: {fields}",
+      "toast": {
+        "arrived": "Anreise erfasst",
+        "arrivedDescription": "Der Aufenthalt des Gastes hat begonnen.",
+        "unreachable": "Das hat nicht geklappt",
+        "unreachableDescription": "Der Dienst hat nicht geantwortet. Versuchen Sie es gleich noch einmal.",
+        "filing": "Meldung gestartet",
+        "filingDescription": "Das Ergebnis erscheint auf dieser Seite, sobald es vorliegt.",
+        "confirmed": "Dokumente bestätigt",
+        "confirmedDescription": "Die Bestätigung ist auf Ihren Namen erfasst.",
+        "notConfirmed": "Bestätigung nicht möglich",
+        "notConfirmedDescription": "Ein Meldefeld oder das Dokument eines Gastes fehlt."
+      }
     },
     "conversations": {
       "title": "Unterhaltungen",
@@ -237,7 +258,17 @@
         "unknown_twice": "die Anfrage wurde zweimal nicht verstanden"
       },
       "approved": "freigegeben",
-      "declined": "vom Personal abgelehnt"
+      "declined": "vom Personal abgelehnt",
+      "toast": {
+        "takenOver": "Unterhaltung übernommen",
+        "takenOverDescription": "Diese Unterhaltung liegt jetzt bei Ihnen.",
+        "handedBack": "Unterhaltung freigegeben",
+        "handedBackDescription": "Sie ist wieder bei den nicht zugewiesenen.",
+        "sent": "Antwort gesendet",
+        "undone": "Aktion rückgängig gemacht",
+        "notUndone": "Rückgängig machen nicht möglich",
+        "notUndoneDescription": "Diese Aktion lässt sich nicht mehr rückgängig machen."
+      }
     },
     "report": {
       "title": "Umsatz & Gebühren",
@@ -287,7 +318,19 @@
           "credit": "Gutschrift",
           "net": "Netto",
           "evidence": "Grund der Zuordnung"
-        }
+        },
+        "done": "CSV heruntergeladen"
+      },
+      "toast": {
+        "issued": "Abrechnung bestätigt",
+        "issuedDescription": "Der Zeitraum ist abgeschlossen: Die Rechnung folgt diesen Beträgen.",
+        "alreadyIssued": "Diese Abrechnung ist bereits bestätigt.",
+        "notIssued": "Für diesen Zeitraum wurde keine Abrechnung gefunden.",
+        "disputed": "Einspruch erfasst",
+        "disputedDescription": "Der Betrag wurde auf der Abrechnung gutgeschrieben.",
+        "alreadyDisputed": "Gegen diese Position wurde bereits Einspruch erhoben.",
+        "notDisputed": "Einspruch nicht möglich",
+        "notDisputedDescription": "Gegen diese Position ist kein Einspruch möglich."
       }
     },
     "setup": {
@@ -369,7 +412,23 @@
       "save": "Speichern",
       "create": "Hinzufügen",
       "newHeading": "Antwort hinzufügen",
-      "newHint": "Eine leer gelassene Sprache ist eine Sprache, für die der Assistent eine Person holt. Er übersetzt nie."
+      "newHint": "Eine leer gelassene Sprache ist eine Sprache, für die der Assistent eine Person holt. Er übersetzt nie.",
+      "toast": {
+        "saved": "Antwort gespeichert",
+        "savedDescription": "Der Concierge verwendet sie ab sofort.",
+        "savedDraft": "Entwurf gespeichert",
+        "published": "Antwort veröffentlicht",
+        "publishedDescription": "Der Concierge verwendet sie ab sofort.",
+        "unpublished": "Antwort zurückgezogen",
+        "unpublishedDescription": "Der Concierge verwendet sie nicht mehr. Sie bleibt im Verlauf.",
+        "notSaved": "Antwort nicht gespeichert",
+        "reasons": {
+          "topicRequired": "Ein Thema ist erforderlich.",
+          "topicTooLong": "Ein Thema sollte ein oder zwei Wörter lang sein.",
+          "answerRequired": "Schreiben Sie die Antwort in mindestens einer Sprache.",
+          "other": "Versuchen Sie es gleich noch einmal."
+        }
+      }
     },
     "privacy": {
       "title": "Datenschutz",
@@ -414,6 +473,12 @@
         "fee_events": "Was wir diesem Haus berechnet haben",
         "alloggiati_submissions": "Die Meldung an die Questura",
         "privacy_requests": "Diese Anfrage"
+      },
+      "toast": {
+        "exportRecorded": "Anfrage erfasst: Der Download startet",
+        "erasureQueued": "Löschung gestartet",
+        "erasurePending": "Löschung erfasst, noch nicht ausgeführt",
+        "exportFailed": "Der Export konnte nicht gestartet werden. Bitte erneut versuchen."
       }
     },
     "approvals": {
@@ -424,11 +489,19 @@
       "reject": "Ablehnen",
       "openThread": "Gespräch öffnen",
       "rejectNote": "Ablehnen schickt dem Gast eine Antwort, dass sich jemand meldet.",
-      "failed": "Konnte nicht ausgeführt werden: {reason}. An den Gast wurde nichts gesendet.",
       "tools": {
         "cancel_booking": "Buchung stornieren",
         "create_payment_link": "Zahlungslink senden",
         "request_late_checkout": "Später Check-out"
+      },
+      "toast": {
+        "approved": "Genehmigt",
+        "approvedDescription": "Der Gast hat die Antwort in seiner Unterhaltung.",
+        "rejected": "Abgelehnt",
+        "rejectedDescription": "Der Gast wurde informiert, dass sich jemand bei ihm meldet.",
+        "gone": "Über diese Anfrage wurde bereits entschieden.",
+        "failed": "Die Aktion konnte nicht ausgeführt werden",
+        "failedDescription": "Grund: {reason}. Dem Gast wurde nichts gesendet."
       }
     },
     "assistant": {
@@ -1056,6 +1129,13 @@
       "retention": "Dokumentfotos werden nach der Meldung oder kurz nach Ihrer Abreise gelöscht. Meldedaten werden 30 Tage nach Ihrem Aufenthalt aufbewahrt; der Übermittlungsnachweis wird gesetzlich vorgeschrieben aufbewahrt.",
       "location": "Alles wird in der EU gespeichert. Nachrichten, die Sie hier schreiben, und – wenn das Haus die automatische Erfassung nutzt – Fotos von Ausweisdokumenten können von einem automatischen Dienst verarbeitet werden, der außerhalb der EU laufen kann; er speichert nichts.",
       "rights": "Sie können das Haus bitten, Ihre Daten einzusehen, zu berichtigen oder zu löschen."
+    },
+    "toast": {
+      "partySaved": "Gästedaten gespeichert",
+      "documentSaved": "Dokument erhalten",
+      "documentSavedDescription": "Das Haus prüft es vor Ihrer Anreise.",
+      "arrivalSaved": "Ankunftszeit gespeichert",
+      "messageSent": "Nachricht gesendet"
     }
   },
   "concierge": {

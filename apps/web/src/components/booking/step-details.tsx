@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import type { HeldBooking } from '@bookone/core/db'
-import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Checkbox } from '@bookone/ui/components/checkbox'
 import { Input } from '@bookone/ui/components/input'
 import { Label } from '@bookone/ui/components/label'
@@ -113,7 +113,7 @@ export async function StepDetails({
         )}
 
         <div className="flex items-center gap-4">
-          <Button type="submit">{t('details.submit')}</Button>
+          <PendingButton>{t('details.submit')}</PendingButton>
           <Link
             href={backHref}
             className="text-muted-foreground text-sm underline underline-offset-4"

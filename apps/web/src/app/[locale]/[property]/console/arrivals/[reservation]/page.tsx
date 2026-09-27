@@ -12,7 +12,7 @@ import {
 import { PageShell } from '@/components/shell/page-shell'
 import { hasFeature, requireProperty } from '@/lib/auth/current-property'
 import { Badge } from '@bookone/ui/components/badge'
-import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Separator } from '@bookone/ui/components/separator'
 import { formatDate } from '@/components/booking/format'
 import { confirmDocumentsAction, fileNow, markArrived } from './actions'
@@ -88,7 +88,7 @@ export default async function ArrivalPage({
           </Badge>
         ) : (
           <form action={markArrived.bind(null, context)}>
-            <Button type="submit">{t('confirmArrival')}</Button>
+            <PendingButton>{t('confirmArrival')}</PendingButton>
           </form>
         )
       }
@@ -142,9 +142,7 @@ export default async function ArrivalPage({
                 </Badge>
               ) : schedina.ready && schedina.documentsHeld >= schedina.guests.length ? (
                 <form action={confirmDocumentsAction.bind(null, context)}>
-                  <Button type="submit" size="sm">
-                    {t('confirmDocuments')}
-                  </Button>
+                  <PendingButton size="sm">{t('confirmDocuments')}</PendingButton>
                 </form>
               ) : null}
             </div>
@@ -209,9 +207,9 @@ export default async function ArrivalPage({
             */}
             {filing && (
               <form action={fileNow.bind(null, context)}>
-                <Button type="submit" variant="outline" size="sm">
+                <PendingButton variant="outline" size="sm">
                   {t('submitNow')}
-                </Button>
+                </PendingButton>
               </form>
             )}
           </div>

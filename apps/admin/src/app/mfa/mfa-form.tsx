@@ -2,6 +2,8 @@
 
 import { useActionState, useState, useTransition } from 'react'
 import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
+import { Spinner } from '@bookone/ui/components/spinner'
 import { Input } from '@bookone/ui/components/input'
 import { Label } from '@bookone/ui/components/label'
 import { enrolTotp, verifyTotp, type AuthState, type EnrolState } from '../auth-actions'
@@ -9,7 +11,7 @@ import { enrolTotp, verifyTotp, type AuthState, type EnrolState } from '../auth-
 export function MfaForm({ factorId: existing }: { factorId: string | null }) {
   const [enrolment, setEnrolment] = useState<EnrolState | null>(null)
   const [starting, startTransition] = useTransition()
-  const [state, action, pending] = useActionState<AuthState, FormData>(verifyTotp, {
+  const [state, action] = useActionState<AuthState, FormData>(verifyTotp, {
     error: null,
   })
 
@@ -20,8 +22,10 @@ export function MfaForm({ factorId: existing }: { factorId: string | null }) {
       <div className="flex flex-col gap-3">
         <Button
           disabled={starting}
+          aria-busy={starting}
           onClick={() => startTransition(async () => setEnrolment(await enrolTotp()))}
         >
+          {starting ? <Spinner aria-hidden /> : null}
           Set up an authenticator
         </Button>
         {enrolment?.error ? <p className="text-sm text-destructive">{enrolment.error}</p> : null}
@@ -48,10 +52,12 @@ export function MfaForm({ factorId: existing }: { factorId: string | null }) {
           required
         />
       </div>
-      {state.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
-      <Button type="submit" disabled={pending}>
-        Verify
-      </Button>
+      {state.error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {state.error}
+        </p>
+      ) : null}
+      <PendingButton pendingLabel="Verifying">Verify</PendingButton>
     </form>
   )
 }

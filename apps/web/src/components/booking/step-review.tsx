@@ -3,7 +3,7 @@ import Link from 'next/link'
 import type { HeldBooking, BookingProperty } from '@bookone/core/db'
 import type { TouristTaxNote } from '@bookone/core/booking'
 import type { DepositQuote } from '@bookone/core/policy'
-import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Separator } from '@bookone/ui/components/separator'
 import type { BookingDraft } from '@/lib/booking/draft'
 import { formatDate, formatMoney, formatTime, roomName } from './format'
@@ -159,9 +159,9 @@ export async function StepReview({
 
       <form action={action} className="mt-8 flex items-center gap-4">
         <StateFields state={state} />
-        <Button type="submit" size="lg">
+        <PendingButton size="lg">
           {deposit.dueNowCents > 0 ? t('payment.payAndConfirm') : t('review.confirm')}
-        </Button>
+        </PendingButton>
         <Link
           href={backHref}
           className="text-muted-foreground text-sm underline underline-offset-4"

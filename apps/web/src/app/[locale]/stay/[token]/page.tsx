@@ -9,7 +9,7 @@ import { SimulatedPaymentNotice } from '@/components/booking/payment-notice'
 import { Thread } from '@/components/stay/thread'
 import { hasFeature } from '@/lib/auth/current-property'
 import { DOCUMENT_RETENTION_DAYS_DEFAULT } from '@bookone/core/alloggiati'
-import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Input } from '@bookone/ui/components/input'
 import { Label } from '@bookone/ui/components/label'
 import { Separator } from '@bookone/ui/components/separator'
@@ -45,15 +45,12 @@ import {
  */
 export default async function StayPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: string; token: string }>
-  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const { locale, token } = await params
   setRequestLocale(locale)
 
-  const query = await searchParams
   const t = await getTranslations('stay')
 
   const resolved = await resolveStay(token)
@@ -81,7 +78,6 @@ export default async function StayPage({
 
   const { stay } = resolved
   const context = { locale, token }
-  const error = single(query.error)
 
   // The shell wants the property shape the booking surface uses. Built from
   // what the token resolved rather than re-queried: one round trip, and the
@@ -208,18 +204,6 @@ export default async function StayPage({
             </ul>
           </>
         ))}
-
-      {error && (
-        <p role="alert" className="text-destructive mt-6 text-sm">
-          {error === 'upload'
-            ? t('errors.upload')
-            : error === 'message'
-              ? t('errors.message')
-              : error === 'consent'
-                ? t('errors.consent')
-                : t('errors.generic')}
-        </p>
-      )}
 
       <Separator className="my-8" />
 
@@ -358,7 +342,7 @@ export default async function StayPage({
                 )
               })}
 
-              <Button type="submit">{t('party.save')}</Button>
+              <PendingButton>{t('party.save')}</PendingButton>
             </form>
           </section>
 
@@ -452,9 +436,9 @@ export default async function StayPage({
                     </div>
 
                     {!member.documentDeleted && (
-                      <Button type="submit" variant="outline">
+                      <PendingButton variant="outline">
                         {member.hasDocument ? t('documents.replace') : t('documents.send')}
-                      </Button>
+                      </PendingButton>
                     )}
                   </form>
                 ))}
@@ -495,9 +479,7 @@ export default async function StayPage({
                   defaultValue={stay.journey.expectedArrivalTime ?? ''}
                 />
               </div>
-              <Button type="submit" variant="outline">
-                {t('arrival.save')}
-              </Button>
+              <PendingButton variant="outline">{t('arrival.save')}</PendingButton>
             </form>
 
             {stay.journey.expectedArrivalTime && (
@@ -518,7 +500,7 @@ export default async function StayPage({
           <p className="text-muted-foreground mt-1 text-sm">{t('arrived.body')}</p>
 
           <form action={confirmArrivalNow.bind(null, context)} className="mt-4">
-            <Button type="submit">{t('arrived.action')}</Button>
+            <PendingButton>{t('arrived.action')}</PendingButton>
           </form>
         </section>
       )}
@@ -588,9 +570,7 @@ export default async function StayPage({
                   <input type="checkbox" name="intent" value="request" className="accent-current" />
                   {t('messages.isRequest')}
                 </label>
-                <Button type="submit" size="sm">
-                  {t('messages.send')}
-                </Button>
+                <PendingButton size="sm">{t('messages.send')}</PendingButton>
               </div>
             </form>
           </section>
@@ -678,7 +658,7 @@ export default async function StayPage({
                   </div>
                 </fieldset>
 
-                <Button type="submit">{t('checkout.action')}</Button>
+                <PendingButton>{t('checkout.action')}</PendingButton>
               </form>
             )}
 
@@ -758,10 +738,6 @@ function readTheme(settings: unknown): { primary?: string; accent?: string } {
  */
 function todayAt(timeZone: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date())
-}
-
-function single(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value
 }
 
 /** The property's document retention after departure, or the default (WP0.4). */

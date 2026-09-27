@@ -8,6 +8,8 @@
     "./components/*": "./src/components/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
     "./lib/utils": "./src/lib/utils.ts",
+    "./lib/flash": "./src/lib/flash.ts",
+    "./lib/flash-server": "./src/lib/flash-server.ts",
     "./globals.css": "./src/styles/globals.css",
     "./tokens.css": "./src/styles/tokens.css",
     "./components/chat/*": "./src/components/chat/*.tsx"

@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import type { RoomOption } from '@bookone/core/booking'
-import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Card, CardContent } from '@bookone/ui/components/card'
 import type { BookingSearch } from '@/lib/booking/params'
 import { formatMoney, roomName } from './format'
@@ -93,7 +93,7 @@ export async function StepRooms({
                         <input type="hidden" name="departure" value={search.departure} />
                         <input type="hidden" name="adults" value={search.adults} />
                         <input type="hidden" name="children" value={search.children} />
-                        <Button type="submit">{t('rooms.select')}</Button>
+                        <PendingButton>{t('rooms.select')}</PendingButton>
                       </form>
                     </div>
                   </CardContent>

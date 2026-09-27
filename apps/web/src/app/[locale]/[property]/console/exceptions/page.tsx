@@ -6,6 +6,7 @@ import { PageShell } from '@/components/shell/page-shell'
 import { propertyFeatures, requireProperty } from '@/lib/auth/current-property'
 import { Badge } from '@bookone/ui/components/badge'
 import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 import { retryReflectionAction } from './actions'
 
 /**
@@ -147,10 +148,13 @@ async function ExceptionRow({
         ) : item.retryable ? (
           <form action={retryReflectionAction.bind(null, context)}>
             <input type="hidden" name="reservationId" value={item.subject} />
-            <Button type="submit" variant="outline" size="sm">
-              <RefreshCwIcon className="size-3.5" aria-hidden />
+            <PendingButton
+              variant="outline"
+              size="sm"
+              icon={<RefreshCwIcon className="size-3.5" aria-hidden />}
+            >
               {t('retry')}
-            </Button>
+            </PendingButton>
           </form>
         ) : (
           <Button variant="outline" size="sm" disabled>

@@ -4,7 +4,10 @@
     "loading": "Loading",
     "cancel": "Cancel",
     "save": "Save",
-    "retry": "Try again"
+    "retry": "Try again",
+    "notifications": "Notifications",
+    "close": "Close",
+    "thinking": "Writing a reply"
   },
   "auth": {
     "brandLine": "Every stay, handled.",
@@ -117,7 +120,13 @@
       "reason": "Reason",
       "waiting": "Waiting to be sent",
       "alloggiatiTitle": "Police registration overdue",
-      "alloggiatiBody": "This guest arrived more than 20 hours ago and the filing is not confirmed."
+      "alloggiatiBody": "This guest arrived more than 20 hours ago and the filing is not confirmed.",
+      "toast": {
+        "retrying": "Retry started",
+        "retryingDescription": "The row disappears as soon as the booking reaches your PMS.",
+        "unreachable": "The retry did not start",
+        "unreachableDescription": "The service did not respond. Try again in a moment."
+      }
     },
     "arrival": {
       "title": "Arrival",
@@ -163,7 +172,19 @@
       "ocrValid": "Document read: machine-readable zone checks out",
       "ocrInvalid": "Photo unreadable — ask the guest for a new one",
       "ocrPrinted": "Read from print only — check it against the document",
-      "ocrMismatch": "Differs from the document: {fields}"
+      "ocrMismatch": "Differs from the document: {fields}",
+      "toast": {
+        "arrived": "Arrival recorded",
+        "arrivedDescription": "The guest's stay has started.",
+        "unreachable": "That did not go through",
+        "unreachableDescription": "The service did not respond. Try again in a moment.",
+        "filing": "Filing started",
+        "filingDescription": "The result appears on this page as soon as it arrives.",
+        "confirmed": "Documents confirmed",
+        "confirmedDescription": "The confirmation is recorded in your name.",
+        "notConfirmed": "Could not confirm",
+        "notConfirmedDescription": "A registration field or a guest's document is missing."
+      }
     },
     "conversations": {
       "title": "Conversations",
@@ -237,7 +258,17 @@
         "unknown_twice": "the request was not understood twice"
       },
       "approved": "approved",
-      "declined": "rejected by staff"
+      "declined": "rejected by staff",
+      "toast": {
+        "takenOver": "Conversation taken over",
+        "takenOverDescription": "This conversation is yours now.",
+        "handedBack": "Conversation released",
+        "handedBackDescription": "It is back with the unassigned ones.",
+        "sent": "Reply sent",
+        "undone": "Action undone",
+        "notUndone": "Could not undo",
+        "notUndoneDescription": "This action can no longer be undone."
+      }
     },
     "report": {
       "title": "Revenue & fees",
@@ -287,7 +318,19 @@
           "credit": "Credit",
           "net": "Net",
           "evidence": "Attribution reason"
-        }
+        },
+        "done": "CSV downloaded"
+      },
+      "toast": {
+        "issued": "Statement confirmed",
+        "issuedDescription": "The period is closed: the invoice will follow these amounts.",
+        "alreadyIssued": "This statement is already confirmed.",
+        "notIssued": "No statement found for this period.",
+        "disputed": "Dispute recorded",
+        "disputedDescription": "The amount has been credited on the statement.",
+        "alreadyDisputed": "This line is already disputed.",
+        "notDisputed": "Could not dispute",
+        "notDisputedDescription": "This line cannot be disputed."
       }
     },
     "setup": {
@@ -369,7 +412,23 @@
       "save": "Save",
       "create": "Add",
       "newHeading": "Add an answer",
-      "newHint": "A language left empty is a language the assistant will fetch a person for. It never translates."
+      "newHint": "A language left empty is a language the assistant will fetch a person for. It never translates.",
+      "toast": {
+        "saved": "Answer saved",
+        "savedDescription": "The concierge uses it straight away.",
+        "savedDraft": "Draft saved",
+        "published": "Answer published",
+        "publishedDescription": "The concierge uses it straight away.",
+        "unpublished": "Answer withdrawn",
+        "unpublishedDescription": "The concierge no longer uses it. It stays in the history.",
+        "notSaved": "Answer not saved",
+        "reasons": {
+          "topicRequired": "A topic is required.",
+          "topicTooLong": "A topic should be a word or two.",
+          "answerRequired": "Write the answer in at least one language.",
+          "other": "Try again in a moment."
+        }
+      }
     },
     "privacy": {
       "title": "Privacy",
@@ -414,6 +473,12 @@
         "fee_events": "What we charged this property",
         "alloggiati_submissions": "The Questura filing",
         "privacy_requests": "This request"
+      },
+      "toast": {
+        "exportRecorded": "Request recorded: the download is starting",
+        "erasureQueued": "Erasure started",
+        "erasurePending": "Erasure recorded, not yet applied",
+        "exportFailed": "The export could not be started. Try again."
       }
     },
     "approvals": {
@@ -424,11 +489,19 @@
       "reject": "Reject",
       "openThread": "Open the conversation",
       "rejectNote": "Rejecting sends the guest a reply that a person will follow up.",
-      "failed": "Could not carry this out: {reason}. Nothing was sent to the guest.",
       "tools": {
         "cancel_booking": "Cancel the booking",
         "create_payment_link": "Send a payment link",
         "request_late_checkout": "Late checkout"
+      },
+      "toast": {
+        "approved": "Approved",
+        "approvedDescription": "The guest has the reply in their conversation.",
+        "rejected": "Rejected",
+        "rejectedDescription": "The guest was told someone will follow up.",
+        "gone": "This request has already been decided.",
+        "failed": "The action could not be carried out",
+        "failedDescription": "Reason: {reason}. Nothing was sent to the guest."
       }
     },
     "assistant": {
@@ -1056,6 +1129,13 @@
       "retention": "Document photos are deleted once registration is done, or shortly after you leave. Registration details are kept for 30 days after your stay; the filing receipt is kept as the law requires.",
       "location": "Everything is stored in the EU. Messages you write here, and document photos when the property uses automatic reading, may be processed by an automated service that can run outside the EU; it keeps nothing.",
       "rights": "You can ask the property to see, correct or delete your data."
+    },
+    "toast": {
+      "partySaved": "Guest details saved",
+      "documentSaved": "Document received",
+      "documentSavedDescription": "The property checks it before you arrive.",
+      "arrivalSaved": "Arrival time saved",
+      "messageSent": "Message sent"
     }
   },
   "concierge": {

@@ -5,7 +5,7 @@ import { getThread } from '@bookone/core/db'
 import { PageShell } from '@/components/shell/page-shell'
 import { requireFeature } from '@/lib/auth/current-property'
 import { formatDate } from '@/components/booking/format'
-import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Label } from '@bookone/ui/components/label'
 import { Separator } from '@bookone/ui/components/separator'
 import { Textarea } from '@bookone/ui/components/textarea'
@@ -76,15 +76,13 @@ export default async function ThreadPage({
       actions={
         mine ? (
           <form action={handBack.bind(null, context)}>
-            <Button type="submit" variant="outline" size="sm">
+            <PendingButton variant="outline" size="sm">
               {t('handBack')}
-            </Button>
+            </PendingButton>
           </form>
         ) : (
           <form action={takeOver.bind(null, context)}>
-            <Button type="submit" size="sm">
-              {t('takeOver')}
-            </Button>
+            <PendingButton size="sm">{t('takeOver')}</PendingButton>
           </form>
         )
       }
@@ -217,9 +215,13 @@ export default async function ThreadPage({
                         <form action={undoAction.bind(null, context)}>
                           <input type="hidden" name="runId" value={action.runId} />
                           <input type="hidden" name="callIndex" value={action.callIndex} />
-                          <button type="submit" className="text-foreground underline">
+                          <PendingButton
+                            variant="link"
+                            size="sm"
+                            className="text-foreground h-auto p-0 text-xs underline"
+                          >
                             {t('undo')}
-                          </button>
+                          </PendingButton>
                         </form>
                       ) : null}
                     </li>
@@ -236,9 +238,7 @@ export default async function ThreadPage({
           </Label>
           <Textarea id="body" name="body" rows={3} required placeholder={t('replyPlaceholder')} />
           <div className="flex justify-end">
-            <Button type="submit" size="sm">
-              {t('send')}
-            </Button>
+            <PendingButton size="sm">{t('send')}</PendingButton>
           </div>
         </form>
 

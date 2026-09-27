@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
+import { flash } from '@bookone/ui/lib/flash-server'
 import {
   hasDocumentConsent,
   recordDocument,
@@ -30,6 +32,11 @@ import { hasFeature } from '@/lib/auth/current-property'
  *
  * Resolving also re-reads the reservation, so a stay cancelled between page
  * load and submit stops accepting writes without anything having to be revoked.
+ *
+ * Outcomes are flashed as toasts (`@bookone/ui/lib/flash`), and every write
+ * revalidates before redirecting back: the target is the page the guest is
+ * already on, and without it the client router can serve its cached copy of
+ * that URL — the stale page `sendMessage` below describes.
  */
 
 interface Context {
@@ -46,6 +53,25 @@ const GUEST_NOTICE_VERSION = 'guest-notice-2026-09-27-draft'
 
 function stayUrl(context: Context, extra = ''): string {
   return `/${context.locale}/stay/${context.token}${extra}`
+}
+
+function strings(context: Context) {
+  return getTranslations({ locale: context.locale, namespace: 'stay' })
+}
+
+/** Revalidate, then back to the page (and section) the guest came from. */
+function back(context: Context, hash = ''): never {
+  revalidatePath(stayUrl(context))
+  redirect(stayUrl(context, hash))
+}
+
+async function failed(
+  context: Context,
+  key: 'upload' | 'consent' | 'message' | 'generic',
+  hash = '',
+) {
+  await flash.error((await strings(context))(`errors.${key}`))
+  return back(context, hash)
 }
 
 /** Who is travelling (E2.1). Upserts by index, so resubmitting is safe. */
@@ -96,7 +122,9 @@ export async function submitParty(context: Context, formData: FormData): Promise
     members,
   })
 
-  redirect(stayUrl(context, outcome.status === 'saved' ? '?saved=party' : '?error=party'))
+  if (outcome.status !== 'saved') return failed(context, 'generic')
+  await flash.success((await strings(context))('toast.partySaved'))
+  back(context)
 }
 
 /** One identity document (E2.1). */
@@ -111,7 +139,7 @@ export async function uploadDocument(context: Context, formData: FormData): Prom
   // Consent before the first document (WP0.4). The checkbox is `required` in
   // the form; this is the check that holds when the form is not the one we sent.
   if (!(await hasDocumentConsent(stay.propertyId, stay.reservationId))) {
-    if (formData.get('consent') !== 'on') redirect(stayUrl(context, '?error=consent'))
+    if (formData.get('consent') !== 'on') return failed(context, 'consent')
     await recordDocumentConsent({
       propertyId: stay.propertyId,
       reservationId: stay.reservationId,
@@ -123,14 +151,14 @@ export async function uploadDocument(context: Context, formData: FormData): Prom
   const file = formData.get('document')
 
   if (!Number.isInteger(guestIndex) || guestIndex < 0 || !(file instanceof File)) {
-    redirect(stayUrl(context, '?error=upload'))
+    return failed(context, 'upload')
   }
 
   // Bounded by the party size for the same reason the names are: an index from
   // a form is a suggestion, and one outside the booking would create a
   // registration record for a person the room cannot hold.
   if (guestIndex >= Math.max(1, stay.adults + stay.children)) {
-    redirect(stayUrl(context, '?error=upload'))
+    return failed(context, 'upload')
   }
 
   const stored = await storeIdentityDocument({
@@ -141,7 +169,7 @@ export async function uploadDocument(context: Context, formData: FormData): Prom
   })
 
   if (stored.status !== 'stored') {
-    redirect(stayUrl(context, '?error=upload'))
+    return failed(context, 'upload')
   }
 
   // The row is updated only after the object exists. The other order would
@@ -165,7 +193,10 @@ export async function uploadDocument(context: Context, formData: FormData): Prom
     })
   }
 
-  redirect(stayUrl(context, recorded.status === 'recorded' ? '?saved=document' : '?error=upload'))
+  if (recorded.status !== 'recorded') return failed(context, 'upload')
+  const t = await strings(context)
+  await flash.success(t('toast.documentSaved'), t('toast.documentSavedDescription'))
+  back(context)
 }
 
 /** When they will arrive (E2.2). */
@@ -183,7 +214,10 @@ export async function submitArrivalTime(context: Context, formData: FormData): P
     time,
   })
 
-  redirect(stayUrl(context, outcome.status === 'set' ? '?saved=arrival' : '?error=arrival'))
+  if (outcome.status !== 'set') return failed(context, 'generic')
+  const t = await strings(context)
+  await flash.success(t('toast.arrivalSaved'), t('arrival.saved', { time }))
+  back(context)
 }
 
 type OptionalField =
@@ -219,16 +253,15 @@ export async function confirmArrivalNow(context: Context): Promise<void> {
 
   const { stay } = resolved
 
-  await confirmArrival({
+  const sent = await confirmArrival({
     propertyId: stay.propertyId,
     reservationId: stay.reservationId,
     source: 'guest',
   })
 
-  // Same reason as `sendMessage`: this redirect lands on the page it came from.
-  revalidatePath(stayUrl(context))
-
-  redirect(stayUrl(context))
+  if (!sent) return failed(context, 'generic')
+  await flash.success((await strings(context))('arrived.done'))
+  back(context)
 }
 
 /**
@@ -273,9 +306,9 @@ export async function sendMessage(context: Context, formData: FormData): Promise
    *
    * The later messages looked fine, which is what made it easy to miss.
    */
-  revalidatePath(stayUrl(context))
-
-  redirect(stayUrl(context, sent.ok ? '#messages' : '?error=message#messages'))
+  if (!sent.ok) return failed(context, 'message', '#messages')
+  await flash.success((await strings(context))('toast.messageSent'))
+  back(context, '#messages')
 }
 
 /**
@@ -311,7 +344,6 @@ export async function checkOut(context: Context, formData: FormData): Promise<vo
       : {}),
   })
 
-  revalidatePath(stayUrl(context))
-
-  redirect(stayUrl(context, '#checkout'))
+  await flash.success((await strings(context))('checkout.done'))
+  back(context, '#checkout')
 }

@@ -1,6 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { getTranslations } from 'next-intl/server'
+import { flash } from '@bookone/ui/lib/flash-server'
 import { requireFeature } from '@/lib/auth/current-property'
 import { retryReflection } from '@/lib/worker'
 
@@ -27,7 +29,11 @@ export async function retryReflectionAction(
   const reservationId = String(formData.get('reservationId') ?? '')
   if (!reservationId) return
 
-  await retryReflection({ propertyId: property.id, reservationId })
+  const sent = await retryReflection({ propertyId: property.id, reservationId })
+
+  const t = await getTranslations({ locale: context.locale, namespace: 'console.exceptions.toast' })
+  if (sent) await flash.info(t('retrying'), t('retryingDescription'))
+  else await flash.error(t('unreachable'), t('unreachableDescription'))
 
   // The row disappears from the inbox once the reflection lands, which takes a
   // moment. Revalidating now shows the list as it is rather than as it was —

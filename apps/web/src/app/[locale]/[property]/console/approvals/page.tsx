@@ -3,7 +3,7 @@ import { CheckCircle2Icon } from 'lucide-react'
 import { listPendingApprovals } from '@bookone/core/concierge'
 import { PageShell } from '@/components/shell/page-shell'
 import { requireFeature } from '@/lib/auth/current-property'
-import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Link } from '@/i18n/navigation'
 import { approveAction, rejectAction } from './actions'
 
@@ -17,17 +17,14 @@ import { approveAction, rejectAction } from './actions'
  */
 export default async function ApprovalsPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: string; property: string }>
-  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const { locale, property: slug } = await params
   setRequestLocale(locale)
 
   const { property } = await requireFeature(locale, slug, 'concierge')
   const pending = await listPendingApprovals(property.id)
-  const failed = (await searchParams).failed
 
   const t = await getTranslations('console.approvals')
   const context = { locale, slug }
@@ -40,12 +37,6 @@ export default async function ApprovalsPage({
 
   return (
     <PageShell locale={locale} title={t('title')} subtitle={t('subtitle')}>
-      {typeof failed === 'string' && (
-        <p role="alert" className="text-destructive text-sm">
-          {t('failed', { reason: failed })}
-        </p>
-      )}
-
       {pending.length === 0 ? (
         <p className="text-muted-foreground flex items-center gap-2 text-sm">
           <CheckCircle2Icon className="size-4 text-[color:var(--bo-success-500)]" aria-hidden />
@@ -82,15 +73,13 @@ export default async function ApprovalsPage({
               <div className="flex shrink-0 gap-2">
                 <form action={rejectAction.bind(null, context)}>
                   <input type="hidden" name="runId" value={item.runId} />
-                  <Button type="submit" variant="outline" size="sm">
+                  <PendingButton variant="outline" size="sm">
                     {t('reject')}
-                  </Button>
+                  </PendingButton>
                 </form>
                 <form action={approveAction.bind(null, context)}>
                   <input type="hidden" name="runId" value={item.runId} />
-                  <Button type="submit" size="sm">
-                    {t('approve')}
-                  </Button>
+                  <PendingButton size="sm">{t('approve')}</PendingButton>
                 </form>
               </div>
             </li>

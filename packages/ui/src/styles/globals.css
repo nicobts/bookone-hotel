@@ -78,6 +78,11 @@
   --sidebar-accent-foreground: var(--bo-white);
   --sidebar-border: var(--bo-ink-4);
   --sidebar-ring: var(--bo-signal-400);
+
+  /* Skeleton: a placeholder must be visible on both the canvas and a white
+     card, which the near-white accent was not. */
+  --skeleton: var(--bo-n-100);
+  --skeleton-highlight: var(--bo-n-50);
 }
 
 [data-theme='dark'] {
@@ -88,6 +93,8 @@
   --accent: var(--bo-ink-3);
   --accent-foreground: var(--bo-fg-1);
   --input: var(--bo-border-2);
+  --skeleton: rgba(255, 255, 255, 0.07);
+  --skeleton-highlight: rgba(255, 255, 255, 0.12);
 }
 
 @theme inline {
@@ -110,6 +117,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-skeleton: var(--skeleton);
 
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
@@ -193,6 +201,58 @@
     letter-spacing: -0.01em;
   }
 
+  /* Skeleton shimmer: a soft band sweeping left to right. Held still under
+     reduced motion — the shape alone says "loading". */
+  .bo-skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--skeleton) 0%,
+        var(--skeleton-highlight) 45%,
+        var(--skeleton) 90%
+      )
+      0 0 / 220% 100% var(--skeleton);
+    animation: bo-shimmer 1.6s var(--bo-ease-out, ease-out) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bo-skeleton {
+      animation: none;
+    }
+  }
+
+  /* The chat's "reply on its way": three dots rising in turn, where the
+     reply will appear. Under reduced motion they hold still at mid-tone. */
+  .bo-typing {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 1.25em;
+  }
+
+  .bo-typing > span {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: currentColor;
+    opacity: 0.35;
+    animation: bo-typing 1.2s ease-in-out infinite;
+  }
+
+  .bo-typing > span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .bo-typing > span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bo-typing > span {
+      animation: none;
+      opacity: 0.55;
+    }
+  }
+
   /* Micro-cap label: section starters, form labels, status chips. */
   .bo-label {
     font-family: var(--bo-font-sans);
@@ -203,4 +263,93 @@
     text-transform: uppercase;
     color: var(--bo-fg-3);
   }
+}
+
+@keyframes bo-typing {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 0.9;
+  }
+}
+
+@keyframes bo-shimmer {
+  from {
+    background-position: 110% 0;
+  }
+  to {
+    background-position: -110% 0;
+  }
+}
+
+/*
+  Toasts (sonner). Unlayered on purpose: sonner injects its own stylesheet
+  outside any layer, so a layered rule would lose to it.
+
+  One neutral surface for every toast. The type is carried by the icon's
+  colour and by the words, never by a coloured background: an error toast
+  that turns the corner of the screen red competes with the thing that went
+  wrong, and the hotel's own brand colour (PRD A1) must not clash with it.
+*/
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] {
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  font-family: var(--bo-font-sans);
+  box-shadow: var(--bo-shadow-lg);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-icon] {
+  margin-top: 1px;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-icon] svg {
+  width: 18px;
+  height: 18px;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type='success'] [data-icon] {
+  color: var(--bo-success-500);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type='error'] [data-icon] {
+  color: var(--destructive);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type='warning'] [data-icon] {
+  color: var(--bo-warning-500);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type='info'] [data-icon],
+[data-sonner-toaster] [data-sonner-toast][data-type='loading'] [data-icon] {
+  color: var(--primary);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-title] {
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-description] {
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.45;
+  margin-top: 2px;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-close-button] {
+  background: var(--popover);
+  border-color: var(--border);
+  color: var(--muted-foreground);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-styled='true'] [data-close-button]:hover {
+  color: var(--foreground);
 }

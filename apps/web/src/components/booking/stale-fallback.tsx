@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import type { BookingProperty } from '@bookone/core/db'
-import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Input } from '@bookone/ui/components/input'
 import { Label } from '@bookone/ui/components/label'
 import type { BookingSearch } from '@/lib/booking/params'
@@ -99,7 +99,7 @@ export async function StaleFallback({
         )}
 
         <div>
-          <Button type="submit">{t('submit')}</Button>
+          <PendingButton>{t('submit')}</PendingButton>
         </div>
       </form>
     </div>

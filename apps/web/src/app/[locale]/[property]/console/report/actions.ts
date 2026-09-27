@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { buildReport, csvFilename, issueReport, raiseDispute, toCsv } from '@bookone/core/billing'
 import { getTranslations } from 'next-intl/server'
+import { flash } from '@bookone/ui/lib/flash-server'
 import { requireOwner } from '@/lib/auth/current-property'
 
 /**
@@ -23,6 +24,10 @@ interface Context {
   periodStart: string
 }
 
+function toasts(context: Context) {
+  return getTranslations({ locale: context.locale, namespace: 'console.report.toast' })
+}
+
 /**
  * Freeze the period.
  *
@@ -33,11 +38,16 @@ interface Context {
 export async function issue(context: Context): Promise<void> {
   const { user, property } = await requireOwner(context.locale, context.slug)
 
-  await issueReport({
+  const outcome = await issueReport({
     propertyId: property.id,
     periodStart: context.periodStart,
     actor: { kind: 'user', userId: user.id },
   })
+
+  const t = await toasts(context)
+  if (outcome?.status === 'issued') await flash.success(t('issued'), t('issuedDescription'))
+  else if (outcome?.status === 'already-issued') await flash.info(t('alreadyIssued'))
+  else await flash.error(t('notIssued'))
 
   revalidatePath(`/${context.locale}/${context.slug}/console/report`)
 }
@@ -57,12 +67,17 @@ export async function dispute(
 
   const reason = String(formData.get('reason') ?? '').trim()
 
-  await raiseDispute({
+  const outcome = await raiseDispute({
     propertyId: property.id,
     feeEventId: context.feeEventId,
     userId: user.id,
     ...(reason ? { reason } : {}),
   })
+
+  const t = await toasts(context)
+  if (outcome.status === 'credited') await flash.success(t('disputed'), t('disputedDescription'))
+  else if (outcome.status === 'already-disputed') await flash.info(t('alreadyDisputed'))
+  else await flash.error(t('notDisputed'), t('notDisputedDescription'))
 
   revalidatePath(`/${context.locale}/${context.slug}/console/report`)
 }

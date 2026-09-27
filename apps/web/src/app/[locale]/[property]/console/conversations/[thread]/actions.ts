@@ -1,6 +1,8 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { getTranslations } from 'next-intl/server'
+import { flash } from '@bookone/ui/lib/flash-server'
 import {
   appendStaffMessage,
   handBackThread,
@@ -22,12 +24,18 @@ import { requireFeature } from '@/lib/auth/current-property'
  * state change the person is looking at when they make it, and it enqueues
  * nothing. Routing it through a queue would add a round trip and a window in
  * which the button has been pressed and the screen still says nobody has it.
+ *
+ * Each outcome is flashed as a toast (`@bookone/ui/lib/flash`).
  */
 
 interface Context {
   locale: string
   slug: string
   threadId: string
+}
+
+function toasts(context: Context) {
+  return getTranslations({ locale: context.locale, namespace: 'console.conversations.toast' })
 }
 
 function revalidate(context: Context): void {
@@ -45,6 +53,8 @@ export async function takeOver(context: Context): Promise<void> {
     userId: user.id,
   })
 
+  const t = await toasts(context)
+  await flash.success(t('takenOver'), t('takenOverDescription'))
   revalidate(context)
 }
 
@@ -64,6 +74,8 @@ export async function handBack(context: Context): Promise<void> {
     userId: user.id,
   })
 
+  const t = await toasts(context)
+  await flash.success(t('handedBack'), t('handedBackDescription'))
   revalidate(context)
 }
 
@@ -88,6 +100,7 @@ export async function reply(context: Context, formData: FormData): Promise<void>
     body,
   })
 
+  await flash.success((await toasts(context))('sent'))
   revalidate(context)
 }
 
@@ -98,12 +111,15 @@ export async function reply(context: Context, formData: FormData): Promise<void>
 export async function undoAction(context: Context, formData: FormData): Promise<void> {
   const { user, property } = await requireFeature(context.locale, context.slug, 'inbox')
 
-  await reverseAction({
+  const outcome = await reverseAction({
     propertyId: property.id,
     runId: String(formData.get('runId') ?? ''),
     callIndex: Number(formData.get('callIndex')),
     userId: user.id,
   })
 
+  const t = await toasts(context)
+  if (outcome.status === 'reversed') await flash.success(t('undone'))
+  else await flash.error(t('notUndone'), t('notUndoneDescription'))
   revalidate(context)
 }

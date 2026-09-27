@@ -1,13 +1,13 @@
 'use client'
 
 import { useActionState } from 'react'
-import { Button } from '@bookone/ui/components/button'
 import { Input } from '@bookone/ui/components/input'
 import { Label } from '@bookone/ui/components/label'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 import { signIn, type AuthState } from '../auth-actions'
 
 export function LoginForm() {
-  const [state, action, pending] = useActionState<AuthState, FormData>(signIn, { error: null })
+  const [state, action] = useActionState<AuthState, FormData>(signIn, { error: null })
 
   return (
     <form action={action} className="flex flex-col gap-4">
@@ -25,10 +25,12 @@ export function LoginForm() {
           required
         />
       </div>
-      {state.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
-      <Button type="submit" disabled={pending}>
-        {pending ? 'Signing in…' : 'Sign in'}
-      </Button>
+      {state.error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {state.error}
+        </p>
+      ) : null}
+      <PendingButton pendingLabel="Signing in">Sign in</PendingButton>
     </form>
   )
 }

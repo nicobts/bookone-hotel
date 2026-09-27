@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Geist_Mono, Inter, Instrument_Serif } from 'next/font/google'
 import { ThemeProvider } from '@bookone/ui/components/theme-provider'
+import { Suspense } from 'react'
+import { FlashToaster } from '@bookone/ui/components/flash-toaster'
 import { Toaster } from '@bookone/ui/components/sonner'
 import { TooltipProvider } from '@bookone/ui/components/tooltip'
 import { sharedLocalProject } from '@/lib/env'
@@ -40,7 +42,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             ) : null}
             {children}
           </TooltipProvider>
-          <Toaster position="top-center" />
+          <Toaster />
+          <Suspense fallback={null}>
+            <FlashToaster />
+          </Suspense>
         </ThemeProvider>
       </body>
     </html>

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
+import { flash } from '@bookone/ui/lib/flash-server'
 import {
   appendStaffMessage,
   createStayTask,
@@ -30,6 +32,9 @@ import { requestCancellation, startCheckout } from '@/lib/worker'
  * the thread with the person who decided: after a decision about their money,
  * continuity with a person is the point. Any member may decide; the actor is
  * named on the run (`reviewed_by`) and in the event log.
+ *
+ * Each outcome is flashed as a toast (`@bookone/ui/lib/flash`): what was done,
+ * and that the guest was told — or, on failure, that the guest was not.
  */
 interface Context {
   locale: string
@@ -44,10 +49,26 @@ async function pendingFor(propertyId: string, runId: string) {
   return (await listPendingApprovals(propertyId)).find((pending) => pending.runId === runId) ?? null
 }
 
+function toasts(context: Context) {
+  return getTranslations({ locale: context.locale, namespace: 'console.approvals.toast' })
+}
+
+/** Someone else decided first, or the run is gone: say so, change nothing. */
+async function alreadyDecided(context: Context): Promise<never> {
+  await flash.info((await toasts(context))('gone'))
+  redirect(page(context))
+}
+
+async function failed(context: Context, reason: string): Promise<never> {
+  const t = await toasts(context)
+  await flash.error(t('failed'), t('failedDescription', { reason }))
+  redirect(page(context))
+}
+
 export async function approveAction(context: Context, formData: FormData): Promise<void> {
   const { user, property } = await requireFeature(context.locale, context.slug, 'concierge')
   const pending = await pendingFor(property.id, String(formData.get('runId') ?? ''))
-  if (!pending?.threadId || !pending.reservationId) redirect(page(context))
+  if (!pending?.threadId || !pending.reservationId) return alreadyDecided(context)
 
   const thread = await getThreadForReservation(property.id, pending.reservationId)
   const locale = thread?.locale ?? context.locale
@@ -73,7 +94,7 @@ export async function approveAction(context: Context, formData: FormData): Promi
         reservationId: pending.reservationId,
       })
       if (outcome.status !== 'cancelled' && outcome.status !== 'already-cancelled') {
-        redirect(page(context, `?failed=${encodeURIComponent(outcome.status)}`))
+        return failed(context, outcome.status)
       }
       message = deskPhrase(locale, 'decisionCancelled')
       break
@@ -89,16 +110,14 @@ export async function approveAction(context: Context, formData: FormData): Promi
       // Today's checkout is the booking flow's deposit step; a balance link for
       // a confirmed stay does not exist yet, and saying so beats inventing one.
       if (!outcome.checkoutUrl) {
-        redirect(page(context, `?failed=${encodeURIComponent(outcome.reason ?? outcome.status)}`))
+        return failed(context, outcome.reason ?? outcome.status)
       }
       message = deskPhrase(locale, 'decisionPaymentLink', { url: outcome.checkoutUrl })
       break
     }
 
     default:
-      redirect(
-        page(context, `?failed=${encodeURIComponent(`no approval path for ${pending.tool}`)}`),
-      )
+      return failed(context, `no approval path for ${pending.tool}`)
   }
 
   const decided = await decideApproval({
@@ -115,6 +134,10 @@ export async function approveAction(context: Context, formData: FormData): Promi
       userId: user.id,
       body: message,
     })
+    const t = await toasts(context)
+    await flash.success(t('approved'), t('approvedDescription'))
+  } else {
+    await flash.info((await toasts(context))('gone'))
   }
 
   revalidatePath(page(context))
@@ -124,7 +147,7 @@ export async function approveAction(context: Context, formData: FormData): Promi
 export async function rejectAction(context: Context, formData: FormData): Promise<void> {
   const { user, property } = await requireFeature(context.locale, context.slug, 'concierge')
   const pending = await pendingFor(property.id, String(formData.get('runId') ?? ''))
-  if (!pending?.threadId || !pending.reservationId) redirect(page(context))
+  if (!pending?.threadId || !pending.reservationId) return alreadyDecided(context)
 
   const decided = await decideApproval({
     propertyId: property.id,
@@ -141,6 +164,10 @@ export async function rejectAction(context: Context, formData: FormData): Promis
       userId: user.id,
       body: deskPhrase(thread?.locale ?? context.locale, 'decisionRejected'),
     })
+    const t = await toasts(context)
+    await flash.success(t('rejected'), t('rejectedDescription'))
+  } else {
+    await flash.info((await toasts(context))('gone'))
   }
 
   revalidatePath(page(context))
