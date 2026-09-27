@@ -250,6 +250,24 @@ export const SUBPROCESSORS: SubProcessor[] = [
     verifiedAt: '2026-09-27',
     note: 'The adapter deletes each message resource from Twilio once it reaches a final state, so Twilio’s log holds content only in flight. Meta’s transient retention for delivery is outside our control. Re-evaluated against 360dialog (EU) and Cloud API directly (ADR-035).',
   },
+  {
+    id: 'SP-014',
+    name: 'Grafana Labs (Grafana Cloud)',
+    purpose:
+      'Storage and query of telemetry — traces, metrics and logs — from every service (ADR-036).',
+    dataCategories: [
+      'service telemetry: platform ids (property, reservation, thread), durations, outcomes, model and token counts',
+      'staff and guest personal data excluded by design: redacted at source and stripped again at the collector',
+    ],
+    region:
+      'EU region of Grafana Cloud (to be selected at sign-up); alternatively self-hosted on SP-011',
+    established: 'United States (Grafana Labs); EU region selected',
+    status: 'planned',
+    contract:
+      'Grafana Labs DPA with SCCs; EU region only. Self-hosting the same stack (Tempo, Loki, Prometheus) on the Phase 0 host removes the entry.',
+    verifiedAt: null,
+    note: 'Phoenix, for model spans, is self-hosted on our own host and is not a sub-processor.',
+  },
 ]
 
 export const SUBPROCESSOR_IDS: ReadonlySet<string> = new Set(SUBPROCESSORS.map((sp) => sp.id))

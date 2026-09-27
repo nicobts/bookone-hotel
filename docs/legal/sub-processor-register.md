@@ -189,6 +189,25 @@ Compute only. ADR-033: no pilot guest data on the host before working backups an
 
 **Residency last verified.** — (nothing to verify; no provider chosen)
 
+### SP-014 — Grafana Labs (Grafana Cloud)
+
+**Purpose.** Storage and query of telemetry — traces, metrics and logs — from every service (ADR-036).
+
+**Processing region.** EU region of Grafana Cloud (to be selected at sign-up); alternatively self-hosted on SP-011
+
+**Entity established in.** United States (Grafana Labs); EU region selected
+
+**Categories of personal data.**
+
+- service telemetry: platform ids (property, reservation, thread), durations, outcomes, model and token counts
+- staff and guest personal data excluded by design: redacted at source and stripped again at the collector
+
+**Contract.** Grafana Labs DPA with SCCs; EU region only. Self-hosting the same stack (Tempo, Loki, Prometheus) on the Phase 0 host removes the entry.
+
+**Residency last verified.** — (nothing to verify; no provider chosen)
+
+Phoenix, for model spans, is self-hosted on our own host and is not a sub-processor.
+
 ## Not chosen — no data flowing
 
 ### SP-004 — Email service provider — undecided

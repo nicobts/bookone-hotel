@@ -59,3 +59,9 @@ variable "admin_env" {
   description = "Non-secret environment for apps/admin (includes ADMIN_SUPABASE_URL)."
   default     = {}
 }
+
+variable "otel_collector_endpoint" {
+  type        = string
+  description = "OTLP/HTTP endpoint of the collector every service reports to (ADR-036). Empty disables telemetry."
+  default     = ""
+}

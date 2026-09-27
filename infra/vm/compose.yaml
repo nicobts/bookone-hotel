@@ -31,6 +31,9 @@ services:
     image: ${REGISTRY:-bookone}/api:${TAG:-latest}
     environment:
       NODE_ENV: production
+      # ADR-036: every service reports to the collector below.
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      BOOKONE_ENVIRONMENT: ${BOOKONE_ENVIRONMENT:-prod}
       API_PORT: '8787'
       TRUST_PROXY: 'true'
       DATABASE_URL: ${DATABASE_URL:?}
@@ -58,6 +61,9 @@ services:
     image: ${REGISTRY:-bookone}/worker:${TAG:-latest}
     environment:
       NODE_ENV: production
+      # ADR-036: every service reports to the collector below.
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      BOOKONE_ENVIRONMENT: ${BOOKONE_ENVIRONMENT:-prod}
       DATABASE_URL: ${DATABASE_URL:?}
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:?}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:?}
@@ -85,6 +91,9 @@ services:
     tmpfs: [/tmp, /app/apps/admin/.next/cache]
     environment:
       NODE_ENV: production
+      # ADR-036: every service reports to the collector below.
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      BOOKONE_ENVIRONMENT: ${BOOKONE_ENVIRONMENT:-prod}
       DATABASE_URL: ${DATABASE_URL:?}
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:?}
       ADMIN_SUPABASE_URL: ${ADMIN_SUPABASE_URL:?}
@@ -93,6 +102,19 @@ services:
     # no published port on the host.
     network_mode: service:tailscale
     depends_on: [tailscale]
+
+  # ADR-036: the one place telemetry leaves this host. It strips content and
+  # URL secrets (infra/otel/collector.yaml) and ships to an EU backend.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.161.0
+    restart: unless-stopped
+    command: ['--config=/etc/otelcol/config.yaml']
+    environment:
+      OTEL_BACKEND_ENDPOINT: ${OTEL_BACKEND_ENDPOINT:?}
+      OTEL_BACKEND_AUTHORIZATION: ${OTEL_BACKEND_AUTHORIZATION:?}
+    volumes:
+      - ../otel/collector.yaml:/etc/otelcol/config.yaml:ro
+    expose: ['4318']
 
   tailscale:
     image: tailscale/tailscale:stable

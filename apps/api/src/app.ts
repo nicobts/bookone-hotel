@@ -20,6 +20,7 @@ import { bodyLimit } from 'hono/body-limit'
 import { routeInboundMessage } from '@bookone/core/channels'
 import { parseInbound, parseStatus, verifyTwilioSignature } from '@bookone/adapters/twilio'
 import { ROUTE_FEATURE } from './features'
+import { serverSpans } from './telemetry'
 import { clientKey, rateLimit } from './rate-limit'
 
 /**
@@ -117,6 +118,8 @@ export function createApp(deps: {
 
   return (
     new Hono()
+      // Before everything else, so every route — webhooks included — is a span.
+      .use('*', serverSpans())
       .get('/health', (c) => c.json({ status: 'ok' as const, service: 'api' as const }))
 
       /**

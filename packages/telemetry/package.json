@@ -1,0 +1,36 @@
+{
+  "name": "@bookone/telemetry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "OpenTelemetry wiring for every BookOne service: traces, metrics and logs over OTLP (ADR-036)",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/api-logs": "0.222.0",
+    "@opentelemetry/core": "2.11.0",
+    "@opentelemetry/exporter-logs-otlp-http": "0.222.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "0.222.0",
+    "@opentelemetry/exporter-trace-otlp-http": "0.222.0",
+    "@opentelemetry/instrumentation-undici": "0.32.0",
+    "@opentelemetry/resources": "2.11.0",
+    "@opentelemetry/sdk-logs": "0.222.0",
+    "@opentelemetry/sdk-metrics": "2.11.0",
+    "@opentelemetry/sdk-node": "0.222.0",
+    "@opentelemetry/sdk-trace-base": "2.11.0",
+    "@opentelemetry/semantic-conventions": "1.43.0",
+    "pino": "^10.3.1"
+  }
+}

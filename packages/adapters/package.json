@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@bookone/core": "workspace:*",
+    "@opentelemetry/api": "1.9.1",
     "pg-boss": "^12.28.0",
     "zod": "^4.4.3"
   },

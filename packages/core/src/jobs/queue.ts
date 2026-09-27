@@ -287,6 +287,11 @@ export interface Job<N extends JobName = JobName> {
   id: string
   name: N
   data: JobPayloads[N]
+  /**
+   * The W3C trace context of whoever enqueued the job (ADR-036), so the job's
+   * span continues their trace across the queue. Absent for scheduled jobs.
+   */
+  trace?: Record<string, string>
 }
 
 export type JobHandler<N extends JobName> = (job: Job<N>) => Promise<void>

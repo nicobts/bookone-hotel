@@ -71,6 +71,14 @@ resource "google_cloud_run_v2_service" "api" {
         value = "production"
       }
       env {
+        name  = "OTEL_EXPORTER_OTLP_ENDPOINT"
+        value = var.otel_collector_endpoint
+      }
+      env {
+        name  = "BOOKONE_ENVIRONMENT"
+        value = var.environment
+      }
+      env {
         name  = "TRUST_PROXY"
         value = "true"
       }
@@ -119,6 +127,14 @@ resource "google_cloud_run_v2_service" "worker" {
         name  = "NODE_ENV"
         value = "production"
       }
+      env {
+        name  = "OTEL_EXPORTER_OTLP_ENDPOINT"
+        value = var.otel_collector_endpoint
+      }
+      env {
+        name  = "BOOKONE_ENVIRONMENT"
+        value = var.environment
+      }
       dynamic "env" {
         for_each = var.worker_env
         content {
@@ -159,6 +175,14 @@ resource "google_cloud_run_v2_service" "admin" {
       env {
         name  = "NODE_ENV"
         value = "production"
+      }
+      env {
+        name  = "OTEL_EXPORTER_OTLP_ENDPOINT"
+        value = var.otel_collector_endpoint
+      }
+      env {
+        name  = "BOOKONE_ENVIRONMENT"
+        value = var.environment
       }
       dynamic "env" {
         for_each = var.admin_env

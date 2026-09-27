@@ -9,6 +9,7 @@ import {
 import { FEATURES, type Feature } from '@bookone/core/onboarding'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { logger } from '@/lib/logger'
 import { requireAdmin, requireStaff } from '@/lib/staff'
 
 export interface ActionState {
@@ -44,6 +45,10 @@ export async function setFeature(_prev: ActionState, form: FormData): Promise<Ac
     return refusal(error)
   }
 
+  logger.info(
+    { action: enabled ? 'feature.grant' : 'feature.revoke', propertyId, feature },
+    'admin change',
+  )
   revalidatePath(`/properties/${propertyId}`)
   return { error: null, done: true }
 }
@@ -60,6 +65,7 @@ export async function setAgentPaused(_prev: ActionState, form: FormData): Promis
     return refusal(error)
   }
 
+  logger.info({ action: paused ? 'agent.pause' : 'agent.resume', propertyId }, 'admin change')
   revalidatePath(`/properties/${propertyId}`)
   revalidatePath('/')
   return { error: null, done: true }
@@ -77,5 +83,6 @@ export async function viewAsTenant(_prev: ActionState, form: FormData): Promise<
     return refusal(error)
   }
 
+  logger.info({ action: 'tenant.view', propertyId }, 'admin view')
   redirect(`/properties/${propertyId}/view`)
 }

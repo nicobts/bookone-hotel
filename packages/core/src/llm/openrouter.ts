@@ -1,3 +1,4 @@
+import { traceModelCall } from '../telemetry'
 import { generateText, jsonSchema, tool, type ModelMessage, type ToolSet } from 'ai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import type {
@@ -97,17 +98,28 @@ export function createOpenRouterProvider(config: OpenRouterConfig): LlmProvider 
             : { role: m.role as 'user' | 'assistant', content: m.content },
         )
 
-      const result = await generateText({
-        model,
-        ...(system ? { system } : {}),
-        messages,
-        ...(request.tools?.length ? { tools, toolChoice: 'required' as const } : {}),
-        ...(request.maxOutputTokens !== undefined
-          ? { maxOutputTokens: request.maxOutputTokens }
-          : {}),
-        ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
-        ...(request.signal ? { abortSignal: request.signal } : {}),
-      })
+      // A GenAI span per call (ADR-036): model, task, tokens — never the
+      // prompt or completion. The AI SDK's own `experimental_telemetry` stays
+      // off because it records both.
+      const result = await traceModelCall(
+        { system: 'openrouter', model: modelId, task: request.task },
+        () =>
+          generateText({
+            model,
+            ...(system ? { system } : {}),
+            messages,
+            ...(request.tools?.length ? { tools, toolChoice: 'required' as const } : {}),
+            ...(request.maxOutputTokens !== undefined
+              ? { maxOutputTokens: request.maxOutputTokens }
+              : {}),
+            ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
+            ...(request.signal ? { abortSignal: request.signal } : {}),
+          }),
+        (r) => ({
+          inputTokens: r.usage.inputTokens ?? 0,
+          outputTokens: r.usage.outputTokens ?? 0,
+        }),
+      )
 
       return {
         text: result.text,

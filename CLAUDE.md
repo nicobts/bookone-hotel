@@ -5,7 +5,7 @@ Guest-journey-first hospitality platform for small independent hotels (IT/AT/SI)
 ## Read first, in order
 1. `docs/00-PROJECT-OVERVIEW.md` — scope, decision register D1–D21, non-goals
 2. `docs/03-ARCHITECTURE.md` — topology, schema, conventions (§10 = repo layout)
-3. `docs/adr/` — ADR-001…035, one file each ([index](docs/adr/README.md)); **ADRs override anything conflicting in older annex documents**
+3. `docs/adr/` — ADR-001…036, one file each ([index](docs/adr/README.md)); **ADRs override anything conflicting in older annex documents**
 4. `docs/01-PRD.md` + `docs/02-USER-STORIES.md` — what to build, acceptance criteria
 5. `docs/04-IMPLEMENTATION-PLAN.md` — current sprint scope and DoD
 6. `docs/06-AI-AGENT-LAYER.md` — agent roster, `agent_runs`, autonomy tiers
@@ -103,7 +103,11 @@ Adding a dependency · changing the router's hard rules · any schema migration 
 - No internal surface (admin, Phoenix, queue dashboards) gets a public ingress: Tailscale only.
 - Secrets come from the secrets manager at runtime; never commit `.env` values; per-property credentials are envelope-encrypted.
 - Webhooks verify signatures and are idempotent on the provider's event id.
-- OpenTelemetry in every service: LLM spans to Phoenix (after PII redaction), the rest to Grafana EU.
+- **OpenTelemetry in every service (ADR-036), traces + metrics + logs over OTLP to a collector.**
+  - A new app starts `startTelemetry` from `@bookone/telemetry` at its entry point; a test fails if it doesn't.
+  - Log through `createLogger`, which is redacted and trace-correlated, never `console`.
+  - Put ids in spans, never contents: no names, phones, emails, message text, prompts or completions.
+  - A new personal field that gets logged goes into `packages/telemetry/src/redact.ts`.
 - IaC in `infra/` (OpenTofu), two targets (`vm`, `gcp`), same image. **`tofu`/`terraform` run from WSL only**, per the global rule.
 - New services (Tailscale, Infisical, Grafana, Phoenix, OCI/Hetzner, GCP, the staff Supabase project) get a sub-processor register entry before first use.
 

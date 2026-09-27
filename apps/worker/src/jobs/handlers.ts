@@ -65,6 +65,7 @@ import {
 import { isEntitled } from '@bookone/core/onboarding'
 import { ownerNotUnderstoodPhrase, unmatchedSenderPhrase } from '@bookone/core/concierge'
 import type { Logger } from 'pino'
+import { traceJob } from '@bookone/core/telemetry'
 import { syncPropertySchedules } from './schedules'
 
 /**
@@ -210,6 +211,19 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     await queue.work(name, async (job) => {
       const propertyId = (job.data as { propertyId?: unknown }).propertyId
 
+      // One span per job run, with duration and outcome as metrics (ADR-036).
+      await traceJob(
+        {
+          name,
+          id: job.id,
+          propertyId: typeof propertyId === 'string' ? propertyId : null,
+          ...(job.trace ? { trace: job.trace } : {}),
+        },
+        () => run(job, propertyId),
+      )
+    })
+
+    async function run(job: Parameters<JobHandler<N>>[0], propertyId: unknown): Promise<void> {
       if (
         gate !== 'core' &&
         typeof propertyId === 'string' &&
@@ -220,7 +234,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       }
 
       await handler(job)
-    })
+    }
   }
 
   await work('reservation.reflect', async (job) => {

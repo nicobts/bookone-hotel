@@ -17,7 +17,10 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   // The monorepo root, so the standalone trace includes workspace packages.
   outputFileTracingRoot: fileURLToPath(new URL('../../', import.meta.url)),
-  transpilePackages: ['@bookone/core', '@bookone/ui'],
+  transpilePackages: ['@bookone/core', '@bookone/ui', '@bookone/telemetry'],
+  // The OpenTelemetry SDK and pino stay Node modules rather than bundled
+  // (ADR-036): both load optional pieces at runtime that a bundle would miss.
+  serverExternalPackages: ['@opentelemetry/sdk-node', 'pino'],
   typedRoutes: true,
   poweredByHeader: false,
   allowedDevOrigins: ['127.0.0.1', 'localhost'],

@@ -1,4 +1,5 @@
 import 'server-only'
+import { logger } from './logger'
 
 /**
  * Calling the worker.
@@ -45,7 +46,7 @@ export async function notifyBookingConfirmed(input: {
   if (!base || !secret) {
     // Configuration, not a runtime failure. Loud in the log because in any
     // deployed environment it means every booking is taking the slow path.
-    console.warn('[booking] WORKER_URL or WORKER_INTERNAL_TOKEN is unset; relying on the sweep')
+    logger.warn('[booking] WORKER_URL or WORKER_INTERNAL_TOKEN is unset; relying on the sweep')
     return false
   }
 
@@ -67,13 +68,13 @@ export async function notifyBookingConfirmed(input: {
     })
 
     if (!response.ok) {
-      console.warn('[booking] worker refused the confirmation nudge', response.status)
+      logger.warn({ status: response.status }, '[booking] worker refused the confirmation nudge')
       return false
     }
 
     return true
   } catch (error) {
-    console.warn('[booking] could not reach the worker', error)
+    logger.warn({ err: error }, '[booking] could not reach the worker')
     return false
   }
 }
@@ -94,7 +95,7 @@ export async function retryReflection(input: {
   const secret = token()
 
   if (!base || !secret) {
-    console.warn('[exceptions] WORKER_URL or WORKER_INTERNAL_TOKEN is unset; cannot retry')
+    logger.warn('[exceptions] WORKER_URL or WORKER_INTERNAL_TOKEN is unset; cannot retry')
     return false
   }
 
@@ -108,7 +109,7 @@ export async function retryReflection(input: {
 
     return response.ok
   } catch (error) {
-    console.warn('[exceptions] could not reach the worker', error)
+    logger.warn({ err: error }, '[exceptions] could not reach the worker')
     return false
   }
 }
@@ -158,7 +159,7 @@ export async function startCheckout(input: {
 
     return (await response.json()) as CheckoutResult
   } catch (error) {
-    console.warn('[payments] could not reach the worker', error)
+    logger.warn({ err: error }, '[payments] could not reach the worker')
 
     return { status: 'rejected', reason: 'the payment service is unreachable' }
   }
@@ -256,7 +257,7 @@ export async function simulatePayment(input: {
 
     return response.ok
   } catch (error) {
-    console.warn('[payments] could not reach the worker to simulate', error)
+    logger.warn({ err: error }, '[payments] could not reach the worker to simulate')
 
     return false
   }
@@ -303,7 +304,7 @@ export async function cancellationQuote(input: {
 
     return (await response.json()) as CancellationQuoteResult
   } catch (error) {
-    console.warn('[cancel] could not reach the worker', error)
+    logger.warn({ err: error }, '[cancel] could not reach the worker')
 
     return null
   }
@@ -333,7 +334,7 @@ export async function requestCancellation(input: {
       refundFailed?: boolean
     }
   } catch (error) {
-    console.warn('[cancel] could not reach the worker', error)
+    logger.warn({ err: error }, '[cancel] could not reach the worker')
 
     return { status: 'rejected' }
   }
@@ -407,7 +408,7 @@ export async function sendGuestMessage(input: {
 
     return { ok: true, threadId: body.threadId }
   } catch (error) {
-    console.warn('[messaging] could not reach the worker', error)
+    logger.warn({ err: error }, '[messaging] could not reach the worker')
 
     return { ok: false, error: 'unreachable' }
   }
@@ -495,7 +496,7 @@ async function post(path: string, body: unknown): Promise<boolean> {
   const secret = token()
 
   if (!base || !secret) {
-    console.warn(`[worker] not configured; cannot call ${path}`)
+    logger.warn(`[worker] not configured; cannot call ${path}`)
     return false
   }
 
@@ -509,7 +510,7 @@ async function post(path: string, body: unknown): Promise<boolean> {
 
     return response.ok
   } catch (error) {
-    console.warn(`[worker] could not reach ${path}`, error)
+    logger.warn({ err: error }, `[worker] could not reach ${path}`)
 
     return false
   }

@@ -1,3 +1,4 @@
+import { context, propagation } from '@opentelemetry/api'
 import { PgBoss, type Job as BossJob } from 'pg-boss'
 import { jobNames } from '@bookone/core/jobs'
 import type {
@@ -25,6 +26,9 @@ import type {
  * recalled API: pg-boss 10 introduced explicit queue creation and reshaped the
  * work handler, and the old shapes fail at runtime rather than at compile time.
  */
+/** Payload key for the enqueuer's trace context (ADR-036). */
+const TRACE_KEY = '__trace'
+
 export class PgBossQueue implements JobQueue {
   private readonly boss: PgBoss
   private started = false
@@ -74,7 +78,14 @@ export class PgBossQueue implements JobQueue {
     data: JobPayloads[N],
     options: SendOptions = {},
   ): Promise<string | null> {
-    return this.boss.send(name, data as object, {
+    // The sender's trace context rides along in the payload (ADR-036), so the
+    // job's span continues the request that caused it. A reserved key the
+    // handlers never see: `work` strips it before calling them.
+    const carrier: Record<string, string> = {}
+    propagation.inject(context.active(), carrier)
+    const payload = Object.keys(carrier).length > 0 ? { ...data, [TRACE_KEY]: carrier } : data
+
+    return this.boss.send(name, payload as object, {
       ...(options.singletonKey ? { singletonKey: options.singletonKey } : {}),
       ...(options.startAfterSeconds ? { startAfter: options.startAfterSeconds } : {}),
       retryLimit: options.retryLimit ?? 5,
@@ -96,7 +107,13 @@ export class PgBossQueue implements JobQueue {
 
     await this.boss.work<JobPayloads[N]>(name, options, async (jobs: BossJob<JobPayloads[N]>[]) => {
       for (const job of jobs) {
-        await handler({ id: job.id, name, data: job.data } as Job<N>)
+        const { [TRACE_KEY]: trace, ...data } = (job.data ?? {}) as Record<string, unknown>
+        await handler({
+          id: job.id,
+          name,
+          data: data as JobPayloads[N],
+          ...(trace && typeof trace === 'object' ? { trace: trace as Record<string, string> } : {}),
+        } as Job<N>)
       }
     })
   }

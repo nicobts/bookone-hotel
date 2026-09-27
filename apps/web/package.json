@@ -15,6 +15,7 @@
   "dependencies": {
     "@bookone/core": "workspace:*",
     "@bookone/i18n": "workspace:*",
+    "@bookone/telemetry": "workspace:*",
     "@bookone/ui": "workspace:*",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.112.4",

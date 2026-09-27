@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs'
+import { createLogger, startTelemetry } from '@bookone/telemetry'
 import { fileURLToPath } from 'node:url'
 import { serve } from '@hono/node-server'
 import { getConnInfo } from '@hono/node-server/conninfo'
-import { pino } from 'pino'
 import { MockEricsoftAdapter } from '@bookone/adapters/mock-ericsoft'
 import { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
 import { PgBossQueue } from '@bookone/adapters/pg-boss'
@@ -28,7 +28,14 @@ const envFile = fileURLToPath(new URL('../../../.env', import.meta.url))
 if (existsSync(envFile)) process.loadEnvFile(envFile)
 
 const env = loadEnv()
-const logger = pino({ level: env.LOG_LEVEL })
+
+/**
+ * OpenTelemetry first (ADR-036): traces, metrics and logs over OTLP when
+ * OTEL_EXPORTER_OTLP_ENDPOINT is set, nothing at all when it is not. The
+ * logger is redacted and carries the trace id on every line.
+ */
+const telemetry = startTelemetry({ serviceName: 'bookone-api' })
+const logger = createLogger({ name: 'bookone-api', level: env.LOG_LEVEL })
 
 /**
  * The PMS connector, for `/health/connector` only. Mock until WS-C clears
@@ -103,7 +110,10 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 
     // Stop taking requests first, then let the queue client finish sending.
     server.close(() => {
-      void queue.stop().then(() => process.exit(0))
+      void queue
+        .stop()
+        .then(() => telemetry.shutdown())
+        .then(() => process.exit(0))
     })
   })
 }
