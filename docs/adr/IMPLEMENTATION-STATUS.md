@@ -5,6 +5,24 @@ A decision recorded is not a decision shipped. This table is the gap.
 Update it in the same PR that changes the answer — a status file that lags is
 worse than none, because it is read as current.
 
+## Guest Desk Phase 0 — acceptance (plan §4), as of 2026-09-27
+
+**Not complete.** The code is in place for every item. What is left is
+verification with real accounts and three human tasks.
+
+| Acceptance item | State | What is left |
+|---|---|---|
+| Profiles 1–7 + owner agent end to end on webchat, IT and EN | ✅ | — |
+| …and on WhatsApp | 🟨 built (ADR-035) | Run it against the Twilio sandbox; Meta Business verification for a real number |
+| Every action in the audit log (actor, tool, input, result, reversibility) | ✅ | — |
+| No money action without human approval, shown live | ✅ | — |
+| Schedina preview from CIE, EU passport, non-EU passport | ✅ | Tests for both document formats; a real CIE photo check with a volunteer |
+| Handoff reaches the owner's phone ≤ 60 s, agent stops on that thread | 🟨 built | Alert at the moment of handover to `ownerPhones`; needs Twilio configured and the approved template (`TWILIO_TEMPLATE_ESCALATION_ALERT`) |
+| Demo from a clean tenant in < 20 min without a terminal | 🟨 | Script and `pnpm demo:reset` ready; two rehearsals by someone who did not build it |
+| DPA template and guest privacy notice; notice on first contact | 🟨 | Notice ✅; DPA is a draft for counsel (`docs/legal/dpa-template.md`) |
+| WP0.8: OpenTelemetry in every service | ⬜ | Needs new dependencies (`@opentelemetry/*`), which is a stop-and-ask item |
+| WP0.8: one UI for both consoles | ✅ | `packages/ui`, shared by `apps/web` and `apps/admin` |
+
 | ADR | Decision | Built? | Where |
 |---|---|---|---|
 | 001 | Platform UUIDs; external systems via `external_refs` | ✅ as-built | Platform UUIDs everywhere; `external_refs` the only home for a foreign id; AuthorityMap + write-router in `src/authority` with both routes tested per domain (E6.2) |
