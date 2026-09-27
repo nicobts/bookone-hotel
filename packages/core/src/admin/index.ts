@@ -371,7 +371,12 @@ export async function startTenantView(
 export async function activeTenantView(
   staff: StaffActor,
   propertyId: string,
-  /** Injectable so the expiry is testable against an append-only trail. */
+  /**
+   * Injectable so the expiry is testable against an append-only trail. Only the
+   * lower bound uses it: an upper bound would compare the database's clock with
+   * this process's, and a fraction of a second of drift would close a window
+   * that was opened a moment ago.
+   */
   now: Date = new Date(),
 ): Promise<Date | null> {
   const [row] = await asService((db) =>
@@ -384,7 +389,6 @@ export async function activeTenantView(
           eq(adminAudit.propertyId, propertyId),
           eq(adminAudit.action, 'tenant.view'),
           sql`${adminAudit.at} > ${now.toISOString()}::timestamptz - make_interval(mins => ${TENANT_VIEW_MINUTES})`,
-          sql`${adminAudit.at} <= ${now.toISOString()}::timestamptz`,
         ),
       )
       .orderBy(desc(adminAudit.at))
