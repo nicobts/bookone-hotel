@@ -314,7 +314,7 @@ export const DATA_MAP: DataMapEntry[] = [
       anchor: 'departure',
       columns: { data: "'{}'::jsonb" },
       stamp: 'deleted_at',
-      why: 'The registration fields are needed while the guest is in the house and for a short tail afterwards — a correction, a query from the Questura. After that the filed payload is the record and this is a duplicate of identity data with no purpose. The *document image* goes earlier, on acknowledgement, under the E2.4 job.',
+      why: 'The registration fields are needed while the guest is in the house and for a short tail afterwards — a correction, a query from the Questura. After that the filed payload is the record and this is a duplicate of identity data with no purpose. The *document image* goes earlier, under the E2.4 job: on acknowledgement where the property files through BookOne, or `documentRetentionDays` (default 1) after departure where it does not (WP0.4) — otherwise a property that files elsewhere would keep images forever.',
     },
     erasure: {
       kind: 'redact',

@@ -3,7 +3,9 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import {
+  hasDocumentConsent,
   recordDocument,
+  recordDocumentConsent,
   resolveStay,
   saveParty,
   setExpectedArrival,
@@ -29,6 +31,13 @@ interface Context {
   locale: string
   token: string
 }
+
+/**
+ * The version of the guest privacy notice shown beside the upload, recorded
+ * with each consent so a later wording change does not rewrite what an earlier
+ * guest agreed to. Bump it whenever the `stay.privacy.*` strings change.
+ */
+const GUEST_NOTICE_VERSION = 'guest-notice-2026-09-27-draft'
 
 function stayUrl(context: Context, extra = ''): string {
   return `/${context.locale}/stay/${context.token}${extra}`
@@ -93,6 +102,17 @@ export async function uploadDocument(context: Context, formData: FormData): Prom
   if (!(await hasFeature(resolved.stay.propertyId, 'prearrival'))) redirect(stayUrl(context))
 
   const { stay } = resolved
+
+  // Consent before the first document (WP0.4). The checkbox is `required` in
+  // the form; this is the check that holds when the form is not the one we sent.
+  if (!(await hasDocumentConsent(stay.propertyId, stay.reservationId))) {
+    if (formData.get('consent') !== 'on') redirect(stayUrl(context, '?error=consent'))
+    await recordDocumentConsent({
+      propertyId: stay.propertyId,
+      reservationId: stay.reservationId,
+      noticeVersion: GUEST_NOTICE_VERSION,
+    })
+  }
 
   const guestIndex = Number(formData.get('guestIndex'))
   const file = formData.get('document')

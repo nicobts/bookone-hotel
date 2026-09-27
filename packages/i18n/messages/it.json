@@ -128,7 +128,29 @@
       "documentDeleted": "Documento eliminato",
       "simulated": "Nessun canale è collegato — non viene inviato nulla ad alcuna autorità.",
       "receipt": "Ricevuta conservata",
-      "checksum": "Checksum del file"
+      "checksum": "Checksum del file",
+      "schedina": "Schedina (anteprima)",
+      "schedinaHint": "Esattamente ciò che verrebbe inviato. Da qui non si invia nulla: verifichi con i documenti, poi confermi.",
+      "schedinaNotReady": "Non pronta — campi mancanti:",
+      "confirmDocuments": "Conferma",
+      "documentsConfirmed": "Confermata dal personale",
+      "confirmNote": "Confermare significa che la schedina corrisponde ai documenti che ha verificato. Non è una verifica d'identità.",
+      "schedinaFields": {
+        "guestType": "Tipo alloggiato",
+        "arrivalDate": "Arrivo",
+        "nights": "Notti",
+        "surname": "Cognome",
+        "givenName": "Nome",
+        "sex": "Sesso",
+        "birthDate": "Data di nascita",
+        "birthPlaceCode": "Comune di nascita",
+        "birthProvince": "Provincia di nascita",
+        "birthCountryCode": "Stato di nascita",
+        "citizenshipCode": "Cittadinanza",
+        "documentType": "Tipo documento",
+        "documentNumber": "Numero documento",
+        "documentIssuerCode": "Luogo di rilascio"
+      }
     },
     "conversations": {
       "title": "Conversazioni",
@@ -648,7 +670,9 @@
       "replace": "Sostituisci",
       "send": "Invia documento",
       "needParty": "Aggiungi prima gli ospiti, poi allega un documento per ciascuno.",
-      "retention": "La struttura li elimina una volta registrato il soggiorno presso le autorità. Viene conservata solo la ricevuta."
+      "retention": "La struttura li elimina una volta registrato il soggiorno presso le autorità. Viene conservata solo la ricevuta.",
+      "consent": "Ho letto come vengono usati i miei dati e acconsento che la struttura tratti il mio documento d'identità per registrare il soggiorno.",
+      "retentionAfterStay": "La struttura elimina queste foto {days, plural, one {il giorno} other {# giorni}} dopo la sua partenza. Non viene conservato nulla."
     },
     "arrival": {
       "heading": "A che ora arriverai?",
@@ -668,7 +692,8 @@
       "notConfigured": "Il check-in non è disponibile in questo ambiente.",
       "upload": "Non è stato possibile accettare il file. Usa JPEG, PNG o PDF sotto i 10 MB.",
       "generic": "Qualcosa è andato storto. Riprova.",
-      "message": "Non è stato possibile inviare il messaggio. Riprovi."
+      "message": "Non è stato possibile inviare il messaggio. Riprovi.",
+      "consent": "Prima di inviare un documento legga come vengono usati i suoi dati e spunti la casella."
     },
     "arrived": {
       "heading": "È arrivato?",
@@ -706,6 +731,14 @@
         "address": "Indirizzo (facoltativo)",
         "sent": "La sua richiesta di fattura è stata trasmessa alla struttura."
       }
+    },
+    "privacy": {
+      "heading": "Come vengono usati i suoi dati",
+      "controller": "{property} è titolare del trattamento dei suoi dati. BookOne gestisce questa pagina per suo conto.",
+      "purpose": "I suoi dati e documenti d'identità sono raccolti perché la legge italiana impone di registrare ogni ospite presso la Questura (art. 109 TULPS).",
+      "retention": "Le foto dei documenti vengono eliminate a registrazione avvenuta o poco dopo la partenza. I dati di registrazione sono conservati per 30 giorni dopo il soggiorno; la ricevuta dell'invio è conservata come previsto dalla legge.",
+      "location": "Tutto è conservato nell'UE. I messaggi che scrive qui possono essere letti da un assistente automatico che può operare fuori dall'UE; non conserva nulla.",
+      "rights": "Può chiedere alla struttura di vedere, correggere o cancellare i suoi dati."
     }
   },
   "concierge": {

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { requireFeature, requireProperty } from '@/lib/auth/current-property'
 import { confirmArrival, submitAlloggiatiNow } from '@/lib/worker'
+import { confirmDocuments } from '@bookone/core/journey'
 
 /**
  * The two things a receptionist does on this screen (E2.3, E3.1).
@@ -53,6 +54,25 @@ export async function fileNow(context: Context): Promise<void> {
   const { property } = await requireFeature(context.locale, context.slug, 'alloggiati')
 
   await submitAlloggiatiNow({ propertyId: property.id, reservationId: context.reservationId })
+
+  revalidatePath(`/${context.locale}/${context.slug}/console/arrivals/${context.reservationId}`)
+}
+
+/**
+ * A person confirms the party's registration record against the documents
+ * (Guest Desk WP0.4 "Conferma"). Pre-arrival capture ends here in Phase 0:
+ * nothing is filed. Refused by core unless the record is complete and every
+ * guest has a document; the actor is named, because the confirmation is theirs
+ * and not BookOne's (ADR-027).
+ */
+export async function confirmDocumentsAction(context: Context): Promise<void> {
+  const { user, property } = await requireFeature(context.locale, context.slug, 'prearrival')
+
+  await confirmDocuments({
+    propertyId: property.id,
+    reservationId: context.reservationId,
+    userId: user.id,
+  })
 
   revalidatePath(`/${context.locale}/${context.slug}/console/arrivals/${context.reservationId}`)
 }

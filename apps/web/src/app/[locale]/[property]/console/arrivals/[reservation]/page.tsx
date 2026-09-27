@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { CheckCircle2Icon, FlaskConicalIcon, TriangleAlertIcon } from 'lucide-react'
 import { getArrival } from '@bookone/core/db'
+import { getSchedinaPreview } from '@bookone/core/journey'
 import { registrationToGuestDetails, validateParty } from '@bookone/core/alloggiati'
 import { PageShell } from '@/components/shell/page-shell'
 import { hasFeature, requireProperty } from '@/lib/auth/current-property'
@@ -9,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { formatDate } from '@/components/booking/format'
-import { fileNow, markArrived } from './actions'
+import { confirmDocumentsAction, fileNow, markArrived } from './actions'
 
 /**
  * One arrival, and the registry filing that follows it (E2.3, E3.1).
@@ -47,6 +48,10 @@ export default async function ArrivalPage({
   // Without the feature there is no filing to make — the section still shows
   // what the record is missing, which pre-arrival capture needs regardless.
   const filing = await hasFeature(property.id, 'alloggiati')
+  // The schedina preview and its confirmation belong to pre-arrival (WP0.4).
+  const schedina = (await hasFeature(property.id, 'prearrival'))
+    ? await getSchedinaPreview(property.id, reservationId)
+    : null
   const context = { locale, slug, reservationId }
 
   // The same validator the staging path runs, so what the console promises and
@@ -114,6 +119,74 @@ export default async function ArrivalPage({
       </section>
 
       <Separator />
+
+      {schedina && (
+        <>
+          <section>
+            <div className="mb-3 flex items-center justify-between gap-4">
+              <h2 className="bo-label text-muted-foreground">{t('schedina')}</h2>
+
+              {schedina.confirmedAt ? (
+                <Badge variant="secondary" className="gap-1">
+                  <CheckCircle2Icon
+                    className="size-3 text-[color:var(--bo-success-500)]"
+                    aria-hidden
+                  />
+                  {t('documentsConfirmed')}
+                </Badge>
+              ) : schedina.ready && schedina.documentsHeld >= schedina.guests.length ? (
+                <form action={confirmDocumentsAction.bind(null, context)}>
+                  <Button type="submit" size="sm">
+                    {t('confirmDocuments')}
+                  </Button>
+                </form>
+              ) : null}
+            </div>
+
+            <p className="text-muted-foreground mb-3 text-xs">{t('schedinaHint')}</p>
+
+            {!schedina.ready && schedina.issues.length > 0 && (
+              <p className="text-muted-foreground mb-3 text-xs">
+                {t('schedinaNotReady')}{' '}
+                {schedina.issues
+                  .map((issue) =>
+                    issue.guestIndex >= 0
+                      ? `${t('guest', { n: issue.guestIndex + 1 })}: ${issue.field}`
+                      : issue.field,
+                  )
+                  .join(', ')}
+              </p>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {schedina.guests.map((guest) => (
+                <dl
+                  key={guest.guestIndex}
+                  className="bg-card grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg border p-4 text-xs"
+                >
+                  {guest.fields.map((field) => (
+                    <div key={field.name} className="contents">
+                      <dt className="text-muted-foreground">
+                        {t.has(`schedinaFields.${field.name}`)
+                          ? t(`schedinaFields.${field.name}`)
+                          : field.name}
+                      </dt>
+                      {/* Tabular: these get compared character by character against a document. */}
+                      <dd className="num text-foreground truncate font-mono">
+                        {field.value || '—'}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ))}
+            </div>
+
+            <p className="text-muted-foreground mt-3 text-xs">{t('confirmNote')}</p>
+          </section>
+
+          <Separator />
+        </>
+      )}
 
       <section>
         <h2 className="bo-label text-muted-foreground mb-3">{t('filing')}</h2>

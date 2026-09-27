@@ -128,7 +128,29 @@
       "documentDeleted": "Document deleted",
       "simulated": "No channel is connected — nothing is actually filed with any authority.",
       "receipt": "Receipt held",
-      "checksum": "Payload checksum"
+      "checksum": "Payload checksum",
+      "schedina": "Registration record (preview)",
+      "schedinaHint": "Exactly what would be filed. Nothing is sent from here; check it against the documents, then confirm.",
+      "schedinaNotReady": "Not ready — fields missing:",
+      "confirmDocuments": "Confirm",
+      "documentsConfirmed": "Confirmed by staff",
+      "confirmNote": "Confirming says the record matches the documents you checked. It is not an identity check.",
+      "schedinaFields": {
+        "guestType": "Guest type",
+        "arrivalDate": "Arrival",
+        "nights": "Nights",
+        "surname": "Surname",
+        "givenName": "Given name",
+        "sex": "Sex",
+        "birthDate": "Date of birth",
+        "birthPlaceCode": "Place of birth",
+        "birthProvince": "Province of birth",
+        "birthCountryCode": "Country of birth",
+        "citizenshipCode": "Citizenship",
+        "documentType": "Document type",
+        "documentNumber": "Document number",
+        "documentIssuerCode": "Issued in"
+      }
     },
     "conversations": {
       "title": "Conversations",
@@ -648,7 +670,9 @@
       "replace": "Replace",
       "send": "Send document",
       "needParty": "Add the guests first, then attach a document for each of them.",
-      "retention": "The property deletes these once your stay is registered with the authorities. Only the receipt is kept."
+      "retention": "The property deletes these once your stay is registered with the authorities. Only the receipt is kept.",
+      "consent": "I have read how my data is used, and I agree that the property processes my identity document to register my stay.",
+      "retentionAfterStay": "The property deletes these photos {days, plural, one {the day} other {# days}} after you leave. Nothing is kept."
     },
     "arrival": {
       "heading": "When will you arrive?",
@@ -668,7 +692,8 @@
       "notConfigured": "Check-in is not available in this environment.",
       "upload": "That file could not be accepted. Use a JPEG, PNG or PDF under 10 MB.",
       "generic": "Something went wrong. Try again.",
-      "message": "Your message could not be sent. Please try again."
+      "message": "Your message could not be sent. Please try again.",
+      "consent": "Please read how your data is used and tick the box before sending a document."
     },
     "arrived": {
       "heading": "Are you here?",
@@ -706,6 +731,14 @@
         "address": "Address (optional)",
         "sent": "Your invoice request has been passed to the property."
       }
+    },
+    "privacy": {
+      "heading": "How your data is used",
+      "controller": "{property} is responsible for your data. BookOne runs this page on its behalf.",
+      "purpose": "Your details and identity documents are collected because Italian law requires every guest to be registered with the police (TULPS art. 109).",
+      "retention": "Document photos are deleted once registration is done, or shortly after you leave. Registration details are kept for 30 days after your stay; the filing receipt is kept as the law requires.",
+      "location": "Everything is stored in the EU. Messages you write here may be read by an automated assistant that can run outside the EU; it keeps nothing.",
+      "rights": "You can ask the property to see, correct or delete your data."
     }
   },
   "concierge": {

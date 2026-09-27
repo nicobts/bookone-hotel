@@ -128,7 +128,29 @@
       "documentDeleted": "Dokument gelöscht",
       "simulated": "Kein Kanal angebunden — es wird nichts an eine Behörde gemeldet.",
       "receipt": "Bestätigung vorhanden",
-      "checksum": "Prüfsumme"
+      "checksum": "Prüfsumme",
+      "schedina": "Meldeschein (Vorschau)",
+      "schedinaHint": "Genau das, was gemeldet würde. Von hier wird nichts gesendet; prüfen Sie es anhand der Dokumente und bestätigen Sie dann.",
+      "schedinaNotReady": "Nicht bereit — fehlende Felder:",
+      "confirmDocuments": "Bestätigen",
+      "documentsConfirmed": "Vom Personal bestätigt",
+      "confirmNote": "Mit der Bestätigung erklären Sie, dass der Meldeschein den geprüften Dokumenten entspricht. Es ist keine Identitätsprüfung.",
+      "schedinaFields": {
+        "guestType": "Gasttyp",
+        "arrivalDate": "Anreise",
+        "nights": "Nächte",
+        "surname": "Nachname",
+        "givenName": "Vorname",
+        "sex": "Geschlecht",
+        "birthDate": "Geburtsdatum",
+        "birthPlaceCode": "Geburtsort",
+        "birthProvince": "Geburtsprovinz",
+        "birthCountryCode": "Geburtsland",
+        "citizenshipCode": "Staatsangehörigkeit",
+        "documentType": "Dokumentart",
+        "documentNumber": "Dokumentnummer",
+        "documentIssuerCode": "Ausgestellt in"
+      }
     },
     "conversations": {
       "title": "Unterhaltungen",
@@ -648,7 +670,9 @@
       "replace": "Ersetzen",
       "send": "Dokument senden",
       "needParty": "Tragen Sie zuerst die Gäste ein, dann je ein Dokument dazu.",
-      "retention": "Das Haus löscht diese, sobald Ihr Aufenthalt bei den Behörden gemeldet ist. Nur die Bestätigung bleibt erhalten."
+      "retention": "Das Haus löscht diese, sobald Ihr Aufenthalt bei den Behörden gemeldet ist. Nur die Bestätigung bleibt erhalten.",
+      "consent": "Ich habe gelesen, wie meine Daten verwendet werden, und stimme zu, dass das Haus mein Ausweisdokument zur Meldung meines Aufenthalts verarbeitet.",
+      "retentionAfterStay": "Das Haus löscht diese Fotos {days, plural, one {am Tag} other {# Tage}} nach Ihrer Abreise. Es wird nichts aufbewahrt."
     },
     "arrival": {
       "heading": "Wann kommen Sie an?",
@@ -668,7 +692,8 @@
       "notConfigured": "Der Check-in ist in dieser Umgebung nicht verfügbar.",
       "upload": "Diese Datei konnte nicht angenommen werden. Bitte JPEG, PNG oder PDF unter 10 MB.",
       "generic": "Etwas ist schiefgegangen. Bitte erneut versuchen.",
-      "message": "Ihre Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut."
+      "message": "Ihre Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+      "consent": "Bitte lesen Sie, wie Ihre Daten verwendet werden, und setzen Sie das Häkchen, bevor Sie ein Dokument senden."
     },
     "arrived": {
       "heading": "Sind Sie da?",
@@ -706,6 +731,14 @@
         "address": "Adresse (optional)",
         "sent": "Ihre Rechnungsanfrage wurde an das Haus weitergeleitet."
       }
+    },
+    "privacy": {
+      "heading": "Wie Ihre Daten verwendet werden",
+      "controller": "{property} ist für Ihre Daten verantwortlich. BookOne betreibt diese Seite in seinem Auftrag.",
+      "purpose": "Ihre Angaben und Ausweisdokumente werden erhoben, weil das italienische Recht die polizeiliche Meldung jedes Gastes vorschreibt (Art. 109 TULPS).",
+      "retention": "Dokumentfotos werden nach der Meldung oder kurz nach Ihrer Abreise gelöscht. Meldedaten werden 30 Tage nach Ihrem Aufenthalt aufbewahrt; der Übermittlungsnachweis wird gesetzlich vorgeschrieben aufbewahrt.",
+      "location": "Alles wird in der EU gespeichert. Nachrichten, die Sie hier schreiben, können von einem automatischen Assistenten gelesen werden, der außerhalb der EU laufen kann; er speichert nichts.",
+      "rights": "Sie können das Haus bitten, Ihre Daten einzusehen, zu berichtigen oder zu löschen."
     }
   },
   "concierge": {

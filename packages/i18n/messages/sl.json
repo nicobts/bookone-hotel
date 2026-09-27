@@ -128,7 +128,29 @@
       "documentDeleted": "Dokument izbrisan",
       "simulated": "Noben kanal ni povezan — nič se ne pošlje nobenemu organu.",
       "receipt": "Potrdilo shranjeno",
-      "checksum": "Kontrolna vsota"
+      "checksum": "Kontrolna vsota",
+      "schedina": "Prijavnica (predogled)",
+      "schedinaHint": "Natančno to, kar bi bilo oddano. Od tu se nič ne pošlje; preverite z dokumenti in nato potrdite.",
+      "schedinaNotReady": "Ni pripravljeno — manjkajoča polja:",
+      "confirmDocuments": "Potrdi",
+      "documentsConfirmed": "Potrdilo osebje",
+      "confirmNote": "Potrditev pomeni, da se prijavnica ujema s preverjenimi dokumenti. To ni preverjanje identitete.",
+      "schedinaFields": {
+        "guestType": "Vrsta gosta",
+        "arrivalDate": "Prihod",
+        "nights": "Noči",
+        "surname": "Priimek",
+        "givenName": "Ime",
+        "sex": "Spol",
+        "birthDate": "Datum rojstva",
+        "birthPlaceCode": "Kraj rojstva",
+        "birthProvince": "Pokrajina rojstva",
+        "birthCountryCode": "Država rojstva",
+        "citizenshipCode": "Državljanstvo",
+        "documentType": "Vrsta dokumenta",
+        "documentNumber": "Številka dokumenta",
+        "documentIssuerCode": "Izdano v"
+      }
     },
     "conversations": {
       "title": "Pogovori",
@@ -648,7 +670,9 @@
       "replace": "Zamenjaj",
       "send": "Pošlji dokument",
       "needParty": "Najprej dodajte goste, nato priložite dokument za vsakega.",
-      "retention": "Nastanitev jih izbriše, ko je vaše bivanje prijavljeno pri organih. Ohrani se le potrdilo."
+      "retention": "Nastanitev jih izbriše, ko je vaše bivanje prijavljeno pri organih. Ohrani se le potrdilo.",
+      "consent": "Prebral sem, kako se uporabljajo moji podatki, in soglašam, da nastanitev obdela moj osebni dokument za prijavo bivanja.",
+      "retentionAfterStay": "Nastanitev te fotografije izbriše {days, plural, one {dan} two {# dni} few {# dni} other {# dni}} po vašem odhodu. Nič se ne hrani."
     },
     "arrival": {
       "heading": "Kdaj boste prispeli?",
@@ -668,7 +692,8 @@
       "notConfigured": "Prijava v tem okolju ni na voljo.",
       "upload": "Datoteke ni bilo mogoče sprejeti. Uporabite JPEG, PNG ali PDF pod 10 MB.",
       "generic": "Nekaj je šlo narobe. Poskusite znova.",
-      "message": "Sporočila ni bilo mogoče poslati. Poskusite znova."
+      "message": "Sporočila ni bilo mogoče poslati. Poskusite znova.",
+      "consent": "Preden pošljete dokument, preberite, kako se uporabljajo vaši podatki, in označite polje."
     },
     "arrived": {
       "heading": "Ste že prispeli?",
@@ -706,6 +731,14 @@
         "address": "Naslov (neobvezno)",
         "sent": "Vaša zahteva za račun je bila posredovana nastanitvi."
       }
+    },
+    "privacy": {
+      "heading": "Kako se uporabljajo vaši podatki",
+      "controller": "Za vaše podatke je odgovorna nastanitev {property}. BookOne upravlja to stran v njenem imenu.",
+      "purpose": "Vaše podatke in osebne dokumente zbiramo, ker italijanska zakonodaja zahteva prijavo vsakega gosta policiji (člen 109 TULPS).",
+      "retention": "Fotografije dokumentov se izbrišejo po opravljeni prijavi ali kmalu po vašem odhodu. Podatki za prijavo se hranijo 30 dni po bivanju; potrdilo o oddaji se hrani, kot zahteva zakon.",
+      "location": "Vse se hrani v EU. Sporočila, ki jih napišete tukaj, lahko prebere samodejni pomočnik, ki lahko deluje zunaj EU; ničesar ne hrani.",
+      "rights": "Nastanitev lahko prosite za vpogled, popravek ali izbris vaših podatkov."
     }
   },
   "concierge": {

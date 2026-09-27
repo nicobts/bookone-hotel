@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { CheckCircle2Icon, CircleIcon, InfoIcon } from 'lucide-react'
-import { resolveStay } from '@bookone/core/journey'
+import { hasDocumentConsent, resolveStay } from '@bookone/core/journey'
 import { getThreadForReservation, listMessages, listStayTasks } from '@bookone/core/concierge'
 import { getCheckoutSummary } from '@bookone/core/stay'
 import { BookingShell } from '@/components/booking/booking-shell'
@@ -8,6 +8,7 @@ import { formatDate, formatMoney, roomName } from '@/components/booking/format'
 import { SimulatedPaymentNotice } from '@/components/booking/payment-notice'
 import { Thread } from '@/components/stay/thread'
 import { hasFeature } from '@/lib/auth/current-property'
+import { DOCUMENT_RETENTION_DAYS_DEFAULT } from '@bookone/core/alloggiati'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -151,6 +152,15 @@ export default async function StayPage({
   const prearrival = await hasFeature(stay.propertyId, 'prearrival')
   const inbox = await hasFeature(stay.propertyId, 'inbox')
 
+  // Consent before the first document (WP0.4), and the retention promise that
+  // matches what will actually happen: deletion on filing when the property
+  // files through BookOne, a set number of days after departure when it does not.
+  const consented = prearrival
+    ? await hasDocumentConsent(stay.propertyId, stay.reservationId)
+    : true
+  const filesThroughUs = await hasFeature(stay.propertyId, 'alloggiati')
+  const retentionDays = readRetentionDays(stay.propertySettings)
+
   return (
     <BookingShell property={property} step={null}>
       <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('title')}</h1>
@@ -205,7 +215,9 @@ export default async function StayPage({
             ? t('errors.upload')
             : error === 'message'
               ? t('errors.message')
-              : t('errors.generic')}
+              : error === 'consent'
+                ? t('errors.consent')
+                : t('errors.generic')}
         </p>
       )}
 
@@ -357,6 +369,26 @@ export default async function StayPage({
             <h2 className="text-foreground font-medium">{t('documents.heading')}</h2>
             <p className="text-muted-foreground mt-1 text-xs">{t('documents.hint')}</p>
 
+            {/*
+              How the data is used, above the upload rather than behind a link:
+              the guest is about to photograph a passport. DRAFT wording — it
+              states the product's actual behaviour (ADR-027, ADR-029, the data
+              map) and must be reviewed by the property's counsel before a real
+              guest reads it.
+            */}
+            <details className="bg-muted/40 mt-4 rounded-lg px-4 py-3 text-xs" open={!consented}>
+              <summary className="text-foreground cursor-pointer font-medium">
+                {t('privacy.heading')}
+              </summary>
+              <div className="text-muted-foreground mt-2 space-y-1.5">
+                <p>{t('privacy.controller', { property: stay.propertyName })}</p>
+                <p>{t('privacy.purpose')}</p>
+                <p>{t('privacy.retention')}</p>
+                <p>{t('privacy.location')}</p>
+                <p>{t('privacy.rights')}</p>
+              </div>
+            </details>
+
             {stay.party.length === 0 ? (
               // Deliberately not a disabled upload field. The reason it is not
               // available is that we do not yet know who the document belongs to,
@@ -399,6 +431,18 @@ export default async function StayPage({
                           className="mt-3"
                         />
                       )}
+
+                      {!member.documentDeleted && !consented && (
+                        <label className="text-muted-foreground mt-3 flex items-start gap-2 text-xs">
+                          <input
+                            type="checkbox"
+                            name="consent"
+                            required
+                            className="mt-0.5 accent-current"
+                          />
+                          <span>{t('documents.consent')}</span>
+                        </label>
+                      )}
                     </div>
 
                     {!member.documentDeleted && (
@@ -417,7 +461,11 @@ export default async function StayPage({
           never heard of; what happens to it afterwards is the question they are
           actually asking (E2.4).
         */}
-            <p className="text-muted-foreground mt-4 text-xs">{t('documents.retention')}</p>
+            <p className="text-muted-foreground mt-4 text-xs">
+              {filesThroughUs
+                ? t('documents.retention')
+                : t('documents.retentionAfterStay', { days: retentionDays })}
+            </p>
           </section>
 
           <Separator className="my-8" />
@@ -708,4 +756,15 @@ function todayAt(timeZone: string): string {
 
 function single(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value
+}
+
+/** The property's document retention after departure, or the default (WP0.4). */
+function readRetentionDays(settings: unknown): number {
+  const value =
+    settings !== null && typeof settings === 'object'
+      ? (settings as Record<string, unknown>).documentRetentionDays
+      : undefined
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0
+    ? value
+    : DOCUMENT_RETENTION_DAYS_DEFAULT
 }
