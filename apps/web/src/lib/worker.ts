@@ -487,8 +487,25 @@ export async function askOwnerAssistant(input: {
   userId: string
   message: string
   locale: string
+  /** The run's `input_ref`, so the console chat can read the answer back (ADR-038). */
+  requestId?: string
 }): Promise<boolean> {
   return post('/jobs/owner-message', input)
+}
+
+/**
+ * A console preview of the concierge (ADR-038). The worker runs it with every
+ * non-read tool simulated; the caller reads the run back by `requestId`.
+ */
+export async function previewConcierge(input: {
+  propertyId: string
+  userId: string
+  message: string
+  locale: string
+  requestId: string
+  reservationId?: string
+}): Promise<boolean> {
+  return post('/jobs/agent-preview', input)
 }
 
 async function post(path: string, body: unknown): Promise<boolean> {

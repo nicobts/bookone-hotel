@@ -9,6 +9,9 @@ const CHAT_SURFACES = [
   'packages/ui/src/components/chat/**',
   'apps/*/src/app/api/**/chat/**',
   'apps/*/src/app/**/playground/**',
+  // ADR-038: the console's agent chat and the owner's assistant page.
+  'apps/*/src/components/agents/**',
+  'apps/*/src/app/**/console/assistant/**',
 ]
 
 export default tseslint.config(

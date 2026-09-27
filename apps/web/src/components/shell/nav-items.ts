@@ -15,6 +15,7 @@ export type NavKey =
   | 'exceptions'
   | 'conversations'
   | 'approvals'
+  | 'agents'
   | 'reservations'
   | 'guests'
   | 'report'
@@ -30,6 +31,7 @@ export type NavKey =
 export const NAV_FEATURE: Partial<Record<NavKey, Feature>> = {
   conversations: 'inbox',
   approvals: 'concierge',
+  agents: 'concierge',
   assistant: 'concierge',
 }
 
@@ -38,6 +40,10 @@ const OPERATE: NavKey[] = [
   'exceptions',
   'conversations',
   'approvals',
+  // What the assistants do and a place to try them (ADR-038). In the operating
+  // band, for staff too: knowing what the concierge will do is part of running
+  // the house.
+  'agents',
   'reservations',
   'guests',
 ]

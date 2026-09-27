@@ -68,7 +68,8 @@
     "knowledge": "Knowledge",
     "privacy": "Privacy",
     "approvals": "Approvals",
-    "assistant": "Assistant"
+    "assistant": "Assistant",
+    "agents": "Agents"
   },
   "property": {
     "switcher": {
@@ -431,7 +432,17 @@
       "examples": "It answers from your own data and changes nothing.",
       "ask": "Ask",
       "working": "Looking it up…",
-      "notUnderstood": "I can answer about arrivals, missing documents, complaints and approvals."
+      "notUnderstood": "I can answer about arrivals, missing documents, complaints and approvals.",
+      "emptyTitle": "Ask about your property",
+      "emptyDescription": "The assistant reads your own data and changes nothing.",
+      "suggestions": [
+        "Who hasn't sent their documents yet?",
+        "How many arrivals tomorrow?",
+        "Are there open complaints?",
+        "What is waiting for my approval?"
+      ],
+      "unavailable": "The assistant could not be reached. Try again in a moment.",
+      "timeout": "No answer yet. The assistant may be busy; try again in a moment."
     },
     "settings": {
       "supportTitle": "BookOne support access",
@@ -441,6 +452,248 @@
       "supportWhen": "When",
       "supportWhy": "Reason",
       "supportUntil": "Until"
+    },
+    "agents": {
+      "title": "Agents",
+      "subtitle": "What each assistant does for this property, and how it behaves",
+      "active": "Active",
+      "off": "Not included",
+      "paused": "Paused by BookOne",
+      "background": "Runs on its own",
+      "ownerOnly": "Only the owner can talk to it",
+      "whoFor": "For",
+      "profiles": {
+        "pre-sale": {
+          "name": "Before booking",
+          "description": "People who have not booked yet: availability, prices, which room fits, and a link to book directly."
+        },
+        "general-info": {
+          "name": "Information",
+          "description": "Questions about the property and the area, answered only from your knowledge base."
+        },
+        "pre-arrival": {
+          "name": "Before arrival",
+          "description": "The pre-arrival link, the arrival time, the documents still missing, and how to get here."
+        },
+        "booking-support": {
+          "name": "Existing booking",
+          "description": "Looking up the booking, requesting changes, cancelling within your policy — a cancellation waits for you."
+        },
+        "payments": {
+          "name": "Payments",
+          "description": "Payment status and charges explained. A payment link waits for you; refunds always go to a person."
+        },
+        "checkout": {
+          "name": "Checkout",
+          "description": "Late checkout (waits for your approval), invoice requests, luggage and transport."
+        },
+        "complaints": {
+          "name": "Complaints",
+          "description": "Acknowledged, logged with a deadline, and the manager told at once. Compensation is never decided by the assistant."
+        },
+        "owner-backoffice": {
+          "name": "Owner questions",
+          "description": "Arrivals, missing documents, open complaints and pending approvals, read from your data."
+        }
+      },
+      "tools": {
+        "search_knowledge": {
+          "label": "Answer from your knowledge base",
+          "would": "answer from your knowledge base"
+        },
+        "get_hotel_policy": {
+          "label": "Quote one of your policies",
+          "would": "quote one of your policies"
+        },
+        "find_booking": {
+          "label": "Look up the guest's own booking",
+          "would": "look up the guest's own booking"
+        },
+        "check_availability": {
+          "label": "Check availability",
+          "would": "check availability"
+        },
+        "quote_stay": {
+          "label": "Quote a stay from your rates",
+          "would": "quote a stay from your rates"
+        },
+        "create_booking_link": {
+          "label": "Send a link to your booking page",
+          "would": "send a link to your booking page"
+        },
+        "modify_booking": {
+          "label": "Request a change to dates or guests",
+          "would": "ask the property to change the booking's dates or guests"
+        },
+        "cancel_booking": {
+          "label": "Cancel within your policy",
+          "would": "cancel the booking within your policy"
+        },
+        "create_payment_link": {
+          "label": "Send a payment link",
+          "would": "send the guest a payment link"
+        },
+        "get_payment_status": {
+          "label": "Check a payment's status",
+          "would": "check the payment's status"
+        },
+        "explain_charges": {
+          "label": "Explain the charges",
+          "would": "explain the charges"
+        },
+        "send_prearrival_link": {
+          "label": "Send the pre-arrival link",
+          "would": "send the guest the pre-arrival link"
+        },
+        "record_eta": {
+          "label": "Note the arrival time",
+          "would": "note the guest's arrival time"
+        },
+        "get_capture_status": {
+          "label": "Check what the guest still has to send",
+          "would": "check what the guest still has to send"
+        },
+        "request_late_checkout": {
+          "label": "Request a late checkout",
+          "would": "ask you to approve a late checkout"
+        },
+        "request_invoice": {
+          "label": "Pass on an invoice request",
+          "would": "pass the invoice request on to you"
+        },
+        "log_complaint": {
+          "label": "Log a complaint and tell the manager",
+          "would": "log the complaint and tell the manager"
+        },
+        "notify_owner": {
+          "label": "Tell the manager about the conversation",
+          "would": "tell the manager about this conversation"
+        },
+        "escalate": {
+          "label": "Hand the conversation to a person",
+          "would": "hand the conversation to a person"
+        },
+        "create_task": {
+          "label": "File a request for your team",
+          "would": "file a request for your team"
+        },
+        "list_arrivals": {
+          "label": "List arrivals",
+          "would": "list the arrivals"
+        },
+        "list_capture_status": {
+          "label": "Show who is missing documents",
+          "would": "show who is missing documents"
+        },
+        "list_open_complaints": {
+          "label": "List open complaints",
+          "would": "list the open complaints"
+        },
+        "list_pending_approvals": {
+          "label": "List what waits for your approval",
+          "would": "list what waits for your approval"
+        },
+        "classify_discrepancy": {
+          "label": "Classify a difference with your PMS",
+          "would": "classify a difference with your PMS"
+        },
+        "audit_attribution": {
+          "label": "Re-check fees against their evidence",
+          "would": "re-check fees against their evidence"
+        },
+        "credit_unevidenced_fee": {
+          "label": "Credit a fee without evidence",
+          "would": "credit a fee that lacks evidence"
+        },
+        "draft_knowledge": {
+          "label": "Draft answers from your website",
+          "would": "draft answers from your website"
+        }
+      },
+      "rules": {
+        "emergency": {
+          "name": "Emergency",
+          "description": "Someone may be in danger: the guest gets the emergency number, a person is alerted, and the assistant stops replying in that conversation."
+        },
+        "money": {
+          "name": "Money",
+          "description": "Refunds, compensation and discounts always go to a person, never to the assistant."
+        },
+        "identity": {
+          "name": "Identity and legal matters",
+          "description": "Identity, legal status or a compliance outcome is never decided by the assistant."
+        },
+        "unknown_twice": {
+          "name": "Not understood twice",
+          "description": "If the assistant cannot tell what a guest wants twice in a row, a person takes over with the full conversation."
+        }
+      },
+      "rulesIntro": "These are code, not instructions: they apply before any model is asked.",
+      "classRead": "Reads",
+      "classAction": "Acts",
+      "classApproval": "Needs your approval",
+      "legend": "Reads: looks something up and changes nothing. Acts: does something you can see in the console. Needs your approval: waits for a person before anything happens.",
+      "activity": "Last 7 days",
+      "turns": "{count, plural, =0 {No conversations} one {# conversation turn} other {# conversation turns}}",
+      "handedOver": "{count, plural, =0 {none handed to a person} one {# handed to a person} other {# handed to a person}}",
+      "pending": "{count, plural, =0 {nothing waiting for approval} one {# waiting for approval} other {# waiting for approval}}",
+      "lastRun": "Last run {when}",
+      "never": "No activity yet",
+      "try": "Try it",
+      "tryOwner": "Ask a question",
+      "previewTitle": "Try the concierge",
+      "previewDescription": "A preview: it answers from your real knowledge base and rules, but nothing is sent to anyone and no action is taken. Actions show what would happen.",
+      "previewAs": "Speak as",
+      "previewNoStay": "A guest without a booking",
+      "previewPlaceholder": "Write as a guest…",
+      "previewEmptyTitle": "Write as a guest would",
+      "previewEmptyDescription": "Try a question, a request, a complaint. Each reply shows which part of the assistant answered and what it would do.",
+      "outcomeAnswered": "Answered",
+      "outcomeEscalated": "Handed to a person",
+      "outcomeFailed": "Failed — handed to a person",
+      "outcomeRefused": "Refused",
+      "outcomeNotUnderstood": "Not understood",
+      "simulated": "would do, not done",
+      "approvalWaits": "would wait for approval",
+      "ruleFired": "Rule: {rule}",
+      "profileUsed": "Handled by: {profile}",
+      "previewSuggestions": [
+        "What time is breakfast?",
+        "Do you have a sauna?",
+        "Can we check out at 1 pm?",
+        "I want a refund.",
+        "The room is dirty, this is unacceptable."
+      ],
+      "agents": {
+        "AG-01": {
+          "name": "Guest concierge",
+          "purpose": "Answers your guests in their language, from what you have written, and hands anything else to your team.",
+          "audience": "Your guests, on the stay page and WhatsApp"
+        },
+        "AG-06": {
+          "name": "Owner's assistant",
+          "purpose": "Answers your questions about the property from your own data. It only reads; it changes nothing.",
+          "audience": "The owner"
+        },
+        "AG-05": {
+          "name": "PMS reconciliation",
+          "purpose": "Every night, compares bookings here with your PMS and explains any difference.",
+          "audience": "Runs on its own"
+        },
+        "AG-07": {
+          "name": "Fee auditor",
+          "purpose": "Re-checks every fee attributed to the assistant against its evidence, and credits it back when the evidence is missing.",
+          "audience": "Runs on its own"
+        },
+        "AG-03": {
+          "name": "Knowledge drafts",
+          "purpose": "Reads your website during setup and drafts answers for you to review. Nothing is published until you do.",
+          "audience": "Runs on its own"
+        }
+      },
+      "sectionProfiles": "What it handles",
+      "sectionTools": "What it can do",
+      "sectionRules": "Rules it never breaks"
     }
   },
   "noProperty": {
@@ -848,6 +1101,7 @@
     "decisionCancelled": "Your booking is now cancelled, as you asked.",
     "decisionPaymentLink": "Here is your payment link: {url}",
     "decisionRejected": "The property could not approve this request. Someone will reply here with the alternatives.",
-    "unmatchedSender": "This number belongs to {property}. We could not match yours to a current booking, so nothing has been passed on. If you have a booking, write from the number you gave when booking or use the link in your confirmation. To book: {link}"
+    "unmatchedSender": "This number belongs to {property}. We could not match yours to a current booking, so nothing has been passed on. If you have a booking, write from the number you gave when booking or use the link in your confirmation. To book: {link}",
+    "previewSimulated": "Preview: at this point the assistant would {action}. Nothing was done and nobody was contacted."
   }
 }

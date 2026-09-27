@@ -10,6 +10,7 @@ import {
   MessageSquareIcon,
   ReceiptIcon,
   SettingsIcon,
+  SparklesIcon,
   ShieldIcon,
   SunIcon,
   TriangleAlertIcon,
@@ -112,6 +113,7 @@ export async function AppSidebar({
     exceptions: { title: t('exceptions'), href: `${base}/exceptions`, icon: <TriangleAlertIcon /> },
     assistant: { title: t('assistant'), href: `${base}/assistant`, icon: <BotIcon /> },
     approvals: { title: t('approvals'), href: `${base}/approvals`, icon: <ClipboardCheckIcon /> },
+    agents: { title: t('agents'), href: `${base}/agents`, icon: <SparklesIcon /> },
     conversations: {
       title: t('conversations'),
       href: `${base}/conversations`,

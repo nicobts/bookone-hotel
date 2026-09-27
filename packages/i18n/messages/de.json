@@ -68,7 +68,8 @@
     "knowledge": "Wissen",
     "privacy": "Datenschutz",
     "approvals": "Freigaben",
-    "assistant": "Assistent"
+    "assistant": "Assistent",
+    "agents": "Agenten"
   },
   "property": {
     "switcher": {
@@ -431,7 +432,17 @@
       "examples": "Es antwortet aus Ihren eigenen Daten und ändert nichts.",
       "ask": "Fragen",
       "working": "Wird nachgeschlagen …",
-      "notUnderstood": "Ich kann zu Anreisen, fehlenden Dokumenten, Beschwerden und Freigaben antworten."
+      "notUnderstood": "Ich kann zu Anreisen, fehlenden Dokumenten, Beschwerden und Freigaben antworten.",
+      "emptyTitle": "Fragen Sie zu Ihrem Haus",
+      "emptyDescription": "Der Assistent liest Ihre eigenen Daten und ändert nichts.",
+      "suggestions": [
+        "Wer hat seine Dokumente noch nicht geschickt?",
+        "Wie viele Anreisen morgen?",
+        "Gibt es offene Beschwerden?",
+        "Was wartet auf meine Freigabe?"
+      ],
+      "unavailable": "Der Assistent ist nicht erreichbar. Bitte versuchen Sie es gleich noch einmal.",
+      "timeout": "Noch keine Antwort. Der Assistent ist vielleicht beschäftigt; bitte versuchen Sie es gleich noch einmal."
     },
     "settings": {
       "supportTitle": "Zugriffe des BookOne-Supports",
@@ -441,6 +452,248 @@
       "supportWhen": "Wann",
       "supportWhy": "Grund",
       "supportUntil": "Bis"
+    },
+    "agents": {
+      "title": "Agenten",
+      "subtitle": "Was jeder Assistent für dieses Haus tut, und wie er sich verhält",
+      "active": "Aktiv",
+      "off": "Nicht enthalten",
+      "paused": "Von BookOne pausiert",
+      "background": "Läuft selbstständig",
+      "ownerOnly": "Nur die Inhaberin / der Inhaber kann mit ihm sprechen",
+      "whoFor": "Für",
+      "profiles": {
+        "pre-sale": {
+          "name": "Vor der Buchung",
+          "description": "Wer noch nicht gebucht hat: Verfügbarkeit, Preise, welches Zimmer passt, und ein Link zur Direktbuchung."
+        },
+        "general-info": {
+          "name": "Informationen",
+          "description": "Fragen zum Haus und zur Umgebung, beantwortet nur aus Ihrer Wissensdatenbank."
+        },
+        "pre-arrival": {
+          "name": "Vor der Anreise",
+          "description": "Der Link zur Voranmeldung, die Ankunftszeit, fehlende Dokumente und die Anreise."
+        },
+        "booking-support": {
+          "name": "Bestehende Buchung",
+          "description": "Buchung nachschlagen, Änderungen anfragen, gemäß Ihren Bedingungen stornieren — eine Stornierung wartet auf Sie."
+        },
+        "payments": {
+          "name": "Zahlungen",
+          "description": "Zahlungsstatus und Kosten erklärt. Ein Zahlungslink wartet auf Sie; Erstattungen gehen immer an eine Person."
+        },
+        "checkout": {
+          "name": "Check-out",
+          "description": "Später Check-out (wartet auf Ihre Freigabe), Rechnungsanfragen, Gepäck und Transport."
+        },
+        "complaints": {
+          "name": "Beschwerden",
+          "description": "Bestätigt, mit Frist erfasst und die Leitung sofort informiert. Über Entschädigungen entscheidet nie der Assistent."
+        },
+        "owner-backoffice": {
+          "name": "Fragen der Leitung",
+          "description": "Anreisen, fehlende Dokumente, offene Beschwerden und ausstehende Freigaben, aus Ihren Daten."
+        }
+      },
+      "tools": {
+        "search_knowledge": {
+          "label": "Antwortet aus Ihrer Wissensdatenbank",
+          "would": "aus Ihrer Wissensdatenbank antworten"
+        },
+        "get_hotel_policy": {
+          "label": "Nennt eine Ihrer Regelungen",
+          "would": "eine Ihrer Regelungen nennen"
+        },
+        "find_booking": {
+          "label": "Liest die eigene Buchung des Gastes",
+          "would": "die eigene Buchung des Gastes nachschlagen"
+        },
+        "check_availability": {
+          "label": "Prüft die Verfügbarkeit",
+          "would": "die Verfügbarkeit prüfen"
+        },
+        "quote_stay": {
+          "label": "Berechnet einen Preis aus Ihren Tarifen",
+          "would": "einen Preis aus Ihren Tarifen berechnen"
+        },
+        "create_booking_link": {
+          "label": "Sendet einen Link zu Ihrer Buchungsseite",
+          "would": "einen Link zu Ihrer Buchungsseite senden"
+        },
+        "modify_booking": {
+          "label": "Bittet um Änderung von Daten oder Personen",
+          "would": "das Haus bitten, Daten oder Personen der Buchung zu ändern"
+        },
+        "cancel_booking": {
+          "label": "Storniert gemäß Ihren Bedingungen",
+          "would": "die Buchung gemäß Ihren Bedingungen stornieren"
+        },
+        "create_payment_link": {
+          "label": "Sendet einen Zahlungslink",
+          "would": "dem Gast einen Zahlungslink senden"
+        },
+        "get_payment_status": {
+          "label": "Prüft den Zahlungsstatus",
+          "would": "den Zahlungsstatus prüfen"
+        },
+        "explain_charges": {
+          "label": "Erklärt die Kosten",
+          "would": "die Kosten erklären"
+        },
+        "send_prearrival_link": {
+          "label": "Sendet den Link zur Voranmeldung",
+          "would": "dem Gast den Link zur Voranmeldung senden"
+        },
+        "record_eta": {
+          "label": "Notiert die Ankunftszeit",
+          "would": "die Ankunftszeit des Gastes notieren"
+        },
+        "get_capture_status": {
+          "label": "Prüft, was der Gast noch senden muss",
+          "would": "prüfen, was der Gast noch senden muss"
+        },
+        "request_late_checkout": {
+          "label": "Fragt einen späten Check-out an",
+          "would": "Sie um Freigabe eines späten Check-outs bitten"
+        },
+        "request_invoice": {
+          "label": "Leitet eine Rechnungsanfrage weiter",
+          "would": "Ihnen die Rechnungsanfrage weiterleiten"
+        },
+        "log_complaint": {
+          "label": "Erfasst eine Beschwerde und informiert die Leitung",
+          "would": "die Beschwerde erfassen und die Leitung informieren"
+        },
+        "notify_owner": {
+          "label": "Informiert die Leitung über das Gespräch",
+          "would": "die Leitung über dieses Gespräch informieren"
+        },
+        "escalate": {
+          "label": "Übergibt das Gespräch an eine Person",
+          "would": "das Gespräch an eine Person übergeben"
+        },
+        "create_task": {
+          "label": "Legt eine Aufgabe für Ihr Team an",
+          "would": "eine Aufgabe für Ihr Team anlegen"
+        },
+        "list_arrivals": {
+          "label": "Listet die Anreisen",
+          "would": "die Anreisen auflisten"
+        },
+        "list_capture_status": {
+          "label": "Zeigt, wem Dokumente fehlen",
+          "would": "zeigen, wem noch Dokumente fehlen"
+        },
+        "list_open_complaints": {
+          "label": "Listet offene Beschwerden",
+          "would": "die offenen Beschwerden auflisten"
+        },
+        "list_pending_approvals": {
+          "label": "Listet, was auf Ihre Freigabe wartet",
+          "would": "auflisten, was auf Ihre Freigabe wartet"
+        },
+        "classify_discrepancy": {
+          "label": "Ordnet eine Abweichung zum PMS ein",
+          "would": "eine Abweichung zum PMS einordnen"
+        },
+        "audit_attribution": {
+          "label": "Prüft Gebühren gegen ihre Nachweise",
+          "would": "Gebühren gegen ihre Nachweise prüfen"
+        },
+        "credit_unevidenced_fee": {
+          "label": "Schreibt eine unbelegte Gebühr gut",
+          "would": "eine unbelegte Gebühr gutschreiben"
+        },
+        "draft_knowledge": {
+          "label": "Entwirft Antworten aus Ihrer Website",
+          "would": "Antworten aus Ihrer Website entwerfen"
+        }
+      },
+      "rules": {
+        "emergency": {
+          "name": "Notfall",
+          "description": "Jemand könnte in Gefahr sein: Der Gast erhält die Notrufnummer, eine Person wird alarmiert und der Assistent antwortet in diesem Gespräch nicht mehr."
+        },
+        "money": {
+          "name": "Geld",
+          "description": "Erstattungen, Entschädigungen und Rabatte gehen immer an eine Person, nie an den Assistenten."
+        },
+        "identity": {
+          "name": "Identität und Rechtliches",
+          "description": "Über Identität, Rechtsstatus oder Compliance entscheidet nie der Assistent."
+        },
+        "unknown_twice": {
+          "name": "Zweimal nicht verstanden",
+          "description": "Versteht der Assistent zweimal hintereinander nicht, was der Gast möchte, übernimmt eine Person mit dem ganzen Gespräch."
+        }
+      },
+      "rulesIntro": "Das ist Code, keine Anweisung: Die Regeln greifen, bevor irgendein Modell gefragt wird.",
+      "classRead": "Liest",
+      "classAction": "Handelt",
+      "classApproval": "Braucht Ihre Freigabe",
+      "legend": "Liest: schlägt etwas nach und ändert nichts. Handelt: tut etwas, das Sie in der Konsole sehen. Braucht Ihre Freigabe: wartet auf eine Person, bevor etwas geschieht.",
+      "activity": "Letzte 7 Tage",
+      "turns": "{count, plural, =0 {Keine Gespräche} one {# Antwort} other {# Antworten}}",
+      "handedOver": "{count, plural, =0 {keine an eine Person übergeben} one {# an eine Person übergeben} other {# an eine Person übergeben}}",
+      "pending": "{count, plural, =0 {nichts wartet auf Freigabe} one {# wartet auf Freigabe} other {# warten auf Freigabe}}",
+      "lastRun": "Zuletzt aktiv {when}",
+      "never": "Noch keine Aktivität",
+      "try": "Ausprobieren",
+      "tryOwner": "Frage stellen",
+      "previewTitle": "Concierge ausprobieren",
+      "previewDescription": "Eine Vorschau: Er antwortet aus Ihrer echten Wissensdatenbank und nach Ihren Regeln, sendet aber nichts an niemanden und führt keine Aktion aus. Aktionen zeigen, was geschehen würde.",
+      "previewAs": "Sprechen als",
+      "previewNoStay": "Ein Gast ohne Buchung",
+      "previewPlaceholder": "Als Gast schreiben…",
+      "previewEmptyTitle": "Schreiben Sie wie ein Gast",
+      "previewEmptyDescription": "Probieren Sie eine Frage, einen Wunsch, eine Beschwerde. Jede Antwort zeigt, welcher Teil des Assistenten geantwortet hat und was er tun würde.",
+      "outcomeAnswered": "Beantwortet",
+      "outcomeEscalated": "An eine Person übergeben",
+      "outcomeFailed": "Fehler — an eine Person übergeben",
+      "outcomeRefused": "Abgelehnt",
+      "outcomeNotUnderstood": "Nicht verstanden",
+      "simulated": "würde es tun, nicht ausgeführt",
+      "approvalWaits": "würde auf Freigabe warten",
+      "ruleFired": "Regel: {rule}",
+      "profileUsed": "Bearbeitet von: {profile}",
+      "previewSuggestions": [
+        "Wann gibt es Frühstück?",
+        "Habt ihr eine Sauna?",
+        "Können wir um 13 Uhr auschecken?",
+        "Ich möchte eine Erstattung.",
+        "Das Zimmer ist schmutzig, das ist inakzeptabel."
+      ],
+      "agents": {
+        "AG-01": {
+          "name": "Gäste-Concierge",
+          "purpose": "Antwortet Ihren Gästen in ihrer Sprache aus dem, was Sie hinterlegt haben, und gibt alles andere an Ihr Team weiter.",
+          "audience": "Ihre Gäste, auf der Aufenthaltsseite und über WhatsApp"
+        },
+        "AG-06": {
+          "name": "Assistent der Inhaberin / des Inhabers",
+          "purpose": "Beantwortet Ihre Fragen zum Haus aus Ihren eigenen Daten. Er liest nur und ändert nichts.",
+          "audience": "Inhaberin oder Inhaber"
+        },
+        "AG-05": {
+          "name": "PMS-Abgleich",
+          "purpose": "Vergleicht jede Nacht die Buchungen mit Ihrem PMS und erklärt jede Abweichung.",
+          "audience": "Läuft selbstständig"
+        },
+        "AG-07": {
+          "name": "Gebührenprüfung",
+          "purpose": "Prüft jede dem Assistenten zugeschriebene Gebühr gegen ihre Nachweise und schreibt sie gut, wenn Nachweise fehlen.",
+          "audience": "Läuft selbstständig"
+        },
+        "AG-03": {
+          "name": "Wissensentwürfe",
+          "purpose": "Liest bei der Einrichtung Ihre Website und entwirft Antworten zur Prüfung. Nichts wird ohne Sie veröffentlicht.",
+          "audience": "Läuft selbstständig"
+        }
+      },
+      "sectionProfiles": "Wofür er zuständig ist",
+      "sectionTools": "Was er tun kann",
+      "sectionRules": "Regeln, die er nie bricht"
     }
   },
   "noProperty": {
@@ -848,6 +1101,7 @@
     "decisionCancelled": "Ihre Buchung ist wie gewünscht storniert.",
     "decisionPaymentLink": "Hier ist Ihr Zahlungslink: {url}",
     "decisionRejected": "Das Haus konnte diese Anfrage nicht freigeben. Jemand meldet sich hier mit Alternativen.",
-    "unmatchedSender": "Diese Nummer gehört zu {property}. Wir konnten Ihre Nummer keiner aktuellen Buchung zuordnen, daher wurde nichts weitergeleitet. Wenn Sie gebucht haben, schreiben Sie von der Nummer, die Sie bei der Buchung angegeben haben, oder nutzen Sie den Link in Ihrer Bestätigung. Zum Buchen: {link}"
+    "unmatchedSender": "Diese Nummer gehört zu {property}. Wir konnten Ihre Nummer keiner aktuellen Buchung zuordnen, daher wurde nichts weitergeleitet. Wenn Sie gebucht haben, schreiben Sie von der Nummer, die Sie bei der Buchung angegeben haben, oder nutzen Sie den Link in Ihrer Bestätigung. Zum Buchen: {link}",
+    "previewSimulated": "Vorschau: An dieser Stelle würde der Assistent {action}. Es wurde nichts ausgeführt und niemand kontaktiert."
   }
 }
