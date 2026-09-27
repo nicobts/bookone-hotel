@@ -33,7 +33,7 @@ const instrumentSerif = Instrument_Serif({
   style: ['normal', 'italic'],
 })
 
-const TITLE = 'BookOne'
+const TITLE = 'BookOne Hotel'
 const DESCRIPTION = 'Guest-journey-first hospitality platform for independent hotels.'
 
 export const metadata: Metadata = {
