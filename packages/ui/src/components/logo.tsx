@@ -18,12 +18,20 @@ import { cn } from '../lib/utils'
  * on light, a lighter blue and white on dark. Recolouring it with CSS is
  * explicitly forbidden by the brand kit, so each palette is spelled out here.
  *
+ * Which palette:
+ * - `onDark` — a surface that is ink in both themes (the console sidebar);
+ * - `onDark={false}` — a surface that stays light in both themes;
+ * - omitted — a surface that follows the theme (sign-in, booking footer): both
+ *   palettes are drawn and the theme shows one, so the dark page never
+ *   carries the ink artwork. Swapping which drawing is visible is not
+ *   recolouring.
+ *
  * Minimum sizes from the brand kit: the mark is never below 16px, the
  * horizontal lockup never below 120px.
  */
 export function Logo({
   variant = 'horizontal',
-  onDark = false,
+  onDark,
   height = 24,
   className,
 }: {
@@ -32,7 +40,40 @@ export function Logo({
   height?: number
   className?: string
 }) {
-  const c = onDark ? DARK : LIGHT
+  if (onDark === undefined) {
+    return (
+      <>
+        <Drawing
+          variant={variant}
+          c={LIGHT}
+          height={height}
+          className={cn('dark:hidden', className)}
+        />
+        <Drawing
+          variant={variant}
+          c={DARK}
+          height={height}
+          className={cn('hidden dark:block', className)}
+        />
+      </>
+    )
+  }
+  return (
+    <Drawing variant={variant} c={onDark ? DARK : LIGHT} height={height} className={className} />
+  )
+}
+
+function Drawing({
+  variant,
+  c,
+  height,
+  className,
+}: {
+  variant: 'horizontal' | 'mark'
+  c: typeof LIGHT
+  height: number
+  className?: string | undefined
+}) {
   const width = variant === 'mark' ? MARK_WIDTH : LOCKUP_WIDTH
 
   return (
