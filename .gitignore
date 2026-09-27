@@ -37,3 +37,10 @@ next-env.d.ts
 
 # playwright-mcp scratch output
 .playwright-mcp/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+
+# Local scratch space — notes, keys in transit. Never committed.
+/sratchpad/
+/scratchpad/
