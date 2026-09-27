@@ -1,4 +1,10 @@
-import type { JobQueue } from '@bookone/core/jobs'
+import type { JobHandler, JobName, JobQueue } from '@bookone/core/jobs'
+import {
+  createFeatureCheck,
+  gateOpen,
+  JOB_FEATURE,
+  type FeatureCheck,
+} from '@bookone/core/onboarding'
 import type { PmsAdapter } from '@bookone/core/adapters'
 import { refreshAvailability, reconcileBookingDomain, reflectReservation } from '@bookone/core/sync'
 import { expireHolds } from '@bookone/core/booking'
@@ -43,6 +49,7 @@ import { guestActor, systemActor, userActor } from '@bookone/core/events'
 import { runAgent } from '@bookone/agents/runner'
 import { respondToGuestMessage } from '@bookone/agents/concierge'
 import type { Logger } from 'pino'
+import { syncPropertySchedules } from './schedules'
 
 /**
  * Job handlers.
@@ -76,6 +83,11 @@ export interface HandlerDeps {
    */
   appUrl: string
   logger: Logger
+  /**
+   * A fresh feature check per job run (ADR-019). Defaults to reading
+   * entitlements; injected so the gating test needs no database.
+   */
+  featureCheck?: () => FeatureCheck
 }
 
 /**
@@ -144,8 +156,38 @@ const ATTRIBUTION_AUDIT_WINDOW_DAYS = 40
 
 export async function registerHandlers(deps: HandlerDeps): Promise<void> {
   const { queue, adapter, notifications, payments, alloggiati, deleteObject, appUrl, logger } = deps
+  const featureCheck = deps.featureCheck ?? (() => createFeatureCheck())
 
-  await queue.work('reservation.reflect', async (job) => {
+  /**
+   * `queue.work`, gated (ADR-019).
+   *
+   * A job whose payload names a property does nothing for a property without
+   * the job's feature — whoever enqueued it, and whenever. Checked when the job
+   * runs, not when it was sent, so a revoke stops work already queued.
+   *
+   * Cross-property sweeps carry no property; they filter inside, in the query
+   * that feeds them.
+   */
+  async function work<N extends JobName>(name: N, handler: JobHandler<N>): Promise<void> {
+    const gate = JOB_FEATURE[name]
+
+    await queue.work(name, async (job) => {
+      const propertyId = (job.data as { propertyId?: unknown }).propertyId
+
+      if (
+        gate !== 'core' &&
+        typeof propertyId === 'string' &&
+        !(await gateOpen(featureCheck(), propertyId, gate))
+      ) {
+        logger.info({ jobId: job.id, job: name, propertyId, feature: gate }, 'skipped: feature off')
+        return
+      }
+
+      await handler(job)
+    })
+  }
+
+  await work('reservation.reflect', async (job) => {
     const { propertyId, reservationId } = job.data
 
     const outcome = await reflectReservation({ adapter }, { propertyId, reservationId })
@@ -156,7 +198,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     )
   })
 
-  await queue.work('availability.refresh', async (job) => {
+  await work('availability.refresh', async (job) => {
     const { propertyId, from, to } = job.data
 
     const result = await refreshAvailability({ adapter }, { propertyId, from, to })
@@ -179,7 +221,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     )
   })
 
-  await queue.work('reconcile.nightly', async (job) => {
+  await work('reconcile.nightly', async (job) => {
     const { propertyId, domain } = job.data
 
     if (domain !== 'booking') {
@@ -227,7 +269,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('agent.run', async (job) => {
+  await work('agent.run', async (job) => {
     const { propertyId, agent, triggerEventId } = job.data
 
     const outcome = await runAgent({
@@ -250,7 +292,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     )
   })
 
-  await queue.work('notification.send', async (job) => {
+  await work('notification.send', async (job) => {
     const { propertyId, notificationId } = job.data
 
     const outcome = await sendNotification({ provider: notifications }, { notificationId })
@@ -268,7 +310,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('notification.sweep', async (job) => {
+  await work('notification.sweep', async (job) => {
     const pending = await listPendingNotifications({
       olderThanSeconds: SWEEP_AFTER_SECONDS,
       limit: SWEEP_BATCH,
@@ -290,7 +332,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('payment.replay', async (job) => {
+  await work('payment.replay', async (job) => {
     const result = await replayLostPayments(
       { adapter: payments },
       { olderThanSeconds: PAYMENT_REPLAY_AFTER_SECONDS, limit: SWEEP_BATCH },
@@ -307,10 +349,11 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('precheckin.sweep', async (job) => {
+  await work('precheckin.sweep', async (job) => {
     const due = await listPrecheckinDue({
       withinHours: PRECHECKIN_WINDOW_HOURS,
       limit: SWEEP_BATCH,
+      feature: 'prearrival',
     })
 
     for (const stay of due) {
@@ -329,7 +372,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('precheckin.invite', async (job) => {
+  await work('precheckin.invite', async (job) => {
     const { propertyId, reservationId } = job.data
 
     const outcome = await sendPrecheckinInvite({ propertyId, reservationId })
@@ -345,7 +388,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('alloggiati.file', async (job) => {
+  await work('alloggiati.file', async (job) => {
     const { propertyId, reservationId } = job.data
 
     const staged = await stageAlloggiati({ propertyId, reservationId, channel: alloggiati.channel })
@@ -381,7 +424,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('alloggiati.check', async (job) => {
+  await work('alloggiati.check', async (job) => {
     const result = await checkPendingAcknowledgements(
       { adapter: alloggiati },
       { limit: SWEEP_BATCH },
@@ -399,7 +442,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('documents.purge', async (job) => {
+  await work('documents.purge', async (job) => {
     const due = await listDocumentsToDelete({ limit: SWEEP_BATCH })
 
     let deleted = 0
@@ -431,7 +474,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * acknowledging would lose the message entirely if the agent were slow, which
    * is the one outcome worse than a slow answer.
    */
-  await queue.work('concierge.reply', async (job) => {
+  await work('concierge.reply', async (job) => {
     const { propertyId, reservationId, threadId, locale, message, intent } = job.data
 
     const outcome = await respondToGuestMessage({
@@ -463,10 +506,11 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * escalation — `sla_alerted_at` is what makes that true. An alert that
    * repeated every sweep would be an alert somebody filters.
    */
-  await queue.work('escalation.sweep', async (job) => {
+  await work('escalation.sweep', async (job) => {
     const overdue = await listOverdueEscalations({
       minutes: ESCALATION_SLA_MINUTES,
       limit: SWEEP_BATCH,
+      feature: 'inbox',
     })
 
     for (const thread of overdue) {
@@ -505,7 +549,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * are occasionally down. A retry here re-attempts the side effects without
    * re-asserting a transition that already happened.
    */
-  await queue.work('arrival.complete', async (job) => {
+  await work('arrival.complete', async (job) => {
     const { propertyId, reservationId, source, userId } = job.data
 
     const outcome = await completeArrival({
@@ -554,7 +598,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * We issue nothing. This forwards what the guest asked for, unaltered, to the
    * people whose certified chain issues the document (D11, binding rule 6).
    */
-  await queue.work('invoice.route', async (job) => {
+  await work('invoice.route', async (job) => {
     const pending = await listUnroutedInvoiceRequests(SWEEP_BATCH)
 
     for (const request of pending) {
@@ -586,7 +630,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * adoption number honest: a stay closed by a sweep and a stay the guest
    * closed themselves are different facts.
    */
-  await queue.work('departure.sweep', async (job) => {
+  await work('departure.sweep', async (job) => {
     const departed = await listDepartedStays({ limit: SWEEP_BATCH })
 
     let closed = 0
@@ -617,7 +661,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * does, and the way it stops holding is somebody adding a helpful sentence
    * eighteen months from now.
    */
-  await queue.work('toolboundary.audit', async (job) => {
+  await work('toolboundary.audit', async (job) => {
     const since = new Date(Date.now() - AUDIT_WINDOW_HOURS * 3_600_000)
     const properties = await propertiesWithAgentReplies(since)
 
@@ -663,7 +707,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * the property has to notice. The only direction this agent can move money is
    * down (06 §2).
    */
-  await queue.work('attribution.audit', async (job) => {
+  await work('attribution.audit', async (job) => {
     const to = new Date()
     const from = new Date(to.getTime() - ATTRIBUTION_AUDIT_WINDOW_DAYS * 86_400_000)
 
@@ -721,7 +765,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * single period chosen by whatever enqueued this would put a midnight booking
    * in the wrong month for any house outside the scheduler's zone.
    */
-  await queue.work('report.generate', async (job) => {
+  await work('report.generate', async (job) => {
     const rows = await listPropertiesForReports()
 
     let built = 0
@@ -760,7 +804,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * Everything it writes is unpublished. There is no tool granted that could
    * publish one, so a failure here costs an owner nothing and reaches no guest.
    */
-  await queue.work('onboarding.ingest', async (job) => {
+  await work('onboarding.ingest', async (job) => {
     const { propertyId, url, locale } = job.data
 
     const run = await runAgent({
@@ -798,7 +842,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * detect afterwards — the data would be half-gone and the deadline evidence
    * would say it was handled.
    */
-  await queue.work('privacy.erase', async (job) => {
+  await work('privacy.erase', async (job) => {
     const { propertyId, guestId, requestId, userId } = job.data
 
     const outcome = await eraseGuest(
@@ -844,7 +888,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * renamed, a constraint added — is visible as itself instead of as a total
    * that is quietly lower than last night's.
    */
-  await queue.work('retention.sweep', async (job) => {
+  await work('retention.sweep', async (job) => {
     const { propertyId } = job.data
 
     const outcome = await runRetention({ propertyId })
@@ -870,11 +914,20 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('reservation.expire_holds', async (job) => {
+  await work('reservation.expire_holds', async (job) => {
     const { expired } = await expireHolds()
 
     if (expired > 0) {
       logger.info({ jobId: job.id, expired }, 'reservation.expire_holds')
+    }
+  })
+
+  /** Re-derive per-property schedules from properties and entitlements (ADR-019). */
+  await work('schedules.sync', async (job) => {
+    const outcome = await syncPropertySchedules({ queue, logger, features: featureCheck() })
+
+    if (outcome.removed > 0) {
+      logger.info({ jobId: job.id, ...outcome }, 'schedules.sync')
     }
   })
 }

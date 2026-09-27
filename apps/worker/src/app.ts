@@ -15,6 +15,8 @@ import {
   type PaymentEvent,
 } from '@bookone/core/payments'
 import type { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
+import { createFeatureCheck, gateOpen, type FeatureCheck } from '@bookone/core/onboarding'
+import { ROUTE_FEATURE } from './features'
 
 /**
  * The worker's HTTP surface.
@@ -47,15 +49,24 @@ export function createApp(deps: {
   internalToken: string
   appUrl: string
   /**
-   * Whether `/jobs/payment-simulate` exists at all.
+   * Whether the simulation routes answer at all.
    *
-   * False in production. Not "returns 403 in production" — the route is never
-   * registered, so there is nothing to find, nothing to probe, and no code path
-   * from a request to a fabricated capture.
+   * False in production. The routes are registered — the chain that types
+   * `AppType` is static — but they answer 404 before reading anything, the same
+   * as a path that does not exist, so there is nothing to probe and no code path
+   * from a request to a fabricated capture. (An earlier version of this comment
+   * said "never registered"; it was never true, and a false claim of absence is
+   * how a real leak gets waved through review — ADR-019.)
    */
   allowSimulation: boolean
+  /**
+   * A fresh feature check per request (ADR-019). Defaults to reading
+   * entitlements; injected so tests need no database.
+   */
+  featureCheck?: () => FeatureCheck
 }) {
   const { queue, adapter, payments, logger, internalToken, appUrl, allowSimulation } = deps
+  const featureCheck = deps.featureCheck ?? (() => createFeatureCheck())
 
   /** Shared by the webhook and the simulator, so both take the identical path. */
   async function dispatch(event: PaymentEvent) {
@@ -195,6 +206,29 @@ export function createApp(deps: {
         if (!match || !timingSafeEqual(match[1] ?? '', internalToken)) {
           // No detail. "Wrong token" and "no token" are the same answer here.
           return c.json({ error: 'unauthorized' }, 401)
+        }
+
+        // Feature gate (ADR-019), after authentication so an unauthenticated
+        // caller learns nothing about which modules a property has.
+        //
+        // An unclassified route is refused rather than let through: a new route
+        // nobody classified is the leak, and failing closed is how it gets
+        // noticed. The body is parsed once here and cached by Hono for the
+        // handler; a missing `propertyId` falls through to the handler's 400.
+        const gate = ROUTE_FEATURE[c.req.path]
+
+        if (gate === undefined) return c.json({ error: 'not found' }, 404)
+
+        if (gate !== 'core') {
+          const body = await c.req.json<{ propertyId?: unknown }>().catch(() => ({}))
+          const propertyId = (body as { propertyId?: unknown }).propertyId
+
+          if (
+            typeof propertyId === 'string' &&
+            !(await gateOpen(featureCheck(), propertyId, gate))
+          ) {
+            return c.json({ error: 'not found' }, 404)
+          }
         }
 
         await next()
@@ -426,11 +460,15 @@ export function createApp(deps: {
         })
 
         if (outcome.status === 'applied' || outcome.status === 'no-op') {
-          await queue.send(
-            'alloggiati.file',
-            { propertyId: body.propertyId, reservationId: body.reservationId },
-            { singletonKey: `alloggiati:${body.reservationId}` },
-          )
+          // Filing is its own feature (ADR-019) — off in Guest Desk Phase 0,
+          // where capture ends at staff confirmation and nothing is submitted.
+          if (await gateOpen(featureCheck(), body.propertyId, 'alloggiati')) {
+            await queue.send(
+              'alloggiati.file',
+              { propertyId: body.propertyId, reservationId: body.reservationId },
+              { singletonKey: `alloggiati:${body.reservationId}` },
+            )
+          }
 
           /*
            * The check-in post and the welcome (E3.1), queued separately from the
@@ -694,7 +732,7 @@ export function createApp(deps: {
        * provider replaces the mock, this route disappears and nothing else
        * changes.
        *
-       * Not registered at all when `allowSimulation` is false.
+       * Answers 404 before doing anything when `allowSimulation` is false.
        */
       .post('/jobs/payment-simulate', async (c) => {
         if (!allowSimulation) return c.json({ error: 'not found' }, 404)

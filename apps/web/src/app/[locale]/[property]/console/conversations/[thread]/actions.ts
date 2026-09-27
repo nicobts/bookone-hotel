@@ -2,12 +2,12 @@
 
 import { revalidatePath } from 'next/cache'
 import { appendStaffMessage, handBackThread, takeOverThread } from '@bookone/core/concierge'
-import { requireProperty } from '@/lib/auth/current-property'
+import { requireFeature } from '@/lib/auth/current-property'
 
 /**
  * The three things a person does with a conversation (E3.3).
  *
- * All of them resolve the property through `requireProperty`, which resolves it
+ * All of them resolve the property through `requireFeature` (ADR-019), which resolves it
  * *through the signed-in user's memberships* — so a thread id pasted from
  * another property cannot be acted on: the property behind it never resolves
  * for this person, and every core call is scoped to that property anyway.
@@ -32,7 +32,7 @@ function revalidate(context: Context): void {
 
 /** One tap: this is mine now. */
 export async function takeOver(context: Context): Promise<void> {
-  const { user, property } = await requireProperty(context.locale, context.slug)
+  const { user, property } = await requireFeature(context.locale, context.slug, 'inbox')
 
   await takeOverThread({
     propertyId: property.id,
@@ -51,7 +51,7 @@ export async function takeOver(context: Context): Promise<void> {
  * loop with a guest at the bottom of it.
  */
 export async function handBack(context: Context): Promise<void> {
-  const { user, property } = await requireProperty(context.locale, context.slug)
+  const { user, property } = await requireFeature(context.locale, context.slug, 'inbox')
 
   await handBackThread({
     propertyId: property.id,
@@ -71,7 +71,7 @@ export async function handBack(context: Context): Promise<void> {
  * whether or not they pressed the button first.
  */
 export async function reply(context: Context, formData: FormData): Promise<void> {
-  const { user, property } = await requireProperty(context.locale, context.slug)
+  const { user, property } = await requireFeature(context.locale, context.slug, 'inbox')
 
   const body = String(formData.get('body') ?? '').trim()
   if (!body) return

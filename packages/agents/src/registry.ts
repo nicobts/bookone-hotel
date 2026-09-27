@@ -11,6 +11,8 @@
  * immediate on any material error.
  */
 
+import type { Gate } from '@bookone/core/onboarding'
+
 /** T1 acts and is logged. T2 proposes and a human taps. T3 may only summarise. */
 export type AutonomyTier = 'T1' | 'T2' | 'T3'
 
@@ -40,6 +42,11 @@ export interface AgentDefinition {
   model: 'none' | 'extraction' | 'classification' | 'conversation' | 'drafting'
   /** Cap per property per day. A runaway agent is a cost incident (06 §4). */
   dailyBudgetCents: number
+  /**
+   * The feature a property needs for this agent to run for it (ADR-019), or
+   * `core`. The runner refuses — and records — a run for a property without it.
+   */
+  feature: Gate
 }
 
 /**
@@ -57,6 +64,7 @@ export const AG_05: AgentDefinition = {
   name: 'AG-05',
   description: 'Reconciliation Analyst — classifies nightly discrepancies',
   tier: 'T1',
+  feature: 'pms_sync',
   tools: ['classify_discrepancy'],
   model: 'none',
   dailyBudgetCents: 0,
@@ -99,6 +107,7 @@ export const AG_01: AgentDefinition = {
   name: 'AG-01',
   description: 'Guest Concierge — answers in-stay questions from the property knowledge base',
   tier: 'T1',
+  feature: 'concierge',
   /*
    * Five tools, and the absences matter more than the presences. Nothing here
    * changes a booking, quotes a price, moves a date or touches money (06 §2:
@@ -145,6 +154,7 @@ export const AG_07: AgentDefinition = {
   name: 'AG-07',
   description: 'Attribution Auditor — re-checks AI-attributed fees against their evidence',
   tier: 'T1',
+  feature: 'core',
   /*
    * Two tools, and the missing third is the point: there is no
    * `reclassify_fee`, no `raise_fee`, nothing that can increase a charge. The
@@ -184,6 +194,7 @@ export const AG_03: AgentDefinition = {
   name: 'AG-03',
   description: 'Property Onboarding — drafts knowledge-base articles from the property website',
   tier: 'T2',
+  feature: 'core',
   tools: ['draft_knowledge'],
   model: 'none',
   dailyBudgetCents: 0,

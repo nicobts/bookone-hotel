@@ -22,6 +22,7 @@ import {
 } from '../../../concierge/thread'
 import { auditToolBoundary, propertiesWithAgentReplies } from '../../../concierge/audit'
 import { searchKb } from '../../../concierge/kb'
+import { grantEntitlement } from '../../../onboarding/entitlements'
 
 /**
  * Messaging, tasks and the tool-boundary audit against a real database
@@ -679,5 +680,63 @@ describe('system notes', () => {
     // Marking the thread `answered` would take it out of the queue with the
     // question still open.
     expect(after?.status).toBe('awaiting_reply')
+  })
+})
+
+/*
+ * Last in the file on purpose: it gives beta a thread, and the isolation suite
+ * above asserts beta has none of its own to see.
+ */
+describe('the SLA sweep, per feature (ADR-019)', () => {
+  it('filters by feature before the batch limit, so one property cannot starve another', async () => {
+    // ADR-019. Beta has the oldest overdue escalation of all and no `inbox`
+    // feature. Filtering after the limit would hand the sweep beta's thread,
+    // skip it, and do the same every five minutes forever — alpha's guest
+    // would never be alerted on. The filter has to be in the query.
+    const betaStay = await confirmedStay(fixture.beta.propertyId, 'sla-feature-beta')
+    const betaThread = (
+      await appendGuestMessage({
+        propertyId: fixture.beta.propertyId,
+        reservationId: betaStay,
+        locale: 'en',
+        body: 'Nobody here has the inbox',
+      })
+    ).thread
+    await escalateThread({
+      propertyId: fixture.beta.propertyId,
+      threadId: betaThread.id,
+      reason: 'x',
+      at: new Date(Date.now() - 10_000 * 60_000),
+    })
+
+    const alphaStay = await confirmedStay(fixture.alpha.propertyId, 'sla-feature-alpha')
+    const alphaThread = (
+      await appendGuestMessage({
+        propertyId: fixture.alpha.propertyId,
+        reservationId: alphaStay,
+        locale: 'en',
+        body: 'Waiting',
+      })
+    ).thread
+    await escalateThread({
+      propertyId: fixture.alpha.propertyId,
+      threadId: alphaThread.id,
+      reason: 'x',
+      at: new Date(Date.now() - 120 * 60_000),
+    })
+
+    await grantEntitlement({ propertyId: fixture.alpha.propertyId, feature: 'inbox' })
+
+    // The control: unfiltered, beta's thread is first in line.
+    const unfiltered = await listOverdueEscalations({ minutes: 60, limit: 1 })
+    expect(unfiltered.map((row) => row.id)).toEqual([betaThread.id])
+
+    const filtered = await listOverdueEscalations({ minutes: 60, limit: 1, feature: 'inbox' })
+    expect(filtered).toHaveLength(1)
+    expect(filtered[0]?.propertyId).toBe(fixture.alpha.propertyId)
+
+    const all = await listOverdueEscalations({ minutes: 60, feature: 'inbox' })
+    expect(all.map((row) => row.id)).not.toContain(betaThread.id)
+    expect(all.map((row) => row.id)).toContain(alphaThread.id)
   })
 })

@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { BotIcon, FlaskConicalIcon } from 'lucide-react'
 import { getThread } from '@bookone/core/db'
 import { PageShell } from '@/components/shell/page-shell'
-import { requireProperty } from '@/lib/auth/current-property'
+import { requireFeature } from '@/lib/auth/current-property'
 import { formatDate } from '@/components/booking/format'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -35,7 +35,7 @@ export default async function ThreadPage({
   const { locale, property: slug, thread: threadId } = await params
   setRequestLocale(locale)
 
-  const { user, property } = await requireProperty(locale, slug)
+  const { user, property } = await requireFeature(locale, slug, 'inbox')
 
   const thread = await getThread(user.id, property.id, threadId)
   if (!thread) notFound()

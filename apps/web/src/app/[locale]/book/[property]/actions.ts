@@ -11,6 +11,7 @@ import {
 } from '@bookone/core/booking'
 import { computeDeposit, readBookingPolicy } from '@bookone/core/policy'
 import { clearDraft, readDraft, saveDraft } from '@/lib/booking/draft'
+import { hasFeature } from '@/lib/auth/current-property'
 import { searchToQuery, type BookingSearch } from '@/lib/booking/params'
 import { notifyBookingConfirmed, requestCancellation, startCheckout } from '@/lib/worker'
 
@@ -30,9 +31,23 @@ interface Context {
   slug: string
 }
 
+/**
+ * The property, if it takes bookings here (ADR-019).
+ *
+ * `getBookingProperty` already answers null when the PMS is authoritative for
+ * booking; this adds the `booking_engine` feature. `cancel` does not use it on
+ * purpose: a guest holding a booking can cancel it whatever the property has
+ * since switched off.
+ */
+async function bookableProperty(slug: string) {
+  const property = await getBookingProperty(slug)
+  if (!property || !(await hasFeature(property.id, 'booking_engine'))) return null
+  return property
+}
+
 /** Step 2 → 3. Prices the stay again, writes the hold, moves the guest on. */
 export async function selectRoom(context: Context, formData: FormData): Promise<void> {
-  const property = await getBookingProperty(context.slug)
+  const property = await bookableProperty(context.slug)
   if (!property) redirect(`/${context.locale}`)
 
   const search = readSearch(formData)
@@ -139,7 +154,7 @@ export async function saveDetails(context: Context, formData: FormData): Promise
  * rewrite.
  */
 export async function confirm(context: Context, formData: FormData): Promise<void> {
-  const property = await getBookingProperty(context.slug)
+  const property = await bookableProperty(context.slug)
   if (!property) redirect(`/${context.locale}`)
 
   const search = readSearch(formData)
@@ -261,7 +276,7 @@ export async function cancel(
 
 /** The stale-source fallback (E1.1). Creates no reservation — there is none. */
 export async function sendRequest(context: Context, formData: FormData): Promise<void> {
-  const property = await getBookingProperty(context.slug)
+  const property = await bookableProperty(context.slug)
   if (!property) redirect(`/${context.locale}`)
 
   const search = readSearch(formData)

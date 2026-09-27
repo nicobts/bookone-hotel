@@ -18,6 +18,8 @@ import type { UserProperty } from '@bookone/core/db'
 import { Logo } from '@/components/brand/logo'
 import { PropertySwitcher } from '@/components/property/property-switcher'
 import { NavMain, type NavGroup } from '@/components/shell/nav-main'
+import { navBands, type NavKey } from '@/components/shell/nav-items'
+import { propertyFeatures } from '@/lib/auth/current-property'
 import { Link } from '@/i18n/navigation'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar'
 
@@ -73,60 +75,58 @@ export async function AppSidebar({
    */
   const isOwner = active.role === 'owner'
 
-  const groups: NavGroup[] = [
-    {
-      label: t('sections.operate'),
-      items: [
-        { title: t('today'), href: `${base}/today`, icon: <SunIcon /> },
-        { title: t('exceptions'), href: `${base}/exceptions`, icon: <TriangleAlertIcon /> },
-        {
-          title: t('conversations'),
-          href: `${base}/conversations`,
-          icon: <MessageSquareIcon />,
-        },
-        { title: t('reservations'), href: `${base}/reservations`, icon: <CalendarCheckIcon /> },
-        { title: t('guests'), href: `${base}/guests`, icon: <UsersIcon /> },
-        /*
-         * The report sits last in "Operate" rather than in "Configure", and
-         * only for owners.
-         *
-         * It is neither running the house today nor setting it up — it is the
-         * owner reading what they are billed. Of the two bands that is much
-         * nearer the first: it is read regularly, by the person who reads Today,
-         * and burying an invoice among the settings suggests it is not meant to
-         * be looked at.
-         *
-         * Staff do not see it. Not because the numbers are secret from them,
-         * but because "what the property is charged" is not a thing a seasonal
-         * receptionist should have to have an opinion about.
-         */
-        ...(isOwner ? [{ title: t('report'), href: `${base}/report`, icon: <ReceiptIcon /> }] : []),
-      ],
+  // Modules the property has (ADR-019). A module it lacks has no item here and
+  // a 404 behind the URL; the second is the control, this is the courtesy.
+  const features = await propertyFeatures(active.id)
+  const bands = navBands({ isOwner, features })
+
+  /*
+   * The report sits last in "Operate" rather than in "Configure", and only for
+   * owners.
+   *
+   * It is neither running the house today nor setting it up — it is the owner
+   * reading what they are billed. Of the two bands that is much nearer the
+   * first: it is read regularly, by the person who reads Today, and burying an
+   * invoice among the settings suggests it is not meant to be looked at.
+   *
+   * Staff do not see it. Not because the numbers are secret from them, but
+   * because "what the property is charged" is not a thing a seasonal
+   * receptionist should have to have an opinion about.
+   *
+   * Privacy is owner-only, and narrower than the rest of the configure band. A
+   * privacy request records that a named guest asked to be forgotten. That is a
+   * fact about a person the receptionist who checked them in has no reason to
+   * hold — so unlike the other configure items, this one is hidden for a reason
+   * about the *subject* rather than about the property. The RLS policy on
+   * `privacy_requests` says the same thing at the database.
+   */
+  const items: Record<NavKey, NavGroup['items'][number]> = {
+    today: { title: t('today'), href: `${base}/today`, icon: <SunIcon /> },
+    exceptions: { title: t('exceptions'), href: `${base}/exceptions`, icon: <TriangleAlertIcon /> },
+    conversations: {
+      title: t('conversations'),
+      href: `${base}/conversations`,
+      icon: <MessageSquareIcon />,
     },
-    ...(isOwner
-      ? [
-          {
-            label: t('sections.configure'),
-            items: [
-              { title: t('setup'), href: `${base}/setup`, icon: <ListChecksIcon /> },
-              { title: t('knowledge'), href: `${base}/knowledge`, icon: <BookOpenIcon /> },
-              { title: t('rooms'), href: `${base}/room-types`, icon: <BedDoubleIcon /> },
-              { title: t('members'), href: `${base}/members`, icon: <UsersRoundIcon /> },
-              /*
-               * Owner-only, and narrower than the rest of this band.
-               *
-               * A privacy request records that a named guest asked to be
-               * forgotten. That is a fact about a person the receptionist who
-               * checked them in has no reason to hold — so unlike the other
-               * configure items, this one is hidden for a reason about the
-               * *subject* rather than about the property. The RLS policy on
-               * `privacy_requests` says the same thing at the database.
-               */
-              { title: t('privacy'), href: `${base}/privacy`, icon: <ShieldIcon /> },
-              { title: t('settings'), href: `${base}/settings`, icon: <SettingsIcon /> },
-            ],
-          },
-        ]
+    reservations: {
+      title: t('reservations'),
+      href: `${base}/reservations`,
+      icon: <CalendarCheckIcon />,
+    },
+    guests: { title: t('guests'), href: `${base}/guests`, icon: <UsersIcon /> },
+    report: { title: t('report'), href: `${base}/report`, icon: <ReceiptIcon /> },
+    setup: { title: t('setup'), href: `${base}/setup`, icon: <ListChecksIcon /> },
+    knowledge: { title: t('knowledge'), href: `${base}/knowledge`, icon: <BookOpenIcon /> },
+    rooms: { title: t('rooms'), href: `${base}/room-types`, icon: <BedDoubleIcon /> },
+    members: { title: t('members'), href: `${base}/members`, icon: <UsersRoundIcon /> },
+    privacy: { title: t('privacy'), href: `${base}/privacy`, icon: <ShieldIcon /> },
+    settings: { title: t('settings'), href: `${base}/settings`, icon: <SettingsIcon /> },
+  }
+
+  const groups: NavGroup[] = [
+    { label: t('sections.operate'), items: bands.operate.map((key) => items[key]) },
+    ...(bands.configure.length > 0
+      ? [{ label: t('sections.configure'), items: bands.configure.map((key) => items[key]) }]
       : []),
   ]
 

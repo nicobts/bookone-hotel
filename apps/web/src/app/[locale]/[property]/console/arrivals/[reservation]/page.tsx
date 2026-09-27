@@ -4,7 +4,7 @@ import { CheckCircle2Icon, FlaskConicalIcon, TriangleAlertIcon } from 'lucide-re
 import { getArrival } from '@bookone/core/db'
 import { registrationToGuestDetails, validateParty } from '@bookone/core/alloggiati'
 import { PageShell } from '@/components/shell/page-shell'
-import { requireProperty } from '@/lib/auth/current-property'
+import { hasFeature, requireProperty } from '@/lib/auth/current-property'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -44,6 +44,9 @@ export default async function ArrivalPage({
   if (!arrival) notFound()
 
   const t = await getTranslations('console.arrival')
+  // Without the feature there is no filing to make — the section still shows
+  // what the record is missing, which pre-arrival capture needs regardless.
+  const filing = await hasFeature(property.id, 'alloggiati')
   const context = { locale, slug, reservationId }
 
   // The same validator the staging path runs, so what the console promises and
@@ -120,15 +123,18 @@ export default async function ArrivalPage({
             <p className="text-foreground text-sm font-medium">{filingLabel}</p>
 
             {/*
-              Always present, whatever the automation did (E2.3 acceptance
-              criterion). The property is the declarant; automation they cannot
-              override is automation they cannot answer for.
+              Always present while the property files through BookOne, whatever
+              the automation did (E2.3 acceptance criterion). The property is
+              the declarant; automation they cannot override is automation they
+              cannot answer for. Absent when they do not file through us.
             */}
-            <form action={fileNow.bind(null, context)}>
-              <Button type="submit" variant="outline" size="sm">
-                {t('submitNow')}
-              </Button>
-            </form>
+            {filing && (
+              <form action={fileNow.bind(null, context)}>
+                <Button type="submit" variant="outline" size="sm">
+                  {t('submitNow')}
+                </Button>
+              </form>
+            )}
           </div>
 
           {arrival.submission && (

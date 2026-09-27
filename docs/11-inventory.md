@@ -152,4 +152,9 @@ External blockers that decide the demo, none of them code: ~~EU LLM provider~~ a
 
 Still open: item 7 (channels WP and the thread-without-reservation migration), item 8 (WP0.4 scope as
 "extend"), item 12 (Stripe mock for the demo), item 14 (demo seed), and the external blockers in §4.
-Next: WP0.1 Part B per ADR-019.
+WP0.1 Part B is done (ADR-019 row in IMPLEMENTATION-STATUS). Found while building it, for the next WPs:
+
+- **Pre-sale needs the booking engine the matrix turns off.** WP0.3's `create_booking_link` links to the booking engine, which the matrix has OFF for hotel properties. The demo property needs `booking_engine`, or pre-sale links to a payment link only. Decide in WP0.3.
+- **`booking_engine` without `payments` is a misconfiguration.** A property with a deposit policy gets a 404 from `/jobs/checkout` at step 4. Nothing prevents granting one without the other yet.
+- **Document deletion still waits for Alloggiati acknowledgement.** With `alloggiati` off, `documents.purge` never fires for new stays; the retention sweep is the only backstop. WP0.4's checkout-based retention rule closes this.
+- **Returning from payment after a revoke.** A guest coming back from the provider to a property whose `booking_engine` was just revoked sees a 404; the webhook still confirms the booking. Edge case, accepted.

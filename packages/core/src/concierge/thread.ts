@@ -1,6 +1,8 @@
 import { and, asc, desc, eq, isNull, lt, or } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { asService } from '../db/session'
+import { hasFeatureSql } from '../onboarding/features'
+import type { Feature } from '../onboarding/entitlements'
 import { messageThreads, messages, reservations, stayTasks } from '../db/schema'
 import type * as schema from '../db/schema'
 import { emit } from '../events'
@@ -528,6 +530,8 @@ export async function listOverdueEscalations(input: {
   minutes: number
   now?: Date
   limit?: number
+  /** Only properties with this feature live (ADR-019). Filtered before the limit. */
+  feature?: Feature
 }): Promise<{ id: string; propertyId: string; reservationId: string; escalatedAt: Date | null }[]> {
   const now = input.now ?? new Date()
   const cutoff = new Date(now.getTime() - input.minutes * 60_000)
@@ -546,6 +550,7 @@ export async function listOverdueEscalations(input: {
           eq(messageThreads.status, 'escalated'),
           isNull(messageThreads.slaAlertedAt),
           lt(messageThreads.escalatedAt, cutoff),
+          input.feature ? hasFeatureSql(messageThreads.propertyId, input.feature) : undefined,
         ),
       )
       .orderBy(asc(messageThreads.escalatedAt))

@@ -1,5 +1,6 @@
 import { agentRuns, asService } from '@bookone/core/db'
 import { classifyIntent, type GuestIntent } from '@bookone/core/concierge'
+import { createFeatureCheck, gateOpen, type FeatureCheck } from '@bookone/core/onboarding'
 import { getAgent, grantsTool, type AgentDefinition, type AutonomyTier } from './registry'
 import { getTool, type ToolContext, type ToolResult } from './tools'
 
@@ -90,6 +91,7 @@ export class ToolNotGrantedError extends Error {
 export async function runAgent(
   input: RunInput,
   record: RunRecorder = recordToDatabase,
+  features: FeatureCheck = createFeatureCheck(),
 ): Promise<RunOutcome> {
   const agent = getAgent(input.agent)
   const started = Date.now()
@@ -101,6 +103,16 @@ export async function runAgent(
   let confidence: number | null = null
 
   try {
+    // Feature gate (ADR-019). Inside the try so a refusal is recorded like any
+    // other rejected run: "the concierge did not answer because the property
+    // does not have it" is a thing an owner asks about, and the answer should
+    // be a row, not an absence.
+    if (!(await gateOpen(features, input.propertyId, agent.feature))) {
+      throw new Error(
+        `Agent ${agent.name} needs the "${agent.feature}" feature, which this property does not have.`,
+      )
+    }
+
     const result = await execute(agent, input, (tool, toolInput) =>
       callTool(
         agent,

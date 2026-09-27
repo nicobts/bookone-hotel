@@ -68,6 +68,8 @@ export const jobNames = [
   'privacy.erase',
   /** Apply every executable retention rule to one property (E8.2). */
   'retention.sweep',
+  /** Bring per-property schedules in line with properties and entitlements (ADR-019). */
+  'schedules.sync',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -197,6 +199,13 @@ export interface JobPayloads {
    * declined and turn a helpful step into a recurring chore.
    */
   'onboarding.ingest': { propertyId: string; url: string; locale: string }
+  /**
+   * Re-derive every per-property schedule (ADR-019).
+   *
+   * Cross-property and keyless. It exists so that granting or revoking a
+   * feature, or adding a property, takes effect without a restart.
+   */
+  'schedules.sync': Record<string, never>
 }
 
 export interface SendOptions {

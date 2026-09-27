@@ -147,6 +147,37 @@ try {
       (${alpin.id}, ${ownerId}, 'staff'),
       (${sonja.id}, ${staffId}, 'staff')`
 
+  /*
+   * Every feature, for both properties (ADR-019).
+   *
+   * Entitlements fail closed, so a seed that grants nothing produces a console
+   * with no conversations, a booking page that 404s and a stay page with no
+   * forms — correct, and useless for development. Everything on keeps local
+   * behaviour what it was before the gates existed. The Guest Desk demo property
+   * gets the Phase 0 set instead, from its own seed (WP0.5).
+   *
+   * Mirrors `FEATURES` in packages/core/src/onboarding/entitlements.ts; this
+   * file is plain JS and cannot import it.
+   */
+  const features = [
+    'inbox',
+    'concierge',
+    'prearrival',
+    'payments',
+    'booking_engine',
+    'pms_sync',
+    'alloggiati',
+    'rooms',
+    'reporting',
+  ]
+  for (const property of [sonja, alpin]) {
+    for (const feature of features) {
+      await sql`
+        insert into entitlements (property_id, feature, note)
+        values (${property.id}, ${feature}, 'seed-dev: everything on')`
+    }
+  }
+
   // Room types, so the booking surface has something real to read in Sprint 3.
   for (const property of [sonja, alpin]) {
     await sql`

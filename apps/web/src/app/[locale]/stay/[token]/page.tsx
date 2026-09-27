@@ -7,6 +7,7 @@ import { BookingShell } from '@/components/booking/booking-shell'
 import { formatDate, formatMoney, roomName } from '@/components/booking/format'
 import { SimulatedPaymentNotice } from '@/components/booking/payment-notice'
 import { Thread } from '@/components/stay/thread'
+import { hasFeature } from '@/lib/auth/current-property'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -145,6 +146,11 @@ export default async function StayPage({
    */
   const arrivalIsToday = stay.arrivalDate <= todayAt(property.timezone)
 
+  // Which parts of the page this property offers (ADR-019). A guest never sees
+  // a form whose action would refuse them.
+  const prearrival = await hasFeature(stay.propertyId, 'prearrival')
+  const inbox = await hasFeature(stay.propertyId, 'inbox')
+
   return (
     <BookingShell property={property} step={null}>
       <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('title')}</h1>
@@ -165,29 +171,33 @@ export default async function StayPage({
         </p>
       </div>
 
-      {complete ? (
-        <div className="mt-8">
-          <h2 className="text-foreground font-medium">{t('complete.heading')}</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {t('complete.body', { property: stay.propertyName })}
-          </p>
-        </div>
-      ) : (
-        <>
-          <p className="text-muted-foreground mt-6 text-sm">{t('minutes')}</p>
+      {prearrival &&
+        (complete ? (
+          <div className="mt-8">
+            <h2 className="text-foreground font-medium">{t('complete.heading')}</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {t('complete.body', { property: stay.propertyName })}
+            </p>
+          </div>
+        ) : (
+          <>
+            <p className="text-muted-foreground mt-6 text-sm">{t('minutes')}</p>
 
-          {/*
+            {/*
             What is left, before the forms. A guest who can see three short
             items starts; a guest facing an undifferentiated wall of fields
             estimates it at twenty minutes and does it at the desk.
           */}
-          <ul className="mt-4 space-y-1.5 text-sm">
-            <Task done={stay.journey.precheckin === 'submitted'} label={t('outstanding.details')} />
-            <Task done={everyGuestHasDocument} label={t('outstanding.documents')} />
-            <Task done={stay.journey.arrival !== 'pending'} label={t('outstanding.arrival')} />
-          </ul>
-        </>
-      )}
+            <ul className="mt-4 space-y-1.5 text-sm">
+              <Task
+                done={stay.journey.precheckin === 'submitted'}
+                label={t('outstanding.details')}
+              />
+              <Task done={everyGuestHasDocument} label={t('outstanding.documents')} />
+              <Task done={stay.journey.arrival !== 'pending'} label={t('outstanding.arrival')} />
+            </ul>
+          </>
+        ))}
 
       {error && (
         <p role="alert" className="text-destructive mt-6 text-sm">
@@ -201,244 +211,251 @@ export default async function StayPage({
 
       <Separator className="my-8" />
 
-      {/* ------------------------------------------------------------- party */}
-      <section>
-        <h2 className="text-foreground font-medium">{t('party.heading')}</h2>
-        <p className="text-muted-foreground mt-1 text-xs">{t('party.hint')}</p>
-        <p className="text-muted-foreground mt-1 text-xs">{t('party.required')}</p>
+      {/* Pre-arrival capture — its own feature (ADR-019). */}
+      {prearrival && (
+        <>
+          {/* ------------------------------------------------------------- party */}
+          <section>
+            <h2 className="text-foreground font-medium">{t('party.heading')}</h2>
+            <p className="text-muted-foreground mt-1 text-xs">{t('party.hint')}</p>
+            <p className="text-muted-foreground mt-1 text-xs">{t('party.required')}</p>
 
-        <form action={submitParty.bind(null, context)} className="mt-5 space-y-6">
-          {Array.from({ length: partySize }, (_, index) => {
-            const member = stay.party.find((entry) => entry.guestIndex === index)
-            const prefilled =
-              index === 0 ? splitName(stay.leadGuestName) : { surname: '', givenName: '' }
+            <form action={submitParty.bind(null, context)} className="mt-5 space-y-6">
+              {Array.from({ length: partySize }, (_, index) => {
+                const member = stay.party.find((entry) => entry.guestIndex === index)
+                const prefilled =
+                  index === 0 ? splitName(stay.leadGuestName) : { surname: '', givenName: '' }
 
-            return (
-              <fieldset key={index} className="space-y-3">
-                <legend className="text-muted-foreground text-xs font-medium">
-                  {index === 0 ? t('party.lead') : t('party.guest', { n: index + 1 })}
-                </legend>
+                return (
+                  <fieldset key={index} className="space-y-3">
+                    <legend className="text-muted-foreground text-xs font-medium">
+                      {index === 0 ? t('party.lead') : t('party.guest', { n: index + 1 })}
+                    </legend>
 
-                {/*
+                    {/*
                   Surname and given name separately, because the registry files
                   them separately (E2.3) — and splitting a free-text full name
                   is a guess that gets Spanish and Hungarian names wrong.
                 */}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="grid gap-2">
-                    <Label htmlFor={`surname-${index}`}>{t('party.surname')}</Label>
-                    <Input
-                      id={`surname-${index}`}
-                      name={`surname-${index}`}
-                      autoComplete={index === 0 ? 'family-name' : 'off'}
-                      defaultValue={readString(member?.data.surname) || prefilled.surname}
-                      required={index === 0}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor={`given-${index}`}>{t('party.givenName')}</Label>
-                    <Input
-                      id={`given-${index}`}
-                      name={`given-${index}`}
-                      autoComplete={index === 0 ? 'given-name' : 'off'}
-                      defaultValue={readString(member?.data.givenName) || prefilled.givenName}
-                      required={index === 0}
-                    />
-                  </div>
-                </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor={`surname-${index}`}>{t('party.surname')}</Label>
+                        <Input
+                          id={`surname-${index}`}
+                          name={`surname-${index}`}
+                          autoComplete={index === 0 ? 'family-name' : 'off'}
+                          defaultValue={readString(member?.data.surname) || prefilled.surname}
+                          required={index === 0}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor={`given-${index}`}>{t('party.givenName')}</Label>
+                        <Input
+                          id={`given-${index}`}
+                          name={`given-${index}`}
+                          autoComplete={index === 0 ? 'given-name' : 'off'}
+                          defaultValue={readString(member?.data.givenName) || prefilled.givenName}
+                          required={index === 0}
+                        />
+                      </div>
+                    </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="grid gap-2">
-                    <Label htmlFor={`sex-${index}`}>{t('party.sex')}</Label>
-                    <select
-                      id={`sex-${index}`}
-                      name={`sex-${index}`}
-                      defaultValue={readString(member?.data.sex)}
-                      className="border-input bg-transparent focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
-                    >
-                      <option value="">—</option>
-                      <option value="m">{t('party.male')}</option>
-                      <option value="f">{t('party.female')}</option>
-                    </select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor={`birth-${index}`}>{t('party.birthDate')}</Label>
-                    <Input
-                      id={`birth-${index}`}
-                      name={`birth-${index}`}
-                      type="date"
-                      defaultValue={readString(member?.data.birthDate)}
-                    />
-                  </div>
-                </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor={`sex-${index}`}>{t('party.sex')}</Label>
+                        <select
+                          id={`sex-${index}`}
+                          name={`sex-${index}`}
+                          defaultValue={readString(member?.data.sex)}
+                          className="border-input bg-transparent focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
+                        >
+                          <option value="">—</option>
+                          <option value="m">{t('party.male')}</option>
+                          <option value="f">{t('party.female')}</option>
+                        </select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor={`birth-${index}`}>{t('party.birthDate')}</Label>
+                        <Input
+                          id={`birth-${index}`}
+                          name={`birth-${index}`}
+                          type="date"
+                          defaultValue={readString(member?.data.birthDate)}
+                        />
+                      </div>
+                    </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="grid gap-2">
-                    <Label htmlFor={`birthPlace-${index}`}>{t('party.birthPlace')}</Label>
-                    <Input
-                      id={`birthPlace-${index}`}
-                      name={`birthPlace-${index}`}
-                      defaultValue={readString(member?.data.birthPlace)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor={`birthCountry-${index}`}>{t('party.birthCountry')}</Label>
-                    <Input
-                      id={`birthCountry-${index}`}
-                      name={`birthCountry-${index}`}
-                      maxLength={2}
-                      placeholder="IT"
-                      defaultValue={readString(member?.data.birthCountry)}
-                    />
-                  </div>
-                </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor={`birthPlace-${index}`}>{t('party.birthPlace')}</Label>
+                        <Input
+                          id={`birthPlace-${index}`}
+                          name={`birthPlace-${index}`}
+                          defaultValue={readString(member?.data.birthPlace)}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor={`birthCountry-${index}`}>{t('party.birthCountry')}</Label>
+                        <Input
+                          id={`birthCountry-${index}`}
+                          name={`birthCountry-${index}`}
+                          maxLength={2}
+                          placeholder="IT"
+                          defaultValue={readString(member?.data.birthCountry)}
+                        />
+                      </div>
+                    </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor={`citizenship-${index}`}>{t('party.citizenship')}</Label>
-                  <Input
-                    id={`citizenship-${index}`}
-                    name={`citizenship-${index}`}
-                    maxLength={2}
-                    placeholder="IT"
-                    defaultValue={readString(member?.data.citizenship)}
-                  />
-                  <p className="text-muted-foreground text-xs">{t('party.countryHint')}</p>
-                </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor={`citizenship-${index}`}>{t('party.citizenship')}</Label>
+                      <Input
+                        id={`citizenship-${index}`}
+                        name={`citizenship-${index}`}
+                        maxLength={2}
+                        placeholder="IT"
+                        defaultValue={readString(member?.data.citizenship)}
+                      />
+                      <p className="text-muted-foreground text-xs">{t('party.countryHint')}</p>
+                    </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="grid gap-2">
-                    <Label htmlFor={`docType-${index}`}>{t('party.documentType')}</Label>
-                    <select
-                      id={`docType-${index}`}
-                      name={`docType-${index}`}
-                      defaultValue={readString(member?.data.documentType)}
-                      className="border-input bg-transparent focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
-                    >
-                      <option value="">—</option>
-                      <option value="passport">{t('party.passport')}</option>
-                      <option value="idCard">{t('party.idCard')}</option>
-                      <option value="drivingLicence">{t('party.drivingLicence')}</option>
-                    </select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor={`docNumber-${index}`}>{t('party.documentNumber')}</Label>
-                    <Input
-                      id={`docNumber-${index}`}
-                      name={`docNumber-${index}`}
-                      defaultValue={readString(member?.data.documentNumber)}
-                    />
-                  </div>
-                </div>
-              </fieldset>
-            )
-          })}
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor={`docType-${index}`}>{t('party.documentType')}</Label>
+                        <select
+                          id={`docType-${index}`}
+                          name={`docType-${index}`}
+                          defaultValue={readString(member?.data.documentType)}
+                          className="border-input bg-transparent focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]"
+                        >
+                          <option value="">—</option>
+                          <option value="passport">{t('party.passport')}</option>
+                          <option value="idCard">{t('party.idCard')}</option>
+                          <option value="drivingLicence">{t('party.drivingLicence')}</option>
+                        </select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor={`docNumber-${index}`}>{t('party.documentNumber')}</Label>
+                        <Input
+                          id={`docNumber-${index}`}
+                          name={`docNumber-${index}`}
+                          defaultValue={readString(member?.data.documentNumber)}
+                        />
+                      </div>
+                    </div>
+                  </fieldset>
+                )
+              })}
 
-          <Button type="submit">{t('party.save')}</Button>
-        </form>
-      </section>
+              <Button type="submit">{t('party.save')}</Button>
+            </form>
+          </section>
 
-      <Separator className="my-8" />
+          <Separator className="my-8" />
 
-      {/* --------------------------------------------------------- documents */}
-      <section>
-        <h2 className="text-foreground font-medium">{t('documents.heading')}</h2>
-        <p className="text-muted-foreground mt-1 text-xs">{t('documents.hint')}</p>
+          {/* --------------------------------------------------------- documents */}
+          <section>
+            <h2 className="text-foreground font-medium">{t('documents.heading')}</h2>
+            <p className="text-muted-foreground mt-1 text-xs">{t('documents.hint')}</p>
 
-        {stay.party.length === 0 ? (
-          // Deliberately not a disabled upload field. The reason it is not
-          // available is that we do not yet know who the document belongs to,
-          // and saying that is more useful than greying something out.
-          <p className="text-muted-foreground mt-4 text-sm">{t('documents.needParty')}</p>
-        ) : (
-          <div className="mt-5 space-y-4">
-            {stay.party.map((member) => (
-              <form
-                key={member.guestIndex}
-                action={uploadDocument.bind(null, context)}
-                className="border-border flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-end sm:justify-between"
-              >
-                <input type="hidden" name="guestIndex" value={member.guestIndex} />
+            {stay.party.length === 0 ? (
+              // Deliberately not a disabled upload field. The reason it is not
+              // available is that we do not yet know who the document belongs to,
+              // and saying that is more useful than greying something out.
+              <p className="text-muted-foreground mt-4 text-sm">{t('documents.needParty')}</p>
+            ) : (
+              <div className="mt-5 space-y-4">
+                {stay.party.map((member) => (
+                  <form
+                    key={member.guestIndex}
+                    action={uploadDocument.bind(null, context)}
+                    className="border-border flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-end sm:justify-between"
+                  >
+                    <input type="hidden" name="guestIndex" value={member.guestIndex} />
 
-                <div className="min-w-0 flex-1">
-                  <p className="text-foreground text-sm font-medium">
-                    {t('documents.for', { name: readString(member.data.fullName) })}
-                  </p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-foreground text-sm font-medium">
+                        {t('documents.for', { name: readString(member.data.fullName) })}
+                      </p>
 
-                  {member.documentDeleted ? (
-                    <p className="text-muted-foreground mt-1 text-xs">{t('documents.deleted')}</p>
-                  ) : member.hasDocument ? (
-                    <p className="mt-1 text-xs text-[color:var(--bo-success-500)]">
-                      {t('documents.uploaded')}
-                    </p>
-                  ) : null}
+                      {member.documentDeleted ? (
+                        <p className="text-muted-foreground mt-1 text-xs">
+                          {t('documents.deleted')}
+                        </p>
+                      ) : member.hasDocument ? (
+                        <p className="mt-1 text-xs text-[color:var(--bo-success-500)]">
+                          {t('documents.uploaded')}
+                        </p>
+                      ) : null}
 
-                  {!member.documentDeleted && (
-                    <Input
-                      type="file"
-                      name="document"
-                      required
-                      accept="image/jpeg,image/png,image/webp,application/pdf"
-                      // `capture` opens the camera on a phone rather than a
-                      // file browser. The guest is holding the document.
-                      capture="environment"
-                      className="mt-3"
-                    />
-                  )}
-                </div>
+                      {!member.documentDeleted && (
+                        <Input
+                          type="file"
+                          name="document"
+                          required
+                          accept="image/jpeg,image/png,image/webp,application/pdf"
+                          // `capture` opens the camera on a phone rather than a
+                          // file browser. The guest is holding the document.
+                          capture="environment"
+                          className="mt-3"
+                        />
+                      )}
+                    </div>
 
-                {!member.documentDeleted && (
-                  <Button type="submit" variant="outline">
-                    {member.hasDocument ? t('documents.replace') : t('documents.send')}
-                  </Button>
-                )}
-              </form>
-            ))}
-          </div>
-        )}
+                    {!member.documentDeleted && (
+                      <Button type="submit" variant="outline">
+                        {member.hasDocument ? t('documents.replace') : t('documents.send')}
+                      </Button>
+                    )}
+                  </form>
+                ))}
+              </div>
+            )}
 
-        {/*
+            {/*
           The retention promise, next to the upload rather than in a policy page.
           Somebody is about to photograph their passport for a company they have
           never heard of; what happens to it afterwards is the question they are
           actually asking (E2.4).
         */}
-        <p className="text-muted-foreground mt-4 text-xs">{t('documents.retention')}</p>
-      </section>
+            <p className="text-muted-foreground mt-4 text-xs">{t('documents.retention')}</p>
+          </section>
 
-      <Separator className="my-8" />
+          <Separator className="my-8" />
 
-      {/* ----------------------------------------------------------- arrival */}
-      <section>
-        <h2 className="text-foreground font-medium">{t('arrival.heading')}</h2>
-        <p className="text-muted-foreground mt-1 text-xs">{t('arrival.hint')}</p>
+          {/* ----------------------------------------------------------- arrival */}
+          <section>
+            <h2 className="text-foreground font-medium">{t('arrival.heading')}</h2>
+            <p className="text-muted-foreground mt-1 text-xs">{t('arrival.hint')}</p>
 
-        <form
-          action={submitArrivalTime.bind(null, context)}
-          className="mt-5 flex flex-wrap items-end gap-3"
-        >
-          <div className="grid gap-2">
-            <Label htmlFor="time">{t('arrival.time')}</Label>
-            <Input
-              id="time"
-              name="time"
-              type="time"
-              required
-              defaultValue={stay.journey.expectedArrivalTime ?? ''}
-            />
-          </div>
-          <Button type="submit" variant="outline">
-            {t('arrival.save')}
-          </Button>
-        </form>
+            <form
+              action={submitArrivalTime.bind(null, context)}
+              className="mt-5 flex flex-wrap items-end gap-3"
+            >
+              <div className="grid gap-2">
+                <Label htmlFor="time">{t('arrival.time')}</Label>
+                <Input
+                  id="time"
+                  name="time"
+                  type="time"
+                  required
+                  defaultValue={stay.journey.expectedArrivalTime ?? ''}
+                />
+              </div>
+              <Button type="submit" variant="outline">
+                {t('arrival.save')}
+              </Button>
+            </form>
 
-        {stay.journey.expectedArrivalTime && (
-          <p className="text-muted-foreground mt-3 text-sm">
-            {t('arrival.saved', { time: stay.journey.expectedArrivalTime })}
-          </p>
-        )}
-      </section>
+            {stay.journey.expectedArrivalTime && (
+              <p className="text-muted-foreground mt-3 text-sm">
+                {t('arrival.saved', { time: stay.journey.expectedArrivalTime })}
+              </p>
+            )}
+          </section>
 
-      <Separator className="my-8" />
+          <Separator className="my-8" />
+        </>
+      )}
 
       {/* ----------------------------------------------------------- arrival */}
       {arrivalIsToday && stay.journey.arrival !== 'confirmed' && (
@@ -461,65 +478,70 @@ export default async function StayPage({
         </section>
       )}
 
-      <Separator className="my-8" />
+      {/* Messaging — the inbox feature (ADR-019). */}
+      {inbox && (
+        <>
+          <Separator className="my-8" />
 
-      {/* ---------------------------------------------------------- messages */}
-      <section id="messages">
-        <h2 className="text-foreground font-medium">{t('messages.heading')}</h2>
-        <p className="text-muted-foreground mt-1 text-xs">{t('messages.hint')}</p>
+          {/* ---------------------------------------------------------- messages */}
+          <section id="messages">
+            <h2 className="text-foreground font-medium">{t('messages.heading')}</h2>
+            <p className="text-muted-foreground mt-1 text-xs">{t('messages.hint')}</p>
 
-        <Thread messages={messages} locale={locale} />
+            <Thread messages={messages} locale={locale} />
 
-        {tasks.length > 0 && (
-          <div className="mt-5">
-            <h3 className="text-muted-foreground bo-label mb-2">{t('messages.requests')}</h3>
-            <ul className="space-y-1.5 text-sm">
-              {tasks.map((task) => (
-                <li key={task.id} className="flex items-start justify-between gap-3">
-                  <span className="text-foreground">{task.summary}</span>
-                  {/*
+            {tasks.length > 0 && (
+              <div className="mt-5">
+                <h3 className="text-muted-foreground bo-label mb-2">{t('messages.requests')}</h3>
+                <ul className="space-y-1.5 text-sm">
+                  {tasks.map((task) => (
+                    <li key={task.id} className="flex items-start justify-between gap-3">
+                      <span className="text-foreground">{task.summary}</span>
+                      {/*
                     "Recorded" and "done", never "on its way". A guest told a
                     thing is handled stops chasing it; a guest told it is
                     written down knows to ask again if nothing happens.
                   */}
-                  <span className="text-muted-foreground shrink-0 text-xs">
-                    {task.status === 'done' ? t('messages.taskDone') : t('messages.taskOpen')}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+                      <span className="text-muted-foreground shrink-0 text-xs">
+                        {task.status === 'done' ? t('messages.taskDone') : t('messages.taskOpen')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-        <form action={sendMessage.bind(null, context)} className="mt-5 flex flex-col gap-2">
-          <Label htmlFor="message" className="sr-only">
-            {t('messages.label')}
-          </Label>
-          <Textarea
-            id="message"
-            name="message"
-            rows={3}
-            required
-            maxLength={4000}
-            placeholder={t('messages.placeholder')}
-          />
-          <div className="flex items-center justify-between gap-3">
-            {/*
+            <form action={sendMessage.bind(null, context)} className="mt-5 flex flex-col gap-2">
+              <Label htmlFor="message" className="sr-only">
+                {t('messages.label')}
+              </Label>
+              <Textarea
+                id="message"
+                name="message"
+                rows={3}
+                required
+                maxLength={4000}
+                placeholder={t('messages.placeholder')}
+              />
+              <div className="flex items-center justify-between gap-3">
+                {/*
               An explicit request affordance, because intent stated by the
               person beats intent inferred from their words — and the inference
               is a word list that will be wrong about somebody's phrasing
               (packages/core/src/concierge/intent.ts).
             */}
-            <label className="text-muted-foreground flex items-center gap-2 text-xs">
-              <input type="checkbox" name="intent" value="request" className="accent-current" />
-              {t('messages.isRequest')}
-            </label>
-            <Button type="submit" size="sm">
-              {t('messages.send')}
-            </Button>
-          </div>
-        </form>
-      </section>
+                <label className="text-muted-foreground flex items-center gap-2 text-xs">
+                  <input type="checkbox" name="intent" value="request" className="accent-current" />
+                  {t('messages.isRequest')}
+                </label>
+                <Button type="submit" size="sm">
+                  {t('messages.send')}
+                </Button>
+              </div>
+            </form>
+          </section>
+        </>
+      )}
 
       {/* ---------------------------------------------------------- checkout */}
       {checkout && stay.journey.arrival === 'confirmed' && (

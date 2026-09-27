@@ -7,6 +7,7 @@ import {
   listUserProperties,
   type UserProperty,
 } from '@bookone/core/db'
+import { listEntitlements, type Feature } from '@bookone/core/onboarding'
 import { requireUser } from './current-user'
 
 /**
@@ -21,6 +22,7 @@ import { requireUser } from './current-user'
 const loadProperty = cache(getUserPropertyBySlug)
 const loadProperties = cache(listUserProperties)
 export const loadProfile = cache(getProfile)
+const loadFeatures = cache(listEntitlements)
 
 /**
  * Resolve the property named in the URL, for the signed-in user.
@@ -72,6 +74,39 @@ export async function requireOwner(locale: string, slug: string) {
   const context = await requireProperty(locale, slug)
 
   if (context.property.role !== 'owner') notFound()
+
+  return context
+}
+
+/**
+ * Whether a property has a feature (ADR-019).
+ *
+ * Read once per request per property — so a page, its layout and the sidebar
+ * cost one query between them — and never across requests, so a revoke is
+ * effective on the next click. For guest surfaces, which have no signed-in
+ * user and resolve the property by slug or token instead.
+ */
+export async function hasFeature(propertyId: string, feature: Feature): Promise<boolean> {
+  return (await loadFeatures(propertyId)).includes(feature)
+}
+
+/** Every live feature for a property, for surfaces that show several at once. */
+export async function propertyFeatures(propertyId: string): Promise<ReadonlySet<string>> {
+  return new Set(await loadFeatures(propertyId))
+}
+
+/**
+ * The same shape as `requireOwner`, for a module the property must have (ADR-019).
+ *
+ * 404, for the reason `requireOwner` gives: "this module exists and you do not
+ * have it" is more than the URL needs to say. And the same rule about where it
+ * is enforced — every page **and every server action** of a gated module calls
+ * this. The sidebar leaving the item out is presentation.
+ */
+export async function requireFeature(locale: string, slug: string, feature: Feature) {
+  const context = await requireProperty(locale, slug)
+
+  if (!(await hasFeature(context.property.id, feature))) notFound()
 
   return context
 }

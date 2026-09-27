@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireProperty } from '@/lib/auth/current-property'
+import { requireFeature, requireProperty } from '@/lib/auth/current-property'
 import { confirmArrival, submitAlloggiatiNow } from '@/lib/worker'
 
 /**
@@ -50,7 +50,7 @@ export async function markArrived(context: Context): Promise<void> {
  * depends on our uptime.
  */
 export async function fileNow(context: Context): Promise<void> {
-  const { property } = await requireProperty(context.locale, context.slug)
+  const { property } = await requireFeature(context.locale, context.slug, 'alloggiati')
 
   await submitAlloggiatiNow({ propertyId: property.id, reservationId: context.reservationId })
 

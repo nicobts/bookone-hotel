@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireProperty } from '@/lib/auth/current-property'
+import { requireFeature } from '@/lib/auth/current-property'
 import { retryReflection } from '@/lib/worker'
 
 /**
@@ -13,7 +13,7 @@ import { retryReflection } from '@/lib/worker'
  * underneath both. An owner tapping this four times still produces one booking
  * in their PMS.
  *
- * Authorisation is `requireProperty`, which resolves the property *through the
+ * Authorisation is `requireFeature` (`pms_sync`, ADR-019) over `requireProperty`, which resolves the property *through the
  * signed-in user's memberships* — so a reservation id from another property
  * cannot be retried by pasting it here: the property behind it never resolves
  * for this person, and the id is scoped to that property when the job runs.
@@ -22,7 +22,7 @@ export async function retryReflectionAction(
   context: { locale: string; slug: string },
   formData: FormData,
 ): Promise<void> {
-  const { property } = await requireProperty(context.locale, context.slug)
+  const { property } = await requireFeature(context.locale, context.slug, 'pms_sync')
 
   const reservationId = String(formData.get('reservationId') ?? '')
   if (!reservationId) return

@@ -26,7 +26,26 @@ import { systemActor, type Actor } from '../events/actor'
  * code will actually branch on. A row for something absent from this list is
  * data, not a capability.
  */
-export const FEATURES = ['concierge', 'rooms', 'reporting'] as const
+export const FEATURES = [
+  /** Conversations console, guest messaging on the stay page, escalation SLA. */
+  'inbox',
+  /** The guest-facing agent (AG-01, later the ADR-021 orchestrator). */
+  'concierge',
+  /** Pre-arrival capture: party details, documents, arrival time, T-48h invitation. */
+  'prearrival',
+  /** Online payment through the PaymentAdapter (deposits, checkout page). */
+  'payments',
+  /** The public booking engine at `/book/[property]` and self-service cancel. */
+  'booking_engine',
+  /** PMS sync: availability refresh, reflection, nightly reconciliation (AG-05). */
+  'pms_sync',
+  /** Alloggiati Web filing (E2.3). Off in Guest Desk Phase 0. */
+  'alloggiati',
+  /** Rooms / IoT. Interface only (`stay/door.ts`); nothing to gate yet. */
+  'rooms',
+  /** Module fees on the monthly report (D14 row 4). Designed for, not yet populated. */
+  'reporting',
+] as const
 
 export type Feature = (typeof FEATURES)[number]
 

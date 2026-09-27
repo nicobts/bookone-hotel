@@ -11,6 +11,7 @@ import {
 } from '@bookone/core/journey'
 import { storeIdentityDocument } from '@/lib/storage'
 import { confirmArrival, confirmCheckout, sendGuestMessage } from '@/lib/worker'
+import { hasFeature } from '@/lib/auth/current-property'
 
 /**
  * The pre-arrival writes (E2.1, E2.2).
@@ -37,6 +38,8 @@ function stayUrl(context: Context, extra = ''): string {
 export async function submitParty(context: Context, formData: FormData): Promise<void> {
   const resolved = await resolveStay(context.token)
   if (!resolved.ok) redirect(stayUrl(context))
+  // The section is not on the page without the feature; the action refuses too (ADR-019).
+  if (!(await hasFeature(resolved.stay.propertyId, 'prearrival'))) redirect(stayUrl(context))
 
   const { stay } = resolved
 
@@ -86,6 +89,8 @@ export async function submitParty(context: Context, formData: FormData): Promise
 export async function uploadDocument(context: Context, formData: FormData): Promise<void> {
   const resolved = await resolveStay(context.token)
   if (!resolved.ok) redirect(stayUrl(context))
+  // The section is not on the page without the feature; the action refuses too (ADR-019).
+  if (!(await hasFeature(resolved.stay.propertyId, 'prearrival'))) redirect(stayUrl(context))
 
   const { stay } = resolved
 
@@ -131,6 +136,8 @@ export async function uploadDocument(context: Context, formData: FormData): Prom
 export async function submitArrivalTime(context: Context, formData: FormData): Promise<void> {
   const resolved = await resolveStay(context.token)
   if (!resolved.ok) redirect(stayUrl(context))
+  // The section is not on the page without the feature; the action refuses too (ADR-019).
+  if (!(await hasFeature(resolved.stay.propertyId, 'prearrival'))) redirect(stayUrl(context))
 
   const time = String(formData.get('time') ?? '')
 
@@ -200,6 +207,8 @@ export async function confirmArrivalNow(context: Context): Promise<void> {
 export async function sendMessage(context: Context, formData: FormData): Promise<void> {
   const resolved = await resolveStay(context.token)
   if (!resolved.ok) redirect(stayUrl(context))
+  // The section is not on the page without the feature; the action refuses too (ADR-019).
+  if (!(await hasFeature(resolved.stay.propertyId, 'inbox'))) redirect(stayUrl(context))
 
   const { stay } = resolved
   const message = String(formData.get('message') ?? '').trim()

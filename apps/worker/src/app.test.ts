@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
+import { FEATURES, PHASE0_FEATURES } from '@bookone/core/onboarding'
 import { createApp } from './app'
+import { ROUTE_FEATURE } from './features'
 
 const TOKEN = 'a-token-long-enough-to-pass-the-check'
 
@@ -8,8 +10,11 @@ function build(
     send?: ReturnType<typeof vi.fn>
     parseWebhook?: ReturnType<typeof vi.fn>
     allowSimulation?: boolean
+    /** Features property `p1` has. Every feature unless a test says otherwise. */
+    features?: readonly string[]
   } = {},
 ) {
+  const enabled = new Set<string>(overrides.features ?? FEATURES)
   const send = overrides.send ?? vi.fn(async () => 'job-1')
 
   /** Stand-ins: these tests exercise routing and the guard, not the queue. */
@@ -42,6 +47,7 @@ function build(
     internalToken: TOKEN,
     appUrl: 'http://localhost:3000',
     allowSimulation: overrides.allowSimulation ?? true,
+    featureCheck: () => async (_propertyId: string, feature: string) => enabled.has(feature),
   } as never
 
   return { app: createApp(deps), send }
@@ -271,5 +277,104 @@ describe('the route table', () => {
     }
 
     expect(duplicates).toEqual([])
+  })
+})
+
+describe('the feature gate (ADR-019)', () => {
+  /** Every concrete `/jobs/*` route in the table. */
+  function jobRoutes(): string[] {
+    const { app } = build()
+    return [
+      ...new Set(
+        app.routes
+          .filter((r) => r.method === 'POST' && r.path.startsWith('/jobs/'))
+          .map((r) => r.path),
+      ),
+    ].sort()
+  }
+
+  /**
+   * Which routes do anything for a property with `features`.
+   *
+   * The body names the property and nothing else, so a route that gets past
+   * the gate answers its own 400 (or enqueues, for the one that needs only a
+   * property) without touching a database. 404 means the gate refused.
+   */
+  async function reachable(features: readonly string[]): Promise<string[]> {
+    const open: string[] = []
+
+    for (const path of jobRoutes()) {
+      const { app } = build({ features })
+      const res = await app.request(path, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...authorised },
+        body: JSON.stringify({ propertyId: 'p1' }),
+      })
+
+      if (res.status !== 404) open.push(path)
+    }
+
+    return open
+  }
+
+  it('classifies every internal route', () => {
+    // A route nobody classified is refused by the middleware — this makes the
+    // omission a failing test instead of a mysterious 404 in production.
+    expect(jobRoutes().filter((path) => !(path in ROUTE_FEATURE))).toEqual([])
+    expect(Object.keys(ROUTE_FEATURE).sort()).toEqual(jobRoutes())
+  })
+
+  it('with every feature off, only the core routes answer', async () => {
+    expect(await reachable([])).toEqual([
+      '/jobs/arrival-confirm',
+      '/jobs/cancel',
+      '/jobs/cancellation-quote',
+      '/jobs/depart',
+      '/jobs/payment-intent',
+      '/jobs/payment-simulate',
+      '/jobs/privacy-erase',
+      '/jobs/retention-sweep',
+    ])
+  })
+
+  it('with the Phase 0 set, exactly the Phase 0 surface answers', async () => {
+    expect(await reachable(PHASE0_FEATURES)).toEqual([
+      '/jobs/arrival-confirm',
+      '/jobs/cancel',
+      '/jobs/cancellation-quote',
+      '/jobs/checkout',
+      '/jobs/depart',
+      '/jobs/guest-message',
+      '/jobs/payment-intent',
+      '/jobs/payment-simulate',
+      '/jobs/privacy-erase',
+      '/jobs/retention-sweep',
+    ])
+  })
+
+  it('refuses a gated route with the same answer as an unknown one, and enqueues nothing', async () => {
+    const { app, send } = build({ features: [] })
+
+    const res = await app.request('/jobs/booking-confirmed', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...authorised },
+      body: JSON.stringify({ propertyId: 'p1', reservationId: 'r1', notificationId: 'n1' }),
+    })
+
+    expect(res.status).toBe(404)
+    await expect(res.json()).resolves.toEqual({ error: 'not found' })
+    expect(send).not.toHaveBeenCalled()
+  })
+
+  it('checks after authentication, so the gate leaks nothing to an unauthenticated caller', async () => {
+    const { app } = build({ features: [] })
+
+    const res = await app.request('/jobs/booking-confirmed', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ propertyId: 'p1', reservationId: 'r1' }),
+    })
+
+    expect(res.status).toBe(401)
   })
 })
