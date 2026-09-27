@@ -4,7 +4,9 @@ import {
   disclosurePhrase,
   escalateThread,
   getReservationFacts,
+  getThreadForReservation,
   listMessages,
+  recentRouting,
 } from '@bookone/core/concierge'
 import { agentActor } from '@bookone/core/events'
 import { runAgent, type RunOutcome } from './runner'
@@ -43,6 +45,8 @@ export type RespondOutcome =
   | { status: 'answered'; runId: string; messageId: string }
   | { status: 'escalated'; runId: string; reason: string }
   | { status: 'failed'; runId: string; reason: string }
+  /** The agent stays quiet: an emergency on this thread is still with a person (ADR-021). */
+  | { status: 'silenced'; runId: null; reason: string }
 
 export async function respondToGuestMessage(input: RespondInput): Promise<RespondOutcome> {
   /*
@@ -51,6 +55,29 @@ export async function respondToGuestMessage(input: RespondInput): Promise<Respon
    * into what the guest reads, and it is a stored string.
    */
   const facts = await getReservationFacts(input.propertyId, input.reservationId)
+
+  /*
+   * What this thread's recent turns were routed to, newest first — the sticky
+   * profile and the "unknown twice" rule both read it (ADR-021).
+   */
+  const history = await recentRouting(input.propertyId, input.threadId)
+
+  /*
+   * The emergency rule's "stop replying". After an emergency the thread is with
+   * a person until a person hands it back; an assistant cheerfully answering
+   * the next message about breakfast would read as not having noticed. Handing
+   * back moves the thread out of `escalated`, and the agent resumes.
+   */
+  if (history[0]?.hardRule === 'emergency') {
+    const thread = await getThreadForReservation(input.propertyId, input.reservationId)
+    if (thread?.status === 'escalated') {
+      return {
+        status: 'silenced',
+        runId: null,
+        reason: 'emergency on this thread is with a person',
+      }
+    }
+  }
 
   const run: RunOutcome = await runAgent({
     agent: 'AG-01',
@@ -61,6 +88,10 @@ export async function respondToGuestMessage(input: RespondInput): Promise<Respon
     ...(input.triggerEventId !== undefined ? { triggerEventId: input.triggerEventId } : {}),
     input: {
       message: input.message,
+      history,
+      // Every thread today belongs to a stay. Pre-sale threads arrive with
+      // channels that carry no reservation (plan §4).
+      hasBooking: true,
       ...(input.intent ? { intent: input.intent } : {}),
       ...(facts?.businessHours ? { businessHours: facts.businessHours } : {}),
     },

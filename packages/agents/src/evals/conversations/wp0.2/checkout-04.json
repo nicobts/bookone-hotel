@@ -1,0 +1,18 @@
+{
+  "profile": "checkout",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Possiamo fare un check out tardivo?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "checkout"
+      }
+    }
+  ],
+  "must_not": []
+}

@@ -6,6 +6,8 @@ import { MockEricsoftAdapter } from '@bookone/adapters/mock-ericsoft'
 import { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
 import { MockAlloggiatiAdapter } from '@bookone/adapters/mock-alloggiati'
 import { getNotificationProvider, registerNotificationProvider } from '@bookone/core/notifications'
+import { openRouterFromEnv, registerProvider } from '@bookone/core/llm'
+import { loadProfiles } from '@bookone/agents/profiles'
 import { createApp } from './app'
 import { LogNotificationProvider } from './notifications/log-provider'
 import { createDocumentDeleter } from './storage/documents'
@@ -118,6 +120,21 @@ registerNotificationProvider(new LogNotificationProvider(logger))
 
 const notifications = getNotificationProvider(env.NOTIFICATION_PROVIDER)
 
+/**
+ * The concierge's profiles, validated now (ADR-021). A malformed profile stops
+ * the process here, naming the file and the reason — not later, as a guest who
+ * never gets an answer.
+ */
+const profiles = loadProfiles()
+
+/**
+ * The model gateway, if configured (ADR-023, ADR-029). Registration runs the
+ * residency gate: OpenRouter is admitted only as ADR-029's recorded exception,
+ * with its register entry. No key, no model — the orchestrator routes by rules.
+ */
+const llm = openRouterFromEnv(env)
+if (llm) registerProvider(llm)
+
 const app = createApp({
   queue,
   adapter,
@@ -154,6 +171,9 @@ logger.info(
     // Printed on every boot on purpose. "Which environment is taking real
     // money" should never be a question anyone has to go and look up.
     paymentsSimulated: paymentAdapter.simulated,
+    // Which model answers guests, or none. Printed for the same reason.
+    llm: llm ? `${llm.name} (${llm.residency.region})` : 'none — routing by rules',
+    profiles: profiles.size,
   },
   'queue started, handlers registered',
 )

@@ -57,6 +57,16 @@ const envSchema = z.object({
     .string()
     .min(24, 'PAYMENT_WEBHOOK_SECRET must be at least 24 characters'),
 
+  /**
+   * The model gateway (ADR-023, ADR-029). All optional: without a key no model
+   * is registered and the concierge routes by rules — the state CI runs in.
+   * A key without a model per tier refuses to boot (`openRouterFromEnv`).
+   */
+  OPENROUTER_API_KEY: z.string().optional(),
+  LLM_MODEL_SMALL: z.string().optional(),
+  LLM_MODEL_STRONG: z.string().optional(),
+  OPENROUTER_BASE_URL: z.string().optional(),
+
   /** Where the guest comes back to, and where the simulated checkout lives. */
   APP_URL: z.string().url().default('http://localhost:3000'),
 })

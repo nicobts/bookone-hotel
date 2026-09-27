@@ -714,6 +714,8 @@
     "taskRecorded": "Ich habe das notiert, das Haus kann es sehen. Falls sich niemand gemeldet hat, sagen Sie es mir noch einmal, dann kümmere ich mich darum.",
     "escalated": "Hier möchte ich nicht raten, deshalb habe ich die Frage an das Haus weitergegeben. Jemand antwortet Ihnen hier.",
     "escalatedOutOfHours": "Hier möchte ich nicht raten, deshalb habe ich die Frage an das Haus weitergegeben. Die Rezeption antwortet {hours}, es kann also etwas dauern.",
-    "disclosure": "Sie schreiben mit einem Assistenten. Er antwortet nur mit dem, was das Haus schriftlich hinterlegt hat, und gibt alles andere an eine Person weiter."
+    "disclosure": "Sie schreiben mit einem Assistenten. Er antwortet nur mit dem, was das Haus schriftlich hinterlegt hat, und gibt alles andere an eine Person weiter.",
+    "emergency": "Wenn jemand in Gefahr ist, rufen Sie sofort die 112 an. Der Anruf ist von jedem Telefon aus kostenlos, überall in der EU. Ich habe dieses Gespräch für das Personal des Hauses als dringend markiert; automatische Antworten sind hier beendet.",
+    "approvalPending": "Das braucht die Zustimmung einer Person, deshalb habe ich es an das Haus weitergegeben. Jemand antwortet Ihnen hier."
   }
 }

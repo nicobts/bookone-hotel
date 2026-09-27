@@ -1,0 +1,18 @@
+{
+  "profile": "booking-support",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Vorrei cambiare le date della mia prenotazione"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "booking-support"
+      }
+    }
+  ],
+  "must_not": []
+}

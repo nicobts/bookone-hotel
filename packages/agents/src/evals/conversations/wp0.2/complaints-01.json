@@ -1,0 +1,18 @@
+{
+  "profile": "complaints",
+  "channel": "webchat",
+  "lang": "en",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "The bathroom is dirty, this is unacceptable"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "complaints"
+      }
+    }
+  ],
+  "must_not": []
+}

@@ -1,0 +1,28 @@
+{
+  "id": "payments",
+  "version": 1,
+  "phase": 0,
+  "description": "Send payment links, confirm receipt, explain charges. Refunds are never T1.",
+  "modelTier": "strong",
+  "maxSteps": 5,
+  "prompt": "payments",
+  "tools": ["find_booking", "create_payment_link", "get_payment_status", "explain_charges"],
+  "approvalRequired": ["create_payment_link"],
+  "escalation": [
+    {
+      "when": "refund, chargeback or compensation mentioned",
+      "to": "T2",
+      "notify": ["inbox", "staff_whatsapp"]
+    },
+    {
+      "when": "payment disputed",
+      "to": "T3",
+      "notify": ["inbox", "owner_whatsapp"]
+    }
+  ],
+  "grounding": {
+    "sources": ["booking_record", "policy"],
+    "unknownBehaviour": "escalate_T2"
+  },
+  "primaryAction": "create_payment_link"
+}

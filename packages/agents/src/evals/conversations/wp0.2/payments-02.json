@@ -1,0 +1,18 @@
+{
+  "profile": "payments",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Come posso pagare la caparra?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "payments"
+      }
+    }
+  ],
+  "must_not": []
+}

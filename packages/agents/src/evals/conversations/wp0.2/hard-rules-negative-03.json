@@ -1,0 +1,18 @@
+{
+  "profile": "hard-rules-negative",
+  "channel": "webchat",
+  "lang": "en",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Is there a fire pit in the garden?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "hardRule": null
+      }
+    }
+  ],
+  "must_not": []
+}

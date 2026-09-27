@@ -12,6 +12,7 @@
  */
 
 import type { Gate } from '@bookone/core/onboarding'
+import { profileToolNames } from './profiles'
 
 /** T1 acts and is logged. T2 proposes and a human taps. T3 may only summarise. */
 export type AutonomyTier = 'T1' | 'T2' | 'T3'
@@ -84,37 +85,45 @@ export const AG_05: AgentDefinition = {
  * answer*, not an invented one. That is a mistake a property can see, correct
  * in one edit, and recover from.
  *
- * The tier is about capability, not about caution: anything touching money or
- * dates is T2, and the tools for it deliberately do not exist yet (Sprint 8
- * builds the proposal surface those need). A complaint with legal wording is T3
- * and reaches a person with nothing drafted.
+ * The tier is about capability, not about caution. The hard rules route money,
+ * identity and emergencies to a person before any profile runs, and the
+ * money-shaped tools are held for approval rather than executed (ADR-021).
  *
- * ## Why `model: 'none'`, on the agent that most obviously wants a model
+ * ## The model routes; it does not write (ADR-022, ADR-023)
  *
- * Because today it would have nothing to do. Matching a question to a stored
- * answer is retrieval, and relaying a stored sentence is not generation —
- * exactly the reasoning AG-05 records for arithmetic. `LLM_API_KEY` is empty and
- * no provider is registered, so this is also the honest description of what
- * runs.
- *
- * When a provider is connected, the model widens **recall** — which phrasings
- * reach the right article — and the tier and the tool grants below do not move.
- * The day it is asked to write a sentence instead of choosing one is the day
- * this comment and ADR-009 both have to change, which is the point of writing
- * it down here.
+ * When a provider is registered (OpenRouter, ADR-029), the model classifies
+ * the turn and picks one tool from the profile's allow-list with its
+ * arguments. That widens **recall** — which phrasings reach the right tool —
+ * and changes neither the tier nor what the guest can be told, which is still
+ * a tool's phrase. Without a provider the same orchestrator routes by rules,
+ * which is the behaviour this agent had before profiles existed. The day a
+ * model is asked to write a sentence instead of choosing one is the day ADR-022
+ * has to be superseded.
  */
 export const AG_01: AgentDefinition = {
   name: 'AG-01',
-  description: 'Guest Concierge — answers in-stay questions from the property knowledge base',
+  description:
+    'Guest Concierge — the Guest Desk orchestrator: hard rules, routing, one profile per turn',
   tier: 'T1',
   feature: 'concierge',
   /*
-   * Five tools, and the absences matter more than the presences. Nothing here
-   * changes a booking, quotes a price, moves a date or touches money (06 §2:
-   * those are T2), and nothing fiscal exists to grant (D11, ADR-011).
+   * The router's own two tools, plus every tool any guest-facing or owner
+   * profile lists (ADR-021). The grant is the outer fence; each profile's
+   * allow-list is the inner one, checked per turn by the orchestrator.
+   *
+   * The absences still matter more than the presences. The money-shaped tools
+   * here (`cancel_booking`, `create_payment_link`, `request_late_checkout`) are
+   * in their profiles' `approvalRequired`, so the orchestrator records them
+   * and hands them to a person instead of running them; and nothing fiscal
+   * exists to grant (D11, ADR-011).
    */
-  tools: ['search_kb', 'get_reservation', 'get_property_info', 'create_task', 'escalate'],
-  model: 'none',
+  tools: ['create_task', 'escalate', ...profileToolNames()],
+  /*
+   * Classification: the model routes and picks tools, and never writes to a
+   * guest (ADR-022). What actually ran is recorded per run — `none` when the
+   * turn was routed by rules alone.
+   */
+  model: 'classification',
   /*
    * Zero because nothing costs anything yet. It becomes a real ceiling the day
    * a provider is registered, and it is here now so that connecting one is a

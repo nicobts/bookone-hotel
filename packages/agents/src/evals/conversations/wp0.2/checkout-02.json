@@ -1,0 +1,18 @@
+{
+  "profile": "checkout",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Mi serve la fattura intestata all'azienda"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "checkout"
+      }
+    }
+  ],
+  "must_not": []
+}

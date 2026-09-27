@@ -3,6 +3,7 @@ import type { PmsReservation } from '@bookone/core/adapters'
 import { billingTools } from './billing'
 import { conciergeTools } from './concierge'
 import { draftKnowledgeTool } from './onboarding'
+import { guestDeskTools } from './guest-desk'
 
 /**
  * Typed domain tools — the complete surface through which agents act.
@@ -46,6 +47,14 @@ export interface ToolResult {
 export type Tool = {
   name: string
   description: string
+  /**
+   * JSON Schema of the input, for a model choosing this tool (ADR-023). Absent
+   * on tools no model ever chooses. The context — property, stay, thread —
+   * is never part of it: the runner fixes those, and a model cannot name them.
+   */
+  input?: Record<string, unknown>
+  /** Whether the action can be undone (the per-call record, ADR-021). */
+  reversible?: boolean
   run: (context: ToolContext, input: Record<string, unknown>) => Promise<ToolResult>
 }
 
@@ -105,6 +114,7 @@ export const tools: Record<string, Tool> = {
   ...Object.fromEntries(conciergeTools.map((tool) => [tool.name, tool])),
   ...Object.fromEntries(billingTools.map((tool) => [tool.name, tool])),
   [draftKnowledgeTool.name]: draftKnowledgeTool,
+  ...Object.fromEntries(guestDeskTools.map((tool) => [tool.name, tool])),
 }
 
 export function getTool(name: string): Tool | undefined {

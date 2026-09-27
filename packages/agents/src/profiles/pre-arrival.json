@@ -1,0 +1,33 @@
+{
+  "id": "pre-arrival",
+  "version": 1,
+  "phase": 0,
+  "description": "Send pre-arrival link, collect ETA, guide document capture, answer arrival logistics.",
+  "modelTier": "small",
+  "maxSteps": 5,
+  "prompt": "pre-arrival",
+  "tools": [
+    "find_booking",
+    "send_prearrival_link",
+    "record_eta",
+    "get_capture_status",
+    "get_hotel_policy"
+  ],
+  "approvalRequired": [],
+  "escalation": [
+    {
+      "when": "document capture failed twice",
+      "to": "T2",
+      "notify": ["inbox"]
+    },
+    {
+      "when": "guest asks whether identity is verified or accepted",
+      "to": "T2"
+    }
+  ],
+  "grounding": {
+    "sources": ["booking_record", "hotel_content", "policy"],
+    "unknownBehaviour": "escalate_T2"
+  },
+  "primaryAction": "send_prearrival_link"
+}

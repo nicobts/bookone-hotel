@@ -1,0 +1,18 @@
+{
+  "profile": "hard-rules-negative",
+  "channel": "webchat",
+  "lang": "en",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "What brand of coffee do you serve?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "hardRule": null
+      }
+    }
+  ],
+  "must_not": []
+}

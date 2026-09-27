@@ -3,10 +3,12 @@
 **Generated from `packages/core/src/privacy/subprocessors.ts`. Do not edit by hand** —
 CI compares this file against the rendered output and fails when they differ.
 
-D9 makes EU residency non-negotiable: no service, endpoint or region outside the EU
-without an entry here first. Four entries below are `undecided` on purpose — they
-are the external decisions in 04 §0, listed so this register describes the system
-as it is rather than as those decisions would leave it.
+D9, as amended by ADR-029: stored data stays in the EU, and no service, endpoint or
+region — in the EU or not — is used without an entry here first. Model processing
+outside the EU is the one recorded exception, and its entry says so.
+Four entries below are `undecided` on purpose — the external decisions in 04 §0,
+listed so this register describes the system as it is rather than as those decisions
+would leave it.
 
 ## In use
 
@@ -71,6 +73,26 @@ Renders and forwards; stores nothing. The pinning is a deployment setting, which
 
 ADR-003. The worker is a persistent Node process and never serverless, which narrows the hosting choice more than residency does.
 
+### SP-006 — OpenRouter
+
+**Purpose.** Model gateway for the concierge orchestrator (intent routing, tool selection) and, from WP0.4, document OCR.
+
+**Processing region.** Global routing; processing may be outside the EU (EU in-region routing available on Business/Enterprise)
+
+**Entity established in.** United States
+
+**Categories of personal data.**
+
+- guest message text in transit
+- booking facts passed as tool context
+- identity-document images in transit (WP0.4, demo documents only until the transfer assessment covers it)
+
+**Contract.** OpenRouter terms and DPA with SCCs; requests set zero data retention and deny data collection. Permitted by ADR-029 as a recorded exception to EU-only processing; storage stays in the EU.
+
+**Residency last verified.** 2026-09-27
+
+Enforced in code: `registerProvider` refuses a non-EU provider unless it cites ADR-029 and this entry exists. Reassessed at production with paying properties; moving to EU routing is a base-URL change.
+
 ## Not chosen — no data flowing
 
 ### SP-004 — Email service provider — undecided
@@ -104,22 +126,6 @@ The port exists and a mock sender is behind it. Nothing has ever been sent to a 
 **Residency last verified.** — (nothing to verify; no provider chosen)
 
 WhatsApp implies Meta as a further sub-processor whichever BSP is chosen. That has to be disclosed here as its own entry when the choice is made, not folded into the BSP’s line.
-
-### SP-006 — LLM provider — undecided
-
-**Purpose.** Language model inference for the concierge and the extraction agents.
-
-**Processing region.** —
-
-**Entity established in.** —
-
-**Categories of personal data.** None — nothing is sent to this provider.
-
-**Contract.** Blocked: D18 and ADR-012 require verified EU processing and an entry here before a key is set.
-
-**Residency last verified.** — (nothing to verify; no provider chosen)
-
-Enforced in code: `registerProvider` refuses any provider whose register entry id is not found in this file. AG-01 currently runs as a deterministic router with no model behind it at all.
 
 ### SP-007 — Payment provider — undecided
 

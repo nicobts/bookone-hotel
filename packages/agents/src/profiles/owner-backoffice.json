@@ -1,0 +1,29 @@
+{
+  "id": "owner-backoffice",
+  "version": 1,
+  "phase": 0,
+  "description": "Separate orchestrator for the owner on WhatsApp. Read-only queries over tenant data. Not reachable by guests.",
+  "modelTier": "strong",
+  "maxSteps": 4,
+  "prompt": "owner-backoffice",
+  "tools": [
+    "list_arrivals",
+    "list_capture_status",
+    "list_open_complaints",
+    "list_pending_approvals"
+  ],
+  "approvalRequired": [],
+  "escalation": [
+    {
+      "when": "owner asks to change data",
+      "to": "T2",
+      "notify": ["inbox"]
+    }
+  ],
+  "grounding": {
+    "sources": ["booking_record", "guest_record"],
+    "unknownBehaviour": "say_unknown"
+  },
+  "primaryAction": "list_capture_status",
+  "guestFacing": false
+}

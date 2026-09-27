@@ -1,0 +1,18 @@
+{
+  "profile": "payments",
+  "channel": "webchat",
+  "lang": "sl",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Kako lahko izvedem plačilo?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "payments"
+      }
+    }
+  ],
+  "must_not": []
+}

@@ -1,0 +1,27 @@
+{
+  "id": "booking-support",
+  "version": 1,
+  "phase": 0,
+  "description": "Existing booking: look up, modify dates/occupancy within policy, cancel within policy.",
+  "modelTier": "strong",
+  "maxSteps": 6,
+  "prompt": "booking-support",
+  "tools": ["find_booking", "modify_booking", "cancel_booking", "get_hotel_policy"],
+  "approvalRequired": ["cancel_booking"],
+  "escalation": [
+    {
+      "when": "requested change outside cancellation/modification policy",
+      "to": "T2",
+      "notify": ["inbox", "staff_whatsapp"]
+    },
+    {
+      "when": "booking not found after identity questions",
+      "to": "T2"
+    }
+  ],
+  "grounding": {
+    "sources": ["booking_record", "policy"],
+    "unknownBehaviour": "escalate_T2"
+  },
+  "primaryAction": "modify_booking"
+}

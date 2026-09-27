@@ -1,0 +1,18 @@
+{
+  "profile": "payments",
+  "channel": "webchat",
+  "lang": "en",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "How can I pay the deposit?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "payments"
+      }
+    }
+  ],
+  "must_not": []
+}

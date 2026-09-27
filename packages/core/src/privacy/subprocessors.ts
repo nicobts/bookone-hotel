@@ -131,16 +131,22 @@ export const SUBPROCESSORS: SubProcessor[] = [
   },
   {
     id: 'SP-006',
-    name: 'LLM provider — undecided',
-    purpose: 'Language model inference for the concierge and the extraction agents.',
-    dataCategories: [],
-    region: '—',
-    established: '—',
-    status: 'undecided',
+    name: 'OpenRouter',
+    purpose:
+      'Model gateway for the concierge orchestrator (intent routing, tool selection) and, from WP0.4, document OCR.',
+    dataCategories: [
+      'guest message text in transit',
+      'booking facts passed as tool context',
+      'identity-document images in transit (WP0.4, demo documents only until the transfer assessment covers it)',
+    ],
+    region:
+      'Global routing; processing may be outside the EU (EU in-region routing available on Business/Enterprise)',
+    established: 'United States',
+    status: 'staging',
     contract:
-      'Blocked: D18 and ADR-012 require verified EU processing and an entry here before a key is set.',
-    verifiedAt: null,
-    note: 'Enforced in code: `registerProvider` refuses any provider whose register entry id is not found in this file. AG-01 currently runs as a deterministic router with no model behind it at all.',
+      'OpenRouter terms and DPA with SCCs; requests set zero data retention and deny data collection. Permitted by ADR-029 as a recorded exception to EU-only processing; storage stays in the EU.',
+    verifiedAt: '2026-09-27',
+    note: 'Enforced in code: `registerProvider` refuses a non-EU provider unless it cites ADR-029 and this entry exists. Reassessed at production with paying properties; moving to EU routing is a base-URL change.',
   },
   {
     id: 'SP-007',
@@ -204,10 +210,19 @@ export function renderRegister(): string {
   )
   lines.push('CI compares this file against the rendered output and fails when they differ.')
   lines.push('')
-  lines.push('D9 makes EU residency non-negotiable: no service, endpoint or region outside the EU')
-  lines.push('without an entry here first. Four entries below are `undecided` on purpose — they')
-  lines.push('are the external decisions in 04 §0, listed so this register describes the system')
-  lines.push('as it is rather than as those decisions would leave it.')
+  const undecided = SUBPROCESSORS.filter((sp) => sp.status === 'undecided').length
+  const counted =
+    ['None', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'][undecided] ??
+    String(undecided)
+
+  lines.push('D9, as amended by ADR-029: stored data stays in the EU, and no service, endpoint or')
+  lines.push('region — in the EU or not — is used without an entry here first. Model processing')
+  lines.push('outside the EU is the one recorded exception, and its entry says so.')
+  lines.push(
+    `${counted} ${undecided === 1 ? 'entry below is' : 'entries below are'} \`undecided\` on purpose — the external decisions in 04 §0,`,
+  )
+  lines.push('listed so this register describes the system as it is rather than as those decisions')
+  lines.push('would leave it.')
   lines.push('')
 
   const groups: [SubProcessorStatus, string][] = [

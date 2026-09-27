@@ -1,0 +1,18 @@
+{
+  "profile": "complaints",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "La camera è sporca, sono molto deluso"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "complaints"
+      }
+    }
+  ],
+  "must_not": []
+}

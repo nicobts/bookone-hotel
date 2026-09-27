@@ -714,6 +714,8 @@
     "taskRecorded": "Ho annotato la richiesta e la struttura può vederla. Se nessuno le ha risposto, me lo dica di nuovo e mi assicuro che qualcuno lo faccia.",
     "escalated": "Su questo non voglio tirare a indovinare, quindi ho passato la domanda alla struttura. Qualcuno le risponderà qui.",
     "escalatedOutOfHours": "Su questo non voglio tirare a indovinare, quindi ho passato la domanda alla struttura. La reception risponde {hours}, quindi potrebbe volerci un po'.",
-    "disclosure": "Sta scrivendo a un assistente. Risponde solo con quanto la struttura ha messo per iscritto e passa tutto il resto a una persona."
+    "disclosure": "Sta scrivendo a un assistente. Risponde solo con quanto la struttura ha messo per iscritto e passa tutto il resto a una persona.",
+    "emergency": "Se qualcuno è in pericolo, chiami subito il 112: è gratuito da qualsiasi telefono, in tutta l'UE. Ho segnalato questa conversazione come urgente al personale della struttura e le risposte automatiche qui sono sospese.",
+    "approvalPending": "Serve l'approvazione di una persona, quindi ho passato la richiesta alla struttura. Qualcuno le risponderà qui."
   }
 }

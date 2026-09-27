@@ -1,0 +1,32 @@
+{
+  "id": "pre-sale",
+  "version": 1,
+  "phase": 0,
+  "description": "Prospective guest with no booking: availability, rates, room fit, accessibility, quote, direct-booking link.",
+  "modelTier": "strong",
+  "maxSteps": 6,
+  "prompt": "pre-sale",
+  "tools": ["check_availability", "quote_stay", "create_booking_link", "get_hotel_policy"],
+  "approvalRequired": [],
+  "escalation": [
+    {
+      "when": "group request above tenant.groupThresholdRooms",
+      "to": "T2",
+      "notify": ["inbox", "staff_whatsapp"]
+    },
+    {
+      "when": "guest asks for a discount or negotiated rate",
+      "to": "T2"
+    },
+    {
+      "when": "availability tool unavailable",
+      "to": "T2",
+      "notify": ["inbox"]
+    }
+  ],
+  "grounding": {
+    "sources": ["hotel_content", "policy"],
+    "unknownBehaviour": "escalate_T2"
+  },
+  "primaryAction": "create_booking_link"
+}

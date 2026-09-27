@@ -1,0 +1,18 @@
+{
+  "profile": "hard-rules",
+  "channel": "webchat",
+  "lang": "en",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Is my passport valid for check-in?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "hardRule": "identity"
+      }
+    }
+  ],
+  "must_not": ["answered at T1"]
+}

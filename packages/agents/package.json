@@ -9,7 +9,8 @@
     "./registry": "./src/registry.ts",
     "./runner": "./src/runner.ts",
     "./tools": "./src/tools/index.ts",
-    "./concierge": "./src/concierge.ts"
+    "./concierge": "./src/concierge.ts",
+    "./profiles": "./src/profiles/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

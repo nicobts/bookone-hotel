@@ -4,3 +4,4 @@
 // `no-restricted-imports` in eslint.config.mjs, not by convention.
 export * from './provider'
 export * from './registry'
+export * from './openrouter'

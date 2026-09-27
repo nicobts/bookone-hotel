@@ -1,0 +1,19 @@
+{
+  "profile": "pre-sale",
+  "channel": "webchat",
+  "lang": "en",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Do you have a room for two adults in March?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "pre-sale",
+        "hasBooking": false
+      }
+    }
+  ],
+  "must_not": []
+}

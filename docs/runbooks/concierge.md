@@ -5,8 +5,13 @@ to change that, and what has to be true before a language model is connected.
 
 ## What runs today
 
-**No model.** `LLM_API_KEY` is empty, no `LlmProvider` is registered, and AG-01
-is a deterministic router in `packages/agents/src/runner.ts`:
+**The Guest Desk orchestrator** (ADR-021), in `packages/agents/src/orchestrator.ts`:
+hard rules (emergency, money, identity, unknown-twice) first, then routing to one
+profile, then one tool from that profile's allow-list. With `OPENROUTER_API_KEY`
+and the two model ids set, a model routes and picks the tool (ADR-023, ADR-029);
+without them, routing is by rules. Either way the guest reads a tool's phrase
+(ADR-022). With no model, what runs is the behaviour below — the `request`
+route and the `general-info` profile:
 
 ```
 guest message

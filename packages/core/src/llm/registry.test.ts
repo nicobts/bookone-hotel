@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { clearProviders, getProvider, listProviders, registerProvider } from './registry'
 import { ResidencyError, type LlmProvider, type ResidencyDeclaration } from './provider'
+import { OPENROUTER_RESIDENCY, openRouterFromEnv, tierFor } from './openrouter'
 
 const NOW = new Date('2026-08-28T00:00:00Z')
 
@@ -88,5 +89,67 @@ describe('getProvider', () => {
     // null deref inside an agent run, long after the residency question was
     // the actual problem.
     expect(() => getProvider('never-registered')).toThrow(ResidencyError)
+  })
+})
+
+describe('the ADR-029 transfer exception', () => {
+  const later = new Date('2026-10-01T00:00:00Z')
+
+  it('accepts non-EU processing only when the provider cites ADR-029', () => {
+    registerProvider(
+      provider('openrouter', {
+        euProcessing: false,
+        transferException: 'ADR-029',
+        verifiedAt: '2026-09-27',
+      }),
+      later,
+    )
+
+    expect(getProvider('openrouter').residency.euProcessing).toBe(false)
+  })
+
+  it('still refuses non-EU processing without the citation', () => {
+    expect(() =>
+      registerProvider(
+        provider('quiet-transfer', { euProcessing: false, verifiedAt: '2026-09-27' }),
+        later,
+      ),
+    ).toThrow(/EU processing is not declared/)
+  })
+
+  it('does not waive anything else — the register entry must still exist', () => {
+    // The exception is a declared transfer, not a missing check.
+    expect(() =>
+      registerProvider(
+        provider('undisclosed', {
+          euProcessing: false,
+          transferException: 'ADR-029',
+          subProcessorRegisterEntry: 'SP-999',
+          verifiedAt: '2026-09-27',
+        }),
+        later,
+      ),
+    ).toThrow(/SP-999/)
+  })
+
+  it('declares OpenRouter exactly as the register records it', () => {
+    registerProvider(provider('openrouter', OPENROUTER_RESIDENCY), later)
+    expect(getProvider('openrouter').residency.subProcessorRegisterEntry).toBe('SP-006')
+  })
+})
+
+describe('OpenRouter configuration', () => {
+  it('is absent without a key — the orchestrator then routes deterministically', () => {
+    expect(openRouterFromEnv({})).toBeNull()
+  })
+
+  it('refuses a key without a model per tier', () => {
+    expect(() => openRouterFromEnv({ OPENROUTER_API_KEY: 'k' })).toThrow(/LLM_MODEL_SMALL/)
+  })
+
+  it('picks the small tier for classification and the strong tier otherwise', () => {
+    expect(tierFor({ task: 'classification' })).toBe('small')
+    expect(tierFor({ task: 'conversation' })).toBe('strong')
+    expect(tierFor({ task: 'conversation', tier: 'small' })).toBe('small')
   })
 })

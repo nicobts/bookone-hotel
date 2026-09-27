@@ -40,8 +40,17 @@ export interface LlmMessage {
   content: string
 }
 
+/**
+ * Two model tiers (ADR-023): `small` for routing and classification, `strong`
+ * for choosing an action and extracting its arguments. Which model each tier is
+ * lives in the provider's configuration; nothing outside the registry names one.
+ */
+export type ModelTier = 'small' | 'strong'
+
 export interface LlmRequest {
   task: LlmTask
+  /** Defaults to `small` for classification and `strong` for everything else. */
+  tier?: ModelTier
   messages: LlmMessage[]
   /** Hard ceiling. A runaway generation is a cost incident, not a bug report. */
   maxOutputTokens?: number
@@ -92,7 +101,11 @@ export interface LlmProvider {
    *
    * Not a boolean the caller sets: the provider asserts it about itself, the
    * registry refuses anything false, and the register entry names what was
-   * checked. D9 is not negotiable and this is where it stops being a promise.
+   * checked. D9 is where it stops being a promise.
+   *
+   * ADR-029 allows one recorded exception: model processing outside the EU,
+   * declared as such, with a register entry that says so. Stored data never
+   * leaves the EU either way.
    */
   readonly residency: ResidencyDeclaration
 
@@ -107,6 +120,11 @@ export interface ResidencyDeclaration {
   subProcessorRegisterEntry: string
   /** ISO date the claim was last verified by a human. */
   verifiedAt: string
+  /**
+   * The decision that permits `euProcessing: false` (ADR-029). The only value
+   * the registry accepts; anything else is refused as before.
+   */
+  transferException?: 'ADR-029'
 }
 
 export class ResidencyError extends Error {

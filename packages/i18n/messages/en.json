@@ -714,6 +714,8 @@
     "taskRecorded": "I have written this down and the property can see it. If nobody has come back to you, tell me again and I will make sure someone does.",
     "escalated": "I do not want to guess at this one, so I have passed it to the property. Someone will reply here.",
     "escalatedOutOfHours": "I do not want to guess at this one, so I have passed it to the property. The desk answers {hours}, so it may be a little while.",
-    "disclosure": "You are messaging an assistant. It answers from what the property has written down, and passes anything else to a person."
+    "disclosure": "You are messaging an assistant. It answers from what the property has written down, and passes anything else to a person.",
+    "emergency": "If anyone is in danger, call 112 now. It is free from any phone, anywhere in the EU. I have marked this conversation urgent for the property's staff, and automatic replies here have stopped.",
+    "approvalPending": "This needs a person's approval, so I have passed it to the property. Someone will reply here."
   }
 }

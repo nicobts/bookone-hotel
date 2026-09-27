@@ -31,7 +31,8 @@ export default tseslint.config(
     },
   },
   {
-    // ADR-012: no agent or domain module may import a model vendor SDK directly.
+    // ADR-012 / ADR-023: no agent or domain module may import a model vendor SDK,
+    // the AI SDK or a provider package directly.
     // LLM access goes through the LlmProvider abstraction in @bookone/core.
     files: ['packages/agents/**/*.ts', 'packages/core/**/*.ts', 'apps/**/*.{ts,tsx}'],
     ignores: ['packages/core/src/llm/**'],
@@ -47,6 +48,16 @@ export default tseslint.config(
             {
               name: 'openai',
               message: 'ADR-012: use the LlmProvider abstraction in @bookone/core/llm.',
+            },
+            {
+              name: 'ai',
+              message: 'ADR-023: the AI SDK lives behind LlmProvider in @bookone/core/llm.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['@ai-sdk/*', '@openrouter/*'],
+              message: 'ADR-023: provider packages live behind LlmProvider in @bookone/core/llm.',
             },
           ],
         },

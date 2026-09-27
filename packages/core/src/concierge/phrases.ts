@@ -98,3 +98,16 @@ export function escalatedOutOfHoursPhrase(locale: string, hours: string): string
 export function disclosurePhrase(locale: string): string {
   return catalogues[resolve(locale)].concierge.disclosure
 }
+
+/**
+ * The emergency hard rule's reply (ADR-021). A fixed template, not generated:
+ * 112 is the one fact it states, and it is true everywhere we operate.
+ */
+export function emergencyPhrase(locale: string): string {
+  return catalogues[resolve(locale)].concierge.emergency
+}
+
+/** Said when a profile's action needs a person to approve it first (ADR-021, T2). */
+export function approvalPendingPhrase(locale: string): string {
+  return catalogues[resolve(locale)].concierge.approvalPending
+}

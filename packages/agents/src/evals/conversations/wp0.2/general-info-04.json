@@ -1,0 +1,18 @@
+{
+  "profile": "general-info",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "C'è il wifi in camera?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "general-info"
+      }
+    }
+  ],
+  "must_not": []
+}

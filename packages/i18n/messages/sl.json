@@ -714,6 +714,8 @@
     "taskRecorded": "To sem zabeležil in nastanitev to vidi. Če se vam nihče ni oglasil, mi povejte še enkrat in poskrbel bom, da se.",
     "escalated": "Pri tem ne želim ugibati, zato sem vprašanje predal nastanitvi. Nekdo vam bo odgovoril tukaj.",
     "escalatedOutOfHours": "Pri tem ne želim ugibati, zato sem vprašanje predal nastanitvi. Recepcija odgovarja {hours}, zato lahko traja nekaj časa.",
-    "disclosure": "Pišete z asistentom. Odgovarja samo s tem, kar je nastanitev zapisala, vse drugo pa preda osebi."
+    "disclosure": "Pišete z asistentom. Odgovarja samo s tem, kar je nastanitev zapisala, vse drugo pa preda osebi.",
+    "emergency": "Če je kdo v nevarnosti, takoj pokličite 112. Klic je brezplačen s katerega koli telefona, povsod v EU. Ta pogovor je zdaj za osebje nastanitve označen kot nujen, samodejni odgovori pa so tukaj ustavljeni.",
+    "approvalPending": "Za to je potrebna odobritev osebe, zato je bila zahteva posredovana nastanitvi. Nekdo vam bo odgovoril tukaj."
   }
 }

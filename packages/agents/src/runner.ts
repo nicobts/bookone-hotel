@@ -1,8 +1,10 @@
 import { agentRuns, asService } from '@bookone/core/db'
-import { classifyIntent, type GuestIntent } from '@bookone/core/concierge'
+import type { RoutingTurn } from '@bookone/core/concierge'
+import { listProviders, type LlmProvider } from '@bookone/core/llm'
 import { createFeatureCheck, gateOpen, type FeatureCheck } from '@bookone/core/onboarding'
 import { getAgent, grantsTool, type AgentDefinition, type AutonomyTier } from './registry'
 import { getTool, type ToolContext, type ToolResult } from './tools'
+import { orchestrate, type ExecuteTool, type NoteToolCall } from './orchestrator'
 
 /**
  * The agent runner (06-AI-AGENT-LAYER §3).
@@ -61,13 +63,34 @@ export interface AgentRunRecord {
   agent: string
   propertyId: string
   triggerEventId?: bigint
-  toolCalls: { tool: string; ok: boolean }[]
+  toolCalls: ToolCallRecord[]
   output: Record<string, unknown>
   confidence: number | null
   tierApplied: AutonomyTier
   outcome: 'auto' | null
   latencyMs: number
   model: string | null
+}
+
+/**
+ * One tool call, as recorded on the run (ADR-021).
+ *
+ * Every call leaves exactly one entry — executed, refused by the allow-list,
+ * or held for approval — with what went in and what came out, so the audit
+ * trail answers "what did the agent do with what" without re-running it. Kept
+ * in `agent_runs.tool_calls` for now; a table of its own, with `reversed_by`,
+ * arrives with reversal (WP0.3/0.6). The data map already puts this column on
+ * the message clock and redacts it on erasure.
+ */
+export interface ToolCallRecord {
+  tool: string
+  ok: boolean
+  status: 'done' | 'failed' | 'refused' | 'pending_approval'
+  /** The profile that chose the call, when the orchestrator ran one. */
+  profile?: string | null
+  input: Record<string, unknown>
+  output?: Record<string, unknown>
+  reversible: boolean
 }
 
 export interface RunOutcome {
@@ -92,11 +115,12 @@ export async function runAgent(
   input: RunInput,
   record: RunRecorder = recordToDatabase,
   features: FeatureCheck = createFeatureCheck(),
+  llm: LlmProvider | null = listProviders()[0] ?? null,
 ): Promise<RunOutcome> {
   const agent = getAgent(input.agent)
   const started = Date.now()
 
-  const toolCalls: { tool: string; ok: boolean; output?: Record<string, unknown> }[] = []
+  const toolCalls: ToolCallRecord[] = []
   // Assigned on both paths below; no initial value is ever read.
   let output: Record<string, unknown>
   let status: RunOutcome['status'] = 'accepted'
@@ -113,20 +137,27 @@ export async function runAgent(
       )
     }
 
-    const result = await execute(agent, input, (tool, toolInput) =>
-      callTool(
-        agent,
-        {
-          propertyId: input.propertyId,
-          ...(input.reservationId ? { reservationId: input.reservationId } : {}),
-          ...(input.threadId ? { threadId: input.threadId } : {}),
-          ...(input.locale ? { locale: input.locale } : {}),
-        },
-        tool,
-        toolInput,
-        toolCalls,
-      ),
-    )
+    const context: ToolContext = {
+      propertyId: input.propertyId,
+      ...(input.reservationId ? { reservationId: input.reservationId } : {}),
+      ...(input.threadId ? { threadId: input.threadId } : {}),
+      ...(input.locale ? { locale: input.locale } : {}),
+    }
+
+    const result = await execute(agent, input, {
+      call: (tool, toolInput, profile) =>
+        callTool(agent, context, tool, toolInput, toolCalls, profile),
+      note: (entry) =>
+        toolCalls.push({
+          tool: entry.tool,
+          ok: false,
+          status: entry.status,
+          profile: entry.profile,
+          input: entry.input,
+          reversible: getTool(entry.tool)?.reversible ?? false,
+        }),
+      llm,
+    })
 
     output = result.output
     confidence = result.confidence
@@ -143,7 +174,7 @@ export async function runAgent(
     agent: agent.name,
     propertyId: input.propertyId,
     ...(input.triggerEventId !== undefined ? { triggerEventId: input.triggerEventId } : {}),
-    toolCalls: toolCalls.map(({ tool, ok }) => ({ tool, ok })),
+    toolCalls,
     output,
     confidence,
     tierApplied,
@@ -152,7 +183,9 @@ export async function runAgent(
     // one when somebody taps the diff-card.
     outcome: status === 'accepted' && tierApplied === 'T1' ? 'auto' : null,
     latencyMs: Date.now() - started,
-    model: agent.model === 'none' ? null : agent.model,
+    // The model that actually answered, when one did; otherwise the declared
+    // need. A run routed by rules alone records no model, because none ran.
+    model: typeof output.model === 'string' ? output.model : null,
   })
 
   return {
@@ -169,29 +202,44 @@ async function callTool(
   context: ToolContext,
   tool: string,
   toolInput: Record<string, unknown>,
-  log: { tool: string; ok: boolean; output?: Record<string, unknown> }[],
+  log: ToolCallRecord[],
+  profile: string | null = null,
 ): Promise<ToolResult> {
+  const reversible = getTool(tool)?.reversible ?? false
+  const entry = { tool, profile, input: toolInput, reversible }
+
   if (!grantsTool(agent, tool)) {
-    log.push({ tool, ok: false })
+    log.push({ ...entry, ok: false, status: 'refused' })
     throw new ToolNotGrantedError(agent.name, tool)
   }
 
   const implementation = getTool(tool)
 
   if (!implementation) {
-    log.push({ tool, ok: false })
+    log.push({ ...entry, ok: false, status: 'failed' })
     throw new Error(`Tool "${tool}" is granted but not implemented.`)
   }
 
   // The context is the scoping boundary: one property and at most one stay,
   // fixed by the runner and not readable from the agent's own input.
   const result = await implementation.run(context, toolInput)
-  log.push({ tool, ok: result.ok, output: result.output })
+  log.push({
+    ...entry,
+    ok: result.ok,
+    status: result.ok ? 'done' : 'failed',
+    output: result.output,
+  })
 
   return result
 }
 
 type ToolCaller = (tool: string, input: Record<string, unknown>) => Promise<ToolResult>
+
+interface ExecuteIO {
+  call: ExecuteTool
+  note: NoteToolCall
+  llm: LlmProvider | null
+}
 
 /**
  * What each agent actually does.
@@ -204,107 +252,45 @@ type ToolCaller = (tool: string, input: Record<string, unknown>) => Promise<Tool
 async function execute(
   agent: AgentDefinition,
   input: RunInput,
-  call: ToolCaller,
+  io: ExecuteIO,
 ): Promise<{ output: Record<string, unknown>; confidence: number | null }> {
+  // Agents other than AG-01 call tools without a profile.
+  const call: ToolCaller = (tool, toolInput) => io.call(tool, toolInput, null)
+
   switch (agent.name) {
     /**
-     * AG-01 — the guest concierge (E3.2).
+     * AG-01 — the guest concierge (E3.2), now the Guest Desk orchestrator
+     * (ADR-021): hard rules, routing, one profile, one tool.
      *
-     * A router, not a writer. It decides which tool applies and relays the
-     * `phrase` that tool returned, verbatim. There is no branch in which it
-     * composes a sentence, which is what lets the tool-boundary audit assert
-     * `reply ⊆ tool output` and expect it to hold (binding rule 7, ADR-009).
-     *
-     * The ladder, in order, and the order is the design:
-     *
-     *   1. A request for a *thing* becomes a task, and still goes to a person.
-     *      Recording it is what stops "I will let them know" being a promise
-     *      made to nobody.
-     *   2. A question goes to the knowledge base.
-     *   3. A hit is relayed.
-     *   4. Everything else escalates — including a question whose article
-     *      exists but not in the guest's language, which is the case that most
-     *      tempts a fallback and most deserves a person.
-     *
-     * Escalation is the default rather than the failure. Answering ninety
-     * percent by guessing at the last thirty-five costs a property more than it
-     * saves (design-notes/stay-messaging.md §4B).
+     * Still a router, not a writer (ADR-022). Every reply is a tool's `phrase`,
+     * which is what lets the tool-boundary audit keep asserting
+     * `reply ⊆ tool output`. The ladder this replaced — request, knowledge base,
+     * escalate — survives as the `request` route and the `general-info`
+     * profile, so a property with no model sees the behaviour it had before.
      */
     case 'AG-01': {
       const message = typeof input.input.message === 'string' ? input.input.message : ''
       if (!message.trim()) throw new Error('AG-01 needs a message')
 
-      const businessHours =
-        typeof input.input.businessHours === 'string' ? input.input.businessHours : ''
-
-      // The surface can say so outright when the guest used a "make a request"
-      // affordance. Explicit intent from the person beats anything inferred
-      // from their words, so it is checked first.
-      const intent =
+      const intentHint =
         input.input.intent === 'request' || input.input.intent === 'question'
-          ? (input.input.intent as GuestIntent)
-          : classifyIntent(message)
+          ? (input.input.intent as 'request' | 'question')
+          : undefined
 
-      if (intent === 'request') {
-        const task = await call('create_task', { summary: message })
-        const escalated = await call('escalate', {
-          reason: 'guest request needs a person',
-          ...(businessHours ? { businessHours } : {}),
-        })
-
-        return {
-          output: {
-            action: 'task',
-            escalate: true,
-            reason: 'guest request needs a person',
-            taskId: task.output.taskId ?? null,
-            // Two phrases, both from tools, joined by nothing but a newline.
-            // Joining with generated connective tissue is precisely the step
-            // that would put an unsourced sentence in front of a guest.
-            reply: [task.output.phrase, escalated.output.phrase].filter(Boolean).join('\n\n'),
-          },
-          confidence: null,
-        }
-      }
-
-      const found = await call('search_kb', { question: message })
-
-      if (found.ok && found.output.found === true && typeof found.output.phrase === 'string') {
-        return {
-          output: {
-            action: 'answer',
-            escalate: false,
-            reply: found.output.phrase,
-            topic: found.output.topic ?? null,
-            articleId: found.output.articleId ?? null,
-            articleVersion: found.output.version ?? null,
-          },
-          // The match score, reported as-is. It is retrieval confidence and
-          // nothing more — a high score means the property wrote this answer
-          // for this question, not that the answer is right.
-          confidence: typeof found.output.score === 'number' ? found.output.score : null,
-        }
-      }
-
-      const reason =
-        found.ok && typeof found.output.reason === 'string'
-          ? found.output.reason
-          : 'no stored answer matches this question'
-
-      const escalated = await call('escalate', {
-        reason,
-        ...(businessHours ? { businessHours } : {}),
-      })
-
-      return {
-        output: {
-          action: 'escalate',
-          escalate: true,
-          reason,
-          reply: escalated.output.phrase,
+      return orchestrate(
+        {
+          message,
+          locale: input.locale ?? 'en',
+          threadId: input.threadId ?? null,
+          hasBooking: input.input.hasBooking !== false,
+          history: Array.isArray(input.input.history) ? (input.input.history as RoutingTurn[]) : [],
+          ...(intentHint ? { intentHint } : {}),
+          ...(typeof input.input.businessHours === 'string' && input.input.businessHours
+            ? { businessHours: input.input.businessHours }
+            : {}),
         },
-        confidence: null,
-      }
+        io,
+      )
     }
 
     /**

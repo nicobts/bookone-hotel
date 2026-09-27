@@ -1,10 +1,11 @@
 # AG-01 · Guest Concierge
 
-**Status: no model is connected.** `LLM_API_KEY` is empty, no `LlmProvider` is
-registered, and AG-01 currently runs as the deterministic router in
-`src/runner.ts`. This file is therefore not yet a system prompt — it is the
-**specification that router implements**, and the one a model will be held to
-when one is connected. Both have to satisfy the same eval set
+**Status: superseded as a prompt by the Guest Desk profiles** (ADR-021). AG-01
+is now the orchestrator in `src/orchestrator.ts`; the prompts a model reads are
+tool-selection instructions in `src/prompts/profiles.ts`, one per profile, and
+the model never writes a reply (ADR-022). This file remains the
+**specification of the in-stay behaviour** — the `request` route and the
+`general-info` profile implement it, with or without a model. Both have to satisfy the same eval set
 (`src/evals/ag-01/`), which is what makes the swap a measurable change rather
 than a leap of faith.
 

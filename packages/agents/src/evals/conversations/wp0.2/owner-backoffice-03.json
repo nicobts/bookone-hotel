@@ -1,0 +1,18 @@
+{
+  "profile": "owner-backoffice",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Quanti arrivi domani?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "notProfile": "owner-backoffice"
+      }
+    }
+  ],
+  "must_not": []
+}

@@ -4,9 +4,9 @@
  * ## What this is, honestly
  *
  * 06 §2 describes AG-03 as ingesting a hotel's website, PDFs and menus and
- * drafting the entire property configuration. **This is not that.** No model is
- * connected (`LLM_API_KEY` is empty, no provider passes D9), so what runs is a
- * heuristic: find headings that look like the questions guests ask, take the
+ * drafting the entire property configuration. **This is not that.** It was
+ * built before any model could be registered, and it still uses none — what
+ * runs is a heuristic: find headings that look like the questions guests ask, take the
  * prose under them, and write drafts.
  *
  * It is worth building anyway, and worth being precise about why. The bottleneck
