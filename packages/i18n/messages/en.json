@@ -9,6 +9,12 @@
   "auth": {
     "brandLine": "Every stay, handled.",
     "brandLineEmphasis": "handled.",
+    "brandTagline": "For independent hotels in Italy, Austria and Slovenia",
+    "coverAlt": "The reception desk of a small hotel at dusk, with a service bell and room keys",
+    "language": "Language",
+    "legal": "Legal",
+    "terms": "Terms and conditions",
+    "privacyPolicy": "Privacy policy",
     "email": "Email",
     "password": "Password",
     "emailPlaceholder": "you@hotel.example",

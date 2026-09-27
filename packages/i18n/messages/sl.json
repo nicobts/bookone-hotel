@@ -9,6 +9,12 @@
   "auth": {
     "brandLine": "Vsako bivanje, urejeno.",
     "brandLineEmphasis": "urejeno.",
+    "brandTagline": "Za neodvisne hotele v Italiji, Avstriji in Sloveniji",
+    "coverAlt": "Recepcija majhnega hotela ob mraku, z zvoncem in ključi sob",
+    "language": "Jezik",
+    "legal": "Pravno",
+    "terms": "Pogoji uporabe",
+    "privacyPolicy": "Pravilnik o zasebnosti",
     "email": "E-pošta",
     "password": "Geslo",
     "emailPlaceholder": "vi@hotel.example",

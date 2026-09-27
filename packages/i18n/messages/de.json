@@ -9,6 +9,12 @@
   "auth": {
     "brandLine": "Jeder Aufenthalt, erledigt.",
     "brandLineEmphasis": "erledigt.",
+    "brandTagline": "Für unabhängige Hotels in Italien, Österreich und Slowenien",
+    "coverAlt": "Die Rezeption eines kleinen Hotels in der Abenddämmerung, mit Tischglocke und Zimmerschlüsseln",
+    "language": "Sprache",
+    "legal": "Rechtliches",
+    "terms": "Allgemeine Geschäftsbedingungen",
+    "privacyPolicy": "Datenschutzerklärung",
     "email": "E-Mail",
     "password": "Passwort",
     "emailPlaceholder": "du@hotel.example",

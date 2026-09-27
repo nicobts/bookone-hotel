@@ -9,6 +9,12 @@
   "auth": {
     "brandLine": "Ogni soggiorno, gestito.",
     "brandLineEmphasis": "gestito.",
+    "brandTagline": "Per hotel indipendenti in Italia, Austria e Slovenia",
+    "coverAlt": "La reception di un piccolo hotel al tramonto, con un campanello e le chiavi delle camere",
+    "language": "Lingua",
+    "legal": "Note legali",
+    "terms": "Termini e condizioni",
+    "privacyPolicy": "Informativa sulla privacy",
     "email": "Email",
     "password": "Password",
     "emailPlaceholder": "tu@hotel.example",
