@@ -5,7 +5,7 @@ Guest-journey-first hospitality platform for small independent hotels (IT/AT/SI)
 ## Read first, in order
 1. `docs/00-PROJECT-OVERVIEW.md` — scope, decision register D1–D21, non-goals
 2. `docs/03-ARCHITECTURE.md` — topology, schema, conventions (§10 = repo layout)
-3. `docs/adr/` — ADR-001…033, one file each ([index](docs/adr/README.md)); **ADRs override anything conflicting in older annex documents**
+3. `docs/adr/` — ADR-001…034, one file each ([index](docs/adr/README.md)); **ADRs override anything conflicting in older annex documents**
 4. `docs/01-PRD.md` + `docs/02-USER-STORIES.md` — what to build, acceptance criteria
 5. `docs/04-IMPLEMENTATION-PLAN.md` — current sprint scope and DoD
 6. `docs/06-AI-AGENT-LAYER.md` — agent roster, `agent_runs`, autonomy tiers
@@ -13,10 +13,11 @@ Guest-journey-first hospitality platform for small independent hotels (IT/AT/SI)
 
 Historical/context docs live in `docs/annexes/` (technical annexes, Concierge workstream PRD/gameplan) and `docs/business/` (proposals, cost references). They inform but never override. Precedence: ADRs > docs/00–08 > annexes/business.
 
-## Stack (ADR-030, ADR-004…006, D13)
+## Stack (ADR-034, ADR-004…006, D13)
 - `apps/web` — Next.js App Router, shadcn/ui, Tailwind, next-intl (it/de/en/sl). Vercel fra1.
 - `apps/worker` — **Hono on @hono/node-server. Persistent Node process. NEVER edge, NEVER serverless.** Our own EU container (self-hosted VM → Cloud Run, ADR-033). Jobs via **pg-boss** (not Redis/BullMQ — ADR-005).
-- `apps/admin` (Guest Desk WP0.8, ADR-030/031) — operator console + its Hono admin API in **one container of our own, Tailscale-only, never on a third-party platform**. Staff sign in to a separate Supabase Auth project; never imports tenant-app auth.
+- `apps/api` (ADR-034, after WP0.2) — Hono: payment and provider webhooks, `/health*`, the bearer-token `/jobs/*` surface and the `AppType` web consumes. Moves out of `apps/worker`, which then runs pg-boss jobs only with no ingress. Until the move lands, `apps/worker` still serves both.
+- `apps/admin` (Guest Desk WP0.8, ADR-031/034) — operator console + its Hono admin API in **one container of our own, Tailscale-only, never on a third-party platform**. Staff sign in to a separate Supabase Auth project; never imports tenant-app auth.
 - Supabase EU (Frankfurt): Postgres + Auth + Storage. **Drizzle** for all domain access.
 - `packages/core` — canonical domain: schema, types, event emitter, journey state machine, AuthorityMap router, policy engine, `LlmProvider`, adapter interfaces. **All domain logic lives here; neither app reimplements it.**
 - `packages/adapters` — `MockEricsoftAdapter` (with failure injection) until real API access; real adapter must pass the mock's contract-test suite before swap (ADR-008).

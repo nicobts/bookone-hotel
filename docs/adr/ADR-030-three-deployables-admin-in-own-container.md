@@ -1,6 +1,6 @@
 # ADR-030 — Three deployables: the admin console runs in its own container, never on a third-party platform
 
-**Status:** Accepted · **Date:** 2026-09-27
+**Status:** Superseded by [ADR-034](ADR-034-api-split-from-worker.md) (deployable count; the admin decisions stand) · **Date:** 2026-09-27
 **Depends on:** ADR-003 · **Supersedes:** ADR-003 (two deployables)
 **Origin:** Guest Desk handoff ADR-F10 and ADR-F12, amended: `apps/web` stays on Vercel
 

@@ -63,12 +63,13 @@ split here unchanged; their bodies are verbatim, with only a status line added.
 | [027](ADR-027-bookone-never-asserts-identity.md) | BookOne never asserts a guest's identity; de visu is staff-assisted behind an adapter | Accepted (module gated) |
 | [028](ADR-028-region-first-expansion.md) | Expansion is one region at a time, each a registry entry | Accepted |
 | [029](ADR-029-model-processing-may-leave-the-eu.md) | Stored data stays in the EU; model and vision processing may run outside it | Accepted |
-| [030](ADR-030-three-deployables-admin-in-own-container.md) | Three deployables: the admin console runs in its own container, never on a third-party platform | Accepted |
+| [030](ADR-030-three-deployables-admin-in-own-container.md) | Three deployables: the admin console runs in its own container, never on a third-party platform | Superseded by 034 |
 | [031](ADR-031-operators-act-through-an-audited-console.md) | BookOne operators act only through an audited console with its own identity store | Accepted |
 | [032](ADR-032-ops-security-baseline.md) | The ops and security baseline is a fixed list delivered in priority order | Accepted |
 | [033](ADR-033-self-hosted-until-first-contract.md) | Our containers run self-hosted until the first signed contract, then on GCP Cloud Run | Accepted |
+| [034](ADR-034-api-split-from-worker.md) | Webhooks and internal endpoints move to `apps/api`; the worker runs jobs only | Accepted |
 
-ADR-019 to ADR-033 come from the Guest Desk handoff (`docs/guest_desk_20260927/`, ADR-F1…F12),
+ADR-019 to ADR-034 come from the Guest Desk handoff (`docs/guest_desk_20260927/`, ADR-F1…F13 and UPGRADE-01),
 amended where the WP0.1 inventory ([11-inventory.md](../11-inventory.md)) found the handoff's
 premise false for this repo. Each record names its origin. The handoff's F-numbered files are
 source material, not part of this log.
