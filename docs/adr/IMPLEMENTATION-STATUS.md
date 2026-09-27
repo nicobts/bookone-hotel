@@ -28,6 +28,23 @@ fills in the seeded demo accounts. It renders only when `NODE_ENV` is
 `development`, and no password reaches a client bundle (checked in a production
 build). Remove every piece with `grep -rn DEV-LOGIN-HELPER`.
 
+## Guest Desk Phase 1 — started on mocks only, 2026-09-28
+
+The Phase 1 gate (5 named pilots and the Regione letter) has not been passed. Phase 1 is being
+built ahead of it **on mocks only**, with the owner's approval of 2026-09-28. No authority is
+called and nothing is filed. Branch `guest-desk/wp1.1`.
+
+| WP1.1 acceptance item | State | What is left |
+|---|---|---|
+| A fake adapter passes the contract suite (submit, retry, fail → manual, evidence stored) | ✅ | `MockComplianceAdapter` passes the contract, in two modes (acknowledges on upload, and a queued channel). The lifecycle's retry, hand-over and evidence are tested against the database (`rls/compliance.test.ts`) |
+| Obligations generated automatically from confirmed schedine and arrivals | ✅ | `compliance.generate` every 10 minutes, plus the arrival path at once. Idempotent on the subject |
+| Manual fallback usable in under 2 minutes (walkthrough) | 🟨 | File and steps built and exercised in the console; the portal half needs a pilot's credentials (`docs/runbooks/compliance.md`) |
+
+Not in WP1.1, by design:
+- **Replayed conversations.** WP1.1 adds no agent behaviour. The owner agent's obligation tools come
+  with WP1.5, and their conversations with them.
+- **The dashboard and manual-receipt screen.** Those are WP1.6.
+
 | ADR | Decision | Built? | Where |
 |---|---|---|---|
 | 001 | Platform UUIDs; external systems via `external_refs` | ✅ as-built | Platform UUIDs everywhere; `external_refs` the only home for a foreign id; AuthorityMap + write-router in `src/authority` with both routes tested per domain (E6.2) |
@@ -63,11 +80,12 @@ build). Remove every piece with `grep -rn DEV-LOGIN-HELPER`.
 | 036 | Every service emits OpenTelemetry traces, metrics and logs | ✅ as-built | `packages/telemetry` (SDK start, redacted and trace-correlated pino logger, URL scrubbing exporter), `@bookone/core/telemetry` (job and GenAI spans, lazy metrics), api server-span middleware, Next `instrumentation.ts` in web and admin, trace context carried through pg-boss. Collector config with content and URL stripping (`infra/otel/collector.yaml`), local LGTM stack, VM collector, GCP endpoint variable. A test fails if an app's entry point does not start it. Not done: Phoenix, tail sampling, dashboards and alerts |
 | 037 | A shared chat interface on the AI SDK UI protocol, first as an agent preview | ✅ playground · ⬜ embed | `@bookone/ui/components/chat/*` (adapted from shadcn's chatbot-template, MIT) over `useChat`; `apps/admin` → Agent playground: speak to AG-01 as any current guest of a demo property, or to AG-06 as its owner; each reply carries the run's profile, hard rule, tier, tools and outcome. Server side runs `previewGuestTurn` / `previewOwnerTurn` (real turns, never a direct model call), demo properties only (`settings.demo`). Not built: the hotel-website embed (needs pre-sale threads and a public, rate-limited endpoint in `apps/api`) |
 | 038 | Hotels see and preview their agents in the console, without side effects | ✅ as-built | Runner preview mode, fail-closed: only `READ_ONLY_TOOLS` run, everything else is recorded as `simulated` with a "would do, nothing done" phrase; no thread, so no message, escalation or alert; approvals never list a preview. `create_task` now flagged as a write (fixes its idempotency). Console chat endpoint `apps/web/src/app/api/agents/chat` enqueues through `apps/api` (`/jobs/agent-preview` → worker `agent.preview`; `owner.ask` with `requestId`) and reads the run back by `input_ref` under the member's session. `/console/agents`: every agent's purpose, status, 7-day activity, profiles, tools classed read / act / needs approval, hard rules, from `@bookone/agents/catalog` (tested against registry, profiles, tools and all four locales); "Try it" opens the shared chat in a side sheet, optionally as a current stay. The owner's assistant page now uses the same chat |
+| 039 | Compliance obligations are a state table that adapters discharge | ✅ as-built (WP1.1, mocks only) | `compliance_obligations` + append-only `compliance_evidence` (trigger; RLS member-read, no client writes, verified both paths with a negative control). Lifecycle as one pure function with its transition table under test; retries with doubling backoff; hand-over to a person inside the adapter's margin (Alloggiati: T−2h); a filed obligation is only ever asked again. Deadline = 24h from arrival, capped at the end of the arrival day for a late click (`compliance/deadlines.ts`). Worker: `compliance.generate` (10 min), `compliance.sweep` (5 min), `compliance.run`; `alloggiati.file` now goes through the lifecycle and waits for a person's confirmation. Demo property: FVG/Trieste, `alloggiati` on against the mock, past stays filed as of their arrival day. **Nothing reaches any authority** |
 | 024 | Replay conversations extend the evals gate | ✅ as-built (WP0.2) | 57 conversations in `packages/agents/src/evals/conversations/wp0.2/`, replayed by `evals/wp0.2/orchestrator.eval.ts`: unsafe actions 0 (gate), routing ≥ 90%, hard-rule negatives. Negative control: disabling the hard rules fails 13. The rules score is coverage, not generalisation. **Live, 2026-09-27** (Haiku 4.5 routing, Sonnet 5 actions, via OpenRouter): 85.7% on the first run — invoice/luggage sent to payments, "which documents" flagged as identity — then **100%, 0 unsafe** once the routing prompt carried each profile's description and sharper flag definitions. 35 routed turns written by us: evidence the design works on a model, not a measure of real traffic. Phoenix not yet |
-| 025 | Workflow engine deferred until a named trigger | Proposed | Decided in Phase 1 on observed evidence |
-| 026 | ComplianceAdapter with a manual fallback | ⬜ Phase 1 (WP1.1) | `AlloggiatiAdapter` becomes its first implementation |
+| 025 | Workflow engine deferred until a named trigger | Proposed · data collection ✅ (WP1.1) | ADR-039 starts Phase 1 on a state table + pg-boss; every obligation transition is a `compliance_obligation.*` event with `waitedSeconds`, and one SQL query answers "where is it stuck" (`docs/runbooks/compliance.md`). Decide in Phase 1 on that evidence |
+| 026 | ComplianceAdapter with a manual fallback | 🟨 port + first implementation (WP1.1) | `packages/core/src/compliance/adapter.ts`: the four methods of the WP1.1 spec, capabilities as ADR-026 lists them. Alloggiati is the first implementation, as a bridge over the Sprint 6 chain (`compliance/alloggiati.ts`); its manual fallback is the exact fixed-width file, downloadable from the arrival page (`docs/runbooks/compliance.md`). Contract suite `packages/adapters/src/compliance/contract.ts` (idempotent submit, receipts, retryability, fallback), passed by `MockComplianceAdapter` in two modes. Not built: the real Alloggiati Web client (WP1.2), WebTur and imposta adapters (WP1.3–1.4) |
 | 027 | BookOne never asserts identity; de visu staff-assisted | ✅ holds (nothing asserts identity); module ⬜ Phase 3, gated | Gate: Viminale guidelines + written legal opinion |
-| 028 | Region-first expansion, region registry | ⬜ Phase 1 (WP1.1) | FVG first |
+| 028 | Region-first expansion, region registry | 🟨 registry ✅ (WP1.1) | `compliance/registry.json` (FVG with Trieste, Veneto empty), read through a schema; `properties.settings.jurisdiction` (ISO 3166-2 region, ISTAT comune). National obligations for every property; unknown region or comune yields no regional or municipal obligation. A test adds a fictional region with no code change, and another fails if compliance code names a region or comune. Not built: the regional adapters themselves |
 
 ## Sprint 3 additions
 

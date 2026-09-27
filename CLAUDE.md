@@ -5,7 +5,7 @@ Guest-journey-first hospitality platform for small independent hotels (IT/AT/SI)
 ## Read first, in order
 1. `docs/00-PROJECT-OVERVIEW.md` — scope, decision register D1–D21, non-goals
 2. `docs/03-ARCHITECTURE.md` — topology, schema, conventions (§10 = repo layout)
-3. `docs/adr/` — ADR-001…038, one file each ([index](docs/adr/README.md)); **ADRs override anything conflicting in older annex documents**
+3. `docs/adr/` — ADR-001…039, one file each ([index](docs/adr/README.md)); **ADRs override anything conflicting in older annex documents**
 4. `docs/01-PRD.md` + `docs/02-USER-STORIES.md` — what to build, acceptance criteria
 5. `docs/04-IMPLEMENTATION-PLAN.md` — current sprint scope and DoD
 6. `docs/06-AI-AGENT-LAYER.md` — agent roster, `agent_runs`, autonomy tiers
@@ -69,6 +69,7 @@ Source: `docs/guest_desk_20260927/bookone-guest-desk-handoff/` (plan `docs/10-gu
 
 ### Scope
 - Phase 0 = WP0.1–WP0.8 (plan §4; WP0.8 = admin console + ops baseline, parallel). One WP per session, one PR. Do not start a WP whose dependencies are not merged, and do not build Phase 1+ items unless the spec says so.
+- **Phase 1 is approved on mocks only (owner, 2026-09-28)**, ahead of its gate: build WP1.x against mock and simulated adapters, never call an authority, never file in production. ADR-039 records the obligations model; `docs/runbooks/compliance.md` is the operating view.
 - Touch only the spec's "Touches" list, translated through the inventory.
 
 ### Flags (ADR-019)

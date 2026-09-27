@@ -360,6 +360,37 @@ export const DATA_MAP: DataMapEntry[] = [
     exportVia: 'reservation',
   },
 
+  {
+    table: 'compliance_obligations',
+    subject: 'guest',
+    categories: ['stay'],
+    basis:
+      'Legal obligation (Art. 6(1)(c)): the property’s duty to register guests, report statistics and declare the imposta.',
+    retention: {
+      kind: 'keep',
+      why: 'The record that a property met or missed a statutory deadline, kept while it is a client and deleted with it. It holds no personal data of its own — a link to the stay, a deadline, a state — and the link is nulled when the reservation goes at ten years (ADR-039).',
+    },
+    erasure: {
+      kind: 'keep',
+      why: 'Art. 17(3)(b): the record that a filing owed to a public authority was made. It names nobody; once the guest is anonymised it says only that a stay was registered on time.',
+      retainedByLaw: true,
+    },
+    exportVia: 'reservation',
+  },
+  {
+    table: 'compliance_evidence',
+    subject: 'none',
+    categories: [],
+    basis:
+      'Not personal data: the authority’s receipt for a filing — references, counts, dates, checksums.',
+    retention: {
+      kind: 'keep',
+      why: 'Proof a filing was made, kept while the property is a client and deleted with it; append-only by trigger (ADR-039). A receipt never carries a guest’s details: the adapter contract forbids it, and the details stay in the filing itself (`alloggiati_submissions.payload`, which has its own two-year purge).',
+    },
+    erasure: { kind: 'none' },
+    exportVia: 'none',
+  },
+
   // -------------------------------------------------------------------------
   // Money
   // -------------------------------------------------------------------------

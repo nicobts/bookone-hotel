@@ -46,6 +46,12 @@ export const jobNames = [
   'alloggiati.check',
   /** Destroy identity documents for stays whose filing was acknowledged (E2.4). */
   'documents.purge',
+  /** Create compliance obligations from confirmed schedine and arrivals (ADR-039). */
+  'compliance.generate',
+  /** Enqueue the compliance obligations that are due (ADR-039). */
+  'compliance.sweep',
+  /** Advance one compliance obligation by one step (ADR-039). */
+  'compliance.run',
   /** Answer one guest message with AG-01 (E3.2). */
   'concierge.reply',
   /** Tell the property a guest has been waiting on a person too long (E3.2). */
@@ -166,6 +172,9 @@ export interface JobPayloads {
   'alloggiati.file': { propertyId: string; reservationId: string }
   'alloggiati.check': Record<string, never>
   'documents.purge': Record<string, never>
+  'compliance.generate': Record<string, never>
+  'compliance.sweep': Record<string, never>
+  'compliance.run': { propertyId: string; obligationId: string }
   /**
    * One turn of a conversation (E3.2).
    *

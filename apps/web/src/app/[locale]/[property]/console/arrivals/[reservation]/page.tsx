@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
-import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { CheckCircle2Icon, FlaskConicalIcon, TriangleAlertIcon } from 'lucide-react'
+import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server'
+import { CheckCircle2Icon, DownloadIcon, FlaskConicalIcon, TriangleAlertIcon } from 'lucide-react'
 import { getArrival } from '@bookone/core/db'
 import { getSchedinaPreview } from '@bookone/core/journey'
 import {
@@ -9,9 +9,16 @@ import {
   validateParty,
   type DocumentReading,
 } from '@bookone/core/alloggiati'
+import {
+  ManualFallbackUnavailable,
+  alloggiatiManualFallback,
+  listObligationsForStay,
+  type ObligationView,
+} from '@bookone/core/compliance'
 import { PageShell } from '@/components/shell/page-shell'
 import { hasFeature, requireProperty } from '@/lib/auth/current-property'
 import { Badge } from '@bookone/ui/components/badge'
+import { Button } from '@bookone/ui/components/button'
 import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Separator } from '@bookone/ui/components/separator'
 import { formatDate } from '@/components/booking/format'
@@ -58,6 +65,29 @@ export default async function ArrivalPage({
     ? await getSchedinaPreview(property.id, reservationId)
     : null
   const context = { locale, slug, reservationId }
+
+  // The stay's obligations (ADR-039): what is owed, by when, and where it
+  // stands. Read under the member's session, like the rest of the page.
+  const obligations = filing
+    ? await listObligationsForStay(user.id, property.id, reservationId)
+    : []
+  const format = await getFormatter()
+  const now = new Date()
+
+  // The steps for filing by hand, shown when a person has to. Built from the
+  // same records as the filing; absent while the record is incomplete, in
+  // which case the missing fields below are what to fix first.
+  let fallbackSteps: string[] | null = null
+  if (
+    obligations.some((obligation) => obligation.state === 'manual' || obligation.state === 'failed')
+  ) {
+    try {
+      fallbackSteps = (await alloggiatiManualFallback({ propertyId: property.id, reservationId }))
+        .instructions
+    } catch (error) {
+      if (!(error instanceof ManualFallbackUnavailable)) throw error
+    }
+  }
 
   // The same validator the staging path runs, so what the console promises and
   // what the filing accepts cannot disagree.
@@ -235,6 +265,28 @@ export default async function ArrivalPage({
             </dl>
           )}
 
+          {obligations.map((obligation) => (
+            <Obligation
+              key={obligation.id}
+              obligation={obligation}
+              t={t}
+              when={`${format.dateTime(obligation.deadline, {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              })} · ${format.relativeTime(obligation.deadline, now)}`}
+              fallback={
+                fallbackSteps && (obligation.state === 'manual' || obligation.state === 'failed')
+                  ? {
+                      steps: fallbackSteps,
+                      href: `/${locale}/${slug}/console/compliance/${obligation.id}/fallback`,
+                    }
+                  : null
+              }
+            />
+          ))}
+
           {issues.length > 0 && (
             <div className="mt-4">
               <p className="text-foreground flex items-center gap-2 text-sm font-medium">
@@ -311,6 +363,100 @@ function OcrStatus({
               .join(', '),
           })}
         </p>
+      )}
+    </div>
+  )
+}
+
+/** Messages the lifecycle writes, in the words the desk reads. Anything else is shown as written. */
+const KNOWN_ERRORS: Record<string, string> = {
+  'Nobody has confirmed the guests against their documents yet.': 'notConfirmed',
+  'The deadline is close: file by hand.': 'deadlineClose',
+}
+
+/**
+ * One obligation on the stay (ADR-039): the authority, the state, the
+ * deadline, and — when a person has to act — the file and the steps.
+ */
+function Obligation({
+  obligation,
+  t,
+  when,
+  fallback,
+}: {
+  obligation: ObligationView
+  t: Awaited<ReturnType<typeof getTranslations<'console.arrival'>>>
+  when: string
+  fallback: { steps: string[]; href: string } | null
+}) {
+  const needsPerson = obligation.state === 'manual'
+  const variant =
+    obligation.state === 'acknowledged' ? 'secondary' : needsPerson ? 'destructive' : 'outline'
+  const known = obligation.lastError ? KNOWN_ERRORS[obligation.lastError] : undefined
+
+  return (
+    <div className="border-border mt-4 border-t pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-foreground text-sm font-medium">
+          {t.has(`obligation.authorities.${obligation.authority}`)
+            ? t(`obligation.authorities.${obligation.authority}`)
+            : obligation.authority}
+        </p>
+        <Badge variant={variant} className="gap-1">
+          {obligation.state === 'acknowledged' && (
+            <CheckCircle2Icon className="size-3 text-[color:var(--bo-success-500)]" aria-hidden />
+          )}
+          {t(`obligation.states.${obligation.state}`)}
+        </Badge>
+      </div>
+
+      <dl className="text-muted-foreground mt-2 grid gap-1 text-xs">
+        <div className="flex justify-between gap-4">
+          <dt>{t('obligation.deadline')}</dt>
+          <dd className="num">{when}</dd>
+        </div>
+        {obligation.attempts > 0 && (
+          <div className="flex justify-between gap-4">
+            <dt>{t('obligation.attempts')}</dt>
+            <dd className="num">{obligation.attempts}</dd>
+          </div>
+        )}
+        {obligation.evidence && (
+          <div className="flex justify-between gap-4">
+            <dt>
+              {obligation.evidence.source === 'manual'
+                ? t('obligation.evidenceManual')
+                : t('obligation.evidence')}
+            </dt>
+            {/* The receipt's hash: what an inspector compares against. */}
+            <dd className="num truncate">{obligation.evidence.hash.slice(0, 16)}…</dd>
+          </div>
+        )}
+      </dl>
+
+      {obligation.lastError && obligation.state !== 'acknowledged' && (
+        <p className={`mt-2 text-xs ${needsPerson ? 'text-destructive' : 'text-muted-foreground'}`}>
+          {known ? t(`obligation.errors.${known}`) : obligation.lastError}
+        </p>
+      )}
+
+      {fallback && (
+        <div className="border-border mt-3 rounded-md border border-dashed p-3">
+          <p className="text-foreground text-sm font-medium">{t('obligation.fallbackTitle')}</p>
+          <p className="text-muted-foreground mt-1 text-xs">{t('obligation.fallbackHint')}</p>
+          <ol className="text-foreground mt-2 list-decimal space-y-1 pl-5 text-xs" lang="it">
+            {fallback.steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+          <Button asChild size="sm" variant="outline" className="mt-3">
+            {/* A plain anchor: it downloads a file, it does not navigate. */}
+            <a href={fallback.href} download>
+              <DownloadIcon className="size-4" aria-hidden />
+              {t('obligation.fallbackDownload')}
+            </a>
+          </Button>
+        </div>
       )}
     </div>
   )

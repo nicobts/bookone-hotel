@@ -72,6 +72,7 @@ split here unchanged; their bodies are verbatim, with only a status line added.
 | [036](ADR-036-opentelemetry-in-every-service.md) | Every service emits OpenTelemetry traces, metrics and logs | Accepted |
 | [037](ADR-037-chat-interface-on-the-ai-sdk-ui-protocol.md) | A shared chat interface on the AI SDK UI protocol, first as an agent preview | Accepted |
 | [038](ADR-038-hotels-preview-agents-without-side-effects.md) | Hotels see and preview their agents in the console, without side effects | Accepted |
+| [039](ADR-039-compliance-obligations-are-a-state-table.md) | Compliance obligations are a state table that adapters discharge | Accepted |
 
 ADR-019 to ADR-034 come from the Guest Desk handoff (`docs/guest_desk_20260927/`, ADR-F1…F13 and UPGRADE-01),
 amended where the WP0.1 inventory ([11-inventory.md](../11-inventory.md)) found the handoff's

@@ -132,6 +132,35 @@ export const submissionStatus = pgEnum('submission_status', [
 ])
 
 /**
+ * What a property owes an authority (ADR-039). One adapter discharges each.
+ *
+ * `guest_registration` is the Alloggiati schedina (WP1.1–1.2); the other two
+ * arrive with WP1.3 (the regional ISTAT return) and WP1.4 (the imposta).
+ */
+export const obligationType = pgEnum('obligation_type', [
+  'guest_registration',
+  'istat_movement',
+  'tourist_tax_declaration',
+])
+
+/**
+ * Where an obligation stands (ADR-039). The transitions are one pure function,
+ * `compliance/lifecycle.ts`; nothing else writes this column.
+ *
+ * `pending` is known but not ready (the schedina is not confirmed yet);
+ * `manual` means a person has to file it, with the fallback the adapter
+ * produced — it can still end `acknowledged` when they record the receipt.
+ */
+export const obligationState = pgEnum('obligation_state', [
+  'pending',
+  'queued',
+  'submitted',
+  'acknowledged',
+  'failed',
+  'manual',
+])
+
+/**
  * What a payment row is for.
  *
  * `deposit` and `balance` are money in; `refund` is money out and carries a
@@ -1310,6 +1339,133 @@ export const alloggiatiSubmissions = pgTable(
       'alloggiati_submissions_purged_has_no_payload',
       sql`${t.payloadPurgedAt} is null or length(${t.payload}) = 0`,
     ),
+  ],
+)
+
+// ---------------------------------------------------------------------------
+// Compliance obligations and evidence (ADR-039, Guest Desk WP1.1)
+// ---------------------------------------------------------------------------
+
+/**
+ * One thing a property owes an authority: a schedina, a day's ISTAT return, a
+ * period's imposta declaration.
+ *
+ * The obligation is the property's, never ours (ADR-020, the Alloggiati
+ * responsibility mirror): this row tracks the filing we prepare and carry, and
+ * the deadline the property is held to.
+ */
+export const complianceObligations = pgTable(
+  'compliance_obligations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+
+    /** The adapter that discharges it, by registry id (`alloggiati`, `webtur-fvg`). */
+    adapterId: text('adapter_id').notNull(),
+
+    /** Who it is owed to, as the registry names them (`questura`, `regione-fvg`). */
+    authority: text('authority').notNull(),
+
+    type: obligationType('type').notNull(),
+
+    /**
+     * What it is about, as a stable key: `reservation:<uuid>` or `day:<date>`.
+     * Unique with the property, adapter and type, which is what makes
+     * generation idempotent — the sweep can run every ten minutes forever.
+     */
+    subjectKey: text('subject_key').notNull(),
+
+    /**
+     * The stay, when the obligation is about one.
+     *
+     * `set null`, unlike the filing it tracks: when the reservation goes at ten
+     * years (data map), the obligation and its evidence stay with the
+     * property — the record that a deadline was met outlives the stay it was
+     * about. The subject key keeps the id; nothing personal remains.
+     */
+    reservationId: uuid('reservation_id').references(() => reservations.id, {
+      onDelete: 'set null',
+    }),
+
+    /** The day, when the obligation is about one (ISTAT). */
+    periodDate: date('period_date'),
+
+    /** When the property is in breach. Escalation happens before it, never after. */
+    deadline: timestamp('deadline', { withTimezone: true }).notNull(),
+
+    state: obligationState('state').notNull().default('pending'),
+
+    /** When `state` last changed. The wait-time data ADR-025 decides on. */
+    stateChangedAt: timestamp('state_changed_at', { withTimezone: true }).notNull().defaultNow(),
+
+    attempts: smallint('attempts').notNull().default(0),
+
+    /** When the sweep may try again. Null means now, or never for a final state. */
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }),
+
+    /** Why the last attempt failed, or what is missing, in words a person can act on. */
+    lastError: text('last_error'),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('compliance_obligations_subject').on(t.propertyId, t.adapterId, t.type, t.subjectKey),
+    /** The sweep: what is due, across properties. */
+    index('compliance_obligations_due_idx').on(t.state, t.nextAttemptAt),
+    index('compliance_obligations_property_deadline_idx').on(t.propertyId, t.deadline),
+    index('compliance_obligations_reservation_idx').on(t.reservationId),
+    check('compliance_obligations_attempts', sql`${t.attempts} >= 0`),
+    /** A subject is a stay, a day or a period, and the key says which. */
+    check(
+      'compliance_obligations_subject_shape',
+      sql`${t.subjectKey} like 'reservation:%' or (${t.periodDate} is not null and ${t.subjectKey} like 'day:%') or ${t.subjectKey} like 'period:%'`,
+    ),
+  ],
+)
+
+/**
+ * Proof an obligation was met: what the authority returned, and its hash.
+ *
+ * Append-only by trigger (migration `*_compliance_rls.sql`). The one update
+ * allowed is the retention sweep blanking `receipt` and stamping
+ * `receipt_purged_at`; the hash keeps proving the filing afterwards. Rows go
+ * only with their property.
+ */
+export const complianceEvidence = pgTable(
+  'compliance_evidence',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+    obligationId: uuid('obligation_id')
+      .notNull()
+      .references(() => complianceObligations.id, { onDelete: 'cascade' }),
+
+    /** `channel` when the adapter returned it; `manual` when a person recorded it. */
+    source: text('source').notNull(),
+
+    /**
+     * The receipt as returned. Blanked by retention; the hash stays. The
+     * channel's own reference lives in `external_refs` (ADR-001), never here.
+     */
+    receipt: jsonb('receipt').notNull(),
+
+    /** SHA-256 of the canonical JSON of the receipt, taken when it was recorded. */
+    receiptHash: text('receipt_hash').notNull(),
+
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Who recorded it by hand. Null for the channel. */
+    recordedBy: uuid('recorded_by'),
+
+    receiptPurgedAt: timestamp('receipt_purged_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('compliance_evidence_obligation_idx').on(t.obligationId),
+    index('compliance_evidence_property_recorded_idx').on(t.propertyId, t.recordedAt),
+    check('compliance_evidence_source', sql`${t.source} in ('channel', 'manual')`),
   ],
 )
 
