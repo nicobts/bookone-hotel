@@ -1,6 +1,6 @@
 # ADR-003 — Two deployables, one database; worker is a persistent process
 
-**Status:** Accepted · **Date:** July 2026 (documentation handoff v1)
+**Status:** Superseded by [ADR-030](ADR-030-three-deployables-admin-in-own-container.md) (a third deployable, the admin console) · **Date:** July 2026 (documentation handoff v1)
 
 **Context.** Serverless request/response cannot hold PMS polling, queue workers, MQTT (Rooms), or long-lived connector state.
 

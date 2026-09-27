@@ -36,7 +36,7 @@ split here unchanged; their bodies are verbatim, with only a status line added.
 |---|---|---|
 | [001](ADR-001-platform-owns-its-data-model.md) | Platform owns its data model; external PMS is a sync source | Accepted |
 | [002](ADR-002-fiscal-core-is-gated.md) | Fiscal core is gated (Rung 6) | Accepted |
-| [003](ADR-003-two-deployables-one-database.md) | Two deployables, one database; worker is a persistent process | Accepted |
+| [003](ADR-003-two-deployables-one-database.md) | Two deployables, one database; worker is a persistent process | Superseded by 030 |
 | [004](ADR-004-hono-over-fastify.md) | Hono over Fastify | Accepted |
 | [005](ADR-005-pg-boss-over-redis-bullmq.md) | pg-boss over Redis + BullMQ | Accepted |
 | [006](ADR-006-supabase-eu-as-managed-postgres.md) | Supabase (EU/Frankfurt) as managed Postgres + Auth + Storage | Accepted |
@@ -63,8 +63,12 @@ split here unchanged; their bodies are verbatim, with only a status line added.
 | [027](ADR-027-bookone-never-asserts-identity.md) | BookOne never asserts a guest's identity; de visu is staff-assisted behind an adapter | Accepted (module gated) |
 | [028](ADR-028-region-first-expansion.md) | Expansion is one region at a time, each a registry entry | Accepted |
 | [029](ADR-029-model-processing-may-leave-the-eu.md) | Stored data stays in the EU; model and vision processing may run outside it | Accepted |
+| [030](ADR-030-three-deployables-admin-in-own-container.md) | Three deployables: the admin console runs in its own container, never on a third-party platform | Accepted |
+| [031](ADR-031-operators-act-through-an-audited-console.md) | BookOne operators act only through an audited console with its own identity store | Accepted |
+| [032](ADR-032-ops-security-baseline.md) | The ops and security baseline is a fixed list delivered in priority order | Accepted |
+| [033](ADR-033-self-hosted-until-first-contract.md) | Our containers run self-hosted until the first signed contract, then on GCP Cloud Run | Accepted |
 
-ADR-019 to ADR-028 come from the Guest Desk handoff (`docs/guest_desk_20260927/`, ADR-F1…F9),
+ADR-019 to ADR-033 come from the Guest Desk handoff (`docs/guest_desk_20260927/`, ADR-F1…F12),
 amended where the WP0.1 inventory ([11-inventory.md](../11-inventory.md)) found the handoff's
 premise false for this repo. Each record names its origin. The handoff's F-numbered files are
 source material, not part of this log.

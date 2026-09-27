@@ -9,7 +9,7 @@ worse than none, because it is read as current.
 |---|---|---|---|
 | 001 | Platform UUIDs; external systems via `external_refs` | ✅ as-built | Platform UUIDs everywhere; `external_refs` the only home for a foreign id; AuthorityMap + write-router in `src/authority` with both routes tested per domain (E6.2) |
 | 002 | Fiscal core gated | ✅ as-built | Nothing fiscal exists, and the authority router refuses to grant the domain to the platform whatever a property row says — a row is data, so "we would never configure that" is not a control |
-| 003 | Two deployables; worker is persistent | ✅ as-built | `apps/web`, `apps/worker`; constraint stated in the worker README |
+| 003 | Two deployables; worker is persistent | ✅ as-built · superseded by 030 | `apps/web`, `apps/worker`; constraint stated in the worker README. ADR-030 adds `apps/admin` as a third |
 | 004 | Hono on `@hono/node-server` | ✅ as-built | `apps/worker/src/app.ts` |
 | 005 | pg-boss behind a `JobQueue` interface | ✅ as-built | `JobQueue` port in core, `PgBossQueue` the only file importing pg-boss. Verified live: enqueue to reflected in 780ms, against a 60s requirement |
 | 006 | Supabase EU; Drizzle for domain access | 🟨 partial | Schema, access layer and Auth built on local Supabase. Cloud EU project not yet provisioned |
@@ -31,6 +31,10 @@ worse than none, because it is read as current.
 | 022 | The model selects; tools author every guest-facing sentence | 🟨 holds today by absence of a model | Tool-boundary audit unchanged. Becomes a real constraint when ADR-023 connects a model |
 | 023 | AI SDK behind `LlmProvider`, no agent framework | ⬜ not built | Adding `ai` + the OpenRouter provider needs sign-off. Eslint ban to extend to `ai` / `@ai-sdk/*`. No longer blocked on D9 (ADR-029) |
 | 029 | Stored data EU-only; model/vision processing may run outside the EU | ⬜ not built | Needs: OpenRouter register entry (non-EU processing + transfer mechanism), registry exception citing 029, ZDR + no-training on requests, transfer line in privacy notice and DPA template. Reassess EU-only processing at production with paying properties |
+| 030 | Three deployables; admin in its own container | ⬜ not built (WP0.8) | Supersedes 003. Web on Vercel and worker as today; `apps/admin` does not exist yet |
+| 031 | Operators act only through an audited console | ⬜ not built (WP0.8) | Staff Supabase Auth project, Tailscale-only, append-only `admin_audit`. Until it exists, entitlements are granted by script (`docs/runbooks/onboarding.md`) |
+| 032 | Ops and security baseline, in priority order | 🟨 partial | Stripe webhook verification + idempotency, retention/export/erasure, register, logical backup drill ✅. Tailscale, secrets manager, OTel, rate limits, PITR drill, IaC ⬜ |
+| 033 | Self-hosted until the first signed contract, then Cloud Run | ⬜ not built (WP0.8) | GCP project, OpenTofu skeleton and signed-image CI are Phase 0 even with nothing on GCP |
 | 024 | Replay conversations extend the evals gate | ⬜ not built | Fixtures under `packages/agents/src/evals/conversations/<wp>/`; Phoenix waits for a register entry |
 | 025 | Workflow engine deferred until a named trigger | Proposed | Decided in Phase 1 on observed evidence |
 | 026 | ComplianceAdapter with a manual fallback | ⬜ Phase 1 (WP1.1) | `AlloggiatiAdapter` becomes its first implementation |

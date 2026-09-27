@@ -5,7 +5,7 @@ Guest-journey-first hospitality platform for small independent hotels (IT/AT/SI)
 ## Read first, in order
 1. `docs/00-PROJECT-OVERVIEW.md` — scope, decision register D1–D21, non-goals
 2. `docs/03-ARCHITECTURE.md` — topology, schema, conventions (§10 = repo layout)
-3. `docs/adr/` — ADR-001…029, one file each ([index](docs/adr/README.md)); **ADRs override anything conflicting in older annex documents**
+3. `docs/adr/` — ADR-001…033, one file each ([index](docs/adr/README.md)); **ADRs override anything conflicting in older annex documents**
 4. `docs/01-PRD.md` + `docs/02-USER-STORIES.md` — what to build, acceptance criteria
 5. `docs/04-IMPLEMENTATION-PLAN.md` — current sprint scope and DoD
 6. `docs/06-AI-AGENT-LAYER.md` — agent roster, `agent_runs`, autonomy tiers
@@ -13,9 +13,10 @@ Guest-journey-first hospitality platform for small independent hotels (IT/AT/SI)
 
 Historical/context docs live in `docs/annexes/` (technical annexes, Concierge workstream PRD/gameplan) and `docs/business/` (proposals, cost references). They inform but never override. Precedence: ADRs > docs/00–08 > annexes/business.
 
-## Stack (ADR-003…006, D13)
+## Stack (ADR-030, ADR-004…006, D13)
 - `apps/web` — Next.js App Router, shadcn/ui, Tailwind, next-intl (it/de/en/sl). Vercel fra1.
-- `apps/worker` — **Hono on @hono/node-server. Persistent Node process. NEVER edge, NEVER serverless.** Fly/Hetzner EU. Jobs via **pg-boss** (not Redis/BullMQ — ADR-005).
+- `apps/worker` — **Hono on @hono/node-server. Persistent Node process. NEVER edge, NEVER serverless.** Our own EU container (self-hosted VM → Cloud Run, ADR-033). Jobs via **pg-boss** (not Redis/BullMQ — ADR-005).
+- `apps/admin` (Guest Desk WP0.8, ADR-030/031) — operator console + its Hono admin API in **one container of our own, Tailscale-only, never on a third-party platform**. Staff sign in to a separate Supabase Auth project; never imports tenant-app auth.
 - Supabase EU (Frankfurt): Postgres + Auth + Storage. **Drizzle** for all domain access.
 - `packages/core` — canonical domain: schema, types, event emitter, journey state machine, AuthorityMap router, policy engine, `LlmProvider`, adapter interfaces. **All domain logic lives here; neither app reimplements it.**
 - `packages/adapters` — `MockEricsoftAdapter` (with failure injection) until real API access; real adapter must pass the mock's contract-test suite before swap (ADR-008).
@@ -66,7 +67,7 @@ Prefer the documented decision over cleverness. If a task seems to require viola
 Source: `docs/guest_desk_20260927/bookone-guest-desk-handoff/` (plan `docs/10-guest-desk-plan.md`, specs `docs/specs/WP*.md`). The handoff was written for a single-app layout; **ADR-019…029 and `docs/11-inventory.md` amend it, and win where they conflict** — e.g. a spec saying `src/agent/…`, `src/mcp/…`, `tenant_features` or `capture_sessions` means the monorepo equivalent the inventory names, not a new parallel structure.
 
 ### Scope
-- Phase 0 = WP0.1–WP0.7 (plan §4). One WP per session, one PR. Do not start a WP whose dependencies are not merged, and do not build Phase 1+ items unless the spec says so.
+- Phase 0 = WP0.1–WP0.8 (plan §4; WP0.8 = admin console + ops baseline, parallel). One WP per session, one PR. Do not start a WP whose dependencies are not merged, and do not build Phase 1+ items unless the spec says so.
 - Touch only the spec's "Touches" list, translated through the inventory.
 
 ### Flags (ADR-019)
@@ -94,6 +95,16 @@ Source: `docs/guest_desk_20260927/bookone-guest-desk-handoff/` (plan `docs/10-gu
 
 ### Stop and ask before
 Adding a dependency · changing the router's hard rules · any schema migration · anything that moves money or touches Stripe live mode · storing or processing identity documents beyond the spec · enabling a feature for a real (non-demo) property · calling any external authority system.
+
+### Admin console and ops (ADR-030…033)
+- `apps/admin` holds the UI and the admin API together. The public worker gets no admin routes. Every admin route runs staff auth, then a role check, then audit middleware; the browser never holds a service-role key.
+- `admin_audit` is append-only (a trigger refuses UPDATE/DELETE); never write a migration that loosens that. Every mutation carries a reason. Mutating a property's bookings or payments is not an admin capability.
+- No internal surface (admin, Phoenix, queue dashboards) gets a public ingress: Tailscale only.
+- Secrets come from the secrets manager at runtime; never commit `.env` values; per-property credentials are envelope-encrypted.
+- Webhooks verify signatures and are idempotent on the provider's event id.
+- OpenTelemetry in every service: LLM spans to Phoenix (after PII redaction), the rest to Grafana EU.
+- IaC in `infra/` (OpenTofu), two targets (`vm`, `gcp`), same image. **`tofu`/`terraform` run from WSL only**, per the global rule.
+- New services (Tailscale, Infisical, Grafana, Phoenix, OCI/Hetzner, GCP, the staff Supabase project) get a sub-processor register entry before first use.
 
 ### Legal hygiene
 Competitor behaviour may be referenced in design notes; competitor code, assets, UI copy and coined names are never used (rule 8). Each new surface gets a short design note in `docs/design-notes/` as evidence of independent development.

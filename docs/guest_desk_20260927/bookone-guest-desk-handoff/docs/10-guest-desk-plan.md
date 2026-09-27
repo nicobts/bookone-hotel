@@ -48,7 +48,7 @@ agent (read-only); pre-arrival capture with OCR/MRZ and schedina preview, no sub
 audit log, reversal; scripted "I don't know → reception" moment; roadmap slide.
 Non-goals: voice, OTA messaging, any authority submission, biometrics, channel manager, Rooms, open-web answers.
 Work packages: WP0.1 inventory + flags → WP0.2 router + profiles → WP0.3 actions → WP0.4 pre-arrival capture (parallel) →
-WP0.5 demo tenant + owner agent (parallel) → WP0.6 inbox → WP0.7 demo collateral. Specs in `docs/specs/`.
+WP0.5 demo tenant + owner agent (parallel) → WP0.6 inbox → WP0.7 demo collateral → WP0.8 admin console minimal + ops baseline (parallel). Specs in `docs/specs/`.
 Acceptance (all must be green):
 - [ ] Profiles 1–7 and the owner agent complete their primary action end-to-end on WhatsApp and webchat, IT and EN.
 - [ ] Every action in the audit log with actor, tool, input, result, reversibility.
@@ -91,6 +91,15 @@ server · 5 State: Supabase EU (RLS), pg-boss, no workflow engine until ADR-F5 �
 replay runner · 7 Channels: existing adapters. Models: two EU-resident tiers, provider = config. OCR: vision model + MRZ check
 digits in TS. Deploy: one container set on one EU VM; Cloud Run when justified.
 Rejected: Mastra (Phase 0), LangGraph.js, eve, Hermes (internal back-office only), one VM per hotel.
+
+## 9c. Admin console, ops baseline, hosting (ADR-F10–F12)
+Admin: separate app + staff IdP (MFA/passkeys) + Tailscale-only access + audited admin API; Phase 0 tenants/flags/kill
+switches/health/view-as-tenant; Phase 1 compliance view, credentials vault, provisioning, GDPR export/erasure; Phase 2
+Stripe Billing, cost per tenant, SLOs, Plane-linked support, status page.
+Ops baseline: zero-trust access · staff IdP · secrets manager + KMS · OTel + Phoenix + Grafana · webhook hardening ·
+PITR + restore drill · envs + OpenTofu · SBOM/signed images · config-as-data with history · GDPR mechanics.
+Hosting: self-hosted VM (Compose, Tailscale, Infisical, snapshots) for Phase 0/demo; GCP Cloud Run europe-west at the
+first signed contract; same container, IaC and CI for both targets from Phase 0.
 
 ## 10. Risks (top)
 Meta verification delays demo · association interest is courtesy not commitment · WebTur has no spec · Alloggiati

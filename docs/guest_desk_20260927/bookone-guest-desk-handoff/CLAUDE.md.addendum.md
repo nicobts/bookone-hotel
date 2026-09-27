@@ -41,3 +41,14 @@
 ## Legal hygiene
 - Competitor behaviour may be referenced in design notes; competitor code, assets, UI copy and coined
   names are never used. Each surface gets a short design note as evidence of independent development.
+
+## Admin console and ops (ADR-F10, F11, F12)
+- `apps/admin` is a separate deployable with its own IdP. It never imports tenant-app auth. It reaches data only
+  through `apps/api/admin/*` routes, each wrapped in staff auth + role check + audit middleware.
+- `admin_audit` is append-only; never write a migration that allows UPDATE/DELETE on it.
+- No internal surface (admin, Phoenix, Studio, queue dashboard) gets a public ingress. Tailscale only.
+- Secrets come from the secrets manager at runtime; never commit `.env` values; per-tenant credentials are
+  envelope-encrypted, never stored in clear.
+- All webhook handlers verify signatures and are idempotent on the provider's event id.
+- Every service boots the OpenTelemetry SDK; LLM spans go to Phoenix, everything else to the Grafana exporter.
+- IaC lives in `infra/` (OpenTofu) with two targets, `vm` and `gcp`; the container image is the same for both.
