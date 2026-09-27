@@ -21,6 +21,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:seed": "node scripts/seed-dev.mjs",
+    "demo:seed": "tsx scripts/seed-demo.mts",
     "db:studio": "supabase status -o env",
     "db:generate": "pnpm --filter @bookone/core db:generate",
     "db:migrate": "pnpm --filter @bookone/core db:migrate",

@@ -134,6 +134,25 @@ export const AG_01: AgentDefinition = {
 }
 
 /**
+ * AG-06 — the owner's assistant (06 §2 "Support Agent", Guest Desk WP0.5).
+ *
+ * Runs the `owner-backoffice` profile for a verified owner number only
+ * (`respondToOwner`). Its grant is the profile's four read-only lists: nothing
+ * it can call changes a row, which is why T1 is safe — the worst it can do is
+ * read an owner the wrong list.
+ */
+export const AG_06: AgentDefinition = {
+  name: 'AG-06',
+  description:
+    "Owner's assistant — read-only answers about the property, for verified owner numbers",
+  tier: 'T1',
+  feature: 'concierge',
+  tools: ['list_arrivals', 'list_capture_status', 'list_open_complaints', 'list_pending_approvals'],
+  model: 'classification',
+  dailyBudgetCents: 0,
+}
+
+/**
  * AG-07 — Attribution Auditor (06 §2, Sprint 8).
  *
  * Re-runs D14's attribution rule against every fee we billed at the AI rate and
@@ -213,6 +232,7 @@ const registry = new Map<string, AgentDefinition>([
   [AG_01.name, AG_01],
   [AG_03.name, AG_03],
   [AG_05.name, AG_05],
+  [AG_06.name, AG_06],
   [AG_07.name, AG_07],
 ])
 

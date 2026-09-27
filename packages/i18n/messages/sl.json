@@ -780,6 +780,15 @@
     "ownerComplaints": "Odprte pritožbe ({count}): {list}.",
     "ownerComplaintsNone": "Ni odprtih pritožb.",
     "ownerApprovals": "Dejanja, ki čakajo na vašo odobritev ({count}): {list}.",
-    "ownerApprovalsNone": "Nič ne čaka na vašo odobritev."
+    "ownerApprovalsNone": "Nič ne čaka na vašo odobritev.",
+    "complaintCategories": {
+      "room": "soba",
+      "noise": "hrup",
+      "cleanliness": "čistoča",
+      "staff": "osebje",
+      "billing": "račun",
+      "safety": "varnost",
+      "other": "drugo"
+    }
   }
 }

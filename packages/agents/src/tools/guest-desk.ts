@@ -1,6 +1,7 @@
 import { searchAvailability } from '@bookone/core/booking'
 import {
   alertEscalation,
+  complaintCategoryLabel,
   createStayTask,
   deskPhrase,
   getPropertySlug,
@@ -616,7 +617,9 @@ const listOpenComplaintsTool: Tool = {
     if (rows.length === 0)
       return { ok: true, output: { count: 0, phrase: deskPhrase(lang, 'ownerComplaintsNone') } }
 
-    const list = rows.map((row) => `${row.guestName ?? '—'}: ${row.category}`).join('; ')
+    const list = rows
+      .map((row) => `${row.guestName ?? '—'}: ${complaintCategoryLabel(lang, row.category)}`)
+      .join('; ')
     return {
       ok: true,
       output: {

@@ -157,3 +157,9 @@ export function deskPhrase(
     Object.fromEntries(Object.entries(facts).map(([name, value]) => [name, String(value)])),
   )
 }
+
+/** A complaint category in the reader's language (the owner's lists). */
+export function complaintCategoryLabel(locale: string, category: string): string {
+  const labels = catalogues[resolve(locale)].concierge.complaintCategories as Record<string, string>
+  return labels[category] ?? category
+}

@@ -92,7 +92,7 @@ Source: `docs/guest_desk_20260927/bookone-guest-desk-handoff/` (plan `docs/10-gu
 
 ### Tests and evals (ADR-024)
 - Every WP adds unit tests for its logic and at least 5 replayable conversations under `packages/agents/src/evals/conversations/<wp>/`, run by the existing `test:evals` gate. Unsafe actions: zero.
-- The demo property is seeded by `scripts/seed-demo.mts`, re-runnable from a clean database, separate from `seed-dev.mjs`. No demo-mode toggle inside a real property.
+- The demo property is seeded by `pnpm demo:seed` (`scripts/seed-demo.mts`), re-runnable, separate from `seed-dev.mjs`, touching only `demo-trieste`. Its knowledge base is `content/demo/kb.json`, which the WP0.5 golden eval also reads. No demo-mode toggle inside a real property.
 
 ### Stop and ask before
 Adding a dependency · changing the router's hard rules · any schema migration · anything that moves money or touches Stripe live mode · storing or processing identity documents beyond the spec · enabling a feature for a real (non-demo) property · calling any external authority system.

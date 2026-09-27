@@ -780,6 +780,15 @@
     "ownerComplaints": "{count} open complaints: {list}.",
     "ownerComplaintsNone": "No open complaints.",
     "ownerApprovals": "{count} actions are waiting for your approval: {list}.",
-    "ownerApprovalsNone": "Nothing is waiting for your approval."
+    "ownerApprovalsNone": "Nothing is waiting for your approval.",
+    "complaintCategories": {
+      "room": "room",
+      "noise": "noise",
+      "cleanliness": "cleanliness",
+      "staff": "staff",
+      "billing": "billing",
+      "safety": "safety",
+      "other": "other"
+    }
   }
 }

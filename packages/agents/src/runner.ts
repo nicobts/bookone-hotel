@@ -7,6 +7,7 @@ import { createFeatureCheck, gateOpen, type FeatureCheck } from '@bookone/core/o
 import { getAgent, grantsTool, type AgentDefinition, type AutonomyTier } from './registry'
 import { getTool, type ToolContext, type ToolResult } from './tools'
 import { orchestrate, type ExecuteTool, type NoteToolCall } from './orchestrator'
+import { executeOwner } from './owner'
 
 /**
  * The agent runner (06-AI-AGENT-LAYER §3).
@@ -343,6 +344,13 @@ async function execute(
         },
         io,
       )
+    }
+
+    /** AG-06 — the owner's assistant (WP0.5): one read-only list, its phrase as the reply. */
+    case 'AG-06': {
+      const message = typeof input.input.message === 'string' ? input.input.message : ''
+      if (!message.trim()) throw new Error('AG-06 needs a message')
+      return executeOwner(message, io.call, io.llm)
     }
 
     /**

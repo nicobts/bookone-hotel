@@ -217,6 +217,18 @@ has cost something — worth remembering as a class rather than as two incidents
 | PDFs | ⬜ | Stored and filed as before; not read by the model, which reads images |
 | `capture_sessions` / `guest_identity_documents` | ⬜ **not built, deliberately** | The spec's tables duplicate `journey_states` + `registration_records` + the private bucket; the inventory chose to extend |
 
+## Guest Desk WP0.5 — demo property and owner agent
+
+| Thing | Status | Note |
+|---|---|---|
+| `pnpm demo:seed` | ✅ | Fictional "Hotel Demo Trieste": 25 stays through the domain's own commands (5 departed, 4 in the house, arrivals in every pre-arrival state, 11 future), 13 knowledge articles IT/EN from `content/demo/kb.json`, 2 open complaints, owner and staff logins. Re-runnable; removes only the demo property |
+| Demo features | ✅ | Phase 0 set + `pms_sync` (mock PMS, so availability exists) + `booking_engine` (so pre-sale can hand out a link — the matrix has it off for hotels; the demo needs it) + `document_ocr` (demo documents only). `alloggiati` off |
+| Knowledge golden set | ✅ | 21 IT/EN questions reach the right article; four adjacent ones reach none. Its first run found a real near miss — a pool question answered with the seafront — fixed with content, not the matcher |
+| Owner agent (AG-06) | ✅ | `owner-backoffice` profile for recorded owner numbers only (`settings.ownerPhones`); a guest's number is refused before anything runs. Verified live: arrivals, missing documents, open complaints |
+| Owner reached by WhatsApp | ⬜ | `respondToOwner` is the entry point; the channel waits on the BSP |
+| `knowledge_chunks` / embeddings | ⬜ deliberately | See WP0.3 |
+| AG-02 (document extraction) in `agent_runs` | ⬜ | 06 names extraction AG-02. It runs as the `documents.extract` job, audited by `document.read` events; routing it through the runner would put the image or identity fields in `agent_runs`. Decide how to record it before the model sees a real document |
+
 ## CI gates
 
 All five exist as separate jobs in `.github/workflows/ci.yml`, named so a

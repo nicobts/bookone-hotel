@@ -780,6 +780,15 @@
     "ownerComplaints": "{count} offene Beschwerden: {list}.",
     "ownerComplaintsNone": "Keine offenen Beschwerden.",
     "ownerApprovals": "{count} Aktionen warten auf Ihre Freigabe: {list}.",
-    "ownerApprovalsNone": "Nichts wartet auf Ihre Freigabe."
+    "ownerApprovalsNone": "Nichts wartet auf Ihre Freigabe.",
+    "complaintCategories": {
+      "room": "Zimmer",
+      "noise": "Lärm",
+      "cleanliness": "Sauberkeit",
+      "staff": "Personal",
+      "billing": "Rechnung",
+      "safety": "Sicherheit",
+      "other": "Sonstiges"
+    }
   }
 }

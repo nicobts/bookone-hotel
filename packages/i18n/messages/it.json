@@ -780,6 +780,15 @@
     "ownerComplaints": "{count} reclami aperti: {list}.",
     "ownerComplaintsNone": "Nessun reclamo aperto.",
     "ownerApprovals": "{count} azioni attendono la sua approvazione: {list}.",
-    "ownerApprovalsNone": "Non c'è nulla in attesa della sua approvazione."
+    "ownerApprovalsNone": "Non c'è nulla in attesa della sua approvazione.",
+    "complaintCategories": {
+      "room": "camera",
+      "noise": "rumore",
+      "cleanliness": "pulizia",
+      "staff": "personale",
+      "billing": "conto",
+      "safety": "sicurezza",
+      "other": "altro"
+    }
   }
 }
