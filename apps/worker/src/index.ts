@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { serve } from '@hono/node-server'
 import { pino } from 'pino'
 import { MockEricsoftAdapter } from '@bookone/adapters/mock-ericsoft'
 import { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
@@ -8,13 +7,12 @@ import { MockAlloggiatiAdapter } from '@bookone/adapters/mock-alloggiati'
 import { getNotificationProvider, registerNotificationProvider } from '@bookone/core/notifications'
 import { openRouterFromEnv, registerProvider } from '@bookone/core/llm'
 import { loadProfiles } from '@bookone/agents/profiles'
-import { createApp } from './app'
 import { LogNotificationProvider } from './notifications/log-provider'
 import { createDocumentDeleter } from './storage/documents'
 import { loadEnv } from './env'
 import { registerHandlers } from './jobs/handlers'
 import { registerSchedules } from './jobs/schedules'
-import { PgBossQueue } from './queue/pg-boss-queue'
+import { PgBossQueue } from '@bookone/adapters/pg-boss'
 
 /**
  * The repo-root `.env`, for local development.
@@ -33,6 +31,7 @@ const envFile = fileURLToPath(new URL('../../../.env', import.meta.url))
 if (existsSync(envFile)) process.loadEnvFile(envFile)
 
 // ADR-003: persistent Node process. Not edge, not serverless — see README.
+// No HTTP ingress since ADR-034: webhooks and /jobs/* are apps/api's.
 // The queue subscriptions and connector polling below are exactly why.
 const env = loadEnv()
 const logger = pino({ level: env.LOG_LEVEL })
@@ -135,20 +134,6 @@ const profiles = loadProfiles()
 const llm = openRouterFromEnv(env)
 if (llm) registerProvider(llm)
 
-const app = createApp({
-  queue,
-  adapter,
-  payments: paymentAdapter,
-  logger,
-  internalToken: env.WORKER_INTERNAL_TOKEN,
-  appUrl: env.APP_URL,
-  allowSimulation: env.NODE_ENV !== 'production',
-})
-
-const server = serve({ fetch: app.fetch, port: env.WORKER_PORT }, (info) => {
-  logger.info({ port: info.port, env: env.NODE_ENV }, 'worker listening')
-})
-
 await queue.start()
 await registerHandlers({
   queue,
@@ -195,9 +180,6 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 
     logger.info({ signal }, 'shutting down')
 
-    void (async () => {
-      await queue.stop()
-      server.close(() => process.exit(0))
-    })()
+    void queue.stop().then(() => process.exit(0))
   })
 }

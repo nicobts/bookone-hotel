@@ -10,7 +10,8 @@
     "./mock-ericsoft": "./src/mock-ericsoft/index.ts",
     "./payment": "./src/payment/index.ts",
     "./mock-payment": "./src/mock-payment/index.ts",
-    "./mock-alloggiati": "./src/mock-alloggiati/index.ts"
+    "./mock-alloggiati": "./src/mock-alloggiati/index.ts",
+    "./pg-boss": "./src/pg-boss/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -19,6 +20,7 @@
   },
   "dependencies": {
     "@bookone/core": "workspace:*",
+    "pg-boss": "^12.28.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

@@ -60,7 +60,7 @@ describe('worker http surface', () => {
     const res = await build().app.request('/health')
 
     expect(res.status).toBe(200)
-    await expect(res.json()).resolves.toEqual({ status: 'ok', service: 'worker' })
+    await expect(res.json()).resolves.toEqual({ status: 'ok', service: 'api' })
   })
 
   it('404s an unknown route', async () => {

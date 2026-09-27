@@ -10,6 +10,12 @@ import { z } from 'zod'
  */
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  /**
+   * 8787, the port the worker used to listen on: `apps/web` reaches this
+   * process through `WORKER_URL`, and keeping the port means a local checkout
+   * keeps working across the split (ADR-034).
+   */
+  API_PORT: z.coerce.number().int().positive().default(8787),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
   /**
@@ -20,14 +26,15 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required for the job queue'),
 
   /**
-   * Which outbound provider sends guest messages.
+   * Shared secret guarding `/jobs/*`. The name predates ADR-034, when this
+   * surface lived in the worker; it is kept so web's configuration did not
+   * have to change with the split.
    *
-   * `log` writes them to the log and transmits nothing — the default until an
-   * ESP clears D9 (region pinned, sub-processor register updated, DPA signed).
-   * Naming a provider that has not been registered fails at boot, which is the
-   * intended outcome: the residency gate is not skippable by setting a variable.
+   * Required, with no default, for the same reason as the URL above: a default
+   * would be a published password. A minimum length because a two-character
+   * secret is an unlocked door with a sign on it.
    */
-  NOTIFICATION_PROVIDER: z.string().default('log'),
+  WORKER_INTERNAL_TOKEN: z.string().min(24, 'WORKER_INTERNAL_TOKEN must be at least 24 characters'),
 
   /**
    * MEMO: `mock` is the only implementation today and it moves no money
@@ -47,16 +54,6 @@ const envSchema = z.object({
     .string()
     .min(24, 'PAYMENT_WEBHOOK_SECRET must be at least 24 characters'),
 
-  /**
-   * The model gateway (ADR-023, ADR-029). All optional: without a key no model
-   * is registered and the concierge routes by rules — the state CI runs in.
-   * A key without a model per tier refuses to boot (`openRouterFromEnv`).
-   */
-  OPENROUTER_API_KEY: z.string().optional(),
-  LLM_MODEL_SMALL: z.string().optional(),
-  LLM_MODEL_STRONG: z.string().optional(),
-  OPENROUTER_BASE_URL: z.string().optional(),
-
   /** Where the guest comes back to, and where the simulated checkout lives. */
   APP_URL: z.string().url().default('http://localhost:3000'),
 })
@@ -70,7 +67,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     const issues = parsed.error.issues
       .map((issue) => `  ${issue.path.join('.') || '(root)'}: ${issue.message}`)
       .join('\n')
-    throw new Error(`Invalid worker environment:\n${issues}`)
+    throw new Error(`Invalid api environment:\n${issues}`)
   }
 
   return parsed.data

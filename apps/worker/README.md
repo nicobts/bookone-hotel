@@ -1,6 +1,8 @@
 # @bookone/worker
 
-Hono on `@hono/node-server`, deployed to Fly/Hetzner in the EU.
+pg-boss jobs, schedules, connectors and the agent runner, in our own EU
+container (ADR-033). **No HTTP ingress since ADR-034**: webhooks, health and the
+`/jobs/*` surface web calls are `apps/api`'s; this process only consumes.
 
 ## Standing constraint (ADR-003 — do not relax without a superseding ADR)
 
@@ -26,14 +28,13 @@ the change belongs in `apps/web`'s route handlers instead.
 - pg-boss job execution: `availability.refresh`, `reservation.reflect`,
   `reconcile.nightly`, `agent.run`
 - the dual-source sync engine and nightly reconciliation
-- connectors: Ericsoft (mock until WS-C clears), Stripe webhooks, WhatsApp,
+- connectors: Ericsoft (mock until WS-C clears), WhatsApp,
   Alloggiati
 - the agent runner from `@bookone/agents` — agents are jobs in this process, not
   a separate deployable
-- tool endpoints for the voice concierge workstream (WS-B)
 - notification fanout
 
-**Stripe webhooks are the only authority on payment state** (03 §7.2) — no
+**Stripe webhooks are the only authority on payment state** (received by `apps/api` since ADR-034; replay runs here) (03 §7.2) — no
 polling, no optimistic state in the web app.
 
 ## Data access
@@ -46,6 +47,7 @@ merge gate (ADR-007).
 ## Local development
 
 ```bash
-pnpm --filter @bookone/worker dev     # tsx watch, port 8787
+pnpm --filter @bookone/worker dev     # tsx watch; no port — it only consumes
+pnpm --filter @bookone/api dev        # the HTTP side, port 8787
 curl localhost:8787/health
 ```

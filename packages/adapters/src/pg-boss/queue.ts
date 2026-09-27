@@ -29,12 +29,20 @@ export class PgBossQueue implements JobQueue {
   private readonly boss: PgBoss
   private started = false
 
-  constructor(connectionString: string) {
+  /**
+   * @param role `worker` consumes, schedules and maintains the queue (apps/worker).
+   *   `producer` only sends (apps/api, ADR-034): no supervision and no cron
+   *   leadership, so two processes never both try to run the schedules. Both
+   *   may migrate — pg-boss takes an advisory lock, so whichever boots first
+   *   creates the schema and the other waits.
+   */
+  constructor(connectionString: string, role: 'worker' | 'producer' = 'worker') {
     this.boss = new PgBoss({
       connectionString,
       // Its own schema, so the queue never collides with the domain tables and
       // `supabase db reset` does not drop pending work.
       schema: 'pgboss',
+      ...(role === 'producer' ? { supervise: false, schedule: false } : {}),
     })
   }
 

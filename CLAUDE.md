@@ -15,8 +15,8 @@ Historical/context docs live in `docs/annexes/` (technical annexes, Concierge wo
 
 ## Stack (ADR-034, ADR-004…006, D13)
 - `apps/web` — Next.js App Router, shadcn/ui, Tailwind, next-intl (it/de/en/sl). Vercel fra1.
-- `apps/worker` — **Hono on @hono/node-server. Persistent Node process. NEVER edge, NEVER serverless.** Our own EU container (self-hosted VM → Cloud Run, ADR-033). Jobs via **pg-boss** (not Redis/BullMQ — ADR-005).
-- `apps/api` (ADR-034, after WP0.2) — Hono: payment and provider webhooks, `/health*`, the bearer-token `/jobs/*` surface and the `AppType` web consumes. Moves out of `apps/worker`, which then runs pg-boss jobs only with no ingress. Until the move lands, `apps/worker` still serves both.
+- `apps/worker` — **Persistent Node process. NEVER edge, NEVER serverless.** Our own EU container (self-hosted VM → Cloud Run, ADR-033). Jobs via **pg-boss** (not Redis/BullMQ — ADR-005); the client is `@bookone/adapters/pg-boss`.
+- `apps/api` (ADR-034) — Hono on @hono/node-server: payment and provider webhooks, `/health*`, the bearer-token `/jobs/*` surface web calls, and the per-property feature gate. Answers and enqueues; persistent process, never edge or serverless. `apps/worker` runs pg-boss jobs only and has **no HTTP ingress**.
 - `apps/admin` (Guest Desk WP0.8, ADR-031/034) — operator console + its Hono admin API in **one container of our own, Tailscale-only, never on a third-party platform**. Staff sign in to a separate Supabase Auth project; never imports tenant-app auth.
 - Supabase EU (Frankfurt): Postgres + Auth + Storage. **Drizzle** for all domain access.
 - `packages/core` — canonical domain: schema, types, event emitter, journey state machine, AuthorityMap router, policy engine, `LlmProvider`, adapter interfaces. **All domain logic lives here; neither app reimplements it.**

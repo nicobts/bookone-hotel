@@ -96,7 +96,7 @@ export function createApp(deps: {
 
   return (
     new Hono()
-      .get('/health', (c) => c.json({ status: 'ok' as const, service: 'worker' as const }))
+      .get('/health', (c) => c.json({ status: 'ok' as const, service: 'api' as const }))
 
       /**
        * Connector health, surfaced in the console.
