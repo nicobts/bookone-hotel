@@ -233,9 +233,15 @@ export async function orchestrate(
     })
   }
 
-  // Complaints are always seen by a person, even when logged cleanly (T2).
-  if (profile.id === 'complaints') {
-    return escalate('complaint logged', { profile: profile.id, route: routed, prefix: phrase })
+  // Recorded, but a person confirms: a date change, a late checkout, a
+  // complaint (always T2). The guest reads what was done, then that a person
+  // has it.
+  if (result.output.handoff === true || profile.id === 'complaints') {
+    return escalate(`${profile.id}: ${choice.tool} needs a person to confirm`, {
+      profile: profile.id,
+      route: routed,
+      prefix: phrase,
+    })
   }
 
   return {

@@ -515,6 +515,20 @@ export const DATA_MAP: DataMapEntry[] = [
     exportVia: 'reservation',
   },
   {
+    table: 'complaints',
+    subject: 'guest',
+    categories: ['content'],
+    basis: 'Performance of contract (Art. 6(1)(b)) — a complaint a guest made about their stay.',
+    retention: {
+      kind: 'delete-rows',
+      afterDays: DAYS.twoYears,
+      anchor: 'created_at',
+      why: 'What a guest complained about, in their words. Same category and same clock as the message it came from.',
+    },
+    erasure: { kind: 'delete', why: 'Goes with the conversation it came from.' },
+    exportVia: 'reservation',
+  },
+  {
     table: 'notifications',
     subject: 'guest',
     categories: ['contact', 'content'],

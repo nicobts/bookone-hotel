@@ -23,6 +23,8 @@ import {
 import { auditToolBoundary, propertiesWithAgentReplies } from '../../../concierge/audit'
 import { searchKb } from '../../../concierge/kb'
 import { grantEntitlement } from '../../../onboarding/entitlements'
+import { listOpenComplaints, logComplaint } from '../../../concierge/complaints'
+import { agentActor } from '../../../events/actor'
 
 /**
  * Messaging, tasks and the tool-boundary audit against a real database
@@ -738,5 +740,95 @@ describe('the SLA sweep, per feature (ADR-019)', () => {
     const all = await listOverdueEscalations({ minutes: 60, feature: 'inbox' })
     expect(all.map((row) => row.id)).not.toContain(betaThread.id)
     expect(all.map((row) => row.id)).toContain(alphaThread.id)
+  })
+})
+
+/*
+ * Complaints (Guest Desk WP0.3). Isolation on both paths, as the add-table
+ * skill requires: the PostgREST client (`selectAs`) and Drizzle through
+ * `withUser` (ADR-018) — a BYPASSRLS connection would pass the first and leak on
+ * the second.
+ */
+describe('complaints', () => {
+  it('keeps one property out of another, on both access paths', async () => {
+    const reservationId = await confirmedStay(fixture.alpha.propertyId, 'complaint-iso')
+    const logged = await logComplaint({
+      propertyId: fixture.alpha.propertyId,
+      reservationId,
+      category: 'noise',
+      summary: 'The bar was loud until 2am',
+      actor: agentActor('AG-01'),
+    })
+
+    // Client path.
+    expect(await selectAs(fixture.beta.user, 'complaints')).toEqual([])
+    const own = await selectAs(fixture.alpha.user, 'complaints')
+    expect(own.map((row) => (row as { id: string }).id)).toContain(logged.id)
+
+    // Drizzle path, through the role drop.
+    const seenByBeta = await withUser(fixture.beta.user.id, (tx) =>
+      tx.execute(sql`select id from complaints where id = ${logged.id}`),
+    )
+    expect([...seenByBeta]).toEqual([])
+
+    const seenByAlpha = await withUser(fixture.alpha.user.id, (tx) =>
+      tx.execute(sql`select id from complaints where id = ${logged.id}`),
+    )
+    expect([...seenByAlpha]).toHaveLength(1)
+  })
+
+  it('refuses a complaint written into another property', async () => {
+    const reservationId = await confirmedStay(fixture.alpha.propertyId, 'complaint-cross')
+
+    await expectPolicyRefusal(() =>
+      withUser(fixture.beta.user.id, (tx) =>
+        tx.execute(sql`
+          insert into complaints (property_id, reservation_id, category, summary, sla_minutes, sla_due_at, created_by)
+          values (${fixture.alpha.propertyId}, ${reservationId}, 'other', 'not mine', 30, now(), 'staff')
+        `),
+      ),
+    )
+  })
+
+  it('cannot be deleted by a member — a resolved complaint is information', async () => {
+    const reservationId = await confirmedStay(fixture.alpha.propertyId, 'complaint-nodelete')
+    const logged = await logComplaint({
+      propertyId: fixture.alpha.propertyId,
+      reservationId,
+      category: 'room',
+      summary: 'The window does not close',
+      actor: agentActor('AG-01'),
+    })
+
+    await withUser(fixture.alpha.user.id, (tx) =>
+      tx.execute(sql`delete from complaints where id = ${logged.id}`),
+    )
+
+    const [row] = await db.execute<{ n: number }>(
+      sql`select count(*)::int as n from complaints where id = ${logged.id}`,
+    )
+    expect(row!.n).toBe(1)
+  })
+
+  it('computes the deadline from the database clock: 5 minutes for safety, 30 otherwise', async () => {
+    const reservationId = await confirmedStay(fixture.alpha.propertyId, 'complaint-sla')
+    const safety = await logComplaint({
+      propertyId: fixture.alpha.propertyId,
+      reservationId,
+      category: 'safety',
+      summary: 'The balcony railing is loose',
+      actor: agentActor('AG-01'),
+    })
+
+    const [row] = await db.execute<{ minutes: number }>(
+      sql`select extract(epoch from (sla_due_at - created_at))::int / 60 as minutes
+          from complaints where id = ${safety.id}`,
+    )
+    expect(row!.minutes).toBe(5)
+    expect(safety.slaMinutes).toBe(5)
+
+    const open = await listOpenComplaints(fixture.alpha.propertyId)
+    // Most urgent first: the five-minute safety complaint leads.
+    expect(open[0]?.id).toBe(safety.id)
   })
 })

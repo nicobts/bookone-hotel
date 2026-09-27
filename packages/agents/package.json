@@ -16,13 +16,15 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run",
-    "test:evals": "vitest run --config vitest.evals.config.ts"
+    "test:evals": "vitest run --config vitest.evals.config.ts",
+    "test:rls": "vitest run --config vitest.db.config.ts"
   },
   "dependencies": {
     "@bookone/core": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "drizzle-orm": "^0.45.2",
     "typescript": "5.9.3",
     "vitest": "^4.1.11"
   }

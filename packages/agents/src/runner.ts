@@ -1,4 +1,6 @@
+import { createHash } from 'node:crypto'
 import { agentRuns, asService } from '@bookone/core/db'
+import { findCompletedToolCall } from '@bookone/core/concierge'
 import type { RoutingTurn } from '@bookone/core/concierge'
 import { listProviders, type LlmProvider } from '@bookone/core/llm'
 import { createFeatureCheck, gateOpen, type FeatureCheck } from '@bookone/core/onboarding'
@@ -42,6 +44,8 @@ export interface RunInput {
   reservationId?: string
   threadId?: string
   locale?: string
+  /** The public base URL, for links in tool phrases. Context, like the stay. */
+  appUrl?: string
   /** What the agent is being asked about. Shape is per-agent. */
   input: Record<string, unknown>
 }
@@ -91,6 +95,10 @@ export interface ToolCallRecord {
   input: Record<string, unknown>
   output?: Record<string, unknown>
   reversible: boolean
+  /** thread + tool + input hash, on write tools (WP0.3). */
+  idempotencyKey?: string
+  /** The write had already been done for this key; its earlier output was returned. */
+  replayed?: boolean
 }
 
 export interface RunOutcome {
@@ -142,6 +150,7 @@ export async function runAgent(
       ...(input.reservationId ? { reservationId: input.reservationId } : {}),
       ...(input.threadId ? { threadId: input.threadId } : {}),
       ...(input.locale ? { locale: input.locale } : {}),
+      ...(input.appUrl ? { appUrl: input.appUrl } : {}),
     }
 
     const result = await execute(agent, input, {
@@ -220,6 +229,32 @@ async function callTool(
     throw new Error(`Tool "${tool}" is granted but not implemented.`)
   }
 
+  /*
+   * Idempotency for writes (WP0.3): a guest who sends the same message twice,
+   * or a job retried after a crash, must not log two complaints or send two
+   * links. Keyed per thread, so the same request in another conversation is a
+   * different request.
+   */
+  const idempotencyKey =
+    implementation.write && context.threadId
+      ? writeKey(context.threadId, tool, toolInput)
+      : undefined
+
+  if (idempotencyKey) {
+    const earlier = await findCompletedToolCall(context.propertyId, idempotencyKey)
+    if (earlier) {
+      log.push({
+        ...entry,
+        ok: true,
+        status: 'done',
+        output: earlier,
+        idempotencyKey,
+        replayed: true,
+      })
+      return { ok: true, output: earlier }
+    }
+  }
+
   // The context is the scoping boundary: one property and at most one stay,
   // fixed by the runner and not readable from the agent's own input.
   const result = await implementation.run(context, toolInput)
@@ -228,12 +263,29 @@ async function callTool(
     ok: result.ok,
     status: result.ok ? 'done' : 'failed',
     output: result.output,
+    ...(idempotencyKey ? { idempotencyKey } : {}),
   })
 
   return result
 }
 
 type ToolCaller = (tool: string, input: Record<string, unknown>) => Promise<ToolResult>
+
+/** A stable key for one write: the order of keys in the input does not change it. */
+export function writeKey(threadId: string, tool: string, input: Record<string, unknown>): string {
+  const canonical = (value: unknown): unknown =>
+    value !== null && typeof value === 'object' && !Array.isArray(value)
+      ? Object.fromEntries(
+          Object.keys(value as Record<string, unknown>)
+            .sort()
+            .map((key) => [key, canonical((value as Record<string, unknown>)[key])]),
+        )
+      : value
+
+  return createHash('sha256')
+    .update(`${threadId}|${tool}|${JSON.stringify(canonical(input))}`)
+    .digest('hex')
+}
 
 interface ExecuteIO {
   call: ExecuteTool

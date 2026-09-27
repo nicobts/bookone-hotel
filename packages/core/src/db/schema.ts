@@ -1345,6 +1345,20 @@ export const messageAuthor = pgEnum('message_author', ['guest', 'agent', 'staff'
 /** A task's life. Small on purpose — see `stayTasks`. */
 export const taskStatus = pgEnum('task_status', ['open', 'done', 'cancelled'])
 
+/** What a complaint is about (Guest Desk WP0.3). `safety` has the shortest SLA. */
+export const complaintCategory = pgEnum('complaint_category', [
+  'room',
+  'noise',
+  'cleanliness',
+  'staff',
+  'billing',
+  'safety',
+  'other',
+])
+
+/** Open until somebody resolves it; acknowledged when a person has picked it up. */
+export const complaintStatus = pgEnum('complaint_status', ['open', 'acknowledged', 'resolved'])
+
 /** Which side of the folio line an extra came from. See `stayExtras`. */
 export const extraSource = pgEnum('extra_source', ['platform', 'pms'])
 
@@ -1588,6 +1602,66 @@ export const stayTasks = pgTable(
     check('stay_tasks_summary_not_empty', sql`length(btrim(${t.summary})) > 0`),
     /** Done means done at a time. A completed task with no timestamp cannot be reported on. */
     check('stay_tasks_done_has_time', sql`${t.status} <> 'done' or ${t.completedAt} is not null`),
+  ],
+)
+
+/**
+ * A guest's complaint (Guest Desk WP0.3, the `complaints` profile).
+ *
+ * Not a task. A task records something to do; a complaint records that a guest
+ * is unhappy, with a clock on how soon a person must respond. The profile
+ * always hands a complaint to a person (T2), and the owner is told when it is
+ * logged, not when the SLA runs out.
+ *
+ * **The deadline comes from the database's clock.** `sla_due_at` is computed in
+ * the insert from `now()` and `sla_minutes`, so the deadline and `created_at`
+ * share one clock — the rule the entitlements constraint bug taught (Sprint 9).
+ *
+ * Nothing here is money. A complaint that mentions a refund has already been
+ * stopped by the money hard rule before any profile runs (ADR-021); a
+ * compensation decision, if there is one, is a person's, made elsewhere.
+ */
+export const complaints = pgTable(
+  'complaints',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+    reservationId: uuid('reservation_id')
+      .notNull()
+      .references(() => reservations.id, { onDelete: 'cascade' }),
+    /** The conversation it came from, when it came from one. */
+    threadId: uuid('thread_id').references(() => messageThreads.id, { onDelete: 'set null' }),
+
+    category: complaintCategory('category').notNull(),
+    /** What the guest said, in their words where possible. */
+    summary: text('summary').notNull(),
+
+    status: complaintStatus('status').notNull().default('open'),
+
+    /** How soon a person must respond: 5 for safety, 30 otherwise. */
+    slaMinutes: integer('sla_minutes').notNull(),
+    slaDueAt: timestamp('sla_due_at', { withTimezone: true }).notNull(),
+
+    /** `guest`, `staff:{uuid}`, `agent:AG-01` — the actor vocabulary of `domain_events`. */
+    createdBy: text('created_by').notNull(),
+
+    ownerAlertedAt: timestamp('owner_alerted_at', { withTimezone: true }),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    resolvedBy: text('resolved_by'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('complaints_property_status_idx').on(t.propertyId, t.status),
+    index('complaints_reservation_idx').on(t.reservationId),
+    check('complaints_summary_not_empty', sql`length(btrim(${t.summary})) > 0`),
+    check('complaints_sla_positive', sql`${t.slaMinutes} > 0`),
+    /** Resolved means resolved at a time, by someone. */
+    check(
+      'complaints_resolved_has_time',
+      sql`${t.status} <> 'resolved' or (${t.resolvedAt} is not null and ${t.resolvedBy} is not null)`,
+    ),
   ],
 )
 

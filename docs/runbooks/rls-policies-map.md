@@ -72,6 +72,7 @@ only (`user_property_ids_admin()`).
 | `message_threads` | member | — ²⁵ | member ²⁶ | — ²⁷ | 2026-08-29 |
 | `messages` | member | member ²⁸ | — ²⁹ | — ²⁹ | 2026-08-29 |
 | `stay_tasks` | member | member | member | — ³⁰ | 2026-08-29 |
+| `complaints` | member | member | member | — (no delete: a resolved complaint is information; erasure runs under the service role) | 2026-09-27 — both paths by query; negative control (select policy opened to `true`) failed the isolation test |
 | `stay_extras` | member | — ³¹ | — ³¹ | — ³¹ | 2026-08-29 |
 | `invoice_requests` | member | — ³² | — ³² | — ³² | 2026-08-29 |
 | `attribution_events` | member | — ³³ | — ³³ | — ³³ | 2026-08-29 |

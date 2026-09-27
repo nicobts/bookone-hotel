@@ -111,3 +111,49 @@ export function emergencyPhrase(locale: string): string {
 export function approvalPendingPhrase(locale: string): string {
   return catalogues[resolve(locale)].concierge.approvalPending
 }
+
+/** The Guest Desk tools' phrases (WP0.3). Keys are checked against the English catalogue. */
+export type DeskPhraseKey = Extract<
+  keyof (typeof en)['concierge'],
+  | 'availability'
+  | 'availabilityNone'
+  | 'bookingLink'
+  | 'changeAvailable'
+  | 'changeUnavailable'
+  | 'paymentNone'
+  | 'paymentStatus'
+  | 'charges'
+  | 'prearrivalSent'
+  | 'etaRecorded'
+  | 'captureMissing'
+  | 'captureComplete'
+  | 'captureDetails'
+  | 'captureDocuments'
+  | 'lateCheckoutRequested'
+  | 'invoiceRequested'
+  | 'complaintLogged'
+  | 'ownerNotified'
+  | 'ownerArrivals'
+  | 'ownerArrivalsNone'
+  | 'ownerCapture'
+  | 'ownerCaptureNone'
+  | 'ownerComplaints'
+  | 'ownerComplaintsNone'
+  | 'ownerApprovals'
+  | 'ownerApprovalsNone'
+>
+
+/**
+ * One desk phrase, with its facts interpolated. The facts come from the tool
+ * that calls this — rows, never generation (binding rule 7).
+ */
+export function deskPhrase(
+  locale: string,
+  key: DeskPhraseKey,
+  facts: Record<string, string | number> = {},
+): string {
+  return interpolate(
+    catalogues[resolve(locale)].concierge[key],
+    Object.fromEntries(Object.entries(facts).map(([name, value]) => [name, String(value)])),
+  )
+}

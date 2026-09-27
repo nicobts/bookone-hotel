@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   answerFor,
   auditMessage,
+  toolEvidence,
   classifyIntent,
   disclosurePhrase,
   escalatedPhrase,
@@ -263,6 +264,63 @@ describe('AG-01 · the tool boundary holds on what it would actually send', () =
 
     expect(violations.map((violation) => violation.kind)).toContain('unsourced_number')
     expect(violations.map((violation) => violation.detail)).toContain('10:30')
+  })
+
+  it('passes a reply of two tool phrases joined by a blank line (a task and a handover)', () => {
+    const violations = auditMessage({
+      messageId: 'm5',
+      threadId: 't1',
+      agentRunId: 'r1',
+      body: 'I have written this down.\n\nSomeone will reply here.',
+      runEvidence: toolEvidence(
+        [
+          { tool: 'create_task', ok: true, output: { phrase: 'I have written this down.' } },
+          { tool: 'escalate', ok: true, output: { phrase: 'Someone will reply here.' } },
+        ],
+        { reply: 'I have written this down.\n\nSomeone will reply here.' },
+      ),
+    })
+
+    expect(violations).toEqual([])
+  })
+
+  it('does not accept the reply as its own evidence', () => {
+    // The run records the reply it sent. Were that record evidence, every reply
+    // would be sourced by definition and the audit would measure nothing.
+    const violations = auditMessage({
+      messageId: 'm6',
+      threadId: 't1',
+      agentRunId: 'r1',
+      body: 'Breakfast is included and free for you today.',
+      runEvidence: toolEvidence(
+        [{ tool: 'search_knowledge', ok: true, output: { found: false } }],
+        { reply: 'Breakfast is included and free for you today.' },
+      ),
+    })
+
+    expect(violations.map((violation) => violation.kind)).toContain('unsourced_reply')
+  })
+
+  it("does not accept a tool's input — what the model or guest supplied — as evidence", () => {
+    const violations = auditMessage({
+      messageId: 'm7',
+      threadId: 't1',
+      agentRunId: 'r1',
+      body: 'Your late checkout at 15:00 is confirmed.',
+      runEvidence: toolEvidence(
+        [
+          {
+            tool: 'request_late_checkout',
+            ok: true,
+            input: { time: '15:00', note: 'Your late checkout at 15:00 is confirmed.' },
+            output: { phrase: 'I have asked the property about checking out at 15:00.' },
+          },
+        ],
+        {},
+      ),
+    })
+
+    expect(violations.map((violation) => violation.kind)).toContain('unsourced_reply')
   })
 
   it('catches an agent message with no run behind it', () => {

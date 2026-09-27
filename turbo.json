@@ -50,7 +50,7 @@
       "outputs": []
     },
     "test:rls": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "^test:rls"],
       "cache": false,
       "outputs": []
     },

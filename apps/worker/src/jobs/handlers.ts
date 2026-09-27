@@ -483,6 +483,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       threadId,
       locale,
       message,
+      appUrl,
       ...(intent ? { intent } : {}),
     })
 

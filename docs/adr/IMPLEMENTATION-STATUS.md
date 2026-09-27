@@ -13,7 +13,7 @@ worse than none, because it is read as current.
 | 004 | Hono on `@hono/node-server` | ✅ as-built | `apps/api/src/app.ts` (in `apps/worker` until ADR-034) |
 | 005 | pg-boss behind a `JobQueue` interface | ✅ as-built | `JobQueue` port in core, `PgBossQueue` the only file importing pg-boss. Verified live: enqueue to reflected in 780ms, against a 60s requirement |
 | 006 | Supabase EU; Drizzle for domain access | 🟨 partial | Schema, access layer and Auth built on local Supabase. Cloud EU project not yet provisioned |
-| 007 | RLS on every client-reachable table, tested in CI | ✅ as-built | 30/30 tables, 54 policies, both suites green, negative control verified, and a CI job of its own. Counted by query against the database rather than by reading the schema — the row said 11/11 from Sprint 2 until Sprint 10 checked it. The public booking surface has no JWT to police, so it runs under `asService` with explicit scoping — asserted by handing each function the other property's ids (`booking.test.ts`) |
+| 007 | RLS on every client-reachable table, tested in CI | ✅ as-built | 31/31 tables, 57 policies (counted by query 2026-09-27, `complaints` added in WP0.3), both suites green, negative control verified, and a CI job of its own. Counted by query against the database rather than by reading the schema — the row said 11/11 from Sprint 2 until Sprint 10 checked it. The public booking surface has no JWT to police, so it runs under `asService` with explicit scoping — asserted by handing each function the other property's ids (`booking.test.ts`) |
 | 008 | Mock-first connector | ✅ as-built | `MockEricsoftAdapter` with counted failure injection, plus the shared contract suite the real adapter must pass before the swap. Verified by negative control: removing the idempotency guard fails the contract |
 | 009 | Voice hard tool boundaries | 🟨 discipline applied to chat | Voice is WS-B. The *boundary* is built and measured here: every AG-01 tool returns a pre-formed `phrase`, the reply is that phrase verbatim, and a nightly job re-reads what was sent against the tool outputs of its own run. Zero violations is the gate |
 | 010 | Stripe behind `PaymentAdapter` | 🟨 port built, **provider not connected** | `PaymentAdapter` + `MockPaymentAdapter`, which moves no money. The interface, policy engine, `payments` ledger, `fee_events`, webhook-as-authority, signature check, redelivery idempotency and lost-webhook replay are all real and exercised. Blocked on 04 §0 item 6 (Stripe account, Connect Standard, commercialista). A real adapter must pass `describePaymentAdapterContract` — the suite the mock passes — before the swap, and the worker refuses to boot simulated in production |
@@ -189,6 +189,20 @@ Both `ended_at` writes now use `now()`. The rule: **two timestamps compared by a
 constraint must come from one clock**, and the database already has one. This is
 the same class as the bug AG-07 caught in Sprint 8, which is the second time it
 has cost something — worth remembering as a class rather than as two incidents.
+
+## Guest Desk WP0.3 — real actions
+
+| Thing | Status | Note |
+|---|---|---|
+| Desk tools | ✅ | `check_availability`/`quote_stay` (rate cache; stale → a person, never "nothing free"), `create_booking_link` (only with `booking_engine`), `modify_booking` (checked against availability, **recorded as a task for a person**, never written to the booking), `get_payment_status`, `explain_charges`, `send_prearrival_link`, `record_eta` (through the journey machine), `get_capture_status`, `request_late_checkout`, `request_invoice` (routed; we issue nothing, D11), `log_complaint`, `notify_owner`, and the owner's four read-only lists. Every phrase from rows, in four languages |
+| `complaints` table | ✅ | Category, SLA from the database clock (5 min safety, 30 otherwise), owner alerted on logging, no member delete. Both access paths verified by query; negative control failed the isolation test |
+| Write idempotency | ✅ | thread + tool + canonical input hash, recorded on the call in `agent_runs.tool_calls`; a repeat returns the earlier output and is marked `replayed`. Negative control: bypassing the lookup logs a second complaint |
+| Handoff | ✅ | A tool may answer and still hand to a person (`handoff: true`): date changes, late checkouts, complaints — T2 |
+| Tool-boundary audit, hardened | ✅ | Evidence is now **what tools returned**, not the run's recorded reply (which made every reply sourced by definition) and not tool inputs; multi-phrase replies checked paragraph by paragraph. Verified on the real reply path: zero violations |
+| `cancel_booking`, `create_payment_link` | ⬜ WP0.6 | Approval-held, so they run from the approval step; and the mock payment adapter's intents live in `apps/api` (ADR-034) |
+| Owner notified by WhatsApp | ⬜ | Email through the outbox today (`alertEscalation`); WhatsApp templates wait on the BSP |
+| `knowledge_chunks` + pgvector | ⬜ **not built, deliberately** | The spec's hybrid search needs an embedding provider (another sub-processor) and duplicates `kb_articles`, which already has an editor. Revisit when the knowledge base outgrows keyword matching — the eval set will show it |
+| Agents database suite | ✅ | `packages/agents` `test:rls` (15 tests) in CI's `rls` job, after core's (turbo `^test:rls`); own property, never truncates |
 
 ## CI gates
 

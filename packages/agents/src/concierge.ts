@@ -39,6 +39,8 @@ export interface RespondInput {
   /** Set when the guest used an explicit "make a request" affordance. */
   intent?: 'question' | 'request'
   triggerEventId?: bigint
+  /** The public base URL, for links in tool phrases and in the manager's alert. */
+  appUrl?: string
 }
 
 export type RespondOutcome =
@@ -86,6 +88,7 @@ export async function respondToGuestMessage(input: RespondInput): Promise<Respon
     threadId: input.threadId,
     locale: input.locale,
     ...(input.triggerEventId !== undefined ? { triggerEventId: input.triggerEventId } : {}),
+    ...(input.appUrl ? { appUrl: input.appUrl } : {}),
     input: {
       message: input.message,
       history,

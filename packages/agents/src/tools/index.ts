@@ -37,6 +37,8 @@ export interface ToolContext {
   threadId?: string
   /** The guest's language. A phrase exists in it or the tool reports a miss. */
   locale?: string
+  /** The public base URL, for links a guest will click. Fixed by the runner. */
+  appUrl?: string
 }
 
 export interface ToolResult {
@@ -55,6 +57,11 @@ export type Tool = {
   input?: Record<string, unknown>
   /** Whether the action can be undone (the per-call record, ADR-021). */
   reversible?: boolean
+  /**
+   * The tool changes something. The runner keys each write on thread + tool +
+   * input and does not execute the same write twice (WP0.3).
+   */
+  write?: boolean
   run: (context: ToolContext, input: Record<string, unknown>) => Promise<ToolResult>
 }
 
