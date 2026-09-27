@@ -25,7 +25,7 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 const nextConfig: NextConfig = {
   // Internal packages ship TypeScript source rather than a build step
   // (docs/03-ARCHITECTURE.md §10) — Next compiles them with the app.
-  transpilePackages: ['@bookone/core', '@bookone/i18n'],
+  transpilePackages: ['@bookone/core', '@bookone/i18n', '@bookone/ui'],
   typedRoutes: true,
   // Next 16 blocks dev resources requested from a host it does not consider
   // its own origin, and serves the JS chunks as 403 — the page renders but

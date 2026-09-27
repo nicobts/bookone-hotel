@@ -4,8 +4,8 @@ import { listExceptions, type ExceptionItem } from '@bookone/core/db'
 import type { Feature } from '@bookone/core/onboarding'
 import { PageShell } from '@/components/shell/page-shell'
 import { propertyFeatures, requireProperty } from '@/lib/auth/current-property'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { Badge } from '@bookone/ui/components/badge'
+import { Button } from '@bookone/ui/components/button'
 import { retryReflectionAction } from './actions'
 
 /**

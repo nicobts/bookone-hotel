@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { DownloadIcon, Loader2Icon } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@bookone/ui/components/button'
 
 /**
  * Download the statement as CSV (E5.4).

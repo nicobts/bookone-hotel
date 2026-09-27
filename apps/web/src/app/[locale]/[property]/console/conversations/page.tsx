@@ -4,7 +4,7 @@ import { listThreads } from '@bookone/core/db'
 import { PageShell } from '@/components/shell/page-shell'
 import { Link } from '@/i18n/navigation'
 import { requireFeature } from '@/lib/auth/current-property'
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@bookone/ui/components/badge'
 
 /**
  * The conversations queue (E3.2, E3.3).

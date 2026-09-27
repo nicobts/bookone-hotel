@@ -19,8 +19,16 @@ editable, not a dependency we wait on.
 | `@supabase` registry | Storage, realtime and auth-adjacent widgets | `npx shadcn@latest add @supabase/<name>` |
 | Written here | Only what neither provides | Build from registry primitives |
 
-Run the CLI from `apps/web`, never the repo root — it resolves paths from
-`components.json`.
+**Shared by both consoles.** The vendored components live in `packages/ui`
+(`@bookone/ui`) and are used by `apps/web` and `apps/admin` alike: one look, one
+place to fix. This follows shadcn's monorepo layout.
+- A primitive (button, dialog, table…) goes into `packages/ui`.
+- A composition specific to one app (a sidebar's entries, a booking step) stays
+  in that app's `src/components`.
+
+Run the CLI from the app you are working in (`apps/web` or `apps/admin`), never
+the repo root. Each app's `components.json` sends primitives to
+`@bookone/ui/components` and its own blocks to the app.
 
 **Why registry-first:** a hand-rolled input looks correct in review and drifts
 from the theme within months. Registry components share the token set, the dark
@@ -65,8 +73,12 @@ Two files, deliberately separated:
 
 | File | Role |
 |---|---|
-| `src/app/tokens.css` | Base design tokens — the raw palette and scale |
-| `src/app/globals.css` | Maps those tokens onto shadcn's semantic variables |
+| `packages/ui/src/styles/tokens.css` | Base design tokens — the raw palette and scale |
+| `packages/ui/src/styles/globals.css` | Maps those tokens onto shadcn's semantic variables |
+
+Each app's `src/app/globals.css` only imports the shared one, by relative path.
+Tailwind's resolver does not follow pnpm's workspace links on Windows. Anything
+truly app-specific goes below that import.
 
 **Never edit a token to make one screen look right.** Put the adjustment in the
 mapping layer.

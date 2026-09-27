@@ -6,7 +6,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@bookone/ui/components/table'
 
 type Row = Awaited<ReturnType<typeof listAdminAudit>>[number]
 

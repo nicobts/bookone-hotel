@@ -1,8 +1,8 @@
 'use client'
 
 import { useActionState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Button } from '@bookone/ui/components/button'
+import { Input } from '@bookone/ui/components/input'
 import type { ActionState } from './actions'
 
 /**

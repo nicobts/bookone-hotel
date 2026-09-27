@@ -11,9 +11,9 @@ import {
 } from '@bookone/core/alloggiati'
 import { PageShell } from '@/components/shell/page-shell'
 import { hasFeature, requireProperty } from '@/lib/auth/current-property'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
+import { Badge } from '@bookone/ui/components/badge'
+import { Button } from '@bookone/ui/components/button'
+import { Separator } from '@bookone/ui/components/separator'
 import { formatDate } from '@/components/booking/format'
 import { confirmDocumentsAction, fileNow, markArrived } from './actions'
 

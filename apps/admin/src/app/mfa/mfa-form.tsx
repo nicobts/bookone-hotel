@@ -1,9 +1,9 @@
 'use client'
 
 import { useActionState, useState, useTransition } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Button } from '@bookone/ui/components/button'
+import { Input } from '@bookone/ui/components/input'
+import { Label } from '@bookone/ui/components/label'
 import { enrolTotp, verifyTotp, type AuthState, type EnrolState } from '../auth-actions'
 
 export function MfaForm({ factorId: existing }: { factorId: string | null }) {

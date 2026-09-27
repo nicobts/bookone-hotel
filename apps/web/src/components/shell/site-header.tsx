@@ -1,6 +1,6 @@
 import { UserMenu } from '@/components/shell/user-menu'
-import { Separator } from '@/components/ui/separator'
-import { SidebarTrigger } from '@/components/ui/sidebar'
+import { Separator } from '@bookone/ui/components/separator'
+import { SidebarTrigger } from '@bookone/ui/components/sidebar'
 
 /**
  * The console's top bar.

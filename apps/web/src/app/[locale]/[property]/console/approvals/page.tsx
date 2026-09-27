@@ -3,7 +3,7 @@ import { CheckCircle2Icon } from 'lucide-react'
 import { listPendingApprovals } from '@bookone/core/concierge'
 import { PageShell } from '@/components/shell/page-shell'
 import { requireFeature } from '@/lib/auth/current-property'
-import { Button } from '@/components/ui/button'
+import { Button } from '@bookone/ui/components/button'
 import { Link } from '@/i18n/navigation'
 import { approveAction, rejectAction } from './actions'
 

@@ -6,9 +6,9 @@ import { Link } from '@/i18n/navigation'
 import { requireOwner } from '@/lib/auth/current-property'
 import { formatDate, formatMoney } from '@/components/booking/format'
 import { ExportButton } from '@/components/report/export-button'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
+import { Badge } from '@bookone/ui/components/badge'
+import { Button } from '@bookone/ui/components/button'
+import { Separator } from '@bookone/ui/components/separator'
 import { dispute, exportCsv, issue } from './actions'
 
 /**

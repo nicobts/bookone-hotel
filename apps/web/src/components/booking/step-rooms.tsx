@@ -1,8 +1,8 @@
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import type { RoomOption } from '@bookone/core/booking'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@bookone/ui/components/button'
+import { Card, CardContent } from '@bookone/ui/components/card'
 import type { BookingSearch } from '@/lib/booking/params'
 import { formatMoney, roomName } from './format'
 

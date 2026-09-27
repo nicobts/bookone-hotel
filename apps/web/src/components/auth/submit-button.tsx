@@ -1,8 +1,8 @@
 'use client'
 
 import { Loader2Icon } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { Button } from '@bookone/ui/components/button'
+import { cn } from '@bookone/ui/lib/utils'
 
 /**
  * The three things every async control must do, in one place.

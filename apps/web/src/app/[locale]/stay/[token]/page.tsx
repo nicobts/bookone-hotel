@@ -9,11 +9,11 @@ import { SimulatedPaymentNotice } from '@/components/booking/payment-notice'
 import { Thread } from '@/components/stay/thread'
 import { hasFeature } from '@/lib/auth/current-property'
 import { DOCUMENT_RETENTION_DAYS_DEFAULT } from '@bookone/core/alloggiati'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@bookone/ui/components/button'
+import { Input } from '@bookone/ui/components/input'
+import { Label } from '@bookone/ui/components/label'
+import { Separator } from '@bookone/ui/components/separator'
+import { Textarea } from '@bookone/ui/components/textarea'
 import {
   checkOut,
   confirmArrivalNow,

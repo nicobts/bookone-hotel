@@ -1,8 +1,8 @@
 import { getTranslations } from 'next-intl/server'
 import type { BookingProperty } from '@bookone/core/db'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Button } from '@bookone/ui/components/button'
+import { Input } from '@bookone/ui/components/input'
+import { Label } from '@bookone/ui/components/label'
 import type { BookingSearch } from '@/lib/booking/params'
 
 /**

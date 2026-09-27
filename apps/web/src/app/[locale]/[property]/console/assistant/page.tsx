@@ -4,8 +4,8 @@ import { BotIcon } from 'lucide-react'
 import { listOwnerAnswers } from '@bookone/core/concierge'
 import { PageShell } from '@/components/shell/page-shell'
 import { hasFeature, requireOwner } from '@/lib/auth/current-property'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@bookone/ui/components/button'
+import { Textarea } from '@bookone/ui/components/textarea'
 import { askAction } from './actions'
 
 /**

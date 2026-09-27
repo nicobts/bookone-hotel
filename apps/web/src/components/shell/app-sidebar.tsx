@@ -17,13 +17,18 @@ import {
   UsersRoundIcon,
 } from 'lucide-react'
 import type { UserProperty } from '@bookone/core/db'
-import { Logo } from '@/components/brand/logo'
+import { Logo } from '@bookone/ui/components/logo'
 import { PropertySwitcher } from '@/components/property/property-switcher'
 import { NavMain, type NavGroup } from '@/components/shell/nav-main'
 import { navBands, type NavKey } from '@/components/shell/nav-items'
 import { propertyFeatures } from '@/lib/auth/current-property'
 import { Link } from '@/i18n/navigation'
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+} from '@bookone/ui/components/sidebar'
 
 /**
  * The console's navigation.

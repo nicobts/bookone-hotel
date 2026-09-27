@@ -5,7 +5,7 @@
   "tsx": true,
   "tailwind": {
     "config": "",
-    "css": "src/app/globals.css",
+    "css": "../../packages/ui/src/styles/globals.css",
     "baseColor": "neutral",
     "cssVariables": true,
     "prefix": ""
@@ -13,9 +13,9 @@
   "iconLibrary": "lucide",
   "aliases": {
     "components": "@/components",
-    "ui": "@/components/ui",
-    "utils": "@/lib/utils",
+    "hooks": "@bookone/ui/hooks",
     "lib": "@/lib",
-    "hooks": "@/hooks"
+    "utils": "@bookone/ui/lib/utils",
+    "ui": "@bookone/ui/components"
   }
 }

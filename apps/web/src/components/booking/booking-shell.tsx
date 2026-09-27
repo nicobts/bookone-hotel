@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react'
 import { getTranslations } from 'next-intl/server'
 import type { BookingProperty } from '@bookone/core/db'
-import { Logo } from '@/components/brand/logo'
-import { cn } from '@/lib/utils'
+import { Logo } from '@bookone/ui/components/logo'
+import { cn } from '@bookone/ui/lib/utils'
 
 /**
  * The frame the booking flow sits in.

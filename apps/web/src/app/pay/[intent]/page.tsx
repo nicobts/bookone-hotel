@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { readSimulatedIntent, simulatePayment } from '@/lib/worker'
-import { Button } from '@/components/ui/button'
+import { Button } from '@bookone/ui/components/button'
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════

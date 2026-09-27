@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server'
-import { Logo } from '@/components/brand/logo'
+import { Logo } from '@bookone/ui/components/logo'
 
 /**
  * The frame every signed-out page sits in.

@@ -8,8 +8,8 @@ import { createClient } from '@/lib/supabase/client'
 import { isSupabaseConfigured } from '@/lib/supabase/env'
 import { authErrorKey } from '@/lib/supabase/auth-errors'
 import { Link } from '@/i18n/navigation'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Input } from '@bookone/ui/components/input'
+import { Label } from '@bookone/ui/components/label'
 import { SubmitButton } from '@/components/auth/submit-button'
 
 export function ForgotPasswordForm() {

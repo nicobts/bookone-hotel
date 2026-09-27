@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   // The monorepo root, so the standalone trace includes workspace packages.
   outputFileTracingRoot: fileURLToPath(new URL('../../', import.meta.url)),
-  transpilePackages: ['@bookone/core'],
+  transpilePackages: ['@bookone/core', '@bookone/ui'],
   typedRoutes: true,
   poweredByHeader: false,
   allowedDevOrigins: ['127.0.0.1', 'localhost'],

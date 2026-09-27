@@ -2,7 +2,7 @@
 
 import { useRouter } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
+import { Button } from '@bookone/ui/components/button'
 
 export function LogoutButton({ label }: { label: string }) {
   const router = useRouter()

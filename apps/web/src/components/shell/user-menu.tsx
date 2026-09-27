@@ -5,8 +5,8 @@ import { useTheme } from 'next-themes'
 import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@bookone/ui/components/avatar'
+import { Button } from '@bookone/ui/components/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@bookone/ui/components/dropdown-menu'
 
 export function UserMenu({ email, fullName }: { email: string; fullName: string | null }) {
   const t = useTranslations('auth')

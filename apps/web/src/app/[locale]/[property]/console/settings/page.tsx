@@ -8,7 +8,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@bookone/ui/components/table'
 import { requireOwner } from '@/lib/auth/current-property'
 
 /**
