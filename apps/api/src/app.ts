@@ -600,6 +600,40 @@ export function createApp(deps: {
       })
 
       /**
+       * Read one uploaded identity document with the vision model (WP0.4).
+       *
+       * Gated by `document_ocr` in the middleware (ADR-019): a property without
+       * it gets 404 and nothing is read. Only ids travel — the worker reads the
+       * image from the private bucket itself.
+       */
+      .post('/jobs/document-extract', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          reservationId?: string
+          guestIndex?: number
+        }>()
+
+        if (!body.propertyId || !body.reservationId || !Number.isInteger(body.guestIndex)) {
+          return c.json({ error: 'propertyId, reservationId and guestIndex are required' }, 400)
+        }
+
+        const id = await queue.send(
+          'documents.extract',
+          {
+            propertyId: body.propertyId,
+            reservationId: body.reservationId,
+            guestIndex: body.guestIndex as number,
+          },
+          // A re-upload replaces the photo, so the latest one should be read:
+          // the key is per stay and guest, and a queued read of the old photo
+          // collapses into the new one.
+          { singletonKey: `extract:${body.reservationId}:${body.guestIndex}` },
+        )
+
+        return c.json({ enqueued: id })
+      })
+
+      /**
        * File this stay now (E2.3).
        *
        * The manual submit the acceptance criterion requires to be always

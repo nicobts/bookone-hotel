@@ -467,6 +467,19 @@ export async function requestErasure(input: {
   return post('/jobs/privacy-erase', input)
 }
 
+/**
+ * Ask for one uploaded document to be read by the vision model (WP0.4).
+ * Best effort: the property without `document_ocr` answers 404, and a guest
+ * whose document is not read is no worse off than before OCR existed.
+ */
+export async function requestDocumentExtraction(input: {
+  propertyId: string
+  reservationId: string
+  guestIndex: number
+}): Promise<boolean> {
+  return post('/jobs/document-extract', input)
+}
+
 async function post(path: string, body: unknown): Promise<boolean> {
   const base = workerUrl()
   const secret = token()

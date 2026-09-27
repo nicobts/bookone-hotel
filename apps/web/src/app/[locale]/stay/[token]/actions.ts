@@ -12,7 +12,12 @@ import {
   type PartyInput,
 } from '@bookone/core/journey'
 import { storeIdentityDocument } from '@/lib/storage'
-import { confirmArrival, confirmCheckout, sendGuestMessage } from '@/lib/worker'
+import {
+  confirmArrival,
+  confirmCheckout,
+  requestDocumentExtraction,
+  sendGuestMessage,
+} from '@/lib/worker'
 import { hasFeature } from '@/lib/auth/current-property'
 
 /**
@@ -148,6 +153,17 @@ export async function uploadDocument(context: Context, formData: FormData): Prom
     guestIndex,
     documentPath: stored.path,
   })
+
+  // Read it with the vision model where the property has `document_ocr`
+  // (WP0.4). Best effort and asynchronous: the api answers 404 without the
+  // feature, and the guest is not kept waiting for a model.
+  if (recorded.status === 'recorded') {
+    await requestDocumentExtraction({
+      propertyId: stay.propertyId,
+      reservationId: stay.reservationId,
+      guestIndex,
+    })
+  }
 
   redirect(stayUrl(context, recorded.status === 'recorded' ? '?saved=document' : '?error=upload'))
 }

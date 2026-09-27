@@ -46,6 +46,7 @@ describe('a passport (TD3)', () => {
       givenNames: 'ANNA MARIA',
       checks: { documentNumber: true, birthDate: true, expiryDate: true, composite: true },
       valid: true,
+      repaired: false,
     })
   })
 
@@ -106,5 +107,27 @@ describe('what is not an MRZ', () => {
 
   it('tolerates spacing and lower case from a model or a person typing it', () => {
     expect(normaliseMrzLines([' p<uto eriksson ', ''])).toEqual(['P<UTOERIKSSON'])
+  })
+})
+
+describe('filler repair', () => {
+  it('fixes the miscount a vision model actually made, and the digits confirm it', () => {
+    // Observed live (2026-09-27): four fillers instead of five before the final
+    // two digits, so line 2 came back 43 characters long.
+    const miscounted = [TD3[0]!, 'L898902C36UTO7408122F1204159ZE184226B<<<<10']
+    const result = parseMrz(miscounted, NOW)
+
+    expect(result).toMatchObject({ valid: true, repaired: true, documentNumber: 'L898902C3' })
+  })
+
+  it('never turns a misread into a pass: a repaired line still has to agree with its digits', () => {
+    // Short by one filler *and* a misread digit: the length is repaired, the
+    // document still fails.
+    const both = [TD3[0]!, 'L898903C36UTO7408122F1204159ZE184226B<<<<10']
+    expect(parseMrz(both, NOW)).toMatchObject({ valid: false, repaired: true })
+  })
+
+  it('leaves a line more than three characters off alone — that is a misread, not a miscount', () => {
+    expect(parseMrz([TD3[0]!, 'L898902C36UTO7408122F1204159ZE184226B10'], NOW)).toBeNull()
   })
 })

@@ -3,7 +3,12 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { CheckCircle2Icon, FlaskConicalIcon, TriangleAlertIcon } from 'lucide-react'
 import { getArrival } from '@bookone/core/db'
 import { getSchedinaPreview } from '@bookone/core/journey'
-import { registrationToGuestDetails, validateParty } from '@bookone/core/alloggiati'
+import {
+  readingMismatches,
+  registrationToGuestDetails,
+  validateParty,
+  type DocumentReading,
+} from '@bookone/core/alloggiati'
 import { PageShell } from '@/components/shell/page-shell'
 import { hasFeature, requireProperty } from '@/lib/auth/current-property'
 import { Badge } from '@/components/ui/badge'
@@ -104,6 +109,7 @@ export default async function ArrivalPage({
                 <p className="text-muted-foreground mt-0.5 text-xs">
                   {t('guest', { n: member.guestIndex + 1 })}
                 </p>
+                <OcrStatus data={member.data} t={t} />
               </div>
 
               {member.documentDeleted ? (
@@ -262,5 +268,52 @@ export default async function ArrivalPage({
         </div>
       </section>
     </PageShell>
+  )
+}
+
+/**
+ * What the vision model read from this guest's document, for the person about
+ * to confirm (WP0.4): whether the machine-readable zone checked out, and every
+ * field where what the guest typed disagrees with the document. A suggestion
+ * for a person, never a verdict (ADR-027).
+ */
+function OcrStatus({
+  data,
+  t,
+}: {
+  data: Record<string, unknown>
+  t: Awaited<ReturnType<typeof getTranslations<'console.arrival'>>>
+}) {
+  const reading = data.ocr as DocumentReading | undefined
+  if (!reading || typeof reading !== 'object' || !reading.mrz) return null
+
+  const mismatches = readingMismatches(registrationToGuestDetails(data), reading)
+  const status = reading.mrz.valid
+    ? t('ocrValid')
+    : reading.mrz.present
+      ? t('ocrInvalid')
+      : t('ocrPrinted')
+
+  return (
+    <div className="mt-1 space-y-0.5 text-xs">
+      <p
+        className={
+          reading.mrz.valid
+            ? 'text-[color:var(--bo-success-500)]'
+            : 'text-[color:var(--bo-warning-500)]'
+        }
+      >
+        {status}
+      </p>
+      {mismatches.length > 0 && (
+        <p className="text-destructive">
+          {t('ocrMismatch', {
+            fields: mismatches
+              .map((name) => (t.has(`schedinaFields.${name}`) ? t(`schedinaFields.${name}`) : name))
+              .join(', '),
+          })}
+        </p>
+      )}
+    </div>
   )
 }

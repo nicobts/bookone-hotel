@@ -1,10 +1,11 @@
-import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm'
+import { and, asc, eq, isNotNull, isNull, sql } from 'drizzle-orm'
 import { asService } from '../db/session'
 import { domainEvents, registrationRecords, reservations } from '../db/schema'
 import { emit } from '../events'
-import { guestActor, userActor } from '../events/actor'
+import { guestActor, systemActor, userActor } from '../events/actor'
 import { registrationToGuestDetails } from '../alloggiati/submit'
 import { schedinaPreview, type SchedinaPreview } from '../alloggiati/schedina'
+import type { DocumentReading } from '../alloggiati/extract'
 import { applyJourneyCommandIn } from './apply'
 
 /**
@@ -164,4 +165,77 @@ export async function recordDocumentConsent(input: {
       }),
     ),
   )
+}
+
+/**
+ * Store what the vision model read from one guest's document (WP0.4), beside
+ * what the guest typed — under `data.ocr`, so the data map's clock and erasure
+ * for `registration_records.data` cover it without a column of its own. The
+ * event carries no personal data: which guest, and whether the MRZ checked out.
+ */
+export async function recordDocumentReading(input: {
+  propertyId: string
+  reservationId: string
+  guestIndex: number
+  reading: DocumentReading
+}): Promise<boolean> {
+  return asService((db) =>
+    db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(registrationRecords)
+        .set({
+          data: sql`${registrationRecords.data} || jsonb_build_object('ocr', ${JSON.stringify(input.reading)}::jsonb)`,
+        })
+        .where(
+          and(
+            eq(registrationRecords.propertyId, input.propertyId),
+            eq(registrationRecords.reservationId, input.reservationId),
+            eq(registrationRecords.guestIndex, input.guestIndex),
+            isNull(registrationRecords.deletedAt),
+          ),
+        )
+        .returning({ id: registrationRecords.id })
+
+      if (!row) return false
+
+      await emit(tx, {
+        propertyId: input.propertyId,
+        entityType: 'registration_record',
+        entityId: row.id,
+        eventType: 'document.read',
+        origin: 'platform',
+        actor: systemActor,
+        payload: {
+          guestIndex: input.guestIndex,
+          source: input.reading.source,
+          mrzValid: input.reading.mrz.valid,
+        },
+      })
+
+      return true
+    }),
+  )
+}
+
+/** The stored path of one guest's document, for the extraction job. */
+export async function getDocumentPath(
+  propertyId: string,
+  reservationId: string,
+  guestIndex: number,
+): Promise<string | null> {
+  const [row] = await asService((db) =>
+    db
+      .select({ path: registrationRecords.documentPath })
+      .from(registrationRecords)
+      .where(
+        and(
+          eq(registrationRecords.propertyId, propertyId),
+          eq(registrationRecords.reservationId, reservationId),
+          eq(registrationRecords.guestIndex, guestIndex),
+          isNull(registrationRecords.deletedAt),
+        ),
+      )
+      .limit(1),
+  )
+  return row?.path ?? null
 }

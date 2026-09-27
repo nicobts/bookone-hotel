@@ -150,7 +150,11 @@
         "documentType": "Tipo documento",
         "documentNumber": "Numero documento",
         "documentIssuerCode": "Luogo di rilascio"
-      }
+      },
+      "ocrValid": "Documento letto: zona a lettura ottica verificata",
+      "ocrInvalid": "Foto illeggibile — chiedere una nuova foto all'ospite",
+      "ocrPrinted": "Letto solo dalla stampa — verificare con il documento",
+      "ocrMismatch": "Diverso dal documento: {fields}"
     },
     "conversations": {
       "title": "Conversazioni",
@@ -672,7 +676,8 @@
       "needParty": "Aggiungi prima gli ospiti, poi allega un documento per ciascuno.",
       "retention": "La struttura li elimina una volta registrato il soggiorno presso le autorità. Viene conservata solo la ricevuta.",
       "consent": "Ho letto come vengono usati i miei dati e acconsento che la struttura tratti il mio documento d'identità per registrare il soggiorno.",
-      "retentionAfterStay": "La struttura elimina queste foto {days, plural, one {il giorno} other {# giorni}} dopo la sua partenza. Non viene conservato nulla."
+      "retentionAfterStay": "La struttura elimina queste foto {days, plural, one {il giorno} other {# giorni}} dopo la sua partenza. Non viene conservato nulla.",
+      "unreadable": "Non riusciamo a leggere bene questa foto. Ne invii una più nitida: documento in piano, buona luce, tutte le righe visibili."
     },
     "arrival": {
       "heading": "A che ora arriverai?",

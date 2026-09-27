@@ -43,3 +43,38 @@ export function createDocumentDeleter(logger: Logger): (path: string) => Promise
     return true
   }
 }
+
+/**
+ * Reads one identity document from the private bucket, for the extraction job
+ * (WP0.4). Base64 in memory, handed to the model provider and dropped — never
+ * written anywhere else, never logged.
+ */
+export function createDocumentReader(
+  logger: Logger,
+): (path: string) => Promise<{ mediaType: string; data: string } | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !key) {
+    logger.error('storage is not configured; identity documents cannot be read')
+    return () => Promise.resolve(null)
+  }
+
+  const client = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+
+  return async (path: string) => {
+    const { data, error } = await client.storage.from(DOCUMENT_BUCKET).download(path)
+
+    if (error || !data) {
+      logger.warn({ path, error: error?.message }, 'could not read an identity document')
+      return null
+    }
+
+    return {
+      mediaType: data.type || 'application/octet-stream',
+      data: Buffer.from(await data.arrayBuffer()).toString('base64'),
+    }
+  }
+}

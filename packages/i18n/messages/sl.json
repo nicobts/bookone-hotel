@@ -150,7 +150,11 @@
         "documentType": "Vrsta dokumenta",
         "documentNumber": "Številka dokumenta",
         "documentIssuerCode": "Izdano v"
-      }
+      },
+      "ocrValid": "Dokument prebran: strojno berljivo polje se ujema",
+      "ocrInvalid": "Fotografija ni berljiva — gosta prosite za novo",
+      "ocrPrinted": "Prebrano samo iz tiska — preverite z dokumentom",
+      "ocrMismatch": "Se razlikuje od dokumenta: {fields}"
     },
     "conversations": {
       "title": "Pogovori",
@@ -672,7 +676,8 @@
       "needParty": "Najprej dodajte goste, nato priložite dokument za vsakega.",
       "retention": "Nastanitev jih izbriše, ko je vaše bivanje prijavljeno pri organih. Ohrani se le potrdilo.",
       "consent": "Prebral sem, kako se uporabljajo moji podatki, in soglašam, da nastanitev obdela moj osebni dokument za prijavo bivanja.",
-      "retentionAfterStay": "Nastanitev te fotografije izbriše {days, plural, one {dan} two {# dni} few {# dni} other {# dni}} po vašem odhodu. Nič se ne hrani."
+      "retentionAfterStay": "Nastanitev te fotografije izbriše {days, plural, one {dan} two {# dni} few {# dni} other {# dni}} po vašem odhodu. Nič se ne hrani.",
+      "unreadable": "Te fotografije ne moremo dobro prebrati. Pošljite ostrejšo: dokument naj leži ravno, pri dobri svetlobi, z vidnimi vsemi vrsticami."
     },
     "arrival": {
       "heading": "Kdaj boste prispeli?",

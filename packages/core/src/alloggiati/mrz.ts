@@ -39,6 +39,12 @@ export interface MrzResult {
   }
   /** Every check digit agrees. Anything less asks the guest for another photo. */
   valid: boolean
+  /**
+   * A run of `<` filler had the wrong length and was corrected to the
+   * standard line length. Only filler is ever adjusted — never a character —
+   * and the check digits still decide whether the result is valid.
+   */
+  repaired: boolean
 }
 
 /** ICAO 9303 character values: digits as themselves, A–Z as 10–35, filler `<` as 0. */
@@ -115,11 +121,46 @@ export function normaliseMrzLines(lines: readonly string[]): string[] {
 
 export function parseMrz(input: readonly string[], now: Date = new Date()): MrzResult | null {
   const lines = normaliseMrzLines(input)
+  const width = lines.length === 2 ? 44 : lines.length === 3 ? 30 : null
+  if (width === null) return null
 
-  if (lines.length === 2 && lines.every((line) => line.length === 44)) return parseTd3(lines, now)
-  if (lines.length === 3 && lines.every((line) => line.length === 30)) return parseTd1(lines, now)
+  const exact = lines.every((line) => line.length === width)
+  const shaped = exact ? lines : repairFillerRuns(lines, width)
+  if (!shaped) return null
 
-  return null
+  const result = width === 44 ? parseTd3(shaped, now) : parseTd1(shaped, now)
+  return result ? { ...result, repaired: !exact } : null
+}
+
+/**
+ * Correct the length of a line by lengthening or shortening its last run of
+ * `<` filler — the one thing optical reading reliably gets wrong, because a
+ * run of identical characters is hard to count. Characters are never changed,
+ * added or removed, and a line more than three characters off is left alone:
+ * that is not a miscount, it is a misread. The check digits then decide.
+ */
+export function repairFillerRuns(lines: readonly string[], width: number): string[] | null {
+  const repaired: string[] = []
+
+  for (const line of lines) {
+    const diff = width - line.length
+    if (diff === 0) {
+      repaired.push(line)
+      continue
+    }
+    if (Math.abs(diff) > 3) return null
+
+    const runs = [...line.matchAll(/<+/g)]
+    const last = runs.at(-1)
+    if (!last || last.index === undefined) return null
+    if (diff < 0 && last[0].length + diff < 1) return null
+
+    const start = last.index
+    const end = start + last[0].length
+    repaired.push(line.slice(0, start) + '<'.repeat(last[0].length + diff) + line.slice(end))
+  }
+
+  return repaired
 }
 
 function parseTd3([l1, l2]: string[], now: Date): MrzResult | null {
@@ -149,6 +190,7 @@ function parseTd3([l1, l2]: string[], now: Date): MrzResult | null {
     ...readNames(l1.slice(5)),
     checks,
     valid: Object.values(checks).every(Boolean),
+    repaired: false,
   }
 }
 
@@ -179,5 +221,6 @@ function parseTd1([l1, l2, l3]: string[], now: Date): MrzResult | null {
     ...readNames(l3),
     checks,
     valid: Object.values(checks).every(Boolean),
+    repaired: false,
   }
 }

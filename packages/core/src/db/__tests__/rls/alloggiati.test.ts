@@ -17,11 +17,14 @@ import {
 import { FakeAlloggiatiAdapter } from './fake-alloggiati-adapter'
 import {
   confirmDocuments,
+  getDocumentPath,
   getSchedinaPreview,
+  recordDocumentReading,
   hasDocumentConsent,
   recordDocumentConsent,
 } from '../../../journey/confirm'
 import { grantEntitlement, revokeEntitlement } from '../../../onboarding/entitlements'
+import { interpretReading } from '../../../alloggiati/extract'
 
 /**
  * The Alloggiati chain against a real database (E2.3, E2.4).
@@ -627,5 +630,45 @@ describe('document deletion where nothing is filed (WP0.4)', () => {
     } finally {
       await revokeEntitlement({ propertyId: fixture.alpha.propertyId, feature: 'alloggiati' })
     }
+  })
+})
+
+describe('document reading (WP0.4)', () => {
+  it('stores the reading beside what the guest typed, and events it without personal data', async () => {
+    const reservationId = await fileableStay(fixture.alpha.propertyId)
+    expect(await getDocumentPath(fixture.alpha.propertyId, reservationId, 0)).toBe(
+      `${fixture.alpha.propertyId}/${reservationId}/0`,
+    )
+
+    const reading = interpretReading(
+      {
+        mrzLines: [
+          'P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<',
+          'L898902C36UTO7408122F1204159ZE184226B<<<<<10',
+        ],
+      },
+      'fake-vision',
+    )
+    expect(
+      await recordDocumentReading({
+        propertyId: fixture.alpha.propertyId,
+        reservationId,
+        guestIndex: 0,
+        reading,
+      }),
+    ).toBe(true)
+
+    const [row] = await db.execute<{ surname: string; ocr: string; typed: string }>(
+      sql`select data->>'surname' as typed, data->'ocr'->'fields'->>'surname' as ocr
+          from registration_records where reservation_id = ${reservationId} and guest_index = 0`,
+    )
+    // The guest's own entry is untouched; the reading sits beside it.
+    expect(row).toMatchObject({ typed: 'Weber', ocr: 'ERIKSSON' })
+
+    const [event] = await db.execute<{ payload: Record<string, unknown> }>(
+      sql`select payload from domain_events where event_type = 'document.read'
+          and property_id = ${fixture.alpha.propertyId} order by id desc limit 1`,
+    )
+    expect(event!.payload).toEqual({ guestIndex: 0, source: 'mrz', mrzValid: true })
   })
 })

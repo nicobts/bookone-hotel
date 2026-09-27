@@ -413,6 +413,12 @@ export default async function StayPage({
                         <p className="text-muted-foreground mt-1 text-xs">
                           {t('documents.deleted')}
                         </p>
+                      ) : isUnreadable(member.data) ? (
+                        // The machine-readable zone did not check out (WP0.4):
+                        // ask for another photo now, not at the desk.
+                        <p role="alert" className="text-destructive mt-1 text-xs">
+                          {t('documents.unreadable')}
+                        </p>
                       ) : member.hasDocument ? (
                         <p className="mt-1 text-xs text-[color:var(--bo-success-500)]">
                           {t('documents.uploaded')}
@@ -767,4 +773,10 @@ function readRetentionDays(settings: unknown): number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0
     ? value
     : DOCUMENT_RETENTION_DAYS_DEFAULT
+}
+
+/** The document was read and its machine-readable zone failed its check digits (WP0.4). */
+function isUnreadable(data: Record<string, unknown>): boolean {
+  const ocr = data.ocr as { mrz?: { present?: boolean; valid?: boolean } } | undefined
+  return Boolean(ocr?.mrz?.present && !ocr.mrz.valid)
 }

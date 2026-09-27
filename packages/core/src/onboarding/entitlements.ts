@@ -33,6 +33,12 @@ export const FEATURES = [
   'concierge',
   /** Pre-arrival capture: party details, documents, arrival time, T-48h invitation. */
   'prearrival',
+  /**
+   * Reading document photos with a vision model (WP0.4). Separate from
+   * `prearrival` because the model may process outside the EU (ADR-029) and a
+   * real guest's document waits for the transfer assessment: off by default.
+   */
+  'document_ocr',
   /** Online payment through the PaymentAdapter (deposits, checkout page). */
   'payments',
   /** The public booking engine at `/book/[property]` and self-service cancel. */

@@ -204,6 +204,19 @@ has cost something — worth remembering as a class rather than as two incidents
 | `knowledge_chunks` + pgvector | ⬜ **not built, deliberately** | The spec's hybrid search needs an embedding provider (another sub-processor) and duplicates `kb_articles`, which already has an editor. Revisit when the knowledge base outgrows keyword matching — the eval set will show it |
 | Agents database suite | ✅ | `packages/agents` `test:rls` (15 tests) in CI's `rls` job, after core's (turbo `^test:rls`); own property, never truncates |
 
+## Guest Desk WP0.4 — pre-arrival capture
+
+| Thing | Status | Note |
+|---|---|---|
+| MRZ (TD1, TD3) | ✅ | ICAO 9303 check digits in TypeScript, tested on ICAO specimens; a miscounted `<` run is corrected (never a character) and the digits still decide — the exact miscount a vision model made live |
+| Schedina preview | ✅ | `buildPayload` cut back into its fields: staff see what would be filed, not a second rendering |
+| Staff "Conferma" | ✅ | `documents.validate` + `validated_at`, refused unless complete with a document per guest. Verified in a browser end to end |
+| Consent | ✅ | Before the first document, once per stay, as a domain event with the notice version; beside a **draft** guest privacy notice (four languages) that needs the property's counsel |
+| Document deletion without Alloggiati | ✅ | `documentRetentionDays` (default 1) after departure. Before this, images of a property that files elsewhere were kept indefinitely. Negative control verified |
+| OCR | ✅ behind `document_ocr` | Vision model via OpenRouter reads the photo; MRZ fields win when their digits agree; everything else low-confidence; stored beside the typed data, mismatches shown to staff, unreadable photos prompt a retake. **Off by default** — ADR-029: a real guest's document waits for the transfer assessment. Live on a synthetic ICAO specimen: 5.3 s, MRZ valid after filler repair |
+| PDFs | ⬜ | Stored and filed as before; not read by the model, which reads images |
+| `capture_sessions` / `guest_identity_documents` | ⬜ **not built, deliberately** | The spec's tables duplicate `journey_states` + `registration_records` + the private bucket; the inventory chose to extend |
+
 ## CI gates
 
 All five exist as separate jobs in `.github/workflows/ci.yml`, named so a

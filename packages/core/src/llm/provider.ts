@@ -38,6 +38,18 @@ export type LlmTask =
 export interface LlmMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
+  /**
+   * Images sent with a user message — a document photo for extraction (WP0.4).
+   * Base64, never a URL: a signed URL would hand the provider a way to fetch
+   * the object again later, and the private bucket exists so that nobody can.
+   */
+  images?: LlmImage[]
+}
+
+export interface LlmImage {
+  mediaType: string
+  /** Base64-encoded bytes. */
+  data: string
 }
 
 /**

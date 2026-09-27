@@ -163,6 +163,7 @@ try {
     'inbox',
     'concierge',
     'prearrival',
+    'document_ocr',
     'payments',
     'booking_engine',
     'pms_sync',

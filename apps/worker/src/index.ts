@@ -8,7 +8,7 @@ import { getNotificationProvider, registerNotificationProvider } from '@bookone/
 import { openRouterFromEnv, registerProvider } from '@bookone/core/llm'
 import { loadProfiles } from '@bookone/agents/profiles'
 import { LogNotificationProvider } from './notifications/log-provider'
-import { createDocumentDeleter } from './storage/documents'
+import { createDocumentDeleter, createDocumentReader } from './storage/documents'
 import { loadEnv } from './env'
 import { registerHandlers } from './jobs/handlers'
 import { registerSchedules } from './jobs/schedules'
@@ -106,6 +106,7 @@ if (env.NODE_ENV === 'production' && alloggiatiAdapter.simulated) {
 
 /** E2.4. See the module for why it reports failure rather than swallowing it. */
 const deleteObject = createDocumentDeleter(logger)
+const readObject = createDocumentReader(logger)
 
 const queue = new PgBossQueue(env.DATABASE_URL)
 
@@ -142,6 +143,7 @@ await registerHandlers({
   alloggiati: alloggiatiAdapter,
   notifications,
   deleteObject,
+  readObject,
   appUrl: env.APP_URL,
   logger,
 })

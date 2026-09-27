@@ -70,6 +70,8 @@ export const jobNames = [
   'retention.sweep',
   /** Bring per-property schedules in line with properties and entitlements (ADR-019). */
   'schedules.sync',
+  /** Read one uploaded identity document with the vision model (WP0.4). */
+  'documents.extract',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -206,6 +208,8 @@ export interface JobPayloads {
    * feature, or adding a property, takes effect without a restart.
    */
   'schedules.sync': Record<string, never>
+  /** One guest's document at one stay. The image is read from storage, never carried here. */
+  'documents.extract': { propertyId: string; reservationId: string; guestIndex: number }
 }
 
 export interface SendOptions {

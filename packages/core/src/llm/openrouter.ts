@@ -81,7 +81,21 @@ export function createOpenRouterProvider(config: OpenRouterConfig): LlmProvider 
         .join('\n\n')
       const messages: ModelMessage[] = request.messages
         .filter((m) => m.role !== 'system')
-        .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+        .map((m): ModelMessage =>
+          m.role === 'user' && m.images?.length
+            ? {
+                role: 'user',
+                content: [
+                  { type: 'text', text: m.content },
+                  ...m.images.map((image) => ({
+                    type: 'file' as const,
+                    data: image.data,
+                    mediaType: image.mediaType,
+                  })),
+                ],
+              }
+            : { role: m.role as 'user' | 'assistant', content: m.content },
+        )
 
       const result = await generateText({
         model,

@@ -47,6 +47,9 @@ import {
 import { eraseGuest, resolveRequest, runRetention } from '@bookone/core/privacy'
 import { guestActor, systemActor, userActor } from '@bookone/core/events'
 import { runAgent } from '@bookone/agents/runner'
+import { listProviders } from '@bookone/core/llm'
+import { readDocument } from '@bookone/core/alloggiati'
+import { getDocumentPath, recordDocumentReading } from '@bookone/core/journey'
 import { respondToGuestMessage } from '@bookone/agents/concierge'
 import type { Logger } from 'pino'
 import { syncPropertySchedules } from './schedules'
@@ -74,6 +77,11 @@ export interface HandlerDeps {
    * testable without a storage service.
    */
   deleteObject: (path: string) => Promise<boolean>
+  /**
+   * Reads one stored document as base64 (WP0.4). Injected for the same reason
+   * as `deleteObject`. Optional: without it the extraction job reads nothing.
+   */
+  readObject?: (path: string) => Promise<{ mediaType: string; data: string } | null>
   /**
    * The public base URL, for links a guest or an owner will click.
    *
@@ -921,6 +929,52 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     if (expired > 0) {
       logger.info({ jobId: job.id, expired }, 'reservation.expire_holds')
     }
+  })
+
+  /**
+   * Read one guest's document with the vision model (WP0.4).
+   *
+   * Gated by `document_ocr` in the wrapper. Skips quietly without a registered
+   * model, without a stored image, or for a PDF (the model reads images). What
+   * is logged is whether the MRZ checked out — never a field from the document.
+   */
+  await work('documents.extract', async (job) => {
+    const { propertyId, reservationId, guestIndex } = job.data
+    const llm = listProviders()[0]
+    if (!llm || !deps.readObject) {
+      logger.info(
+        { jobId: job.id, propertyId },
+        'documents.extract skipped: no model or no storage',
+      )
+      return
+    }
+
+    const path = await getDocumentPath(propertyId, reservationId, guestIndex)
+    if (!path) return
+
+    const image = await deps.readObject(path)
+    if (!image || !image.mediaType.startsWith('image/')) {
+      logger.info(
+        { jobId: job.id, propertyId, mediaType: image?.mediaType ?? null },
+        'documents.extract skipped: not an image',
+      )
+      return
+    }
+
+    const reading = await readDocument(llm, image)
+    await recordDocumentReading({ propertyId, reservationId, guestIndex, reading })
+
+    logger.info(
+      {
+        jobId: job.id,
+        propertyId,
+        reservationId,
+        guestIndex,
+        source: reading.source,
+        mrzValid: reading.mrz.valid,
+      },
+      'documents.extract',
+    )
   })
 
   /** Re-derive per-property schedules from properties and entitlements (ADR-019). */

@@ -150,7 +150,11 @@
         "documentType": "Document type",
         "documentNumber": "Document number",
         "documentIssuerCode": "Issued in"
-      }
+      },
+      "ocrValid": "Document read: machine-readable zone checks out",
+      "ocrInvalid": "Photo unreadable — ask the guest for a new one",
+      "ocrPrinted": "Read from print only — check it against the document",
+      "ocrMismatch": "Differs from the document: {fields}"
     },
     "conversations": {
       "title": "Conversations",
@@ -672,7 +676,8 @@
       "needParty": "Add the guests first, then attach a document for each of them.",
       "retention": "The property deletes these once your stay is registered with the authorities. Only the receipt is kept.",
       "consent": "I have read how my data is used, and I agree that the property processes my identity document to register my stay.",
-      "retentionAfterStay": "The property deletes these photos {days, plural, one {the day} other {# days}} after you leave. Nothing is kept."
+      "retentionAfterStay": "The property deletes these photos {days, plural, one {the day} other {# days}} after you leave. Nothing is kept.",
+      "unreadable": "We could not read this photo clearly. Please send a sharper one: flat, in good light, with every line of the document visible."
     },
     "arrival": {
       "heading": "When will you arrive?",

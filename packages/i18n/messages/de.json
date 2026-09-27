@@ -150,7 +150,11 @@
         "documentType": "Dokumentart",
         "documentNumber": "Dokumentnummer",
         "documentIssuerCode": "Ausgestellt in"
-      }
+      },
+      "ocrValid": "Dokument gelesen: maschinenlesbare Zone stimmt",
+      "ocrInvalid": "Foto unlesbar — den Gast um ein neues bitten",
+      "ocrPrinted": "Nur aus dem Druck gelesen — mit dem Dokument abgleichen",
+      "ocrMismatch": "Weicht vom Dokument ab: {fields}"
     },
     "conversations": {
       "title": "Unterhaltungen",
@@ -672,7 +676,8 @@
       "needParty": "Tragen Sie zuerst die Gäste ein, dann je ein Dokument dazu.",
       "retention": "Das Haus löscht diese, sobald Ihr Aufenthalt bei den Behörden gemeldet ist. Nur die Bestätigung bleibt erhalten.",
       "consent": "Ich habe gelesen, wie meine Daten verwendet werden, und stimme zu, dass das Haus mein Ausweisdokument zur Meldung meines Aufenthalts verarbeitet.",
-      "retentionAfterStay": "Das Haus löscht diese Fotos {days, plural, one {am Tag} other {# Tage}} nach Ihrer Abreise. Es wird nichts aufbewahrt."
+      "retentionAfterStay": "Das Haus löscht diese Fotos {days, plural, one {am Tag} other {# Tage}} nach Ihrer Abreise. Es wird nichts aufbewahrt.",
+      "unreadable": "Wir konnten dieses Foto nicht gut lesen. Bitte senden Sie ein schärferes: flach, bei gutem Licht, alle Zeilen sichtbar."
     },
     "arrival": {
       "heading": "Wann kommen Sie an?",
