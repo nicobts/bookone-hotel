@@ -1408,10 +1408,22 @@ export const complianceObligations = pgTable(
     /** Why the last attempt failed, or what is missing, in words a person can act on. */
     lastError: text('last_error'),
 
+    /**
+     * The highest rung of the alert ladder already fired (WP1.5): 0 none,
+     * 1 inbox, 2 staff, 3 owner. Only ever raised, by a conditional update
+     * from the value read, which is what makes "nothing fires twice" a property
+     * of the database rather than of the sweep (`compliance/alerts.ts`).
+     */
+    alertRung: smallint('alert_rung').notNull().default(0),
+
+    /** When `alert_rung` last rose. */
+    alertedAt: timestamp('alerted_at', { withTimezone: true }),
+
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     unique('compliance_obligations_subject').on(t.propertyId, t.adapterId, t.type, t.subjectKey),
+    check('compliance_obligations_alert_rung', sql`${t.alertRung} between 0 and 3`),
     /** The sweep: what is due, across properties. */
     index('compliance_obligations_due_idx').on(t.state, t.nextAttemptAt),
     index('compliance_obligations_property_deadline_idx').on(t.propertyId, t.deadline),

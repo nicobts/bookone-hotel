@@ -10,6 +10,7 @@ import {
   type DocumentReading,
 } from '@bookone/core/alloggiati'
 import {
+  ALERT_REACHES,
   ManualFallbackUnavailable,
   alloggiatiManualFallback,
   listObligationsForStay,
@@ -22,6 +23,7 @@ import { Button } from '@bookone/ui/components/button'
 import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Separator } from '@bookone/ui/components/separator'
 import { formatDate } from '@/components/booking/format'
+import { KNOWN_OBLIGATION_ERRORS } from '@/lib/compliance/errors'
 import { confirmDocumentsAction, fileNow, markArrived } from './actions'
 
 /**
@@ -368,12 +370,6 @@ function OcrStatus({
   )
 }
 
-/** Messages the lifecycle writes, in the words the desk reads. Anything else is shown as written. */
-const KNOWN_ERRORS: Record<string, string> = {
-  'Nobody has confirmed the guests against their documents yet.': 'notConfirmed',
-  'The deadline is close: file by hand.': 'deadlineClose',
-}
-
 /**
  * One obligation on the stay (ADR-039): the authority, the state, the
  * deadline, and — when a person has to act — the file and the steps.
@@ -392,7 +388,7 @@ function Obligation({
   const needsPerson = obligation.state === 'manual'
   const variant =
     obligation.state === 'acknowledged' ? 'secondary' : needsPerson ? 'destructive' : 'outline'
-  const known = obligation.lastError ? KNOWN_ERRORS[obligation.lastError] : undefined
+  const known = obligation.lastError ? KNOWN_OBLIGATION_ERRORS[obligation.lastError] : undefined
 
   return (
     <div className="border-border mt-4 border-t pt-4">
@@ -415,6 +411,14 @@ function Obligation({
           <dt>{t('obligation.deadline')}</dt>
           <dd className="num">{when}</dd>
         </div>
+        {obligation.alertRung > 0 && obligation.state !== 'acknowledged' && (
+          // How far up the alert ladder it has gone (WP1.5). The level, not a
+          // delivery receipt: a rung with no number on record still counts.
+          <div className="flex justify-between gap-4">
+            <dt>{t('obligation.alerted')}</dt>
+            <dd>{t(`obligation.reaches.${ALERT_REACHES[obligation.alertRung - 1]}`)}</dd>
+          </div>
+        )}
         {obligation.attempts > 0 && (
           <div className="flex justify-between gap-4">
             <dt>{t('obligation.attempts')}</dt>

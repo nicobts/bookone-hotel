@@ -119,14 +119,15 @@
       "review": "Esamina",
       "reason": "Motivo",
       "waiting": "In attesa di invio",
-      "alloggiatiTitle": "Comunicazione alla questura in ritardo",
-      "alloggiatiBody": "Questo ospite è arrivato da più di 20 ore e l'invio non è confermato.",
       "toast": {
         "retrying": "Nuovo tentativo avviato",
         "retryingDescription": "La riga sparisce appena la prenotazione arriva nel gestionale.",
         "unreachable": "Il tentativo non è partito",
         "unreachableDescription": "Il servizio non ha risposto. Riprova tra qualche istante."
-      }
+      },
+      "complianceTitle": "Comunicazione obbligatoria in scadenza",
+      "complianceBody": "Non ancora inviata. Scadenza: {deadline}. Apri il soggiorno per vedere cosa manca o per inviarla a mano con il file.",
+      "complianceLate": "La scadenza è passata ({deadline}). Inviala a mano adesso con il file del soggiorno."
     },
     "arrival": {
       "title": "Arrivo",
@@ -207,7 +208,13 @@
         },
         "fallbackTitle": "Invio a mano",
         "fallbackHint": "Lo stesso file che invieremmo noi, una riga per ospite. I passaggi seguono le voci del portale, che è solo in italiano.",
-        "fallbackDownload": "Scarica il file per il portale"
+        "fallbackDownload": "Scarica il file per il portale",
+        "alerted": "Livello di avviso",
+        "reaches": {
+          "inbox": "eccezioni",
+          "staff": "personale",
+          "owner": "titolare"
+        }
       }
     },
     "conversations": {
@@ -697,6 +704,14 @@
           "label": "Elenca cosa attende la vostra approvazione",
           "would": "elencare cosa attende la vostra approvazione"
         },
+        "list_obligations_due": {
+          "label": "Elenca le comunicazioni obbligatorie da inviare",
+          "would": "elencare le comunicazioni obbligatorie ancora da inviare"
+        },
+        "list_obligations_failed": {
+          "label": "Elenca le comunicazioni fallite o da inviare a mano",
+          "would": "elencare le comunicazioni fallite o da inviare a mano"
+        },
         "classify_discrepancy": {
           "label": "Classifica una differenza con il gestionale",
           "would": "classificare una differenza con il gestionale"
@@ -899,6 +914,17 @@
         "reference": "Riferimento prenotazione"
       },
       "cta": "Apri la conversazione: {url}"
+    },
+    "complianceAlert": {
+      "authorities": {
+        "questura": "comunicazione alla Questura",
+        "regione-fvg": "comunicazione ISTAT",
+        "comune-trieste": "dichiarazione dell'imposta di soggiorno"
+      },
+      "subject": "Entro {deadline}: {filing} per {subject}",
+      "due": "La {filing} per {subject} non è ancora inviata. Scadenza: {deadline}.",
+      "manual": "La {filing} per {subject} va inviata a mano. Scadenza: {deadline}.",
+      "cta": "Apri il soggiorno: {url}"
     }
   },
   "booking": {
@@ -1213,6 +1239,12 @@
     "decisionPaymentLink": "Ecco il link per il pagamento: {url}",
     "decisionRejected": "La struttura non ha potuto approvare questa richiesta. Qualcuno le risponderà qui con le alternative.",
     "unmatchedSender": "Questo numero è di {property}. Non abbiamo trovato una prenotazione in corso collegata al suo numero, quindi il messaggio non è stato inoltrato. Se ha una prenotazione, scriva dal numero indicato al momento della prenotazione o usi il link nella conferma. Per prenotare: {link}",
-    "previewSimulated": "Anteprima: a questo punto l'assistente dovrebbe {action}. Non è stato fatto nulla e nessuno è stato contattato."
+    "previewSimulated": "Anteprima: a questo punto l'assistente dovrebbe {action}. Non è stato fatto nulla e nessuno è stato contattato.",
+    "ownerObligationsDue": "Comunicazioni da inviare ({count}): {list}.",
+    "ownerObligationsDueNone": "Nessuna comunicazione obbligatoria in sospeso.",
+    "ownerObligationsFailed": "Comunicazioni che richiedono attenzione ({count}): {list}.",
+    "ownerObligationsFailedNone": "Nessuna comunicazione è fallita o va inviata a mano.",
+    "ownerObligationDueItem": "{subject}, {filing}, entro {deadline}",
+    "ownerObligationFailedItem": "{subject}, {filing}: {state}"
   }
 }

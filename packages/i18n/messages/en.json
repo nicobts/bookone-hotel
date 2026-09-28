@@ -119,14 +119,15 @@
       "review": "Review",
       "reason": "Reason",
       "waiting": "Waiting to be sent",
-      "alloggiatiTitle": "Police registration overdue",
-      "alloggiatiBody": "This guest arrived more than 20 hours ago and the filing is not confirmed.",
       "toast": {
         "retrying": "Retry started",
         "retryingDescription": "The row disappears as soon as the booking reaches your PMS.",
         "unreachable": "The retry did not start",
         "unreachableDescription": "The service did not respond. Try again in a moment."
-      }
+      },
+      "complianceTitle": "Statutory filing due",
+      "complianceBody": "Not filed yet. Deadline: {deadline}. Open the stay to see what is missing, or file it by hand with the file there.",
+      "complianceLate": "The deadline passed ({deadline}). File it by hand now with the stay's file."
     },
     "arrival": {
       "title": "Arrival",
@@ -207,7 +208,13 @@
         },
         "fallbackTitle": "Filing by hand",
         "fallbackHint": "The same file we would send, one line per guest. The steps follow the portal, which is in Italian only.",
-        "fallbackDownload": "Download the file for the portal"
+        "fallbackDownload": "Download the file for the portal",
+        "alerted": "Alert level",
+        "reaches": {
+          "inbox": "exceptions inbox",
+          "staff": "staff",
+          "owner": "owner"
+        }
       }
     },
     "conversations": {
@@ -697,6 +704,14 @@
           "label": "List what waits for your approval",
           "would": "list what waits for your approval"
         },
+        "list_obligations_due": {
+          "label": "List statutory filings still to make",
+          "would": "list the statutory filings still to make"
+        },
+        "list_obligations_failed": {
+          "label": "List filings that failed or need filing by hand",
+          "would": "list the filings that failed or need filing by hand"
+        },
         "classify_discrepancy": {
           "label": "Classify a difference with your PMS",
           "would": "classify a difference with your PMS"
@@ -899,6 +914,17 @@
         "reference": "Booking reference"
       },
       "cta": "Open the conversation: {url}"
+    },
+    "complianceAlert": {
+      "authorities": {
+        "questura": "police registration",
+        "regione-fvg": "ISTAT return",
+        "comune-trieste": "tourist tax declaration"
+      },
+      "subject": "Due by {deadline}: {filing} for {subject}",
+      "due": "The {filing} for {subject} is not filed yet. Deadline: {deadline}.",
+      "manual": "The {filing} for {subject} must be filed by hand. Deadline: {deadline}.",
+      "cta": "Open the stay: {url}"
     }
   },
   "booking": {
@@ -1213,6 +1239,12 @@
     "decisionPaymentLink": "Here is your payment link: {url}",
     "decisionRejected": "The property could not approve this request. Someone will reply here with the alternatives.",
     "unmatchedSender": "This number belongs to {property}. We could not match yours to a current booking, so nothing has been passed on. If you have a booking, write from the number you gave when booking or use the link in your confirmation. To book: {link}",
-    "previewSimulated": "Preview: at this point the assistant would {action}. Nothing was done and nobody was contacted."
+    "previewSimulated": "Preview: at this point the assistant would {action}. Nothing was done and nobody was contacted.",
+    "ownerObligationsDue": "Filings still to make ({count}): {list}.",
+    "ownerObligationsDueNone": "No statutory filing is outstanding.",
+    "ownerObligationsFailed": "Filings that need attention ({count}): {list}.",
+    "ownerObligationsFailedNone": "No filing has failed or needs filing by hand.",
+    "ownerObligationDueItem": "{subject}, {filing}, by {deadline}",
+    "ownerObligationFailedItem": "{subject}, {filing}: {state}"
   }
 }

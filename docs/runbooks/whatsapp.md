@@ -80,6 +80,10 @@ should come back from the owner agent.
       - It uses the Twilio template in `TWILIO_TEMPLATE_ESCALATION_ALERT`,
         with {{1}} who is waiting and {{2}} the link. Submit that template to
         Meta.
+      - The filing-deadline alert (WP1.5) goes to `staffPhones` and then
+        `ownerPhones` through the same outbox, as the template in
+        `TWILIO_TEMPLATE_COMPLIANCE_ALERT`: {{1}} whose filing, {{2}} the
+        deadline, {{3}} the link. Submit that one too.
       - Without it, free text is sent, which WhatsApp accepts only inside
         24 hours of the owner's last message.
       - Still to do: a template for the pre-arrival invitation.

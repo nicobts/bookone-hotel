@@ -182,6 +182,12 @@ export type DeskPhraseKey = Extract<
   | 'ownerComplaintsNone'
   | 'ownerApprovals'
   | 'ownerApprovalsNone'
+  | 'ownerObligationsDue'
+  | 'ownerObligationsDueNone'
+  | 'ownerObligationsFailed'
+  | 'ownerObligationsFailedNone'
+  | 'ownerObligationDueItem'
+  | 'ownerObligationFailedItem'
   | 'decisionLateCheckout'
   | 'decisionCancelled'
   | 'decisionPaymentLink'
@@ -207,4 +213,22 @@ export function deskPhrase(
 export function complaintCategoryLabel(locale: string, category: string): string {
   const labels = catalogues[resolve(locale)].concierge.complaintCategories as Record<string, string>
   return labels[category] ?? category
+}
+
+/** A filing's name in the reader's language (`questura` → "police registration"). */
+export function filingLabel(locale: string, authority: string): string {
+  const labels = catalogues[resolve(locale)].notifications.complianceAlert.authorities as Record<
+    string,
+    string
+  >
+  return labels[authority] ?? authority
+}
+
+/** An obligation state as the console names it. */
+export function obligationStateLabel(locale: string, state: string): string {
+  const labels = catalogues[resolve(locale)].console.arrival.obligation.states as Record<
+    string,
+    string
+  >
+  return labels[state] ?? state
 }

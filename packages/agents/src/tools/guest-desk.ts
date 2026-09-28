@@ -4,6 +4,7 @@ import {
   complaintCategoryLabel,
   createStayTask,
   deskPhrase,
+  filingLabel,
   getPropertySlug,
   getStayFacts,
   isComplaintCategory,
@@ -14,8 +15,10 @@ import {
   localisedName,
   logComplaint,
   markComplaintOwnerAlerted,
+  obligationStateLabel,
   type StayFacts,
 } from '@bookone/core/concierge'
+import { formatDeadline, listObligationsForOwner } from '@bookone/core/compliance'
 import { agentActor } from '@bookone/core/events'
 import { sendPrecheckinInvite, setExpectedArrival } from '@bookone/core/journey'
 import { formatDate, formatMoney } from '@bookone/core/notifications'
@@ -652,6 +655,94 @@ const listPendingApprovalsTool: Tool = {
   },
 }
 
+/*
+ * The owner's filings (WP1.5). Read-only, like the rest of this section: the
+ * owner learns what is owed and by when, and files from the console — an agent
+ * never files, retries or marks anything as filed (hard rules: a compliance
+ * outcome is never T1).
+ */
+const OWNER_LIST_LIMIT = 20
+
+/**
+ * At most `OWNER_LIST_LIMIT` filings, and a count that says when there are
+ * more: "20" for a list that is complete, "20+" for one that is not.
+ */
+async function ownerObligations(propertyId: string, which: 'due' | 'failed') {
+  const rows = await listObligationsForOwner(propertyId, which, OWNER_LIST_LIMIT + 1)
+  const more = rows.length > OWNER_LIST_LIMIT
+  return {
+    rows: rows.slice(0, OWNER_LIST_LIMIT),
+    more,
+    count: more ? `${OWNER_LIST_LIMIT}+` : String(rows.length),
+  }
+}
+
+const listObligationsDueTool: Tool = {
+  name: 'list_obligations_due',
+  description:
+    'List statutory filings (police registration, ISTAT, tourist tax) not yet made, soonest deadline first',
+  input: NONE,
+  reversible: false,
+  run: async (context) => {
+    const { rows, more, count } = await ownerObligations(context.propertyId, 'due')
+    const lang = locale(context)
+    if (rows.length === 0)
+      return { ok: true, output: { count: 0, phrase: deskPhrase(lang, 'ownerObligationsDueNone') } }
+
+    const list = rows
+      .map((row) =>
+        deskPhrase(lang, 'ownerObligationDueItem', {
+          subject: row.subject,
+          filing: filingLabel(lang, row.authority),
+          deadline: formatDeadline(row.deadline, lang, row.timeZone),
+        }),
+      )
+      .join('; ')
+    return {
+      ok: true,
+      output: {
+        count: rows.length,
+        more,
+        phrase: deskPhrase(lang, 'ownerObligationsDue', { count, list }),
+      },
+    }
+  },
+}
+
+const listObligationsFailedTool: Tool = {
+  name: 'list_obligations_failed',
+  description: 'List statutory filings that failed or must be filed by hand',
+  input: NONE,
+  reversible: false,
+  run: async (context) => {
+    const { rows, more, count } = await ownerObligations(context.propertyId, 'failed')
+    const lang = locale(context)
+    if (rows.length === 0)
+      return {
+        ok: true,
+        output: { count: 0, phrase: deskPhrase(lang, 'ownerObligationsFailedNone') },
+      }
+
+    const list = rows
+      .map((row) =>
+        deskPhrase(lang, 'ownerObligationFailedItem', {
+          subject: row.subject,
+          filing: filingLabel(lang, row.authority),
+          state: obligationStateLabel(lang, row.state),
+        }),
+      )
+      .join('; ')
+    return {
+      ok: true,
+      output: {
+        count: rows.length,
+        more,
+        phrase: deskPhrase(lang, 'ownerObligationsFailed', { count, list }),
+      },
+    }
+  },
+}
+
 export const guestDeskTools: Tool[] = [
   // Real since WP0.2, under the names the profiles use.
   alias(
@@ -690,6 +781,8 @@ export const guestDeskTools: Tool[] = [
   listCaptureStatusTool,
   listOpenComplaintsTool,
   listPendingApprovalsTool,
+  listObligationsDueTool,
+  listObligationsFailedTool,
 
   // Approval-held; run from the approval step (WP0.6).
   notYet('cancel_booking', "Cancel this guest's own booking within policy", NONE, false),

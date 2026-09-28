@@ -572,6 +572,8 @@ export interface ObligationView {
   attempts: number
   lastError: string | null
   stateChangedAt: Date
+  /** The alert ladder's rung reached (WP1.5): 0 none, 1 inbox, 2 staff, 3 owner. */
+  alertRung: number
   evidence: { id: string; source: string; hash: string; recordedAt: Date } | null
 }
 
@@ -593,6 +595,7 @@ export async function listObligationsForStay(
         attempts: complianceObligations.attempts,
         lastError: complianceObligations.lastError,
         stateChangedAt: complianceObligations.stateChangedAt,
+        alertRung: complianceObligations.alertRung,
         evidenceId: complianceEvidence.id,
         evidenceSource: complianceEvidence.source,
         evidenceHash: complianceEvidence.receiptHash,
@@ -618,6 +621,7 @@ export async function listObligationsForStay(
       attempts: row.attempts,
       lastError: row.lastError,
       stateChangedAt: row.stateChangedAt,
+      alertRung: row.alertRung,
       evidence:
         row.evidenceId && row.evidenceSource && row.evidenceHash && row.evidenceAt
           ? {
@@ -703,4 +707,67 @@ export async function noteFallbackDownloaded(input: {
       })
     }),
   )
+}
+
+export interface OwnerObligationRow {
+  id: string
+  authority: string
+  state: ObligationState
+  deadline: Date
+  /** The guest's name or booking reference; the day for a daily return. */
+  subject: string
+  timeZone: string
+}
+
+/**
+ * The owner agent's two lists (WP1.5): `due` is every filing not yet with the
+ * authority, soonest deadline first; `failed` is the subset that needs a
+ * person — retries running (`failed`) or handed over (`manual`).
+ *
+ * Service role, scoped by the property the runner fixed (ADR-007): the agent
+ * cannot name another property, and nothing here writes.
+ */
+export async function listObligationsForOwner(
+  propertyId: string,
+  which: 'due' | 'failed',
+  limit = 20,
+): Promise<OwnerObligationRow[]> {
+  const states: ObligationState[] =
+    which === 'due' ? ['pending', 'queued', 'failed', 'manual'] : ['failed', 'manual']
+
+  const rows = await asService((db) =>
+    db
+      .select({
+        id: complianceObligations.id,
+        authority: complianceObligations.authority,
+        state: complianceObligations.state,
+        deadline: complianceObligations.deadline,
+        periodDate: complianceObligations.periodDate,
+        reference: reservations.reference,
+        guestName: sql<
+          string | null
+        >`(select g.name from guests g where g.id = ${reservations.guestId})`,
+        timeZone: properties.timezone,
+      })
+      .from(complianceObligations)
+      .innerJoin(properties, eq(properties.id, complianceObligations.propertyId))
+      .leftJoin(reservations, eq(reservations.id, complianceObligations.reservationId))
+      .where(
+        and(
+          eq(complianceObligations.propertyId, propertyId),
+          inArray(complianceObligations.state, states),
+        ),
+      )
+      .orderBy(asc(complianceObligations.deadline))
+      .limit(limit),
+  )
+
+  return rows.map((row) => ({
+    id: row.id,
+    authority: row.authority,
+    state: row.state,
+    deadline: row.deadline,
+    subject: row.guestName ?? row.reference ?? row.periodDate ?? '—',
+    timeZone: row.timeZone,
+  }))
 }

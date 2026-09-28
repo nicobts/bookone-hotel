@@ -20,7 +20,7 @@ states it in the words the property signs.
 | `MockAlloggiatiAdapter` | ✅ files nothing |
 | `alloggiati_submissions` audit trail | ✅ built |
 | Auto-submit on arrival, manual submit | ✅ built |
-| T-20h alert | ✅ built |
+| T-20h alert | ✅ built, now the WP1.5 alert ladder (`docs/runbooks/compliance.md`) |
 | Document deletion on acknowledgement (E2.4) | ✅ built |
 | **A real channel** | ⬜ **blocked on an external decision** |
 
@@ -95,9 +95,11 @@ list that reveals one per round trip takes four conversations with the guest.
 down — are retried by the queue. Non-retryable ones mean the payload was
 rejected, and the reason is the authority's own message.
 
-**T-20h alert fired.** A guest arrived twenty hours ago and the filing is not
-acknowledged. Twenty rather than twenty-four so it is a chance to act rather
-than a notification of a breach. Submit manually from the console.
+**A filing-deadline alert fired.** Since WP1.5 this is the alert ladder: the
+filing appears in the exceptions inbox twelve hours before its deadline, the
+staff phones get a message at six and the owner at three (per property). Open
+the stay from the inbox row: it lists what is missing, and when the filing has
+been handed to a person, the file for the portal. See `docs/runbooks/compliance.md`.
 
 **Documents still present after acknowledgement.** The deletion job deletes the
 object first and stamps the row second, so a failure leaves the row honest and

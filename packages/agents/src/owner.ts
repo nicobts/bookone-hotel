@@ -17,7 +17,7 @@ import type { ExecuteTool } from './orchestrator'
  * tool runs, so a guest who writes "how many arrivals tomorrow?" from their own
  * phone reaches the guest concierge, not this.
  *
- * Read-only: its four tools list, and nothing it can call changes a row.
+ * Read-only: its six tools list, and nothing it can call changes a row.
  */
 
 /** Digits only, so "+39 040 000 0001" and "0039040 0000001" compare equal. */
@@ -44,7 +44,68 @@ export async function isOwnerPhone(propertyId: string, phone: string): Promise<b
   )
 }
 
+/*
+ * First match wins, so the order matters: the failed filings before the
+ * filings in general ("which filings failed?" is the narrower question), and
+ * both before documents, because "documents for the Questura" is a filing.
+ * Whole words only (`normalise` pads with spaces).
+ */
 const OWNER_VOCABULARY: [string, string[]][] = [
+  [
+    'list_obligations_failed',
+    [
+      'failed',
+      'fallita',
+      'fallite',
+      'fallito',
+      'falliti',
+      'non riuscite',
+      'a mano',
+      'manuale',
+      'manuali',
+      'manualmente',
+      'by hand',
+      'manual',
+      'manually',
+      'manuell',
+      'fehlgeschlagen',
+      'von hand',
+      'spodletela',
+      'spodletele',
+      'rocno',
+    ],
+  ],
+  [
+    'list_obligations_due',
+    [
+      'questura',
+      'alloggiati',
+      'schedina',
+      'schedine',
+      'police registration',
+      'police registrations',
+      'filing',
+      'filings',
+      'comunicazione',
+      'comunicazioni',
+      'meldung',
+      'meldungen',
+      'prijava',
+      'prijave',
+      'istat',
+      'imposta di soggiorno',
+      'tourist tax',
+      'ortstaxe',
+      'scadenza',
+      'scadenze',
+      'deadline',
+      'deadlines',
+      'frist',
+      'fristen',
+      'rok',
+      'roki',
+    ],
+  ],
   [
     'list_capture_status',
     [

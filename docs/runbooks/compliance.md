@@ -2,7 +2,7 @@
 
 **Decisions:** ADR-026 (a ComplianceAdapter per authority, each with a manual fallback), ADR-028 (the
 region registry), ADR-039 (obligations as a state table).
-**Status:** Guest Desk WP1.1, on mocks. **Nothing is filed with any authority.** The only Alloggiati
+**Status:** Guest Desk WP1.1 and WP1.5, on mocks. **Nothing is filed with any authority.** The only Alloggiati
 channel outside production is the mock, and the worker refuses to boot a simulated channel in
 production.
 
@@ -30,6 +30,60 @@ escalation at T−2h). A filing that might fail with minutes left is one nobody 
 - A recording made after the arrival day counts as the end of that day, so a late click never extends
   it (`compliance/deadlines.ts`).
 
+## Deadline alerts (WP1.5)
+
+An obligation nobody has filed climbs a ladder as its deadline nears. Each rung fires once.
+
+| Rung | Default | Who is told |
+|---|---|---|
+| 1 inbox | 12 h before the deadline | The filing appears in **Eccezioni**, with its deadline and a link to the stay |
+| 2 staff | 6 h before | Every number in `settings.staffPhones`, on WhatsApp (or SMS if only that is on) |
+| 3 owner | 3 h before | Every number in `settings.ownerPhones`, the same way |
+
+- **A hand-over goes straight to rung 2.** An obligation in `manual` will not file itself, so the
+  staff are paged at once, and the message says it must be filed by hand. A hand-over after a
+  phone rung fired (Alloggiati hands over two hours out, after the owner rung) pages everyone
+  already paged again, once: they were told the filing would go by itself.
+- **Only while nothing is filed.** `pending`, `queued`, `failed` and `manual` alert. `submitted`
+  and `acknowledged` never do: the authority has it.
+- **Never after the deadline.** A missed filing stays in the inbox, with the fallback file on the
+  stay; nobody is paged about a breach.
+- **Late starts catch up.** An obligation created three hours before its deadline pages staff
+  and owner together, once each.
+- **Per property.** `settings.complianceAlerts`, in minutes before the deadline, `null` to switch
+  a rung off:
+
+  ```json
+  { "complianceAlerts": { "inbox": 720, "staff": 360, "owner": 180 } }
+  ```
+
+  Keys left out keep their default. Later rungs must be closer to the deadline than earlier ones,
+  and each at most 24 h. A setting that does not validate is ignored as a whole and the defaults
+  apply: a typo must never switch the alerts off.
+
+**How "once" is kept.** The rung reached is stored on the obligation (`alert_rung`, `alerted_at`)
+and raised by an update conditional on the value read; a hand-over is claimed the same way, on
+`alerted_at` against `state_changed_at`. Two sweeps racing, a retried job or a
+restarted worker: one wins, the others send nothing. It runs inside `compliance.sweep`, every five
+minutes. Every rise is a `compliance_obligation.alerted` event with the rungs fired, the messages
+queued and `unreachable`, the rungs that had no number on record or no messaging channel on.
+
+**Nobody was paged?** Look for `unreachable > 0` on the event:
+
+```sql
+select at, payload from domain_events
+where event_type = 'compliance_obligation.alerted' and property_id = :property
+order by at desc limit 20;
+```
+
+The usual causes are no `staffPhones` recorded, or neither the `whatsapp` nor the `sms` feature on.
+Outside Twilio's 24-hour window a WhatsApp alert needs its approved template,
+`TWILIO_TEMPLATE_COMPLIANCE_ALERT`: {{1}} whose filing, {{2}} the deadline, {{3}} the link.
+
+**The owner asks on WhatsApp.** "Ci sono comunicazioni in scadenza?" runs `list_obligations_due`;
+"quali sono fallite?" runs `list_obligations_failed`. Both only read. The agent never files or
+marks anything as filed.
+
 ## Where things run
 
 | Piece | Where |
@@ -38,7 +92,8 @@ escalation at T−2h). A filing that might fail with minutes left is one nobody 
 | Alloggiati as a ComplianceAdapter (a bridge over the Sprint 6 chain) | `packages/core/src/compliance/alloggiati.ts` |
 | Region registry (data) | `packages/core/src/compliance/registry.json` |
 | Contract suite, and the simulated authority that passes it | `packages/adapters/src/compliance/`, `packages/adapters/src/mock-compliance/` |
-| `compliance.generate` (every 10 min), `compliance.sweep` (every 5 min), `compliance.run` | `apps/worker/src/jobs/` |
+| `compliance.generate` (every 10 min), `compliance.sweep` (every 5 min, runs the alert ladder too), `compliance.run` | `apps/worker/src/jobs/` |
+| Alert ladder | `packages/core/src/compliance/alerts.ts` |
 | The arrival path and "Invia ora" | `alloggiati.file`: creates the stay's obligation and advances it at once |
 | What the desk sees | Arrival page, "Comunicazione alla Questura" |
 | Fallback download | `/[locale]/[property]/console/compliance/[obligation]/fallback` |
@@ -116,5 +171,4 @@ this (upload plus "mark submitted manually") is WP1.6. Until then, an operator r
   credentials and certificate, and Secret Manager.
 - **WP1.3–1.4:** the WebTur FVG and imposta adapters. The registry already names them, and the
   generation job reports them as unsupported until they exist.
-- **WP1.5:** alerting through the inbox and WhatsApp before the deadline, and the owner-agent tools.
 - **WP1.6:** the compliance dashboard, the inspection export and the manual-receipt screen.

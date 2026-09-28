@@ -119,14 +119,15 @@
       "review": "Prüfen",
       "reason": "Grund",
       "waiting": "Wartet auf Übertragung",
-      "alloggiatiTitle": "Polizeiliche Meldung überfällig",
-      "alloggiatiBody": "Dieser Gast ist vor über 20 Stunden angekommen und die Meldung ist nicht bestätigt.",
       "toast": {
         "retrying": "Neuer Versuch gestartet",
         "retryingDescription": "Die Zeile verschwindet, sobald die Buchung in Ihrem PMS ankommt.",
         "unreachable": "Der Versuch wurde nicht gestartet",
         "unreachableDescription": "Der Dienst hat nicht geantwortet. Versuchen Sie es gleich noch einmal."
-      }
+      },
+      "complianceTitle": "Pflichtmeldung fällig",
+      "complianceBody": "Noch nicht übermittelt. Frist: {deadline}. Öffnen Sie den Aufenthalt, um zu sehen, was fehlt, oder melden Sie mit der Datei dort von Hand.",
+      "complianceLate": "Die Frist ist abgelaufen ({deadline}). Bitte jetzt mit der Datei des Aufenthalts von Hand melden."
     },
     "arrival": {
       "title": "Anreise",
@@ -207,7 +208,13 @@
         },
         "fallbackTitle": "Meldung von Hand",
         "fallbackHint": "Dieselbe Datei, die wir senden würden, eine Zeile pro Gast. Die Schritte folgen dem Portal, das nur auf Italienisch ist.",
-        "fallbackDownload": "Datei für das Portal herunterladen"
+        "fallbackDownload": "Datei für das Portal herunterladen",
+        "alerted": "Alarmstufe",
+        "reaches": {
+          "inbox": "Ausnahmen",
+          "staff": "Personal",
+          "owner": "Inhaber"
+        }
       }
     },
     "conversations": {
@@ -697,6 +704,14 @@
           "label": "Listet, was auf Ihre Freigabe wartet",
           "would": "auflisten, was auf Ihre Freigabe wartet"
         },
+        "list_obligations_due": {
+          "label": "Ausstehende Pflichtmeldungen auflisten",
+          "would": "die ausstehenden Pflichtmeldungen auflisten"
+        },
+        "list_obligations_failed": {
+          "label": "Fehlgeschlagene oder von Hand zu erledigende Meldungen auflisten",
+          "would": "die fehlgeschlagenen oder von Hand zu erledigenden Meldungen auflisten"
+        },
         "classify_discrepancy": {
           "label": "Ordnet eine Abweichung zum PMS ein",
           "would": "eine Abweichung zum PMS einordnen"
@@ -899,6 +914,17 @@
         "reference": "Buchungsnummer"
       },
       "cta": "Unterhaltung öffnen: {url}"
+    },
+    "complianceAlert": {
+      "authorities": {
+        "questura": "Meldung an die Questura",
+        "regione-fvg": "ISTAT-Meldung",
+        "comune-trieste": "Ortstaxe-Erklärung"
+      },
+      "subject": "Bis {deadline}: {filing} für {subject}",
+      "due": "Die {filing} für {subject} ist noch nicht übermittelt. Frist: {deadline}.",
+      "manual": "Die {filing} für {subject} muss von Hand übermittelt werden. Frist: {deadline}.",
+      "cta": "Aufenthalt öffnen: {url}"
     }
   },
   "booking": {
@@ -1213,6 +1239,12 @@
     "decisionPaymentLink": "Hier ist Ihr Zahlungslink: {url}",
     "decisionRejected": "Das Haus konnte diese Anfrage nicht freigeben. Jemand meldet sich hier mit Alternativen.",
     "unmatchedSender": "Diese Nummer gehört zu {property}. Wir konnten Ihre Nummer keiner aktuellen Buchung zuordnen, daher wurde nichts weitergeleitet. Wenn Sie gebucht haben, schreiben Sie von der Nummer, die Sie bei der Buchung angegeben haben, oder nutzen Sie den Link in Ihrer Bestätigung. Zum Buchen: {link}",
-    "previewSimulated": "Vorschau: An dieser Stelle würde der Assistent {action}. Es wurde nichts ausgeführt und niemand kontaktiert."
+    "previewSimulated": "Vorschau: An dieser Stelle würde der Assistent {action}. Es wurde nichts ausgeführt und niemand kontaktiert.",
+    "ownerObligationsDue": "Ausstehende Meldungen ({count}): {list}.",
+    "ownerObligationsDueNone": "Keine Pflichtmeldung steht aus.",
+    "ownerObligationsFailed": "Meldungen, die Aufmerksamkeit brauchen ({count}): {list}.",
+    "ownerObligationsFailedNone": "Keine Meldung ist fehlgeschlagen oder muss von Hand erfolgen.",
+    "ownerObligationDueItem": "{subject}, {filing}, bis {deadline}",
+    "ownerObligationFailedItem": "{subject}, {filing}: {state}"
   }
 }

@@ -83,6 +83,8 @@ const envSchema = z.object({
    * alert starts the conversation, which WhatsApp allows only as a template.
    */
   TWILIO_TEMPLATE_ESCALATION_ALERT: z.string().startsWith('HX').optional(),
+  /** The compliance deadline alert's approved template (WP1.5): {{1}} whose filing, {{2}} by when, {{3}} the link. */
+  TWILIO_TEMPLATE_COMPLIANCE_ALERT: z.string().startsWith('HX').optional(),
   /** `apps/api`'s public URL, for delivery-status callbacks. */
   TWILIO_WEBHOOK_BASE_URL: z.string().url().optional(),
 })

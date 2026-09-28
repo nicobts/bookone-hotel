@@ -78,13 +78,8 @@ export async function alertEscalation(input: {
     // The owner's phones, on the first messaging channel the property has on:
     // WhatsApp, else SMS (ADR-035). Numbers come only from `ownerPhones`, the
     // same recorded list that gates the owner agent.
-    const [channels] = await db.execute<{ whatsapp: boolean; sms: boolean }>(sql`
-      select exists (select 1 from entitlements where property_id = ${input.propertyId}
-                      and feature = 'whatsapp' and ended_at is null) as whatsapp,
-             exists (select 1 from entitlements where property_id = ${input.propertyId}
-                      and feature = 'sms' and ended_at is null) as sms`)
-    const phoneChannel = channels?.whatsapp ? 'whatsapp' : channels?.sms ? 'sms' : null
-    const phones = phoneChannel ? readOwnerPhones(row.settings) : []
+    const phoneChannel = await phoneChannelFor(db, input.propertyId)
+    const phones = phoneChannel ? readPhones(row.settings, 'ownerPhones') : []
 
     if (!contact && phones.length === 0) return null
 
@@ -128,9 +123,28 @@ export async function alertEscalation(input: {
   })
 }
 
-/** `settings.ownerPhones` as E.164; anything without a country code is dropped. */
-function readOwnerPhones(settings: unknown): string[] {
-  const raw = (settings as { ownerPhones?: unknown } | null)?.ownerPhones
+/**
+ * The first messaging channel the property has on: WhatsApp, else SMS, else
+ * none (ADR-035). Shared by every alert that reaches a phone.
+ */
+export async function phoneChannelFor(
+  db: Pick<Parameters<Parameters<typeof asService>[0]>[0], 'execute'>,
+  propertyId: string,
+): Promise<'whatsapp' | 'sms' | null> {
+  const [channels] = await db.execute<{ whatsapp: boolean; sms: boolean }>(sql`
+    select exists (select 1 from entitlements where property_id = ${propertyId}
+                    and feature = 'whatsapp' and ended_at is null) as whatsapp,
+           exists (select 1 from entitlements where property_id = ${propertyId}
+                    and feature = 'sms' and ended_at is null) as sms`)
+  return channels?.whatsapp ? 'whatsapp' : channels?.sms ? 'sms' : null
+}
+
+/**
+ * A phone list from settings (`ownerPhones`, `staffPhones`) as E.164; anything
+ * without a country code is dropped rather than guessed at.
+ */
+export function readPhones(settings: unknown, key: 'ownerPhones' | 'staffPhones'): string[] {
+  const raw = (settings as Record<string, unknown> | null)?.[key]
   if (!Array.isArray(raw)) return []
   const phones = raw
     .map((value) => String(value).trim())

@@ -6,6 +6,11 @@ import type * as schema from '../db/schema'
 import { emit } from '../events'
 import { systemActor } from '../events/actor'
 import {
+  COMPLIANCE_ALERT,
+  complianceAlertTemplateVariables,
+  renderComplianceAlert,
+  renderComplianceAlertShort,
+  type ComplianceAlertFacts,
   ESCALATION_ALERT,
   INVOICE_REQUEST_ROUTED,
   renderBookingConfirmation,
@@ -280,6 +285,9 @@ function templateVariables(template: string, payload: unknown): Record<string, s
   if (template === ESCALATION_ALERT) {
     return escalationAlertTemplateVariables(payload as EscalationAlertFacts)
   }
+  if (template === COMPLIANCE_ALERT) {
+    return complianceAlertTemplateVariables(payload as ComplianceAlertFacts)
+  }
   return null
 }
 
@@ -312,6 +320,12 @@ function render(template: string, locale: string, payload: unknown, channel = 'e
     return channel === 'email'
       ? renderEscalationAlert(locale, payload as EscalationAlertFacts)
       : renderEscalationAlertShort(locale, payload as EscalationAlertFacts)
+  }
+
+  if (template === COMPLIANCE_ALERT) {
+    return channel === 'email'
+      ? renderComplianceAlert(locale, payload as ComplianceAlertFacts)
+      : renderComplianceAlertShort(locale, payload as ComplianceAlertFacts)
   }
 
   throw new Error(`unknown notification template "${template}"`)
