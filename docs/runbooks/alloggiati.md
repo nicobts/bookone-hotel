@@ -146,7 +146,8 @@ filing stays with the person, with the reason. It never re-sends a filing the
 channel already holds.
 
 **The daily reconciliation** (`alloggiati.reconcile`, 05:15, per property with
-the feature): for the day before, how many filings fell due, how many the
+the feature): for the property's previous day, midnight to midnight in its own
+zone, how many filings fell due, how many the
 channel acknowledged, how many were filed by hand, how many are open, and
 whether the service holds a receipt for a day we filed on. A missing receipt is
 a mismatch: an error line and a `compliance.reconciled` event with

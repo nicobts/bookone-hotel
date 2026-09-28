@@ -1,9 +1,10 @@
 import { and, eq, gte, lt, sql } from 'drizzle-orm'
 import type { AlloggiatiAdapter } from '../alloggiati/adapter'
 import { asService } from '../db/session'
-import { complianceEvidence, complianceObligations } from '../db/schema'
+import { complianceEvidence, complianceObligations, properties } from '../db/schema'
 import { emit } from '../events'
 import { systemActor } from '../events/actor'
+import { zonedStartOfDay } from '../policy/booking-policy'
 import { ALLOGGIATI_ADAPTER_ID } from './alloggiati'
 
 /**
@@ -20,6 +21,10 @@ import { ALLOGGIATI_ADAPTER_ID } from './alloggiati'
  * the only honest next step is to open the portal.
  *
  * Counts only: no guest, no reference. The event is read widely.
+ *
+ * A day is the property's calendar day, midnight to midnight in its own zone:
+ * deadlines are set in that zone, the authority's receipts are per local day,
+ * and a day around a clock change is 23 or 25 hours long.
  */
 export interface DayReconciliation {
   day: string
@@ -40,10 +45,24 @@ export interface DayReconciliation {
 
 export async function reconcileAlloggiatiDay(
   deps: { adapter: AlloggiatiAdapter },
-  input: { propertyId: string; day: string },
+  input: {
+    propertyId: string
+    /** `YYYY-MM-DD` in the property's zone. Defaults to its yesterday. */
+    day?: string
+    now?: Date
+  },
 ): Promise<DayReconciliation> {
-  const start = new Date(`${input.day}T00:00:00Z`)
-  const end = new Date(start.getTime() + 86_400_000)
+  const [property] = await asService((db) =>
+    db
+      .select({ timeZone: properties.timezone })
+      .from(properties)
+      .where(eq(properties.id, input.propertyId))
+      .limit(1),
+  )
+  const timeZone = property?.timeZone ?? 'Europe/Rome'
+  const day = input.day ?? addDays(localDate(input.now ?? new Date(), timeZone), -1)
+  const start = zonedStartOfDay(day, timeZone)
+  const end = zonedStartOfDay(addDays(day, 1), timeZone)
 
   const due = await asService((db) =>
     db
@@ -89,14 +108,14 @@ export async function reconcileAlloggiatiDay(
   if (filedThisDay > 0 && deps.adapter.dailyReceipt) {
     const receipt = await deps.adapter.dailyReceipt({
       propertyId: input.propertyId,
-      day: input.day,
+      day,
     })
     channelReceipt = receipt.available ? 'available' : 'missing'
   }
 
   const acknowledged = due.filter((row) => row.state === 'acknowledged')
   const result: DayReconciliation = {
-    day: input.day,
+    day,
     due: due.length,
     byChannel: acknowledged.filter((row) => row.source === 'channel').length,
     byHand: acknowledged.filter((row) => row.source === 'manual').length,
@@ -125,4 +144,20 @@ export async function reconcileAlloggiatiDay(
   )
 
   return result
+}
+
+/** The calendar date of an instant in a zone, as `YYYY-MM-DD`. */
+export function localDate(at: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(at)
+}
+
+function addDays(date: string, days: number): string {
+  const next = new Date(`${date}T00:00:00Z`)
+  next.setUTCDate(next.getUTCDate() + days)
+  return next.toISOString().slice(0, 10)
 }

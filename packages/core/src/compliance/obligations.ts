@@ -547,7 +547,22 @@ export async function retryManualObligation(
 
   const validation = await adapter.validate(obligation)
   if (!validation.ok) {
-    return { status: 'invalid', messages: validation.issues.map((issue) => issue.message) }
+    // Nothing sent. The reason goes on the stay, where the desk was told the
+    // result would appear, and the attempt is on the record like any other.
+    const messages = validation.issues.map((issue) => issue.message)
+    const written = await write(
+      row,
+      {
+        state: 'manual',
+        attempts: row.attempts,
+        nextAttemptAt: null,
+        lastError: messages.join(' · '),
+      },
+      { adapter, now },
+    )
+    if (written.status === 'raced') return { status: 'unavailable', reason: 'raced' }
+    await channelRetried(row, input.userId, 'invalid', adapter)
+    return { status: 'invalid', messages }
   }
 
   const result = await adapter.submit(obligation)
@@ -571,7 +586,20 @@ export async function retryManualObligation(
   })
   if (written.status === 'raced') return { status: 'unavailable', reason: 'raced' }
 
-  // Who asked, on the record: the transition's own event is the system's.
+  await channelRetried(row, input.userId, result.status, adapter)
+
+  return next.state === 'acknowledged'
+    ? { status: 'acknowledged' }
+    : { status: 'still-manual', message: next.lastError ?? '' }
+}
+
+/** Who asked, on the record: the transition's own event is the system's. */
+async function channelRetried(
+  row: ObligationRow,
+  userId: string,
+  outcome: string,
+  adapter: ComplianceAdapter,
+): Promise<void> {
   await asService((db) =>
     db.transaction((tx) =>
       emit(tx, {
@@ -580,19 +608,11 @@ export async function retryManualObligation(
         entityId: row.id,
         eventType: 'compliance_obligation.channel_retried',
         origin: 'platform',
-        actor: userActor(input.userId),
-        payload: {
-          adapterId: row.adapterId,
-          outcome: result.status,
-          simulated: adapter.capabilities().simulated,
-        },
+        actor: userActor(userId),
+        payload: { adapterId: row.adapterId, outcome, simulated: adapter.capabilities().simulated },
       }),
     ),
   )
-
-  return next.state === 'acknowledged'
-    ? { status: 'acknowledged' }
-    : { status: 'still-manual', message: next.lastError ?? '' }
 }
 
 /**

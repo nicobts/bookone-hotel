@@ -350,6 +350,12 @@ let configured: Promise<CodeResolver | null> | null = null
 export function configuredCodes(): Promise<CodeResolver | null> {
   const dir = process.env.ALLOGGIATI_TABLES_DIR?.trim()
   if (!dir) return Promise.resolve(null)
-  configured ??= loadCodeTables(dir).then(createResolver)
+  configured ??= loadCodeTables(dir)
+    .then(createResolver)
+    .catch((error: unknown) => {
+      // Not cached: an operator who fixes the files must not need a restart.
+      configured = null
+      throw error
+    })
   return configured
 }

@@ -159,14 +159,11 @@ export function createAlloggiatiComplianceAdapter(port: AlloggiatiAdapter): Comp
       if (filed.status === 'failed') {
         return {
           status: 'failed',
-          // "unauthorized" is kept apart from "rejected": wrong credentials
-          // are fixed in the credentials, not by asking the guest.
+          // The channel's own classification. "unauthorized" is fixed in the
+          // credentials, not by asking the guest; "unavailable" that is not
+          // retryable is a send that may have gone through, not bad data.
           code:
-            filed.code === 'unauthorized'
-              ? 'unauthorized'
-              : filed.retryable
-                ? 'unavailable'
-                : 'rejected',
+            filed.code === 'unauthorized' || filed.code === 'unavailable' ? filed.code : 'rejected',
           message: filed.reason,
           retryable: filed.retryable,
         }

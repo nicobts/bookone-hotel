@@ -586,10 +586,10 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * a mismatch is an error line and an event for a person to look at.
    */
   await work('alloggiati.reconcile', async (job) => {
-    const day = job.data.day ?? new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
+    // Without a day, core takes the property's own yesterday, in its zone.
     const result = await reconcileAlloggiatiDay(
       { adapter: alloggiati },
-      { propertyId: job.data.propertyId, day },
+      { propertyId: job.data.propertyId, ...(job.data.day ? { day: job.data.day } : {}) },
     )
     const line = { jobId: job.id, propertyId: job.data.propertyId, ...result }
     if (result.mismatch)

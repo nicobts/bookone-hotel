@@ -181,7 +181,7 @@ export interface JobPayloads {
   'compliance.run': { propertyId: string; obligationId: string }
   /** `userId` is who pressed the button; the event records them. */
   'compliance.retry': { propertyId: string; obligationId: string; userId: string }
-  /** `day` defaults to yesterday (UTC), which is what the schedule wants. */
+  /** `day` defaults to the property's yesterday, in its own zone: what the schedule wants. */
   'alloggiati.reconcile': { propertyId: string; day?: string }
   /**
    * One turn of a conversation (E3.2).
