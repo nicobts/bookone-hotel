@@ -123,7 +123,8 @@ The portal's own pages are never automated without the Regione's agreement.
 
 The imposta di soggiorno is computed by a rules engine (`compliance/imposta`). Each comune's rules
 are data, one file per comune in `compliance/imposta/rules/<ISTAT code>.json`, with dated
-versions. A version holds:
+versions. Adding a comune is its file plus one line in `imposta/files.ts`, which the consoles need
+because they are bundled; a test fails when a file is not listed. A version holds:
 - the seasons, and the rates by property category and season;
 - the most nights charged per person per stay;
 - exemptions, either by age or by a declared reason;

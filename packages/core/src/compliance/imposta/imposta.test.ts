@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { computeStayTax, roundCentiCents, type TaxStay } from './engine'
 import { buildDeclaration, declarationCsv, reconcileDeclaration } from './declaration'
-import { loadAllRules, parseRules, rulesFor } from './index'
+import { readdirSync } from 'node:fs'
+import { loadAllRules, parseRules, RULE_FILES, rulesFor } from './index'
 
 /**
  * WP1.4 acceptance, on two fictional comuni (`rules/999001.json`,
@@ -234,6 +235,13 @@ describe('the imposta, golden bookings (WP1.4)', () => {
 })
 
 describe('the rules, as data', () => {
+  it('lists every file in rules/, so a new comune cannot be left out', () => {
+    const onDisk = readdirSync(new URL('./rules/', import.meta.url)).filter((f) =>
+      f.endsWith('.json'),
+    )
+    expect(Object.keys(RULE_FILES).sort()).toEqual(onDisk.sort())
+  })
+
   it('ships only fictional comuni, each in the file named after its code', () => {
     const all = loadAllRules()
     expect(all.map((rules) => rules.comune)).toEqual(['999001', '999002'])

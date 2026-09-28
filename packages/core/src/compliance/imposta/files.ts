@@ -1,19 +1,27 @@
-import { readdirSync, readFileSync } from 'node:fs'
 import { parseRules, type ComuneRules } from './rules'
-
-const RULES_DIR = new URL('./rules/', import.meta.url)
+import comune999001 from './rules/999001.json'
+import comune999002 from './rules/999002.json'
 
 /**
- * Every comune's rules, from `rules/<ISTAT code>.json`, validated. A file that
- * does not validate stops the process at the first read, not a declaration
- * months later.
+ * Every comune's rules file, imported rather than read from disk: the consoles
+ * are bundled, and a bundle has no rules directory to read. Adding a comune is
+ * adding its file and its line here; a test fails when a file in `rules/` is
+ * not listed, so neither can be forgotten.
+ */
+export const RULE_FILES: Readonly<Record<string, unknown>> = {
+  '999001.json': comune999001,
+  '999002.json': comune999002,
+}
+
+/**
+ * Every comune's rules, validated. A file that does not validate fails the
+ * first read, and its test, not a declaration months later.
  */
 export function loadAllRules(): ComuneRules[] {
-  return readdirSync(RULES_DIR)
-    .filter((file) => file.endsWith('.json'))
-    .sort()
-    .map((file) => {
-      const rules = parseRules(JSON.parse(readFileSync(new URL(file, RULES_DIR), 'utf8')))
+  return Object.entries(RULE_FILES)
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([file, json]) => {
+      const rules = parseRules(json)
       if (`${rules.comune}.json` !== file) {
         throw new Error(`rules/${file} declares comune ${rules.comune}`)
       }
