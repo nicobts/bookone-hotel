@@ -96,7 +96,7 @@ Enforced in code: `registerProvider` refuses a non-EU provider unless it cites A
 
 ### SP-013 — Twilio (Twilio Ireland Ltd)
 
-**Purpose.** WhatsApp and SMS: guest conversations on WhatsApp, owner alerts and handoffs to the owner’s phone (ADR-035).
+**Purpose.** WhatsApp and SMS: guest conversations on WhatsApp, owner alerts and handoffs to the owner’s phone, and filing-deadline alerts to the property’s staff and owner (ADR-035, ADR-039).
 
 **Processing region.** Ireland (IE1) where the account supports it, otherwise the US; WhatsApp content also passes through Meta’s Cloud API, whose processing may be outside the EU
 
@@ -104,8 +104,8 @@ Enforced in code: `registerProvider` refuses a non-EU provider unless it cites A
 
 **Categories of personal data.**
 
-- guest and owner phone numbers
-- message text in transit
+- guest, owner and staff phone numbers
+- message text in transit, which in an alert to staff or the owner can include a guest’s name
 - delivery status metadata
 
 **Contract.** Twilio DPA with SCCs and Binding Corporate Rules. Meta (WhatsApp Business Platform) is Twilio’s sub-processor for WhatsApp under Meta’s data processing terms. Permitted by ADR-035 as a recorded exception to EU-only processing; storage of conversations stays in the EU (SP-001).

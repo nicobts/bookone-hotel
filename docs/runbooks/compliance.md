@@ -40,6 +40,10 @@ An obligation nobody has filed climbs a ladder as its deadline nears. Each rung 
 | 2 staff | 6 h before | Every number in `settings.staffPhones`, on WhatsApp (or SMS if only that is on) |
 | 3 owner | 3 h before | Every number in `settings.ownerPhones`, the same way |
 
+The staff and owner numbers are personal data the property controls. Who may be listed, what the
+property must tell them, and where the numbers are copied: `docs/runbooks/privacy.md`, "Owner and
+staff contact numbers".
+
 - **A hand-over goes straight to rung 2.** An obligation in `manual` will not file itself, so the
   staff are paged at once, and the message says it must be filed by hand. A hand-over after a
   phone rung fired (Alloggiati hands over two hours out, after the owner rung) pages everyone

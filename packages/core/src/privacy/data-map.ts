@@ -161,14 +161,28 @@ export const DATA_MAP: DataMapEntry[] = [
   // -------------------------------------------------------------------------
   {
     table: 'properties',
-    subject: 'none',
-    categories: [],
-    basis: 'Customer record. Contract with the property (Art. 6(1)(b)).',
+    /*
+     * Not `none`, although it was declared so until WP1.5. `settings` holds
+     * people: `ownerPhones` (the owner agent's allow-list and the escalation
+     * and filing-deadline pages), `staffPhones` (the filing-deadline pages),
+     * and the contact email, which at a family-run property is usually the
+     * owner's own address. The property is their controller, as employer or as
+     * the owner themselves; we process the numbers only to page them and to
+     * recognise the owner on WhatsApp. docs/runbooks/privacy.md, "Owner and
+     * staff contact numbers", has the rules and the gaps still open.
+     */
+    subject: 'staff',
+    categories: ['contact'],
+    basis:
+      'Customer record: contract with the property (Art. 6(1)(b)). The owner and staff numbers in `settings`: the property’s legitimate interest in being told a guest is waiting or a legal filing is about to be missed (Art. 6(1)(f)), recorded by the property, which informs the people it lists (Art. 13).',
     retention: {
       kind: 'keep',
-      why: 'The customer relationship. Deleted when a hotel leaves and asks.',
+      why: 'The customer relationship, deleted when a hotel leaves and asks. A number stays while the property lists it: the owner removes a person who leaves, and nothing else knows they have left. Copies made when a page is sent live in `notifications` and follow its clock.',
     },
-    erasure: { kind: 'none' },
+    erasure: {
+      kind: 'keep',
+      why: 'Not a guest. A listed number is removed by the property, the controller, when the person asks or leaves; the guest erasure routine never reads `settings`.',
+    },
     exportVia: 'none',
   },
   {
@@ -576,6 +590,15 @@ export const DATA_MAP: DataMapEntry[] = [
     exportVia: 'reservation',
   },
   {
+    /*
+     * Not only guests. Alerts to the property's own people (escalation pages,
+     * filing-deadline pages, the owner agent's replies) are rows here too, with
+     * a staff or owner number as `recipient` and no `reservation_id`. The
+     * two-year clock removes them; the guest erasure and export, which reach
+     * this table through `reservation_id`, do not see them — and their payload
+     * can name a guest. That gap is open: docs/runbooks/privacy.md, "Owner and
+     * staff contact numbers".
+     */
     table: 'notifications',
     subject: 'guest',
     categories: ['contact', 'content'],
