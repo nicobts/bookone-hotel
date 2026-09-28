@@ -41,7 +41,9 @@ An obligation nobody has filed climbs a ladder as its deadline nears. Each rung 
 | 3 owner | 3 h before | Every number in `settings.ownerPhones`, the same way |
 
 - **A hand-over goes straight to rung 2.** An obligation in `manual` will not file itself, so the
-  staff are paged at once, and the message says it must be filed by hand.
+  staff are paged at once, and the message says it must be filed by hand. A hand-over after a
+  phone rung fired (Alloggiati hands over two hours out, after the owner rung) pages everyone
+  already paged again, once: they were told the filing would go by itself.
 - **Only while nothing is filed.** `pending`, `queued`, `failed` and `manual` alert. `submitted`
   and `acknowledged` never do: the authority has it.
 - **Never after the deadline.** A missed filing stays in the inbox, with the fallback file on the
@@ -60,7 +62,8 @@ An obligation nobody has filed climbs a ladder as its deadline nears. Each rung 
   apply: a typo must never switch the alerts off.
 
 **How "once" is kept.** The rung reached is stored on the obligation (`alert_rung`, `alerted_at`)
-and raised by an update conditional on the value read. Two sweeps racing, a retried job or a
+and raised by an update conditional on the value read; a hand-over is claimed the same way, on
+`alerted_at` against `state_changed_at`. Two sweeps racing, a retried job or a
 restarted worker: one wins, the others send nothing. It runs inside `compliance.sweep`, every five
 minutes. Every rise is a `compliance_obligation.alerted` event with the rungs fired, the messages
 queued and `unreachable`, the rungs that had no number on record or no messaging channel on.

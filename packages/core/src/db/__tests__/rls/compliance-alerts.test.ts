@@ -178,6 +178,54 @@ describe('the alert ladder (WP1.5)', () => {
     expect(sent[0]!.payload).toMatchObject({ manual: true })
   })
 
+  it('a hand-over after the owner rung fired pages staff and owner again, once', async () => {
+    await clearAlerts()
+    const now = new Date()
+    // Alloggiati hands over two hours out: the staff and owner rungs have
+    // already fired, telling them the filing would go by itself.
+    const id = await obligation(
+      fixture.alpha.propertyId,
+      fixture.alpha.reservationId,
+      new Date(now.getTime() + 2 * HOUR),
+      'manual',
+    )
+    await db.execute(sql`
+      update compliance_obligations
+         set alert_rung = 3,
+             alerted_at = ${new Date(now.getTime() - HOUR).toISOString()},
+             state_changed_at = ${new Date(now.getTime() - 60_000).toISOString()}
+       where id = ${id}`)
+
+    // Two sweeps at once: the rung cannot move, so the timestamp is the claim.
+    const [a, b] = await Promise.all([
+      alertDueObligations(deps, { limit: 50, appUrl: APP_URL, now }),
+      alertDueObligations(deps, { limit: 50, appUrl: APP_URL, now }),
+    ])
+    expect(a.alerted + b.alerted).toBe(1)
+
+    const sent = await messages(fixture.alpha.propertyId)
+    expect(sent.map((m) => m.recipient).sort()).toEqual([OWNER, STAFF].sort())
+    for (const m of sent) expect(m.payload).toMatchObject({ manual: true })
+
+    const [event] = await db.execute<{ payload: Record<string, unknown> }>(sql`
+      select payload from domain_events
+       where entity_id = ${id} and event_type = 'compliance_obligation.alerted'`)
+    expect(event!.payload).toMatchObject({
+      fromRung: 3,
+      toRung: 3,
+      handover: true,
+      reaches: ['staff', 'owner'],
+    })
+
+    const again = await alertDueObligations(deps, {
+      limit: 50,
+      appUrl: APP_URL,
+      now: new Date(now.getTime() + 5 * 60_000),
+    })
+    expect(again.alerted).toBe(0)
+    expect(await messages(fixture.alpha.propertyId)).toHaveLength(2)
+  })
+
   it('never after the deadline, never for a filing the authority has', async () => {
     await clearAlerts()
     const now = new Date()
@@ -255,6 +303,10 @@ describe('the inbox rung and the owner lists', () => {
     const ids = inbox.filter((item) => item.kind === 'compliance-deadline').map((item) => item.id)
     expect(ids.sort()).toEqual([`compliance:${alerted}`, `compliance:${overdue}`].sort())
     expect(ids).not.toContain(`compliance:${quiet}`)
+    // Review opens the stay; a filing with no stay has nothing to open.
+    const byId = new Map(inbox.map((item) => [item.id, item]))
+    expect(byId.get(`compliance:${alerted}`)!.reservationId).toBe(fixture.alpha.reservationId)
+    expect(byId.get(`compliance:${overdue}`)!.reservationId).toBeNull()
 
     // Beta's owner, asking for alpha's inbox, gets nothing from it (RLS).
     const crossed = await listExceptions(fixture.beta.user.id, fixture.alpha.propertyId, now)

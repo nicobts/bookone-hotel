@@ -661,6 +661,22 @@ const listPendingApprovalsTool: Tool = {
  * never files, retries or marks anything as filed (hard rules: a compliance
  * outcome is never T1).
  */
+const OWNER_LIST_LIMIT = 20
+
+/**
+ * At most `OWNER_LIST_LIMIT` filings, and a count that says when there are
+ * more: "20" for a list that is complete, "20+" for one that is not.
+ */
+async function ownerObligations(propertyId: string, which: 'due' | 'failed') {
+  const rows = await listObligationsForOwner(propertyId, which, OWNER_LIST_LIMIT + 1)
+  const more = rows.length > OWNER_LIST_LIMIT
+  return {
+    rows: rows.slice(0, OWNER_LIST_LIMIT),
+    more,
+    count: more ? `${OWNER_LIST_LIMIT}+` : String(rows.length),
+  }
+}
+
 const listObligationsDueTool: Tool = {
   name: 'list_obligations_due',
   description:
@@ -668,7 +684,7 @@ const listObligationsDueTool: Tool = {
   input: NONE,
   reversible: false,
   run: async (context) => {
-    const rows = await listObligationsForOwner(context.propertyId, 'due')
+    const { rows, more, count } = await ownerObligations(context.propertyId, 'due')
     const lang = locale(context)
     if (rows.length === 0)
       return { ok: true, output: { count: 0, phrase: deskPhrase(lang, 'ownerObligationsDueNone') } }
@@ -686,7 +702,8 @@ const listObligationsDueTool: Tool = {
       ok: true,
       output: {
         count: rows.length,
-        phrase: deskPhrase(lang, 'ownerObligationsDue', { count: rows.length, list }),
+        more,
+        phrase: deskPhrase(lang, 'ownerObligationsDue', { count, list }),
       },
     }
   },
@@ -698,7 +715,7 @@ const listObligationsFailedTool: Tool = {
   input: NONE,
   reversible: false,
   run: async (context) => {
-    const rows = await listObligationsForOwner(context.propertyId, 'failed')
+    const { rows, more, count } = await ownerObligations(context.propertyId, 'failed')
     const lang = locale(context)
     if (rows.length === 0)
       return {
@@ -719,7 +736,8 @@ const listObligationsFailedTool: Tool = {
       ok: true,
       output: {
         count: rows.length,
-        phrase: deskPhrase(lang, 'ownerObligationsFailed', { count: rows.length, list }),
+        more,
+        phrase: deskPhrase(lang, 'ownerObligationsFailed', { count, list }),
       },
     }
   },

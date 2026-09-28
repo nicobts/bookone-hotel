@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { and, asc, eq, gt, inArray, lt, lte } from 'drizzle-orm'
+import { and, asc, eq, gt, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm'
 import { asService } from '../db/session'
 import { complianceObligations, guests, properties, reservations } from '../db/schema'
 import { emit } from '../events'
@@ -149,6 +149,38 @@ export function alertsToFire(current: number, due: number, ladder: AlertLadder):
   )
 }
 
+/**
+ * Whether an obligation was handed to a person (`manual`) after its last alert,
+ * so nobody has yet been told it must be filed by hand. `alertedAt` is written
+ * no earlier than the hand-over, so one claim clears it.
+ */
+export function handoverPending(obligation: {
+  state: ObligationState
+  alertedAt: Date | null
+  stateChangedAt: Date
+}): boolean {
+  return (
+    obligation.state === 'manual' &&
+    (obligation.alertedAt === null ||
+      obligation.alertedAt.getTime() < obligation.stateChangedAt.getTime())
+  )
+}
+
+/**
+ * The rungs to fire for a hand-over: the ordinary rise, plus every phone rung
+ * already fired. Those people were told the filing would go by itself; the
+ * hand-over is new news to them. The inbox is never repeated.
+ */
+export function handoverToFire(current: number, due: number, ladder: AlertLadder): AlertReach[] {
+  const top = Math.max(current, due)
+  return ALERT_REACHES.filter(
+    (reach) =>
+      ladder[reach] !== null &&
+      rungOf(reach) <= top &&
+      (reach !== 'inbox' || rungOf(reach) > current),
+  )
+}
+
 export interface AlertSweepResult {
   /** Obligations whose rung rose. */
   alerted: number
@@ -171,6 +203,10 @@ export async function alertDueObligations(
 ): Promise<AlertSweepResult> {
   const now = input.now ?? deps.now?.() ?? new Date()
   const horizon = new Date(now.getTime() + 24 * 60 * 60_000)
+  // Timestamps round-trip through JavaScript at millisecond precision; compare
+  // the hand-over at the same precision, or a database default's microseconds
+  // would keep it pending after its claim.
+  const handoverCutoff = sql`date_trunc('milliseconds', ${complianceObligations.stateChangedAt})`
 
   const candidates = await asService((db) =>
     db
@@ -184,6 +220,8 @@ export async function alertDueObligations(
         state: complianceObligations.state,
         deadline: complianceObligations.deadline,
         alertRung: complianceObligations.alertRung,
+        alertedAt: complianceObligations.alertedAt,
+        stateChangedAt: complianceObligations.stateChangedAt,
         settings: properties.settings,
         slug: properties.slug,
         timeZone: properties.timezone,
@@ -196,7 +234,17 @@ export async function alertDueObligations(
           inArray(complianceObligations.state, [...ALERTING_STATES]),
           gt(complianceObligations.deadline, now),
           lte(complianceObligations.deadline, horizon),
-          lt(complianceObligations.alertRung, rungOf('owner')),
+          or(
+            lt(complianceObligations.alertRung, rungOf('owner')),
+            // A hand-over after the last rung fired still pages (see below).
+            and(
+              eq(complianceObligations.state, 'manual'),
+              or(
+                isNull(complianceObligations.alertedAt),
+                lt(complianceObligations.alertedAt, handoverCutoff),
+              ),
+            ),
+          ),
         ),
       )
       .orderBy(asc(complianceObligations.deadline))
@@ -208,8 +256,12 @@ export async function alertDueObligations(
 
   for (const row of candidates) {
     const ladder = readAlertLadder(row.settings)
-    const due = dueRung(row, ladder, now)
-    if (due <= row.alertRung) continue
+    const handover = handoverPending(row)
+    const due = Math.max(dueRung(row, ladder, now), row.alertRung)
+    // A hand-over is its own news: the filing usually goes to a person inside
+    // the last margin, after the staff and owner rungs have fired, and they were
+    // told it would file itself.
+    if (due <= row.alertRung && !handover) continue
 
     // Off means off (ADR-019): a property whose filing feature was switched
     // off after the obligation was created is not paged about it.
@@ -219,18 +271,27 @@ export async function alertDueObligations(
     if (!entitled.has(gateKey)) entitled.set(gateKey, await isEntitled(row.propertyId, feature))
     if (!entitled.get(gateKey)) continue
 
-    const reaches = alertsToFire(row.alertRung, due, ladder)
+    const reaches = handover
+      ? handoverToFire(row.alertRung, due, ladder)
+      : alertsToFire(row.alertRung, due, ladder)
+    // Never earlier than the hand-over it answers, so the claim clears it.
+    const alertedAt = new Date(Math.max(now.getTime(), row.stateChangedAt.getTime()))
 
     const outcome = await asService((db) =>
       db.transaction(async (tx) => {
         const claimed = await tx
           .update(complianceObligations)
-          .set({ alertRung: due, alertedAt: now })
+          .set({ alertRung: due, alertedAt })
           .where(
             and(
               eq(complianceObligations.id, row.id),
               eq(complianceObligations.propertyId, row.propertyId),
               eq(complianceObligations.alertRung, row.alertRung),
+              // The hand-over claim: the rung may not move, so the timestamp
+              // read is what two sweeps race on.
+              row.alertedAt === null
+                ? isNull(complianceObligations.alertedAt)
+                : eq(complianceObligations.alertedAt, row.alertedAt),
               inArray(complianceObligations.state, [...ALERTING_STATES]),
             ),
           )
@@ -278,6 +339,7 @@ export async function alertDueObligations(
             state: row.state,
             fromRung: row.alertRung,
             toRung: due,
+            handover,
             reaches,
             messages: queued.length,
             // A rung with no number on record, or no messaging channel on:

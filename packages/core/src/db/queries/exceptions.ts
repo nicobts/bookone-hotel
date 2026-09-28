@@ -34,6 +34,8 @@ export interface ExceptionItem {
   occurredAt: Date
   /** True when a retry could plausibly fix it without a decision. */
   retryable: boolean
+  /** The stay it concerns, when it concerns one: where "review" leads. */
+  reservationId?: string | null
 }
 
 /**
@@ -272,6 +274,8 @@ async function listDeadlineFilings(
     id: `compliance:${row.id}`,
     kind: 'compliance-deadline' as const,
     subject: row.reservationId ?? row.periodDate ?? row.id,
+    // A period filing (ISTAT, the tourist tax) has no stay to open.
+    reservationId: row.reservationId,
     code: row.state,
     detail: row.lastError,
     occurredAt: row.deadline,

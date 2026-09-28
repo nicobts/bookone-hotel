@@ -209,6 +209,28 @@ describe('the owner’s read-only lists', () => {
   it('lists who has not finished pre-arrival', async () => {
     expect(String((await run('list_capture_status')).output.phrase)).toContain('Ada Rossi')
   })
+
+  it('says when a list of filings is not complete (WP1.5)', async () => {
+    const deadline = new Date(Date.now() + 6 * 3_600_000).toISOString()
+    for (let i = 0; i < 21; i++) {
+      await db.execute(sql`
+        insert into compliance_obligations
+          (property_id, adapter_id, authority, type, subject_key, deadline, state)
+        values (${propertyId}, 'alloggiati', 'questura', 'guest_registration',
+                ${`period:truncation-${i}`}, ${deadline}, 'manual')`)
+    }
+    try {
+      for (const tool of ['list_obligations_due', 'list_obligations_failed']) {
+        const { output } = await run(tool)
+        expect(output).toMatchObject({ count: 20, more: true })
+        expect(String(output.phrase)).toContain('(20+)')
+      }
+    } finally {
+      await db.execute(
+        sql`delete from compliance_obligations where property_id = ${propertyId} and subject_key like 'period:truncation-%'`,
+      )
+    }
+  })
 })
 
 describe('idempotency (WP0.3)', () => {

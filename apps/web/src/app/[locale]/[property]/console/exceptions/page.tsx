@@ -176,12 +176,13 @@ async function ExceptionRow({
           and stays disabled: a button that does nothing is worse than one that
           says what it will do.
         */}
-        {item.kind === 'compliance-deadline' ? (
+        {item.kind === 'compliance-deadline' && item.reservationId ? (
           // Opens the arrival screen rather than firing a retry from here. A
           // late filing is usually late because the party is incomplete, and
-          // that screen is where the missing fields are listed.
+          // that screen is where the missing fields are listed. A period
+          // filing has no arrival, and falls through to the disabled review.
           <Button asChild variant="outline" size="sm">
-            <a href={`/${context.locale}/${context.slug}/console/arrivals/${item.subject}`}>
+            <a href={`/${context.locale}/${context.slug}/console/arrivals/${item.reservationId}`}>
               {t('review')}
             </a>
           </Button>

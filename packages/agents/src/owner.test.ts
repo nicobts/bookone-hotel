@@ -16,6 +16,9 @@ describe("the owner's assistant — routing by rules (WP0.5)", () => {
     ['Quali schedine sono fallite?', 'list_obligations_failed'],
     ['What do I have to file by hand?', 'list_obligations_failed'],
     ['Katere prijave so spodletele?', 'list_obligations_failed'],
+    ['Which filings are manual?', 'list_obligations_failed'],
+    ['Quali comunicazioni vanno fatte manualmente?', 'list_obligations_failed'],
+    ['Welche Meldungen muss ich manuell machen?', 'list_obligations_failed'],
   ])('%j → %s', async (message, tool) => {
     expect(await chooseOwnerTool(message, null)).toBe(tool)
   })

@@ -4,6 +4,8 @@ import {
   DEFAULT_ALERT_LADDER,
   alertsToFire,
   dueRung,
+  handoverPending,
+  handoverToFire,
   readAlertLadder,
   rungOf,
   validateAlertLadder,
@@ -131,6 +133,28 @@ describe('which rung is due (fake clock)', () => {
     expect(alertsToFire(rungOf('inbox'), rungOf('owner'), ladder)).toEqual(['staff', 'owner'])
     expect(alertsToFire(rungOf('owner'), rungOf('owner'), ladder)).toEqual([])
   })
+
+  it('a hand-over after the last rung pages everyone already paged, and only once', () => {
+    const changed = at(2 * 60)
+    const manual = { state: 'manual' as const, stateChangedAt: changed }
+    // Handed over after the owner rung fired: staff and owner again, not the inbox.
+    expect(handoverPending({ ...manual, alertedAt: at(3 * 60) })).toBe(true)
+    expect(handoverToFire(rungOf('owner'), rungOf('owner'), ladder)).toEqual(['staff', 'owner'])
+    // Handed over after the staff rung only: staff again; the owner not yet.
+    expect(handoverToFire(rungOf('staff'), rungOf('staff'), ladder)).toEqual(['staff'])
+    // Handed over before anything fired: the ordinary rise, as a hand-over.
+    expect(handoverPending({ ...manual, alertedAt: null })).toBe(true)
+    expect(handoverToFire(0, rungOf('staff'), ladder)).toEqual(['inbox', 'staff'])
+    // Claimed: the claim writes alertedAt no earlier than the hand-over.
+    expect(handoverPending({ ...manual, alertedAt: changed })).toBe(false)
+    expect(handoverPending({ state: 'failed', stateChangedAt: changed, alertedAt: null })).toBe(
+      false,
+    )
+    // A rung switched off stays off.
+    expect(handoverToFire(rungOf('owner'), rungOf('owner'), { ...ladder, staff: null })).toEqual([
+      'owner',
+    ])
+  })
 })
 
 describe('a sweep every five minutes for a day', () => {
@@ -185,9 +209,13 @@ interface SimObligation extends LifecycleRow {
   /** When a person confirmed the guests against their documents; null for never. */
   confirmedAt: Date | null
   alertRung: number
-  alerts: { reach: AlertReach; at: Date }[]
+  alertedAt: Date | null
+  stateChangedAt: Date
+  alerts: { reach: AlertReach; at: Date; manual: boolean }[]
   /** When the channel will answer a filing it has. */
   answerAt: Date | null
+  /** When a phone was first told the filing is with a person. */
+  handoverPagedAt: Date | null
   /** When a person files by hand, once one has been paged about a hand-over. */
   handFiledAt: Date | null
   acknowledgedAt: Date | null
@@ -247,6 +275,7 @@ describe('thirty days of arrivals with injected failures', () => {
 
     const pending = [...arrivalsAt]
     const apply = (o: SimObligation, next: Next, now: Date) => {
+      if (next.state !== o.state) o.stateChangedAt = now
       o.state = next.state
       o.attempts = next.attempts
       o.nextAttemptAt = next.nextAttemptAt
@@ -279,8 +308,11 @@ describe('thirty days of arrivals with injected failures', () => {
                 ? new Date(arrivedAt.getTime() + rand() * 20 * HOUR)
                 : null,
           alertRung: 0,
+          alertedAt: null,
+          stateChangedAt: now,
           alerts: [],
           answerAt: null,
+          handoverPagedAt: null,
           handFiledAt: null,
           acknowledgedAt: null,
           everManual: false,
@@ -288,11 +320,12 @@ describe('thirty days of arrivals with injected failures', () => {
       }
 
       for (const o of obligations) {
-        // A person, once paged about a hand-over, files by hand within 0–90
-        // minutes: the margin is two hours, and this is the assumption the
-        // margin is sized for. Paged about missing data at the staff rung,
-        // they confirm the documents within 0–3 hours.
-        if (o.state === 'manual' && o.alertRung >= rungOf('staff')) {
+        // A person, once paged about the hand-over itself, files by hand
+        // within 0–90 minutes: the margin is two hours, and this is the
+        // assumption the margin is sized for. An earlier page said the filing
+        // would go by itself, so it does not count. Paged about missing data
+        // at the staff rung, they confirm the documents within 0–3 hours.
+        if (o.state === 'manual' && o.handoverPagedAt) {
           o.handFiledAt ??= new Date(t + rand() * 90 * MINUTE)
           if (now >= o.handFiledAt) {
             apply(
@@ -346,11 +379,18 @@ describe('thirty days of arrivals with injected failures', () => {
         }
 
         // The ladder, as `alertDueObligations` runs it.
-        const due = dueRung(o, readAlertLadder({}), now)
-        if (due > o.alertRung) {
-          for (const reach of alertsToFire(o.alertRung, due, ladder))
-            o.alerts.push({ reach, at: now })
+        const handover = handoverPending(o)
+        const due = Math.max(dueRung(o, readAlertLadder({}), now), o.alertRung)
+        if (due > o.alertRung || handover) {
+          const reaches = handover
+            ? handoverToFire(o.alertRung, due, ladder)
+            : alertsToFire(o.alertRung, due, ladder)
+          for (const reach of reaches) {
+            o.alerts.push({ reach, at: now, manual: o.state === 'manual' })
+            if (o.state === 'manual' && reach !== 'inbox') o.handoverPagedAt ??= now
+          }
           o.alertRung = due
+          o.alertedAt = new Date(Math.max(t, o.stateChangedAt.getTime()))
         }
       }
     }
@@ -368,12 +408,14 @@ describe('thirty days of arrivals with injected failures', () => {
     expect(obligations.filter((o) => o.attempts > 1).length).toBeGreaterThan(0)
 
     for (const o of obligations) {
-      // Nothing fired twice, and nothing fired at or after the deadline.
+      // Nothing fired twice — a rung repeats at most once, for the hand-over —
+      // and nothing fired at or after the deadline.
       const reaches = o.alerts.map((a) => a.reach)
-      expect(new Set(reaches).size).toBe(reaches.length)
+      const keys = o.alerts.map((a) => `${a.reach}:${a.manual}`)
+      expect(new Set(keys).size).toBe(keys.length)
       for (const alert of o.alerts) expect(alert.at.getTime()).toBeLessThan(o.deadline.getTime())
-      // Every hand-over reached a person's phone before its deadline.
-      if (o.everManual) expect(reaches).toContain('staff')
+      // Every hand-over reached a person's phone, as a hand-over, before its deadline.
+      if (o.everManual) expect(o.alerts.some((a) => a.manual && a.reach !== 'inbox')).toBe(true)
       expect(ALERT_REACHES).toEqual(expect.arrayContaining(reaches))
       expect([...ALERTING_STATES, 'submitted', 'acknowledged']).toContain(o.state)
     }
