@@ -1,6 +1,6 @@
 # ADR-012 — LLM provider abstraction with EU processing requirement
 
-**Status:** Accepted · **Date:** July 2026 (documentation handoff v1)
+**Status:** Accepted · Amended by [ADR-029](ADR-029-model-processing-may-leave-the-eu.md) (EU-processing clause; reassessed at production) · **Date:** July 2026 (documentation handoff v1)
 
 **Context.** EU residency is non-negotiable (D9); model landscape shifts quarterly; different tasks need different price/quality points.
 

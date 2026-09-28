@@ -11,6 +11,7 @@ export default defineConfig({
     // Eval sets are their own CI gate, so a prompt or model change that
     // regresses a golden set fails under its own name rather than inside the
     // general test run (06 §4).
-    exclude: ['**/node_modules/**', 'src/evals/**'],
+    // Database tests run in the `rls` job (vitest.db.config.ts), not here.
+    exclude: ['**/node_modules/**', 'src/evals/**', 'src/**/*.db.test.ts'],
   },
 })

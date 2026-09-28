@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
+import { flash } from '@bookone/ui/lib/flash-server'
 import { raiseRequest, getSubject } from '@bookone/core/privacy'
 import { requireOwner } from '@/lib/auth/current-property'
 import { requestErasure } from '@/lib/worker'
@@ -22,31 +24,50 @@ interface Context {
   slug: string
 }
 
+function strings(context: Context) {
+  return getTranslations({ locale: context.locale, namespace: 'console.privacy' })
+}
+
+async function unknownGuest(context: Context): Promise<never> {
+  await flash.error((await strings(context))('unknownGuest'))
+  redirect(`/${context.slug}/console/privacy`)
+}
+
+export type ExportStart = { ok: true; url: string } | { ok: false; message: string }
+
 /**
- * Opens an export request and sends the owner to the download.
+ * Opens an export request and hands back the download address.
  *
- * Two steps in one action, deliberately: the bundle is generated on demand and
- * never stored, so there is no artefact for a later "download" button to point
- * at. Recording the request first means the row exists even if the download is
+ * Two steps, deliberately: the bundle is generated on demand and never
+ * stored, so there is no artefact for a later "download" button to point at.
+ * Recording the request first means the row exists even if the download is
  * abandoned, which is the honest order — the obligation started when the guest
  * asked, not when a file was produced.
+ *
+ * Returned rather than redirected to. A server action that redirects to a file
+ * never finishes navigating — the browser downloads and stays put — so the
+ * button that started it would wait forever. The client starts the download
+ * (`ExportDataButton`) and says so.
  */
-export async function requestExport(context: Context, formData: FormData): Promise<void> {
+export async function requestExport(context: Context & { guestId: string }): Promise<ExportStart> {
   const { user, property } = await requireOwner(context.locale, context.slug)
-  const guestId = String(formData.get('guestId') ?? '')
+  const t = await strings(context)
 
-  const subject = await getSubject(property.id, guestId)
-  if (!subject) redirect(`/${context.slug}/console/privacy?error=unknown-guest`)
+  const subject = await getSubject(property.id, context.guestId)
+  if (!subject) return { ok: false, message: t('unknownGuest') }
 
   await raiseRequest({
     propertyId: property.id,
-    guestId,
+    guestId: context.guestId,
     kind: 'export',
     requestedBy: user.id,
   })
 
   revalidatePath(`/${context.locale}/${context.slug}/console/privacy`)
-  redirect(`/${context.slug}/console/privacy/export/${guestId}`)
+  return {
+    ok: true,
+    url: `/${context.locale}/${context.slug}/console/privacy/export/${context.guestId}`,
+  }
 }
 
 /**
@@ -62,7 +83,7 @@ export async function applyErasure(context: Context, formData: FormData): Promis
   const guestId = String(formData.get('guestId') ?? '')
 
   const subject = await getSubject(property.id, guestId)
-  if (!subject) redirect(`/${context.slug}/console/privacy?error=unknown-guest`)
+  if (!subject) return unknownGuest(context)
 
   const requestId = await raiseRequest({
     propertyId: property.id,
@@ -81,13 +102,17 @@ export async function applyErasure(context: Context, formData: FormData): Promis
   revalidatePath(`/${context.locale}/${context.slug}/console/privacy`)
 
   /*
-   * `queued` versus `pending` in the URL, and the difference is not cosmetic.
+   * `queued` versus `pending`, and the difference is not cosmetic.
    *
    * If the worker is unreachable the request row still exists and still has its
    * deadline — the obligation does not depend on our queue being up. What the
    * owner must not be told is that the erasure is running when nothing picked
-   * it up, so the desk says "recorded, not yet applied" and the runbook says
-   * how to run it by hand.
+   * it up, so the desk says "recorded, not yet applied" (a warning, which stays
+   * on screen longer) and the runbook says how to run it by hand. The open
+   * request stays listed on the page either way.
    */
-  redirect(`/${context.slug}/console/privacy?erased=${enqueued ? 'queued' : 'pending'}`)
+  const t = await strings(context)
+  if (enqueued) await flash.success(t('toast.erasureQueued'), t('erasureQueued'))
+  else await flash.warning(t('toast.erasurePending'), t('erasurePending'))
+  redirect(`/${context.slug}/console/privacy`)
 }

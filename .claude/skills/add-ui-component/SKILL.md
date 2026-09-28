@@ -34,8 +34,9 @@ npx shadcn@latest view <name>     # inspect before adding
 npx shadcn@latest add <name>      # vendored into the repo, ours to edit
 ```
 
-Run from `apps/web`, never the repo root — the CLI resolves paths from
-`components.json`. A hand-rolled input looks correct in review and drifts from
+Run from the app you are working in (`apps/web` or `apps/admin`), never the
+repo root: the CLI resolves paths from that app's `components.json`, which sends
+primitives to the shared `packages/ui` (used by both consoles). A hand-rolled input looks correct in review and drifts from
 the theme within months.
 
 **2. Apply the corrections every registry block needs.** Each fails quietly:

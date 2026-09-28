@@ -19,8 +19,16 @@ editable, not a dependency we wait on.
 | `@supabase` registry | Storage, realtime and auth-adjacent widgets | `npx shadcn@latest add @supabase/<name>` |
 | Written here | Only what neither provides | Build from registry primitives |
 
-Run the CLI from `apps/web`, never the repo root — it resolves paths from
-`components.json`.
+**Shared by both consoles.** The vendored components live in `packages/ui`
+(`@bookone/ui`) and are used by `apps/web` and `apps/admin` alike: one look, one
+place to fix. This follows shadcn's monorepo layout.
+- A primitive (button, dialog, table…) goes into `packages/ui`.
+- A composition specific to one app (a sidebar's entries, a booking step) stays
+  in that app's `src/components`.
+
+Run the CLI from the app you are working in (`apps/web` or `apps/admin`), never
+the repo root. Each app's `components.json` sends primitives to
+`@bookone/ui/components` and its own blocks to the app.
 
 **Why registry-first:** a hand-rolled input looks correct in review and drifts
 from the theme within months. Registry components share the token set, the dark
@@ -54,6 +62,65 @@ Any control that triggers async work must, without exception:
   a spinner changes the button's width mid-click, which reads as a bug
 - **set `aria-busy`**
 
+Two components do all three, so nobody writes it by hand:
+
+| Where | Use |
+|---|---|
+| A `<form action={serverAction}>` in a server component | `PendingButton` from `@bookone/ui/components/pending-button`. It reads the form's status itself (`useFormStatus`), so the page stays a server component. Pass `icon` for a leading icon: the spinner takes its place and the width does not change. With `name`/`value`, only the pressed button spins. |
+| A client component with its own transition | `Spinner` from `@bookone/ui/components/spinner`, plus `disabled` and `aria-busy` (see `SubmitButton`, `ExportButton`). |
+
+`Spinner` is the platform's only spinner: a faint track with a moving arc.
+Do not reach for lucide's `Loader2` with `animate-spin`; its broken circle wobbles
+at 16px. Inside a control whose label already says what is happening, pass
+`aria-hidden`.
+
+A server action must not `redirect()` to a file download. The browser downloads
+and stays on the page, the navigation never completes, and the button waits
+for ever. Return the address and let the client start the download
+(`ExportDataButton`).
+
+## Feedback: toasts
+
+The result of an action is a toast (sonner): what happened, in the user's
+words. That covers "Approved", "Answer saved", and "That did not go through:
+nothing was sent to the guest". The toaster is mounted once per app; see
+*Provider placement*.
+
+- **From a server action, flash it.** Almost every mutation here ends in
+  `redirect()` or `revalidatePath()`, so no client code is left to call
+  `toast()`. Call `flash.success(title, description?)` (or `error`, `info`,
+  `warning`) from `@bookone/ui/lib/flash-server` *before* `redirect()`. It sets a
+  short-lived cookie, and `FlashToaster` shows it on the next render and deletes
+  it. Forms stay plain `<form action>` and keep working without script.
+- **From a client component, call `toast()`** from `sonner` directly.
+- **Translate on the server.** Use `getTranslations({ locale, namespace })` in
+  the action. Strings live under a `toast` key beside the page's own. A test
+  checks every `…toast` namespace has the same keys in all four locales.
+- **No personal data in a toast.** Say what happened, not who it happened to:
+  the flash travels in a cookie.
+- **Errors say what to do next**, and stay longer (10s, against 4s for a
+  success). A warning that the owner must act on, such as "erasure recorded,
+  not yet applied", is a `warning`, which stays 8s. The state it describes must
+  also be visible on the page; a toast is never the only record.
+- **Inline beats toast for a field.** A validation message about one input
+  belongs beside that input (`role="alert"`). The toast is for the outcome of
+  the whole action.
+- The type shows in the icon's colour on a neutral surface, never as a coloured
+  background (globals.css, "Toasts"). Do not pass `richColors`.
+
+## Loading: skeletons
+
+A console route shows `PageSkeleton` (`@bookone/ui/components/page-skeleton`)
+from its `loading.tsx` while it renders. The variant is shaped like the page:
+
+- `list`: the default for `console/loading.tsx`;
+- `cards`: Today, the report, the agents page;
+- `detail`: one arrival, one conversation, one property.
+
+Nothing should jump when the page lands. Use `Skeleton` directly for a region
+that loads on its own. It shimmers from the `--skeleton` token and holds still
+under reduced motion. The region carries `aria-busy`; the bars are decorative.
+
 Password fields use a reveal toggle that is `type="button"` (or it submits the
 form), `tabIndex={-1}` (so tab order runs email → password → submit), and
 carries a label that changes with state — an icon alone tells a screen reader
@@ -65,8 +132,12 @@ Two files, deliberately separated:
 
 | File | Role |
 |---|---|
-| `src/app/tokens.css` | Base design tokens — the raw palette and scale |
-| `src/app/globals.css` | Maps those tokens onto shadcn's semantic variables |
+| `packages/ui/src/styles/tokens.css` | Base design tokens — the raw palette and scale |
+| `packages/ui/src/styles/globals.css` | Maps those tokens onto shadcn's semantic variables |
+
+Each app's `src/app/globals.css` only imports the shared one, by relative path.
+Tailwind's resolver does not follow pnpm's workspace links on Windows. Anything
+truly app-specific goes below that import.
 
 **Never edit a token to make one screen look right.** Put the adjustment in the
 mapping layer.
@@ -95,7 +166,8 @@ a layout done — it is the widest of the four in practice.
 
 ## Provider placement
 
-`TooltipProvider` and the toaster are mounted once in `app/[locale]/layout.tsx`.
+`TooltipProvider`, the toaster and `FlashToaster` (inside a `Suspense`) are
+mounted once in `app/[locale]/layout.tsx`, and in `apps/admin/src/app/layout.tsx`.
 Several registry components — the sidebar among them — assume a tooltip provider
 exists above them. Mounting per page means discovering the omission one page at
 a time.

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "lucide",
+  "aliases": {
+    "components": "@bookone/ui/components",
+    "utils": "@bookone/ui/lib/utils",
+    "hooks": "@bookone/ui/hooks",
+    "lib": "@bookone/ui/lib",
+    "ui": "@bookone/ui/components"
+  }
+}

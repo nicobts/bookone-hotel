@@ -22,6 +22,9 @@ function recorder() {
   return { record, rows }
 }
 
+/** Every feature on. The gate itself is tested below; the rest are not about it. */
+const allOn = async () => true
+
 const divergent = {
   ours: {
     arrivalDate: '2026-09-10',
@@ -45,7 +48,11 @@ describe('a successful run', () => {
   it('classifies and records the tool call', async () => {
     const { record, rows } = recorder()
 
-    const outcome = await runAgent({ agent: 'AG-05', propertyId: 'p1', input: divergent }, record)
+    const outcome = await runAgent(
+      { agent: 'AG-05', propertyId: 'p1', input: divergent },
+      record,
+      allOn,
+    )
 
     expect(outcome.status).toBe('accepted')
     expect(outcome.output.class).toBe('logic')
@@ -58,7 +65,7 @@ describe('a successful run', () => {
     // recorded with a null outcome and gain one when somebody taps the card.
     const { record, rows } = recorder()
 
-    await runAgent({ agent: 'AG-05', propertyId: 'p1', input: divergent }, record)
+    await runAgent({ agent: 'AG-05', propertyId: 'p1', input: divergent }, record, allOn)
 
     expect(rows[0]?.tierApplied).toBe('T1')
     expect(rows[0]?.outcome).toBe('auto')
@@ -70,6 +77,7 @@ describe('a successful run', () => {
     await runAgent(
       { agent: 'AG-05', propertyId: 'p1', triggerEventId: 42n, input: divergent },
       record,
+      allOn,
     )
 
     expect(rows[0]?.triggerEventId).toBe(42n)
@@ -81,7 +89,7 @@ describe('a successful run', () => {
     // subtraction.
     const { record, rows } = recorder()
 
-    await runAgent({ agent: 'AG-05', propertyId: 'p1', input: divergent }, record)
+    await runAgent({ agent: 'AG-05', propertyId: 'p1', input: divergent }, record, allOn)
 
     expect(rows[0]?.model).toBeNull()
   })
@@ -112,6 +120,7 @@ describe('a failed run', () => {
     const outcome = await runAgent(
       { agent: 'AG-05', propertyId: 'p1', input: { ours: divergent.ours } },
       record,
+      allOn,
     )
 
     expect(outcome.status).toBe('rejected')
@@ -123,7 +132,7 @@ describe('a failed run', () => {
   it('carries the reason into the record', async () => {
     const { record, rows } = recorder()
 
-    await runAgent({ agent: 'AG-05', propertyId: 'p1', input: {} }, record)
+    await runAgent({ agent: 'AG-05', propertyId: 'p1', input: {} }, record, allOn)
 
     expect(String(rows[0]?.output.error)).toMatch(/required/)
   })
@@ -144,8 +153,42 @@ describe('property scoping', () => {
         input: { ...divergent, propertyId: 'p2' },
       },
       record,
+      allOn,
     )
 
     expect(rows[0]?.propertyId).toBe('p1')
+  })
+})
+
+describe('the feature gate (ADR-019)', () => {
+  it('refuses an agent whose feature the property lacks, and records the refusal', async () => {
+    // AG-05 needs `pms_sync`. A property without it gets no classification and
+    // no tool call — and a row that says why, rather than silence.
+    const { record, rows } = recorder()
+    const asked: string[] = []
+
+    const outcome = await runAgent(
+      { agent: 'AG-05', propertyId: 'p1', input: divergent },
+      record,
+      async (propertyId, feature) => {
+        asked.push(`${propertyId}:${feature}`)
+        return false
+      },
+    )
+
+    expect(outcome.status).toBe('rejected')
+    expect(outcome.toolCalls).toEqual([])
+    expect(asked).toEqual(['p1:pms_sync'])
+    expect(rows).toHaveLength(1)
+    expect(String(rows[0]?.output.error)).toMatch(/pms_sync/)
+  })
+
+  it('classifies every agent', () => {
+    // The concierge is a module a property buys; the attribution auditor checks
+    // what BookOne billed and is never switched off by a flag.
+    expect(getAgent('AG-01').feature).toBe('concierge')
+    expect(getAgent('AG-05').feature).toBe('pms_sync')
+    expect(getAgent('AG-07').feature).toBe('core')
+    expect(getAgent('AG-03').feature).toBe('core')
   })
 })

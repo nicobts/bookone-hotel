@@ -1,0 +1,33 @@
+{
+  "id": "checkout",
+  "version": 1,
+  "phase": 0,
+  "description": "Late checkout within policy, invoice request, luggage storage, transport.",
+  "modelTier": "small",
+  "maxSteps": 5,
+  "prompt": "checkout",
+  "tools": [
+    "find_booking",
+    "request_late_checkout",
+    "request_invoice",
+    "search_knowledge",
+    "get_hotel_policy"
+  ],
+  "approvalRequired": ["request_late_checkout"],
+  "escalation": [
+    {
+      "when": "late checkout beyond policy window",
+      "to": "T2",
+      "notify": ["inbox", "staff_whatsapp"]
+    },
+    {
+      "when": "invoice with company data changes",
+      "to": "T2"
+    }
+  ],
+  "grounding": {
+    "sources": ["booking_record", "hotel_content", "policy"],
+    "unknownBehaviour": "escalate_T2"
+  },
+  "primaryAction": "request_late_checkout"
+}

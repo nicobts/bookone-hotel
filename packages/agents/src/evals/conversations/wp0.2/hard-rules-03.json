@@ -1,0 +1,18 @@
+{
+  "profile": "hard-rules",
+  "channel": "webchat",
+  "lang": "de",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Ich möchte eine Entschädigung"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "hardRule": "money"
+      }
+    }
+  ],
+  "must_not": ["answered at T1"]
+}

@@ -22,6 +22,9 @@ import {
 } from '../../../concierge/thread'
 import { auditToolBoundary, propertiesWithAgentReplies } from '../../../concierge/audit'
 import { searchKb } from '../../../concierge/kb'
+import { grantEntitlement } from '../../../onboarding/entitlements'
+import { listOpenComplaints, logComplaint } from '../../../concierge/complaints'
+import { agentActor } from '../../../events/actor'
 
 /**
  * Messaging, tasks and the tool-boundary audit against a real database
@@ -182,6 +185,30 @@ describe('a thread', () => {
         }),
       ).rejects.toBeInstanceOf(MessageRejected)
     }
+  })
+})
+
+describe('taking over a conversation nobody escalated (WP0.6)', () => {
+  it('works, and stamps the escalation time — it used to fail the check constraint', async () => {
+    const reservationId = await confirmedStay(fixture.alpha.propertyId, 'takeover-fresh')
+    const { thread } = await appendGuestMessage({
+      propertyId: fixture.alpha.propertyId,
+      reservationId,
+      locale: 'en',
+      body: 'Just saying hello',
+    })
+
+    await takeOverThread({
+      propertyId: fixture.alpha.propertyId,
+      threadId: thread.id,
+      userId: fixture.alpha.user.id,
+    })
+
+    const [row] = await db.execute<{ status: string; assigned: string; stamped: boolean }>(
+      sql`select status, assigned_to as assigned, escalated_at is not null as stamped
+          from message_threads where id = ${thread.id}`,
+    )
+    expect(row).toEqual({ status: 'escalated', assigned: fixture.alpha.user.id, stamped: true })
   })
 })
 
@@ -679,5 +706,153 @@ describe('system notes', () => {
     // Marking the thread `answered` would take it out of the queue with the
     // question still open.
     expect(after?.status).toBe('awaiting_reply')
+  })
+})
+
+/*
+ * Last in the file on purpose: it gives beta a thread, and the isolation suite
+ * above asserts beta has none of its own to see.
+ */
+describe('the SLA sweep, per feature (ADR-019)', () => {
+  it('filters by feature before the batch limit, so one property cannot starve another', async () => {
+    // ADR-019. Beta has the oldest overdue escalation of all and no `inbox`
+    // feature. Filtering after the limit would hand the sweep beta's thread,
+    // skip it, and do the same every five minutes forever — alpha's guest
+    // would never be alerted on. The filter has to be in the query.
+    const betaStay = await confirmedStay(fixture.beta.propertyId, 'sla-feature-beta')
+    const betaThread = (
+      await appendGuestMessage({
+        propertyId: fixture.beta.propertyId,
+        reservationId: betaStay,
+        locale: 'en',
+        body: 'Nobody here has the inbox',
+      })
+    ).thread
+    await escalateThread({
+      propertyId: fixture.beta.propertyId,
+      threadId: betaThread.id,
+      reason: 'x',
+      at: new Date(Date.now() - 10_000 * 60_000),
+    })
+
+    const alphaStay = await confirmedStay(fixture.alpha.propertyId, 'sla-feature-alpha')
+    const alphaThread = (
+      await appendGuestMessage({
+        propertyId: fixture.alpha.propertyId,
+        reservationId: alphaStay,
+        locale: 'en',
+        body: 'Waiting',
+      })
+    ).thread
+    await escalateThread({
+      propertyId: fixture.alpha.propertyId,
+      threadId: alphaThread.id,
+      reason: 'x',
+      at: new Date(Date.now() - 120 * 60_000),
+    })
+
+    await grantEntitlement({ propertyId: fixture.alpha.propertyId, feature: 'inbox' })
+
+    // The control: unfiltered, beta's thread is first in line.
+    const unfiltered = await listOverdueEscalations({ minutes: 60, limit: 1 })
+    expect(unfiltered.map((row) => row.id)).toEqual([betaThread.id])
+
+    const filtered = await listOverdueEscalations({ minutes: 60, limit: 1, feature: 'inbox' })
+    expect(filtered).toHaveLength(1)
+    expect(filtered[0]?.propertyId).toBe(fixture.alpha.propertyId)
+
+    const all = await listOverdueEscalations({ minutes: 60, feature: 'inbox' })
+    expect(all.map((row) => row.id)).not.toContain(betaThread.id)
+    expect(all.map((row) => row.id)).toContain(alphaThread.id)
+  })
+})
+
+/*
+ * Complaints (Guest Desk WP0.3). Isolation on both paths, as the add-table
+ * skill requires: the PostgREST client (`selectAs`) and Drizzle through
+ * `withUser` (ADR-018) — a BYPASSRLS connection would pass the first and leak on
+ * the second.
+ */
+describe('complaints', () => {
+  it('keeps one property out of another, on both access paths', async () => {
+    const reservationId = await confirmedStay(fixture.alpha.propertyId, 'complaint-iso')
+    const logged = await logComplaint({
+      propertyId: fixture.alpha.propertyId,
+      reservationId,
+      category: 'noise',
+      summary: 'The bar was loud until 2am',
+      actor: agentActor('AG-01'),
+    })
+
+    // Client path.
+    expect(await selectAs(fixture.beta.user, 'complaints')).toEqual([])
+    const own = await selectAs(fixture.alpha.user, 'complaints')
+    expect(own.map((row) => (row as { id: string }).id)).toContain(logged.id)
+
+    // Drizzle path, through the role drop.
+    const seenByBeta = await withUser(fixture.beta.user.id, (tx) =>
+      tx.execute(sql`select id from complaints where id = ${logged.id}`),
+    )
+    expect([...seenByBeta]).toEqual([])
+
+    const seenByAlpha = await withUser(fixture.alpha.user.id, (tx) =>
+      tx.execute(sql`select id from complaints where id = ${logged.id}`),
+    )
+    expect([...seenByAlpha]).toHaveLength(1)
+  })
+
+  it('refuses a complaint written into another property', async () => {
+    const reservationId = await confirmedStay(fixture.alpha.propertyId, 'complaint-cross')
+
+    await expectPolicyRefusal(() =>
+      withUser(fixture.beta.user.id, (tx) =>
+        tx.execute(sql`
+          insert into complaints (property_id, reservation_id, category, summary, sla_minutes, sla_due_at, created_by)
+          values (${fixture.alpha.propertyId}, ${reservationId}, 'other', 'not mine', 30, now(), 'staff')
+        `),
+      ),
+    )
+  })
+
+  it('cannot be deleted by a member — a resolved complaint is information', async () => {
+    const reservationId = await confirmedStay(fixture.alpha.propertyId, 'complaint-nodelete')
+    const logged = await logComplaint({
+      propertyId: fixture.alpha.propertyId,
+      reservationId,
+      category: 'room',
+      summary: 'The window does not close',
+      actor: agentActor('AG-01'),
+    })
+
+    await withUser(fixture.alpha.user.id, (tx) =>
+      tx.execute(sql`delete from complaints where id = ${logged.id}`),
+    )
+
+    const [row] = await db.execute<{ n: number }>(
+      sql`select count(*)::int as n from complaints where id = ${logged.id}`,
+    )
+    expect(row!.n).toBe(1)
+  })
+
+  it('computes the deadline from the database clock: 5 minutes for safety, 30 otherwise', async () => {
+    const reservationId = await confirmedStay(fixture.alpha.propertyId, 'complaint-sla')
+    const safety = await logComplaint({
+      propertyId: fixture.alpha.propertyId,
+      reservationId,
+      category: 'safety',
+      summary: 'The balcony railing is loose',
+      actor: agentActor('AG-01'),
+    })
+
+    const [row] = await db.execute<{ minutes: number }>(
+      sql`select extract(epoch from (sla_due_at - created_at))::int / 60 as minutes
+          from complaints where id = ${safety.id}`,
+    )
+    expect(row!.minutes).toBe(5)
+    expect(safety.slaMinutes).toBe(5)
+
+    const open = await listOpenComplaints(fixture.alpha.propertyId)
+    // Most urgent first: the five-minute safety complaint leads.
+    expect(open[0]?.id).toBe(safety.id)
   })
 })

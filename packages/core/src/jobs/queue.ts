@@ -68,6 +68,26 @@ export const jobNames = [
   'privacy.erase',
   /** Apply every executable retention rule to one property (E8.2). */
   'retention.sweep',
+  /** Bring per-property schedules in line with properties and entitlements (ADR-019). */
+  'schedules.sync',
+  /** Read one uploaded identity document with the vision model (WP0.4). */
+  'documents.extract',
+  /** Tell the manager about complaints whose SLA ran out unresolved (WP0.6). */
+  'complaints.sla',
+  /** The owner asked their assistant a question from the console (AG-06, WP0.7). */
+  'owner.ask',
+  /** The owner wrote to the property's WhatsApp/SMS number (AG-06, ADR-035). */
+  'owner.message',
+  /** An owner or staff member tries the concierge from the console (ADR-038). */
+  'agent.preview',
+  /** Send a thread's pending replies to the guest on WhatsApp/SMS (ADR-035). */
+  'channel.deliver',
+  /** Catch replies written outside a concierge turn: staff, approvals, sweeps (ADR-035). */
+  'channel.sweep',
+  /** Answer a sender who is neither the owner nor a current guest (ADR-035). */
+  'channel.unmatched',
+  /** Delete a finished message from the provider's log (ADR-035). */
+  'channel.purge',
 ] as const
 
 export type JobName = (typeof jobNames)[number]
@@ -197,6 +217,57 @@ export interface JobPayloads {
    * declined and turn a helpful step into a recurring chore.
    */
   'onboarding.ingest': { propertyId: string; url: string; locale: string }
+  /**
+   * Re-derive every per-property schedule (ADR-019).
+   *
+   * Cross-property and keyless. It exists so that granting or revoking a
+   * feature, or adding a property, takes effect without a restart.
+   */
+  'schedules.sync': Record<string, never>
+  /** One guest's document at one stay. The image is read from storage, never carried here. */
+  'documents.extract': { propertyId: string; reservationId: string; guestIndex: number }
+  /** Cross-property sweep; filters by the inbox feature in its own query. */
+  'complaints.sla': Record<string, never>
+  /** Identity is the owner's console session, checked by the caller (`requireOwner`). */
+  'owner.ask': {
+    propertyId: string
+    userId: string
+    message: string
+    locale: string
+    /** Recorded as the run's `input_ref`, so the console's chat can read the answer back. */
+    requestId?: string
+  }
+  /**
+   * A console preview of the concierge (ADR-038): read tools run, everything
+   * else is simulated. `reservationId`, when given, lets booking tools read one
+   * of the property's current stays; nothing is written to it.
+   */
+  'agent.preview': {
+    propertyId: string
+    userId: string
+    message: string
+    locale: string
+    requestId: string
+    reservationId?: string
+  }
+  /** Identity is the recorded owner number, checked again by `respondToOwner`. */
+  'owner.message': {
+    propertyId: string
+    channel: 'whatsapp' | 'sms'
+    phone: string
+    message: string
+    locale: string
+  }
+  'channel.deliver': { propertyId: string; threadId: string }
+  /** Cross-property sweep; filters by each channel's feature in its own query. */
+  'channel.sweep': Record<string, never>
+  'channel.unmatched': {
+    propertyId: string
+    channel: 'whatsapp' | 'sms'
+    to: string
+    locale: string
+  }
+  'channel.purge': { providerMessageId: string }
 }
 
 export interface SendOptions {
@@ -238,6 +309,11 @@ export interface Job<N extends JobName = JobName> {
   id: string
   name: N
   data: JobPayloads[N]
+  /**
+   * The W3C trace context of whoever enqueued the job (ADR-036), so the job's
+   * span continues their trace across the queue. Absent for scheduled jobs.
+   */
+  trace?: Record<string, string>
 }
 
 export type JobHandler<N extends JobName> = (job: Job<N>) => Promise<void>

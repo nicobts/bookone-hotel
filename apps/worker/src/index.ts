@@ -1,18 +1,23 @@
 import { existsSync } from 'node:fs'
+import { createLogger, startTelemetry } from '@bookone/telemetry'
 import { fileURLToPath } from 'node:url'
-import { serve } from '@hono/node-server'
-import { pino } from 'pino'
 import { MockEricsoftAdapter } from '@bookone/adapters/mock-ericsoft'
 import { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
 import { MockAlloggiatiAdapter } from '@bookone/adapters/mock-alloggiati'
-import { getNotificationProvider, registerNotificationProvider } from '@bookone/core/notifications'
-import { createApp } from './app'
+import {
+  ESCALATION_ALERT,
+  getNotificationProvider,
+  registerNotificationProvider,
+} from '@bookone/core/notifications'
+import { openRouterFromEnv, registerProvider } from '@bookone/core/llm'
+import { loadProfiles } from '@bookone/agents/profiles'
 import { LogNotificationProvider } from './notifications/log-provider'
-import { createDocumentDeleter } from './storage/documents'
+import { TwilioClient, TwilioError, TwilioNotificationProvider } from '@bookone/adapters/twilio'
+import { createDocumentDeleter, createDocumentReader } from './storage/documents'
 import { loadEnv } from './env'
 import { registerHandlers } from './jobs/handlers'
 import { registerSchedules } from './jobs/schedules'
-import { PgBossQueue } from './queue/pg-boss-queue'
+import { PgBossQueue } from '@bookone/adapters/pg-boss'
 
 /**
  * The repo-root `.env`, for local development.
@@ -31,9 +36,17 @@ const envFile = fileURLToPath(new URL('../../../.env', import.meta.url))
 if (existsSync(envFile)) process.loadEnvFile(envFile)
 
 // ADR-003: persistent Node process. Not edge, not serverless — see README.
+// No HTTP ingress since ADR-034: webhooks and /jobs/* are apps/api's.
 // The queue subscriptions and connector polling below are exactly why.
 const env = loadEnv()
-const logger = pino({ level: env.LOG_LEVEL })
+
+/**
+ * OpenTelemetry first (ADR-036): traces, metrics and logs over OTLP when
+ * OTEL_EXPORTER_OTLP_ENDPOINT is set, nothing at all when it is not. The
+ * logger is redacted and carries the trace id on every line.
+ */
+const telemetry = startTelemetry({ serviceName: 'bookone-worker' })
+const logger = createLogger({ name: 'bookone-worker', level: env.LOG_LEVEL })
 
 /**
  * The PMS connector.
@@ -105,6 +118,7 @@ if (env.NODE_ENV === 'production' && alloggiatiAdapter.simulated) {
 
 /** E2.4. See the module for why it reports failure rather than swallowing it. */
 const deleteObject = createDocumentDeleter(logger)
+const readObject = createDocumentReader(logger)
 
 const queue = new PgBossQueue(env.DATABASE_URL)
 
@@ -118,19 +132,48 @@ registerNotificationProvider(new LogNotificationProvider(logger))
 
 const notifications = getNotificationProvider(env.NOTIFICATION_PROVIDER)
 
-const app = createApp({
-  queue,
-  adapter,
-  payments: paymentAdapter,
-  logger,
-  internalToken: env.WORKER_INTERNAL_TOKEN,
-  appUrl: env.APP_URL,
-  allowSimulation: env.NODE_ENV !== 'production',
-})
+/**
+ * WhatsApp and SMS through Twilio (ADR-035), when configured. It passes the
+ * same registration gate, admitted only as ADR-035's recorded exception with
+ * register entry SP-013 — the gate refuses it otherwise.
+ */
+const twilioClient =
+  env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN
+    ? new TwilioClient({
+        accountSid: env.TWILIO_ACCOUNT_SID,
+        authToken: env.TWILIO_AUTH_TOKEN,
+        region: env.TWILIO_REGION,
+      })
+    : null
+const messaging = twilioClient
+  ? {
+      provider: new TwilioNotificationProvider({
+        client: twilioClient,
+        region: env.TWILIO_REGION,
+        ...(env.TWILIO_WHATSAPP_FROM ? { whatsappFrom: env.TWILIO_WHATSAPP_FROM } : {}),
+        ...(env.TWILIO_SMS_FROM ? { smsFrom: env.TWILIO_SMS_FROM } : {}),
+        ...(env.TWILIO_WEBHOOK_BASE_URL ? { webhookBaseUrl: env.TWILIO_WEBHOOK_BASE_URL } : {}),
+      }),
+      purge: (sid: string) => twilioClient.deleteMessage(sid),
+      retryable: (error: unknown) => error instanceof TwilioError && error.retryable,
+    }
+  : null
+if (messaging) registerNotificationProvider(messaging.provider)
 
-const server = serve({ fetch: app.fetch, port: env.WORKER_PORT }, (info) => {
-  logger.info({ port: info.port, env: env.NODE_ENV }, 'worker listening')
-})
+/**
+ * The concierge's profiles, validated now (ADR-021). A malformed profile stops
+ * the process here, naming the file and the reason — not later, as a guest who
+ * never gets an answer.
+ */
+const profiles = loadProfiles()
+
+/**
+ * The model gateway, if configured (ADR-023, ADR-029). Registration runs the
+ * residency gate: OpenRouter is admitted only as ADR-029's recorded exception,
+ * with its register entry. No key, no model — the orchestrator routes by rules.
+ */
+const llm = openRouterFromEnv(env)
+if (llm) registerProvider(llm)
 
 await queue.start()
 await registerHandlers({
@@ -140,20 +183,31 @@ await registerHandlers({
   alloggiati: alloggiatiAdapter,
   notifications,
   deleteObject,
+  readObject,
   appUrl: env.APP_URL,
   logger,
+  messaging,
+  ...(env.TWILIO_TEMPLATE_ESCALATION_ALERT
+    ? { whatsappTemplates: { [ESCALATION_ALERT]: env.TWILIO_TEMPLATE_ESCALATION_ALERT } }
+    : {}),
 })
 await registerSchedules({ queue, logger })
 logger.info(
   {
     adapter: adapter.system,
     notifications: notifications.name,
+    messaging: messaging
+      ? `${messaging.provider.name} (${messaging.provider.channels.join(', ') || 'no sender set'})`
+      : 'none',
     payments: paymentAdapter.provider,
     alloggiati: alloggiatiAdapter.channel,
     alloggiatiSimulated: alloggiatiAdapter.simulated,
     // Printed on every boot on purpose. "Which environment is taking real
     // money" should never be a question anyone has to go and look up.
     paymentsSimulated: paymentAdapter.simulated,
+    // Which model answers guests, or none. Printed for the same reason.
+    llm: llm ? `${llm.name} (${llm.residency.region})` : 'none — routing by rules',
+    profiles: profiles.size,
   },
   'queue started, handlers registered',
 )
@@ -175,9 +229,9 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
 
     logger.info({ signal }, 'shutting down')
 
-    void (async () => {
-      await queue.stop()
-      server.close(() => process.exit(0))
-    })()
+    void queue
+      .stop()
+      .then(() => telemetry.shutdown())
+      .then(() => process.exit(0))
   })
 }

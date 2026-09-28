@@ -3,8 +3,8 @@ import { BotIcon, TriangleAlertIcon } from 'lucide-react'
 import { listThreads } from '@bookone/core/db'
 import { PageShell } from '@/components/shell/page-shell'
 import { Link } from '@/i18n/navigation'
-import { requireProperty } from '@/lib/auth/current-property'
-import { Badge } from '@/components/ui/badge'
+import { requireFeature } from '@/lib/auth/current-property'
+import { Badge } from '@bookone/ui/components/badge'
 
 /**
  * The conversations queue (E3.2, E3.3).
@@ -36,7 +36,7 @@ export default async function ConversationsPage({
   const { locale, property: slug } = await params
   setRequestLocale(locale)
 
-  const { user, property } = await requireProperty(locale, slug)
+  const { user, property } = await requireFeature(locale, slug, 'inbox')
   const threads = await listThreads(user.id, property.id)
   const t = await getTranslations('console.conversations')
 

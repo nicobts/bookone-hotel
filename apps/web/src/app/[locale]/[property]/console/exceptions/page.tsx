@@ -1,10 +1,12 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { CheckCircle2Icon, RefreshCwIcon, TriangleAlertIcon } from 'lucide-react'
 import { listExceptions, type ExceptionItem } from '@bookone/core/db'
+import type { Feature } from '@bookone/core/onboarding'
 import { PageShell } from '@/components/shell/page-shell'
-import { requireProperty } from '@/lib/auth/current-property'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { propertyFeatures, requireProperty } from '@/lib/auth/current-property'
+import { Badge } from '@bookone/ui/components/badge'
+import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 import { retryReflectionAction } from './actions'
 
 /**
@@ -17,6 +19,13 @@ import { retryReflectionAction } from './actions'
  * Read through `withUser`, so what appears is what the database says this
  * person may see (ADR-018), not what a filter in this file remembered to apply.
  */
+/** Which module raises each kind of exception. */
+const EXCEPTION_FEATURE: Partial<Record<ExceptionItem['kind'], Feature>> = {
+  'unreflected-reservation': 'pms_sync',
+  discrepancy: 'pms_sync',
+  'alloggiati-overdue': 'alloggiati',
+}
+
 export default async function ExceptionsPage({
   params,
 }: {
@@ -26,7 +35,13 @@ export default async function ExceptionsPage({
   setRequestLocale(locale)
 
   const { user, property } = await requireProperty(locale, slug)
-  const exceptions = await listExceptions(user.id, property.id)
+  const features = await propertyFeatures(property.id)
+  // An exception from a module the property does not have is not one it can
+  // act on — a filing it is not making, a PMS it is not synced to (ADR-019).
+  const exceptions = (await listExceptions(user.id, property.id)).filter((item) => {
+    const feature = EXCEPTION_FEATURE[item.kind]
+    return feature === undefined || features.has(feature)
+  })
 
   const t = await getTranslations('console.exceptions')
   const context = { locale, slug }
@@ -133,10 +148,13 @@ async function ExceptionRow({
         ) : item.retryable ? (
           <form action={retryReflectionAction.bind(null, context)}>
             <input type="hidden" name="reservationId" value={item.subject} />
-            <Button type="submit" variant="outline" size="sm">
-              <RefreshCwIcon className="size-3.5" aria-hidden />
+            <PendingButton
+              variant="outline"
+              size="sm"
+              icon={<RefreshCwIcon className="size-3.5" aria-hidden />}
+            >
               {t('retry')}
-            </Button>
+            </PendingButton>
           </form>
         ) : (
           <Button variant="outline" size="sm" disabled>

@@ -4,9 +4,12 @@ import {
   disclosurePhrase,
   escalateThread,
   getReservationFacts,
+  getThreadForReservation,
   listMessages,
+  pausedPhrase,
+  recentRouting,
 } from '@bookone/core/concierge'
-import { agentActor } from '@bookone/core/events'
+import { agentActor, systemActor } from '@bookone/core/events'
 import { runAgent, type RunOutcome } from './runner'
 
 /**
@@ -37,12 +40,18 @@ export interface RespondInput {
   /** Set when the guest used an explicit "make a request" affordance. */
   intent?: 'question' | 'request'
   triggerEventId?: bigint
+  /** The public base URL, for links in tool phrases and in the manager's alert. */
+  appUrl?: string
 }
 
 export type RespondOutcome =
   | { status: 'answered'; runId: string; messageId: string }
   | { status: 'escalated'; runId: string; reason: string }
   | { status: 'failed'; runId: string; reason: string }
+  /** The agent stays quiet: an emergency on this thread is still with a person (ADR-021). */
+  | { status: 'silenced'; runId: null; reason: string }
+  /** The operator paused the concierge; the thread went to a person without a run (WP0.8). */
+  | { status: 'paused'; runId: null; reason: string }
 
 export async function respondToGuestMessage(input: RespondInput): Promise<RespondOutcome> {
   /*
@@ -52,6 +61,52 @@ export async function respondToGuestMessage(input: RespondInput): Promise<Respon
    */
   const facts = await getReservationFacts(input.propertyId, input.reservationId)
 
+  /*
+   * What this thread's recent turns were routed to, newest first — the sticky
+   * profile and the "unknown twice" rule both read it (ADR-021).
+   */
+  const history = await recentRouting(input.propertyId, input.threadId)
+
+  const thread = await getThreadForReservation(input.propertyId, input.reservationId)
+
+  // A person has taken this conversation ("Prendo io", WP0.6). The guest's
+  // message is stored and theirs to answer; an assistant replying underneath
+  // them would contradict whoever is typing.
+  if (thread?.assignedTo) {
+    return { status: 'silenced', runId: null, reason: 'a person has taken this conversation' }
+  }
+
+  /*
+   * The emergency rule's "stop replying". After an emergency the thread is with
+   * a person until a person hands it back; an assistant cheerfully answering
+   * the next message about breakfast would read as not having noticed. Handing
+   * back moves the thread out of `escalated`, and the agent resumes.
+   */
+  if (history[0]?.hardRule === 'emergency' && thread?.status === 'escalated') {
+    return { status: 'silenced', runId: null, reason: 'emergency on this thread is with a person' }
+  }
+
+  /*
+   * The operator's kill switch (ADR-031, WP0.8). No model call, no tool: the
+   * guest is told their message arrived, and the thread goes to a person. Said
+   * as a `system` message because no agent produced it — the tool-boundary
+   * audit would rightly flag it as an agent reply with no tool behind it.
+   */
+  if (facts?.agentPaused) {
+    await appendSystemMessage({
+      propertyId: input.propertyId,
+      threadId: input.threadId,
+      body: pausedPhrase(input.locale),
+    })
+    await escalateThread({
+      propertyId: input.propertyId,
+      threadId: input.threadId,
+      reason: 'the concierge is paused at this property',
+      actor: systemActor,
+    })
+    return { status: 'paused', runId: null, reason: 'the concierge is paused at this property' }
+  }
+
   const run: RunOutcome = await runAgent({
     agent: 'AG-01',
     propertyId: input.propertyId,
@@ -59,8 +114,13 @@ export async function respondToGuestMessage(input: RespondInput): Promise<Respon
     threadId: input.threadId,
     locale: input.locale,
     ...(input.triggerEventId !== undefined ? { triggerEventId: input.triggerEventId } : {}),
+    ...(input.appUrl ? { appUrl: input.appUrl } : {}),
     input: {
       message: input.message,
+      history,
+      // Every thread today belongs to a stay. Pre-sale threads arrive with
+      // channels that carry no reservation (plan §4).
+      hasBooking: true,
       ...(input.intent ? { intent: input.intent } : {}),
       ...(facts?.businessHours ? { businessHours: facts.businessHours } : {}),
     },

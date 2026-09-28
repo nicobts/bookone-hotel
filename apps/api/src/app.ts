@@ -1,0 +1,1075 @@
+import { Hono } from 'hono'
+import type { Logger } from 'pino'
+import type { JobQueue } from '@bookone/core/jobs'
+import type { PmsAdapter } from '@bookone/core/adapters'
+import { cancelBooking, quoteCancellation } from '@bookone/core/booking'
+import { applyJourneyCommand } from '@bookone/core/journey'
+import { appendGuestMessage, MessageRejected } from '@bookone/core/concierge'
+import { confirmDeparture, requestInvoice } from '@bookone/core/stay'
+import { guestActor, systemActor, userActor } from '@bookone/core/events'
+import {
+  applyPaymentEvent,
+  startCheckout,
+  PaymentAdapterError,
+  type PaymentAdapter,
+  type PaymentEvent,
+} from '@bookone/core/payments'
+import type { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
+import { createFeatureCheck, gateOpen, type FeatureCheck } from '@bookone/core/onboarding'
+import { bodyLimit } from 'hono/body-limit'
+import { routeInboundMessage } from '@bookone/core/channels'
+import { parseInbound, parseStatus, verifyTwilioSignature } from '@bookone/adapters/twilio'
+import { ROUTE_FEATURE } from './features'
+import { serverSpans } from './telemetry'
+import { clientKey, rateLimit } from './rate-limit'
+
+/**
+ * The worker's HTTP surface.
+ *
+ * Deliberately thin: this process exists for jobs, connectors and the agent
+ * runner. What it exposes over HTTP is health, the payment provider's webhook,
+ * and a small internal surface for the console and the booking surface to nudge
+ * work — later, the typed tool endpoints shared with the voice concierge
+ * workstream (WS-B).
+ *
+ * Three different authentication models live here, and the differences are the
+ * interesting part:
+ *
+ *   - `/health*` — none. A health check that needs a secret is one the
+ *     platform's own probes cannot make.
+ *   - `/jobs/*` — a shared bearer token. Both callers are ours.
+ *   - `/webhooks/payments` — a payload signature. The caller is a third party
+ *     that cannot hold our secrets, so the signature *is* the authentication.
+ *
+ * Routes are chained rather than registered separately so the exported type
+ * carries them; that type is what gives `apps/web` end-to-end types through
+ * Hono RPC without codegen (ADR-004, binding rule 10).
+ */
+export function createApp(deps: {
+  queue: JobQueue
+  adapter: PmsAdapter
+  payments: PaymentAdapter
+  logger: Logger
+  /** Shared secret for `/jobs/*`. See the middleware below. */
+  internalToken: string
+  appUrl: string
+  /**
+   * Whether the simulation routes answer at all.
+   *
+   * False in production. The routes are registered — the chain that types
+   * `AppType` is static — but they answer 404 before reading anything, the same
+   * as a path that does not exist, so there is nothing to probe and no code path
+   * from a request to a fabricated capture. (An earlier version of this comment
+   * said "never registered"; it was never true, and a false claim of absence is
+   * how a real leak gets waved through review — ADR-019.)
+   */
+  allowSimulation: boolean
+  /**
+   * A fresh feature check per request (ADR-019). Defaults to reading
+   * entitlements; injected so tests need no database.
+   */
+  featureCheck?: () => FeatureCheck
+  /** Webhook requests per minute per client (ADR-032). */
+  webhookRateLimit?: number
+  /** Whether `X-Forwarded-For` is set by a proxy we run. */
+  trustProxy?: boolean
+  /**
+   * Twilio's webhooks (ADR-035). Absent, the routes answer 404 — a provider
+   * nobody configured has no endpoint to probe.
+   */
+  twilio?: {
+    authToken: string
+    /** The public base URL Twilio calls; the signature covers it exactly. */
+    publicBaseUrl: string
+  }
+  /** Injected so the webhook's tests need no database. */
+  routeInbound?: typeof routeInboundMessage
+  /** The socket's address; supplied by the node server, absent in tests. */
+  remoteAddress?: Parameters<typeof rateLimit>[1]
+}) {
+  const { queue, adapter, payments, logger, internalToken, appUrl, allowSimulation } = deps
+  const featureCheck = deps.featureCheck ?? (() => createFeatureCheck())
+
+  /** Shared by the webhook and the simulator, so both take the identical path. */
+  async function dispatch(event: PaymentEvent) {
+    const outcome = await applyPaymentEvent({ adapter: payments }, event)
+
+    if (outcome.status === 'confirmed' && event.type === 'payment.succeeded') {
+      // The same two jobs a no-deposit confirmation fires. Enqueued here rather
+      // than inside the domain function because the queue lives in this process
+      // and core must not know it exists (ADR-005).
+      await queue.send(
+        'reservation.reflect',
+        { propertyId: event.intent.propertyId, reservationId: outcome.reservationId },
+        { singletonKey: `reflect:${outcome.reservationId}` },
+      )
+
+      if (outcome.notificationId) {
+        await queue.send(
+          'notification.send',
+          { propertyId: event.intent.propertyId, notificationId: outcome.notificationId },
+          { singletonKey: `notify:${outcome.notificationId}` },
+        )
+      }
+    }
+
+    return outcome
+  }
+
+  return (
+    new Hono()
+      // Before everything else, so every route — webhooks included — is a span.
+      .use('*', serverSpans())
+      .get('/health', (c) => c.json({ status: 'ok' as const, service: 'api' as const }))
+
+      /**
+       * Connector health, surfaced in the console.
+       *
+       * Owners see connector status honestly (03 §8) — including when it is bad.
+       * A health endpoint that reports OK while the PMS refuses every call is
+       * worse than none, because it converts a visible outage into a mystery.
+       */
+      .get('/health/connector', async (c) => {
+        const health = await adapter.healthCheck()
+
+        return c.json(
+          {
+            system: adapter.system,
+            healthy: health.healthy,
+            message: health.message ?? null,
+            checkedAt: health.checkedAt.toISOString(),
+          },
+          health.healthy ? 200 : 503,
+        )
+      })
+
+      /**
+       * Payment provider status, including whether it is simulated.
+       *
+       * MEMO: with the mock connected this reports `simulated: true`, and the
+       * booking surface reads it to decide whether to warn the guest. Separate
+       * from the connector health because the two fail independently and an
+       * owner needs to know which one is down.
+       */
+      .get('/health/payments', async (c) => {
+        const health = await payments.healthCheck()
+
+        return c.json({
+          provider: payments.provider,
+          simulated: payments.simulated,
+          healthy: health.healthy,
+          message: health.message ?? null,
+        })
+      })
+
+      /**
+       * The payment provider's webhook — the only state authority (03 §7.2).
+       *
+       * Deliberately **outside** the `/jobs/*` bearer-token guard: a provider
+       * cannot present our internal secret. The signature on the payload is the
+       * authentication, which is why `parseWebhook` throws rather than returns
+       * on a bad one.
+       *
+       * Answering promptly matters more than it looks: a provider that does not
+       * get a 2xx redelivers for days, and every redelivery re-runs this.
+       * Everything downstream is idempotent for exactly that reason.
+       */
+      /**
+       * The public ingress's guards, before any route reads a body (ADR-032
+       * item 5): a rate limit per client, then a size cap. Both run before the
+       * signature check, so a flood costs a map lookup rather than an HMAC.
+       * A provider event is a few kilobytes; 256 KiB is generous.
+       */
+      .use(
+        '/webhooks/*',
+        rateLimit(
+          {
+            limit: deps.webhookRateLimit ?? 120,
+            windowMs: 60_000,
+            key: clientKey(deps.trustProxy ?? false),
+            onLimited: (key) => logger.warn({ key }, 'webhook rate limited'),
+          },
+          deps.remoteAddress,
+        ),
+      )
+      .use(
+        '/webhooks/*',
+        bodyLimit({
+          maxSize: 256 * 1024,
+          onError: (c) => c.json({ error: 'payload_too_large' }, 413),
+        }),
+      )
+
+      /**
+       * Inbound WhatsApp and SMS (ADR-035).
+       *
+       * The signature is checked first, against the configured public URL —
+       * the one Twilio signed — and a bad one is a 403 before anything is read.
+       * Routing happens here, synchronously: it is a few indexed reads and one
+       * insert, and it means the message body is written once, to the thread,
+       * rather than also sitting in a job payload.
+       *
+       * Every well-formed message gets a 200 with an empty TwiML response, even
+       * when it is ignored. A 4xx/5xx would make Twilio retry a message that will
+       * be ignored the same way next time.
+       */
+      .post('/webhooks/twilio/inbound', async (c) => {
+        const twilio = deps.twilio
+        if (!twilio) return c.json({ error: 'not found' }, 404)
+
+        const params = Object.fromEntries(new URLSearchParams(await c.req.text()))
+        const valid = verifyTwilioSignature({
+          url: `${twilio.publicBaseUrl.replace(/\/$/, '')}/webhooks/twilio/inbound`,
+          params,
+          signature: c.req.header('x-twilio-signature'),
+          authToken: twilio.authToken,
+        })
+        if (!valid) return c.json({ error: 'invalid signature' }, 403)
+
+        const twiml = () => c.body('<Response/>', 200, { 'content-type': 'text/xml' })
+        const message = parseInbound(params)
+        if (!message) return twiml()
+
+        const route = await (deps.routeInbound ?? routeInboundMessage)({
+          channel: message.channel,
+          provider: 'twilio',
+          providerMessageId: message.messageSid,
+          from: message.from,
+          to: message.to,
+          body: message.body,
+        })
+
+        switch (route.kind) {
+          case 'guest':
+            await queue.send('concierge.reply', {
+              propertyId: route.propertyId,
+              reservationId: route.reservationId,
+              threadId: route.threadId,
+              locale: route.locale,
+              message: message.body,
+            })
+            break
+          case 'owner':
+            await queue.send(
+              'owner.message',
+              {
+                propertyId: route.propertyId,
+                channel: message.channel,
+                phone: route.phone,
+                message: message.body,
+                locale: route.locale,
+              },
+              { singletonKey: `owner-message:${message.messageSid}` },
+            )
+            break
+          case 'unknown':
+            await queue.send(
+              'channel.unmatched',
+              {
+                propertyId: route.propertyId,
+                channel: message.channel,
+                to: message.from,
+                locale: route.locale,
+              },
+              { singletonKey: `unmatched:${message.messageSid}` },
+            )
+            break
+          default:
+            break
+        }
+
+        // Stored (or deliberately not), so Twilio's copy can go (ADR-035).
+        await queue.send(
+          'channel.purge',
+          { providerMessageId: message.messageSid },
+          { singletonKey: `purge:${message.messageSid}` },
+        )
+
+        logger.info(
+          { channel: message.channel, route: route.kind, media: message.media },
+          'twilio inbound',
+        )
+        return twiml()
+      })
+
+      /**
+       * Delivery status for messages we sent. A final state means the message
+       * is finished with, and Twilio's copy of it is deleted (ADR-035).
+       */
+      .post('/webhooks/twilio/status', async (c) => {
+        const twilio = deps.twilio
+        if (!twilio) return c.json({ error: 'not found' }, 404)
+
+        const params = Object.fromEntries(new URLSearchParams(await c.req.text()))
+        const valid = verifyTwilioSignature({
+          url: `${twilio.publicBaseUrl.replace(/\/$/, '')}/webhooks/twilio/status`,
+          params,
+          signature: c.req.header('x-twilio-signature'),
+          authToken: twilio.authToken,
+        })
+        if (!valid) return c.json({ error: 'invalid signature' }, 403)
+
+        const status = parseStatus(params)
+        if (status?.final) {
+          if (status.status !== 'delivered' && status.status !== 'read') {
+            logger.warn(
+              { status: status.status, errorCode: status.errorCode },
+              'twilio message not delivered',
+            )
+          }
+          await queue.send(
+            'channel.purge',
+            { providerMessageId: status.messageSid },
+            { singletonKey: `purge:${status.messageSid}` },
+          )
+        }
+        return c.body(null, 204)
+      })
+
+      .post('/webhooks/payments', async (c) => {
+        const payload = await c.req.text()
+        const signature =
+          c.req.header('x-payment-signature') ?? c.req.header('stripe-signature') ?? null
+
+        let event: PaymentEvent | null
+        try {
+          event = await payments.parseWebhook(payload, signature)
+        } catch (cause) {
+          const code = cause instanceof PaymentAdapterError ? cause.code : 'unknown'
+          logger.warn({ code, provider: payments.provider }, 'rejected a payment webhook')
+
+          // 400, never 5xx. A signature that does not match will not match on a
+          // retry either, and a 5xx invites the provider to try all day.
+          return c.json({ error: 'invalid webhook' }, 400)
+        }
+
+        if (!event) return c.json({ ignored: true })
+
+        const outcome = await dispatch(event)
+
+        logger.info(
+          { type: event.type, outcome: outcome.status, provider: payments.provider },
+          'payment webhook',
+        )
+
+        return c.json({ status: outcome.status })
+      })
+
+      /**
+       * Everything under `/jobs` is service-to-service and carries a shared
+       * secret.
+       *
+       * This became necessary the moment a *public* page could reach these —
+       * the booking surface confirms a reservation and then asks the worker to
+       * reflect it. Without the check, anyone who can route to this process can
+       * enqueue work against any property id they can guess: a queue full of
+       * reflections is a PMS full of them.
+       *
+       * A shared secret rather than mTLS or a signed request because both
+       * deployables are ours, in one EU region, and the secret is the smallest
+       * thing that closes the hole. Compared in constant time so the endpoint
+       * does not leak the token one byte at a time to anyone timing it.
+       */
+      .use('/jobs/*', async (c, next) => {
+        // The scheme is required, not stripped if present. A header that is
+        // just the token happens to carry the right secret, but it is not a
+        // request this platform makes — accepting it means the one caller that
+        // sends it is a caller nobody wrote, and that is worth a 401 rather
+        // than a shrug.
+        const header = c.req.header('authorization') ?? ''
+        const match = /^Bearer (.+)$/.exec(header)
+
+        if (!match || !timingSafeEqual(match[1] ?? '', internalToken)) {
+          // No detail. "Wrong token" and "no token" are the same answer here.
+          return c.json({ error: 'unauthorized' }, 401)
+        }
+
+        // Feature gate (ADR-019), after authentication so an unauthenticated
+        // caller learns nothing about which modules a property has.
+        //
+        // An unclassified route is refused rather than let through: a new route
+        // nobody classified is the leak, and failing closed is how it gets
+        // noticed. The body is parsed once here and cached by Hono for the
+        // handler; a missing `propertyId` falls through to the handler's 400.
+        const gate = ROUTE_FEATURE[c.req.path]
+
+        if (gate === undefined) return c.json({ error: 'not found' }, 404)
+
+        if (gate !== 'core') {
+          const body = await c.req.json<{ propertyId?: unknown }>().catch(() => ({}))
+          const propertyId = (body as { propertyId?: unknown }).propertyId
+
+          if (
+            typeof propertyId === 'string' &&
+            !(await gateOpen(featureCheck(), propertyId, gate))
+          ) {
+            return c.json({ error: 'not found' }, 404)
+          }
+        }
+
+        await next()
+      })
+
+      /**
+       * Re-enqueue a reflection.
+       *
+       * The one-tap resolution behind an unreflected reservation in the
+       * exceptions inbox (PRD C1). Safe to call repeatedly: the singleton key
+       * collapses duplicates, and the adapter is idempotent underneath — so an
+       * owner tapping retry four times still produces one booking.
+       */
+      .post('/jobs/reservation-reflect', async (c) => {
+        const body = await c.req.json<{ propertyId?: string; reservationId?: string }>()
+
+        if (!body.propertyId || !body.reservationId) {
+          return c.json({ error: 'propertyId and reservationId are required' }, 400)
+        }
+
+        const id = await queue.send(
+          'reservation.reflect',
+          { propertyId: body.propertyId, reservationId: body.reservationId },
+          { singletonKey: `reflect:${body.reservationId}` },
+        )
+
+        return c.json({ enqueued: id })
+      })
+
+      /**
+       * What a confirmed booking sets in motion (E1.2, E1.5).
+       *
+       * Called by the booking surface immediately after the confirming
+       * transaction commits, on the no-deposit path. Two jobs, enqueued
+       * together because they have the same trigger and neither blocks the
+       * other: tell the PMS, tell the guest.
+       *
+       * Note what this endpoint does *not* do: confirm anything. The booking is
+       * already real and already recorded when this is called, and the outbox
+       * row already exists. If this call never lands, the sweep still sends the
+       * confirmation and the exceptions inbox still surfaces the unreflected
+       * reservation after sixty seconds. It is the fast path, not the only one —
+       * which is what makes it safe for a public surface to depend on.
+       */
+      .post('/jobs/booking-confirmed', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          reservationId?: string
+          notificationId?: string
+        }>()
+
+        if (!body.propertyId || !body.reservationId) {
+          return c.json({ error: 'propertyId and reservationId are required' }, 400)
+        }
+
+        const reflect = await queue.send(
+          'reservation.reflect',
+          { propertyId: body.propertyId, reservationId: body.reservationId },
+          { singletonKey: `reflect:${body.reservationId}` },
+        )
+
+        const notify = body.notificationId
+          ? await queue.send(
+              'notification.send',
+              { propertyId: body.propertyId, notificationId: body.notificationId },
+              { singletonKey: `notify:${body.notificationId}` },
+            )
+          : null
+
+        return c.json({ reflect, notify })
+      })
+
+      /**
+       * Start a payment for a held reservation (E1.3).
+       *
+       * Lives here rather than in the web app because the provider client lives
+       * in this process — one place holds the credentials, and the booking
+       * surface never talks to a payment provider directly.
+       */
+      .post('/jobs/checkout', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          reservationId?: string
+          returnUrl?: string
+        }>()
+
+        if (!body.propertyId || !body.reservationId) {
+          return c.json({ error: 'propertyId and reservationId are required' }, 400)
+        }
+
+        const outcome = await startCheckout(
+          { adapter: payments },
+          {
+            propertyId: body.propertyId,
+            reservationId: body.reservationId,
+            returnUrl: body.returnUrl ?? appUrl,
+          },
+        )
+
+        logger.info(
+          { reservationId: body.reservationId, outcome: outcome.status },
+          'checkout started',
+        )
+
+        return c.json({ ...outcome, simulated: payments.simulated })
+      })
+
+      /**
+       * Cancel a booking and refund per policy (E1.4).
+       *
+       * Here rather than in the web app for the same reason as checkout: the
+       * refund needs the payment provider, and exactly one process holds it.
+       *
+       * The web app showed the guest a refund figure before they pressed the
+       * button; this recomputes it from the policy and the ledger rather than
+       * accepting it, because the number travelled through a browser in
+       * between.
+       */
+      .post('/jobs/cancel', async (c) => {
+        const body = await c.req.json<{ propertyId?: string; reservationId?: string }>()
+
+        if (!body.propertyId || !body.reservationId) {
+          return c.json({ error: 'propertyId and reservationId are required' }, 400)
+        }
+
+        const outcome = await cancelBooking(
+          { adapter: payments },
+          { propertyId: body.propertyId, reservationId: body.reservationId },
+        )
+
+        if (outcome.status === 'cancelled') {
+          // The PMS has to hear about it too — a cancellation the hotel never
+          // sees is a room they hold empty (PRD A5: changes propagate like A3).
+          await queue.send(
+            'reservation.reflect',
+            { propertyId: body.propertyId, reservationId: body.reservationId },
+            { singletonKey: `reflect:cancel:${body.reservationId}` },
+          )
+        }
+
+        logger.info(
+          {
+            reservationId: body.reservationId,
+            outcome: outcome.status,
+            ...(outcome.status === 'cancelled'
+              ? { refundCents: outcome.refundCents, refundFailed: outcome.refundFailed }
+              : {}),
+          },
+          'cancellation',
+        )
+
+        return c.json(outcome)
+      })
+
+      /**
+       * What a guest would be refunded if they cancelled now (E1.4).
+       *
+       * Read-only, and shown *before* the confirm button. A cancel flow that
+       * reveals what it kept afterwards is the fastest way to turn a routine
+       * cancellation into a chargeback.
+       */
+      .post('/jobs/cancellation-quote', async (c) => {
+        const body = await c.req.json<{ propertyId?: string; reservationId?: string }>()
+
+        if (!body.propertyId || !body.reservationId) {
+          return c.json({ error: 'propertyId and reservationId are required' }, 400)
+        }
+
+        const quote = await quoteCancellation({
+          propertyId: body.propertyId,
+          reservationId: body.reservationId,
+        })
+
+        if (!quote) return c.json({ error: 'unknown reservation' }, 404)
+
+        return c.json(quote)
+      })
+
+      /**
+       * The guest has arrived (E3.1).
+       *
+       * Only reservation-scoped triggers are accepted — a staff tap in the
+       * console today, a guest tap on the stay surface, and later a door event
+       * from Rooms. All three become the same journey command, which is the
+       * whole point of ADR-013: a new trigger source plugs in without the
+       * journey changing.
+       *
+       * Confirming arrival is what starts the Alloggiati filing. That coupling
+       * lives here rather than inside the command because enqueuing is the
+       * worker's job and core must not know the queue exists (ADR-005).
+       */
+      .post('/jobs/arrival-confirm', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          reservationId?: string
+          userId?: string
+          /**
+           * Which trigger fired. Defaults to `staff`, the conservative reading:
+           * G1 counts the arrivals that were *not* a staff tap, so an unstated
+           * source must never inflate it.
+           */
+          source?: 'guest' | 'staff' | 'door'
+        }>()
+
+        if (!body.propertyId || !body.reservationId) {
+          return c.json({ error: 'propertyId and reservationId are required' }, 400)
+        }
+
+        const outcome = await applyJourneyCommand({
+          propertyId: body.propertyId,
+          reservationId: body.reservationId,
+          command: { type: 'arrival.confirm' },
+          /*
+           * Named, whoever did it. "Who marked this guest arrived" is a question
+           * that gets asked at a desk with three people on shift.
+           *
+           * The guest branch was missing until this was run end to end: a guest
+           * tapping "I have arrived" holds no session, so there was no `userId`
+           * and the actor fell through to `system` — which reads as "a job did
+           * this" on the one transition where nothing automatic happened at all.
+           * G1 counts the arrivals that needed nobody at a desk, and it is
+           * computed off these events.
+           */
+          actor: body.userId
+            ? userActor(body.userId)
+            : body.source === 'guest'
+              ? guestActor(body.reservationId)
+              : systemActor,
+        })
+
+        if (outcome.status === 'applied' || outcome.status === 'no-op') {
+          // Filing is its own feature (ADR-019) — off in Guest Desk Phase 0,
+          // where capture ends at staff confirmation and nothing is submitted.
+          if (await gateOpen(featureCheck(), body.propertyId, 'alloggiati')) {
+            await queue.send(
+              'alloggiati.file',
+              { propertyId: body.propertyId, reservationId: body.reservationId },
+              { singletonKey: `alloggiati:${body.reservationId}` },
+            )
+          }
+
+          /*
+           * The check-in post and the welcome (E3.1), queued separately from the
+           * filing because they fail for unrelated reasons and neither should
+           * be able to swallow the other. A guest without a door code is a
+           * different problem from a stay the police registry has not seen.
+           */
+          await queue.send(
+            'arrival.complete',
+            {
+              propertyId: body.propertyId,
+              reservationId: body.reservationId,
+              source: body.source ?? 'staff',
+              ...(body.userId ? { userId: body.userId } : {}),
+            },
+            { singletonKey: `arrival-complete:${body.reservationId}` },
+          )
+        }
+
+        logger.info(
+          { reservationId: body.reservationId, outcome: outcome.status },
+          'arrival confirmed',
+        )
+
+        return c.json({ status: outcome.status })
+      })
+
+      /**
+       * A guest said something (E3.2).
+       *
+       * Stores the message, then queues the answer. The two are separate on
+       * purpose: the guest's words are safe the moment this returns, and the
+       * reply arrives when the agent is done. A surface that waited for the
+       * agent before acknowledging would lose the message entirely whenever the
+       * agent was slow — the one outcome worse than a slow answer.
+       */
+      .post('/jobs/guest-message', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          reservationId?: string
+          locale?: string
+          message?: string
+          intent?: 'question' | 'request'
+        }>()
+
+        if (!body.propertyId || !body.reservationId || !body.message) {
+          return c.json({ error: 'propertyId, reservationId and message are required' }, 400)
+        }
+
+        try {
+          const { thread, messageId } = await appendGuestMessage({
+            propertyId: body.propertyId,
+            reservationId: body.reservationId,
+            locale: body.locale ?? 'en',
+            body: body.message,
+          })
+
+          await queue.send('concierge.reply', {
+            propertyId: body.propertyId,
+            reservationId: body.reservationId,
+            threadId: thread.id,
+            locale: thread.locale,
+            message: body.message,
+            ...(body.intent ? { intent: body.intent } : {}),
+          })
+
+          return c.json({ threadId: thread.id, messageId })
+        } catch (error) {
+          if (error instanceof MessageRejected) {
+            // A guest's own mistake — empty, or longer than the limit. A 400
+            // with the reason, not a 500: nothing is broken.
+            return c.json({ error: error.message }, 400)
+          }
+          throw error
+        }
+      })
+
+      /**
+       * The guest is leaving (E4.1).
+       *
+       * `/jobs/depart`, not `/jobs/checkout` — that name was taken by the
+       * *payment* checkout in Sprint 4, and Hono matches the first route it
+       * registered. The collision silently answered departure requests with a
+       * payment-intent response, so the guest's checkout appeared to succeed
+       * and nothing was recorded. Found by checking the database after clicking
+       * the button rather than by trusting the 200.
+       *
+       * MEMO — no payment provider is connected, so nothing here moves money.
+       * The journey transition, the invoice request and the review send are the
+       * real path; settlement runs through `MockPaymentAdapter` (ADR-010).
+       */
+      .post('/jobs/depart', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          reservationId?: string
+          billTo?: string
+          details?: Record<string, unknown>
+        }>()
+
+        if (!body.propertyId || !body.reservationId) {
+          return c.json({ error: 'propertyId and reservationId are required' }, 400)
+        }
+
+        // The invoice request first, so a guest whose departure transition is
+        // refused has still asked for their invoice. We issue nothing (D11).
+        if (body.billTo?.trim()) {
+          await requestInvoice({
+            propertyId: body.propertyId,
+            reservationId: body.reservationId,
+            billTo: body.billTo,
+            ...(body.details ? { details: body.details } : {}),
+          })
+
+          await queue.send('invoice.route', {}, { singletonKey: 'invoice-route' })
+        }
+
+        const outcome = await confirmDeparture({
+          propertyId: body.propertyId,
+          reservationId: body.reservationId,
+          reviewUrl: `${appUrl.replace(/\/$/, '')}/review/${body.reservationId}`,
+        })
+
+        logger.info(
+          { reservationId: body.reservationId, outcome: outcome.status },
+          'checkout confirmed',
+        )
+
+        return c.json(outcome)
+      })
+
+      /**
+       * The owner asks their assistant a question from the console (AG-06,
+       * WP0.7). The caller has checked the session is the property's owner;
+       * the worker runs the agent and the console reads the answer from the run.
+       */
+      .post('/jobs/owner-message', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          userId?: string
+          message?: string
+          locale?: string
+          requestId?: string
+        }>()
+
+        const message = body.message?.trim().slice(0, 500)
+        if (!body.propertyId || !body.userId || !message) {
+          return c.json({ error: 'propertyId, userId and message are required' }, 400)
+        }
+
+        const id = await queue.send('owner.ask', {
+          propertyId: body.propertyId,
+          userId: body.userId,
+          message,
+          locale: body.locale ?? 'it',
+          ...(body.requestId ? { requestId: body.requestId } : {}),
+        })
+
+        return c.json({ enqueued: id })
+      })
+
+      /**
+       * A console preview of the concierge (ADR-038). The caller — the web
+       * console, with the member's session already checked — gets the answer
+       * back by reading the run whose `input_ref` is `requestId`. Nothing here
+       * or in the worker writes anything a guest, a report or an approval list
+       * can see.
+       */
+      .post('/jobs/agent-preview', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          userId?: string
+          message?: string
+          locale?: string
+          requestId?: string
+          reservationId?: string
+        }>()
+
+        const message = body.message?.trim().slice(0, 1000)
+        if (!body.propertyId || !body.userId || !message || !body.requestId) {
+          return c.json({ error: 'propertyId, userId, requestId and message are required' }, 400)
+        }
+
+        const id = await queue.send(
+          'agent.preview',
+          {
+            propertyId: body.propertyId,
+            userId: body.userId,
+            message,
+            locale: body.locale ?? 'it',
+            requestId: body.requestId,
+            ...(body.reservationId ? { reservationId: body.reservationId } : {}),
+          },
+          { singletonKey: `preview:${body.requestId}` },
+        )
+
+        return c.json({ enqueued: id })
+      })
+
+      /**
+       * Read one uploaded identity document with the vision model (WP0.4).
+       *
+       * Gated by `document_ocr` in the middleware (ADR-019): a property without
+       * it gets 404 and nothing is read. Only ids travel — the worker reads the
+       * image from the private bucket itself.
+       */
+      .post('/jobs/document-extract', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          reservationId?: string
+          guestIndex?: number
+        }>()
+
+        if (!body.propertyId || !body.reservationId || !Number.isInteger(body.guestIndex)) {
+          return c.json({ error: 'propertyId, reservationId and guestIndex are required' }, 400)
+        }
+
+        const id = await queue.send(
+          'documents.extract',
+          {
+            propertyId: body.propertyId,
+            reservationId: body.reservationId,
+            guestIndex: body.guestIndex as number,
+          },
+          // A re-upload replaces the photo, so the latest one should be read:
+          // the key is per stay and guest, and a queued read of the old photo
+          // collapses into the new one.
+          { singletonKey: `extract:${body.reservationId}:${body.guestIndex}` },
+        )
+
+        return c.json({ enqueued: id })
+      })
+
+      /**
+       * File this stay now (E2.3).
+       *
+       * The manual submit the acceptance criterion requires to be always
+       * present. Automation that cannot be overridden is automation an owner
+       * cannot answer for — and they are the declarant.
+       *
+       * Safe to press repeatedly: the singleton key collapses duplicates, and
+       * the domain refuses to re-file something already submitted.
+       */
+      .post('/jobs/alloggiati-submit', async (c) => {
+        const body = await c.req.json<{ propertyId?: string; reservationId?: string }>()
+
+        if (!body.propertyId || !body.reservationId) {
+          return c.json({ error: 'propertyId and reservationId are required' }, 400)
+        }
+
+        const id = await queue.send(
+          'alloggiati.file',
+          { propertyId: body.propertyId, reservationId: body.reservationId },
+          { singletonKey: `alloggiati:${body.reservationId}` },
+        )
+
+        return c.json({ enqueued: id })
+      })
+
+      /**
+       * MEMO — SIMULATED PAYMENT SUPPORT. Development and staging only.
+       *
+       * What the fake checkout page reads to render an amount. A real
+       * provider hosts its own page and needs none of this, which is why the
+       * route is gated the same way the simulator is.
+       */
+      .post('/jobs/payment-intent', async (c) => {
+        if (!allowSimulation) return c.json({ error: 'not found' }, 404)
+
+        const body = await c.req.json<{ intentId?: string }>()
+        if (!body.intentId) return c.json({ error: 'intentId is required' }, 400)
+
+        const simulator = payments as Partial<MockPaymentAdapter>
+        if (typeof simulator.peek !== 'function') {
+          return c.json({ error: 'the configured payment provider cannot be inspected' }, 409)
+        }
+
+        const intent = simulator.peek(body.intentId)
+        if (!intent) return c.json({ error: 'unknown intent' }, 404)
+
+        return c.json({
+          id: intent.id,
+          amountCents: intent.amountCents,
+          currency: intent.currency,
+          status: intent.status,
+          reservationId: intent.reservationId,
+          propertyId: intent.propertyId,
+        })
+      })
+
+      /**
+       * Apply an erasure request (E8.1).
+       *
+       * Enqueues rather than erasing inline, and the desk shows the request as
+       * open until the job resolves it. Three reasons, all pointing the same
+       * way: it deletes objects from somebody else's storage, it is
+       * irreversible so a retry must be safe rather than quick, and the owner
+       * has already been shown that this is a two-step operation.
+       *
+       * `singletonKey` on the guest, so an owner pressing twice produces one
+       * erasure. Twice is harmless to the data and not harmless to the request
+       * log, which is the evidence a deadline was met.
+       */
+      .post('/jobs/privacy-erase', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          guestId?: string
+          requestId?: string
+          userId?: string
+        }>()
+
+        if (!body.propertyId || !body.guestId) {
+          return c.json({ error: 'propertyId and guestId are required' }, 400)
+        }
+
+        const id = await queue.send(
+          'privacy.erase',
+          {
+            propertyId: body.propertyId,
+            guestId: body.guestId,
+            // Spread rather than assigned: `exactOptionalPropertyTypes` treats
+            // an explicit `undefined` as a different thing from an absent key,
+            // and the payload type says these are absent or a string.
+            ...(body.requestId ? { requestId: body.requestId } : {}),
+            ...(body.userId ? { userId: body.userId } : {}),
+          },
+          { singletonKey: `erase:${body.guestId}` },
+        )
+
+        return c.json({ enqueued: id })
+      })
+
+      /**
+       * Run the retention sweep for one property now (E8.2).
+       *
+       * The runbook's manual trigger, and what the backup-restore drill uses to
+       * check that a restored database still enforces its declared periods. The
+       * schedule is the real path; this exists so "run it and see" does not mean
+       * waiting until 02:15.
+       */
+      .post('/jobs/retention-sweep', async (c) => {
+        const body = await c.req.json<{ propertyId?: string }>()
+
+        if (!body.propertyId) return c.json({ error: 'propertyId is required' }, 400)
+
+        const id = await queue.send(
+          'retention.sweep',
+          { propertyId: body.propertyId },
+          { singletonKey: `retention:${body.propertyId}` },
+        )
+
+        return c.json({ enqueued: id })
+      })
+
+      /**
+       * ═══════════════════════════════════════════════════════════════════
+       *  MEMO — SIMULATED PAYMENT. Development and staging only.
+       * ═══════════════════════════════════════════════════════════════════
+       *
+       * Stands in for a guest entering a card. It asks the mock adapter to move
+       * an intent to an outcome, then feeds the resulting signed payload
+       * through **the real webhook path** — same parse, same signature check,
+       * same idempotency, same jobs. That is the whole point: when a real
+       * provider replaces the mock, this route disappears and nothing else
+       * changes.
+       *
+       * Answers 404 before doing anything when `allowSimulation` is false.
+       */
+      .post('/jobs/payment-simulate', async (c) => {
+        if (!allowSimulation) return c.json({ error: 'not found' }, 404)
+
+        const body = await c.req.json<{
+          intentId?: string
+          outcome?: 'succeeded' | 'failed' | 'requires_action'
+        }>()
+
+        if (!body.intentId) return c.json({ error: 'intentId is required' }, 400)
+
+        const simulator = payments as Partial<MockPaymentAdapter>
+
+        if (typeof simulator.simulate !== 'function') {
+          // The configured provider is a real one. Refusing loudly beats
+          // pretending to simulate against a provider that would charge a card.
+          return c.json({ error: 'the configured payment provider cannot be simulated' }, 409)
+        }
+
+        let signed: { payload: string; signature: string }
+        try {
+          signed = simulator.simulate(body.intentId, body.outcome ?? 'succeeded')
+        } catch (cause) {
+          return c.json({ error: cause instanceof Error ? cause.message : String(cause) }, 404)
+        }
+
+        const event = await payments.parseWebhook(signed.payload, signed.signature)
+        if (!event) return c.json({ ignored: true })
+
+        const outcome = await dispatch(event)
+
+        logger.info(
+          { intentId: body.intentId, chose: body.outcome ?? 'succeeded', outcome: outcome.status },
+          'payment simulated — no money moved',
+        )
+
+        return c.json({ status: outcome.status })
+      })
+  )
+}
+
+export type AppType = ReturnType<typeof createApp>
+
+/**
+ * Constant-time string comparison.
+ *
+ * `===` returns as soon as two bytes differ, which over enough requests tells an
+ * attacker how much of the token they have right. Hand-rolled rather than
+ * `crypto.timingSafeEqual` because that one throws on a length mismatch, and
+ * the throw is itself the length oracle.
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (b.length === 0) return false
+
+  let diff = a.length ^ b.length
+
+  for (let i = 0; i < a.length; i += 1) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i % b.length)
+  }
+
+  return diff === 0
+}

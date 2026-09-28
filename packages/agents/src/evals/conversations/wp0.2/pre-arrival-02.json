@@ -1,0 +1,18 @@
+{
+  "profile": "pre-arrival",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Arriveremo verso le 21"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "pre-arrival"
+      }
+    }
+  ],
+  "must_not": []
+}

@@ -132,7 +132,17 @@ export function auditMessage(message: AuditableMessage): Violation[] {
   const evidence = fold(flattenToolOutputs(message.runEvidence))
   const violations: Violation[] = []
 
-  if (!evidence.includes(fold(message.body))) {
+  // Paragraph by paragraph: a reply may be two tool phrases joined by a blank
+  // line (a task and a handover, a complaint and a handover), and each must be
+  // a tool's own text. Checking the whole body as one string would fail every
+  // such reply — or, worse, be made to pass by recording the reply itself as
+  // evidence, which is what `toolEvidence` exists to prevent.
+  const paragraphs = message.body
+    .split(/\n\s*\n/)
+    .map(fold)
+    .filter(Boolean)
+
+  if (paragraphs.length === 0 || paragraphs.some((paragraph) => !evidence.includes(paragraph))) {
     violations.push({
       kind: 'unsourced_reply',
       messageId: message.messageId,
@@ -203,11 +213,34 @@ export async function auditToolBoundary(input: {
       threadId: row.threadId,
       agentRunId: row.agentRunId,
       body: row.body,
-      runEvidence: [row.toolCalls, row.output],
+      runEvidence: toolEvidence(row.toolCalls, row.output),
     }),
   )
 
   return { propertyId: input.propertyId, checked: rows.length, violations }
+}
+
+/**
+ * What counts as evidence for a run: what its tools returned.
+ *
+ * Not the run's own `output` — since the orchestrator records the reply there,
+ * evidence that included it would make every reply sourced by definition. Not
+ * the tools' *inputs* either: those are what the model or the guest supplied,
+ * and a reply is sourced only by what a tool produced.
+ *
+ * Runs recorded before WP0.2 kept only `{ tool, ok }` per call, with no outputs
+ * to read; they are audited as they always were, against the run record.
+ */
+export function toolEvidence(toolCalls: unknown, output: unknown): unknown {
+  const calls = Array.isArray(toolCalls) ? toolCalls : []
+  const outputs = calls
+    .filter(
+      (call): call is { output: unknown } =>
+        call !== null && typeof call === 'object' && 'output' in call,
+    )
+    .map((call) => call.output)
+
+  return outputs.length > 0 ? outputs : [toolCalls, output]
 }
 
 /** Properties that sent an agent reply in the window — the audit's work list. */

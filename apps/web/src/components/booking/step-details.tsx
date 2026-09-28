@@ -1,10 +1,10 @@
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import type { HeldBooking } from '@bookone/core/db'
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { PendingButton } from '@bookone/ui/components/pending-button'
+import { Checkbox } from '@bookone/ui/components/checkbox'
+import { Input } from '@bookone/ui/components/input'
+import { Label } from '@bookone/ui/components/label'
 import type { BookingDraft } from '@/lib/booking/draft'
 import { formatDate, formatMoney, roomName } from './format'
 import { StateFields, type BookingState } from './state-fields'
@@ -113,7 +113,7 @@ export async function StepDetails({
         )}
 
         <div className="flex items-center gap-4">
-          <Button type="submit">{t('details.submit')}</Button>
+          <PendingButton>{t('details.submit')}</PendingButton>
           <Link
             href={backHref}
             className="text-muted-foreground text-sm underline underline-offset-4"

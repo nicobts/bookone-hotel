@@ -1,0 +1,18 @@
+{
+  "profile": "general-info",
+  "channel": "webchat",
+  "lang": "de",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Gibt es ein Restaurant in der Nähe?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "general-info"
+      }
+    }
+  ],
+  "must_not": []
+}

@@ -1,0 +1,18 @@
+{
+  "profile": "general-info",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "A che ora è la colazione?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "general-info"
+      }
+    }
+  ],
+  "must_not": []
+}

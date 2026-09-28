@@ -82,6 +82,47 @@ export function escalatedPhrase(locale: string): string {
   return catalogues[resolve(locale)].concierge.escalated
 }
 
+/**
+ * Said while an operator has paused the concierge (WP0.8). It claims nothing
+ * about the question — only that it arrived and a person will answer.
+ */
+export function pausedPhrase(locale: string): string {
+  return catalogues[resolve(locale)].concierge.paused
+}
+
+/**
+ * To a WhatsApp/SMS sender who is neither the owner nor a guest on a current
+ * stay (ADR-035). It says what happened — nothing was passed on — and the two
+ * ways forward, and it states no fact about any booking.
+ */
+export function unmatchedSenderPhrase(locale: string, property: string, link: string): string {
+  return interpolate(catalogues[resolve(locale)].concierge.unmatchedSender, { property, link })
+}
+
+/**
+ * The owner agent's answer when no read-only tool fits the question — the same
+ * sentence the console's assistant page shows, on WhatsApp (ADR-035).
+ */
+export function ownerNotUnderstoodPhrase(locale: string): string {
+  return catalogues[resolve(locale)].console.assistant.notUnderstood
+}
+
+/**
+ * What a preview turn says in place of an action it did not take (ADR-038).
+ * It names the action (`would`: the phrase that fits "the assistant would …" in
+ * each language), and says nothing was done:
+ * a preview must never read as though a guest had been answered or a request
+ * filed. The label comes from the agents page's own catalogue; an unlisted
+ * tool shows its id.
+ */
+export function previewSimulatedPhrase(locale: string, tool: string): string {
+  const catalogue = catalogues[resolve(locale)]
+  const tools = (catalogue.console as { agents?: { tools?: Record<string, { would?: string }> } })
+    .agents?.tools
+  const action = tools?.[tool]?.would ?? tool
+  return interpolate(catalogue.concierge.previewSimulated, { action })
+}
+
 /** The same, when nobody is on shift — see design-notes/stay-messaging.md §4D. */
 export function escalatedOutOfHoursPhrase(locale: string, hours: string): string {
   return interpolate(catalogues[resolve(locale)].concierge.escalatedOutOfHours, { hours })
@@ -97,4 +138,73 @@ export function escalatedOutOfHoursPhrase(locale: string, hours: string): string
  */
 export function disclosurePhrase(locale: string): string {
   return catalogues[resolve(locale)].concierge.disclosure
+}
+
+/**
+ * The emergency hard rule's reply (ADR-021). A fixed template, not generated:
+ * 112 is the one fact it states, and it is true everywhere we operate.
+ */
+export function emergencyPhrase(locale: string): string {
+  return catalogues[resolve(locale)].concierge.emergency
+}
+
+/** Said when a profile's action needs a person to approve it first (ADR-021, T2). */
+export function approvalPendingPhrase(locale: string): string {
+  return catalogues[resolve(locale)].concierge.approvalPending
+}
+
+/** The Guest Desk tools' phrases (WP0.3). Keys are checked against the English catalogue. */
+export type DeskPhraseKey = Extract<
+  keyof (typeof en)['concierge'],
+  | 'availability'
+  | 'availabilityNone'
+  | 'bookingLink'
+  | 'changeAvailable'
+  | 'changeUnavailable'
+  | 'paymentNone'
+  | 'paymentStatus'
+  | 'charges'
+  | 'prearrivalSent'
+  | 'etaRecorded'
+  | 'captureMissing'
+  | 'captureComplete'
+  | 'captureDetails'
+  | 'captureDocuments'
+  | 'lateCheckoutRequested'
+  | 'invoiceRequested'
+  | 'complaintLogged'
+  | 'ownerNotified'
+  | 'ownerArrivals'
+  | 'ownerArrivalsNone'
+  | 'ownerCapture'
+  | 'ownerCaptureNone'
+  | 'ownerComplaints'
+  | 'ownerComplaintsNone'
+  | 'ownerApprovals'
+  | 'ownerApprovalsNone'
+  | 'decisionLateCheckout'
+  | 'decisionCancelled'
+  | 'decisionPaymentLink'
+  | 'decisionRejected'
+>
+
+/**
+ * One desk phrase, with its facts interpolated. The facts come from the tool
+ * that calls this — rows, never generation (binding rule 7).
+ */
+export function deskPhrase(
+  locale: string,
+  key: DeskPhraseKey,
+  facts: Record<string, string | number> = {},
+): string {
+  return interpolate(
+    catalogues[resolve(locale)].concierge[key],
+    Object.fromEntries(Object.entries(facts).map(([name, value]) => [name, String(value)])),
+  )
+}
+
+/** A complaint category in the reader's language (the owner's lists). */
+export function complaintCategoryLabel(locale: string, category: string): string {
+  const labels = catalogues[resolve(locale)].concierge.complaintCategories as Record<string, string>
+  return labels[category] ?? category
 }

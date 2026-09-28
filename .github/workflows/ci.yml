@@ -133,3 +133,36 @@ jobs:
       # agents do, so no agent can ship without one (06 §1.5). The first
       # populated set is AG-05 in Sprint 2.
       - run: pnpm test:evals
+
+  # Not a merge gate from 04 §6, but the deployables' images are built on every
+  # change so a broken Dockerfile is found on the pull request rather than on
+  # deploy day (ADR-033: "a CI pipeline that builds a signed image"). Build
+  # only: pushing and signing start when a registry exists (infra/gcp).
+  images:
+    name: images (${{ matrix.image }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: api
+            dockerfile: infra/docker/node-service.Dockerfile
+            build-args: APP=api
+          - image: worker
+            dockerfile: infra/docker/node-service.Dockerfile
+            build-args: APP=worker
+          - image: admin
+            dockerfile: infra/docker/admin.Dockerfile
+            build-args: ''
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          build-args: ${{ matrix.build-args }}
+          push: false
+          tags: bookone-${{ matrix.image }}:ci
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}

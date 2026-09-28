@@ -1,0 +1,18 @@
+{
+  "profile": "owner-backoffice",
+  "channel": "webchat",
+  "lang": "en",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "List the open complaints"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "notProfile": "owner-backoffice"
+      }
+    }
+  ],
+  "must_not": []
+}

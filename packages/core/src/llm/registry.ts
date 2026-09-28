@@ -20,7 +20,10 @@ const MAX_VERIFICATION_AGE_DAYS = 365
 export function registerProvider(provider: LlmProvider, now: Date = new Date()): void {
   const { residency, name } = provider
 
-  if (!residency.euProcessing) {
+  // Non-EU processing is refused unless the provider cites ADR-029 — which
+  // still requires everything below, including a register entry that exists.
+  // The exception is a declared, audited transfer, not a missing check.
+  if (!residency.euProcessing && residency.transferException !== 'ADR-029') {
     throw new ResidencyError(name, 'EU processing is not declared')
   }
 

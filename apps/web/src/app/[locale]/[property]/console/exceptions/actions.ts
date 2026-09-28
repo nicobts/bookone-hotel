@@ -1,7 +1,9 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireProperty } from '@/lib/auth/current-property'
+import { getTranslations } from 'next-intl/server'
+import { flash } from '@bookone/ui/lib/flash-server'
+import { requireFeature } from '@/lib/auth/current-property'
 import { retryReflection } from '@/lib/worker'
 
 /**
@@ -13,7 +15,7 @@ import { retryReflection } from '@/lib/worker'
  * underneath both. An owner tapping this four times still produces one booking
  * in their PMS.
  *
- * Authorisation is `requireProperty`, which resolves the property *through the
+ * Authorisation is `requireFeature` (`pms_sync`, ADR-019) over `requireProperty`, which resolves the property *through the
  * signed-in user's memberships* — so a reservation id from another property
  * cannot be retried by pasting it here: the property behind it never resolves
  * for this person, and the id is scoped to that property when the job runs.
@@ -22,12 +24,16 @@ export async function retryReflectionAction(
   context: { locale: string; slug: string },
   formData: FormData,
 ): Promise<void> {
-  const { property } = await requireProperty(context.locale, context.slug)
+  const { property } = await requireFeature(context.locale, context.slug, 'pms_sync')
 
   const reservationId = String(formData.get('reservationId') ?? '')
   if (!reservationId) return
 
-  await retryReflection({ propertyId: property.id, reservationId })
+  const sent = await retryReflection({ propertyId: property.id, reservationId })
+
+  const t = await getTranslations({ locale: context.locale, namespace: 'console.exceptions.toast' })
+  if (sent) await flash.info(t('retrying'), t('retryingDescription'))
+  else await flash.error(t('unreachable'), t('unreachableDescription'))
 
   // The row disappears from the inbox once the reflection lands, which takes a
   // moment. Revalidating now shows the list as it is rather than as it was —

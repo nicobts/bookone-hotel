@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation'
 import { readSimulatedIntent, simulatePayment } from '@/lib/worker'
-import { Button } from '@/components/ui/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════
@@ -107,23 +107,23 @@ export default async function SimulatedCheckoutPage({
         */}
         <form action={action}>
           <input type="hidden" name="outcome" value="succeeded" />
-          <Button type="submit" className="w-full" size="lg">
+          <PendingButton className="w-full" size="lg">
             Simulate a successful payment
-          </Button>
+          </PendingButton>
         </form>
 
         <form action={action}>
           <input type="hidden" name="outcome" value="failed" />
-          <Button type="submit" variant="outline" className="w-full">
+          <PendingButton variant="outline" className="w-full">
             Simulate a declined card
-          </Button>
+          </PendingButton>
         </form>
 
         <form action={action}>
           <input type="hidden" name="outcome" value="abandon" />
-          <Button type="submit" variant="ghost" className="w-full">
+          <PendingButton variant="ghost" className="w-full">
             Go back without paying
-          </Button>
+          </PendingButton>
         </form>
       </div>
     </main>

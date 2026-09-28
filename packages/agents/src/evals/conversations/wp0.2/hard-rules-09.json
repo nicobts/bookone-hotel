@@ -1,0 +1,18 @@
+{
+  "profile": "hard-rules",
+  "channel": "webchat",
+  "lang": "en",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "There is a fire in the corridor"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "hardRule": "emergency"
+      }
+    }
+  ],
+  "must_not": ["answered at T1"]
+}

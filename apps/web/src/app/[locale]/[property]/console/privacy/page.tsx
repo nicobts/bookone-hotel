@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { AlertTriangleIcon, DownloadIcon, SearchIcon, ShieldIcon } from 'lucide-react'
+import { AlertTriangleIcon, SearchIcon, ShieldIcon } from 'lucide-react'
 import {
   declaredPeriods,
   findSubjects,
@@ -8,12 +8,14 @@ import {
   listRequests,
 } from '@bookone/core/privacy'
 import { PageShell } from '@/components/shell/page-shell'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
+import { Badge } from '@bookone/ui/components/badge'
+import { Button } from '@bookone/ui/components/button'
+import { PendingButton } from '@bookone/ui/components/pending-button'
+import { Input } from '@bookone/ui/components/input'
+import { Separator } from '@bookone/ui/components/separator'
 import { requireOwner } from '@/lib/auth/current-property'
 import { Link } from '@/i18n/navigation'
+import { ExportDataButton } from '@/components/privacy/export-data-button'
 import { applyErasure, requestExport } from './actions'
 
 /**
@@ -45,7 +47,7 @@ export default async function PrivacyPage({
   searchParams,
 }: {
   params: Promise<{ locale: string; property: string }>
-  searchParams: Promise<{ q?: string; erase?: string; erased?: string; error?: string }>
+  searchParams: Promise<{ q?: string; erase?: string }>
 }) {
   const { locale, property: slug } = await params
   const query = await searchParams
@@ -91,22 +93,6 @@ export default async function PrivacyPage({
         )
       }
     >
-      {query.erased === 'queued' && (
-        <p className="border-border bg-card rounded-lg border p-4 text-sm">{t('erasureQueued')}</p>
-      )}
-
-      {query.erased === 'pending' && (
-        // Recorded but not running. The obligation is real either way, and the
-        // owner must not be told it is in progress when nothing picked it up.
-        <p className="border-[color:var(--bo-warning-500)] bg-card rounded-lg border p-4 text-sm">
-          {t('erasurePending')}
-        </p>
-      )}
-
-      {query.error === 'unknown-guest' && (
-        <p className="border-border bg-card rounded-lg border p-4 text-sm">{t('unknownGuest')}</p>
-      )}
-
       {/* ------------------------------------------------------------------ */}
       {/* The confirmation screen — carve-outs first, button last            */}
       {/* ------------------------------------------------------------------ */}
@@ -131,9 +117,7 @@ export default async function PrivacyPage({
 
           <form action={applyErasure.bind(null, context)} className="mt-5 flex gap-3">
             <input type="hidden" name="guestId" value={pending.id} />
-            <Button type="submit" variant="destructive">
-              {t('confirmErase')}
-            </Button>
+            <PendingButton variant="destructive">{t('confirmErase')}</PendingButton>
             <Button asChild variant="ghost">
               <Link href={`/${slug}/console/privacy`}>{t('cancel')}</Link>
             </Button>
@@ -189,13 +173,12 @@ export default async function PrivacyPage({
               </div>
 
               <div className="flex gap-2">
-                <form action={requestExport.bind(null, context)}>
-                  <input type="hidden" name="guestId" value={subject.id} />
-                  <Button type="submit" variant="secondary" size="sm">
-                    <DownloadIcon className="size-4" aria-hidden />
-                    {t('export')}
-                  </Button>
-                </form>
+                <ExportDataButton
+                  action={requestExport.bind(null, { ...context, guestId: subject.id })}
+                  label={t('export')}
+                  doneLabel={t('toast.exportRecorded')}
+                  errorLabel={t('toast.exportFailed')}
+                />
 
                 {!subject.erased && (
                   <Button asChild variant="outline" size="sm">

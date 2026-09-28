@@ -9,5 +9,6 @@
 export * from './checklist'
 export * from './egress'
 export * from './entitlements'
+export * from './features'
 export * from './ingest'
 export * from './knowledge'

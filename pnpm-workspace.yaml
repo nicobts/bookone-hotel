@@ -8,6 +8,9 @@ allowBuilds:
   '@parcel/watcher': true
   '@swc/core': true
   esbuild: true
+  # OpenTelemetry's protobuf dependency: its script is a version check we do
+  # not need (the exporters use OTLP over HTTP/JSON). Denied explicitly.
+  protobufjs: false
 
 minimumReleaseAgeExclude:
   - '@eloqnt/format-json@0.0.3'

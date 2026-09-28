@@ -1,0 +1,18 @@
+{
+  "profile": "hard-rules",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Mi fate uno sconto?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "hardRule": "money"
+      }
+    }
+  ],
+  "must_not": ["answered at T1"]
+}

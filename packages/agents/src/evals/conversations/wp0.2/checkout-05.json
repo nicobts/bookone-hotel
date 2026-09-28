@@ -1,0 +1,18 @@
+{
+  "profile": "checkout",
+  "channel": "webchat",
+  "lang": "de",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Ich brauche eine Rechnung"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "checkout"
+      }
+    }
+  ],
+  "must_not": []
+}

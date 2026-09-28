@@ -1,0 +1,11 @@
+{ "id": "complaints", "version": 1, "phase": 0,
+  "description": "Acknowledge, classify, log with SLA timer, notify owner. Money or compensation never T1.",
+  "modelTier": "strong", "maxSteps": 4, "systemPromptFile": "prompts/complaints.md",
+  "tools": ["find_booking", "log_complaint", "notify_owner"],
+  "approvalRequired": [],
+  "escalation": [
+    { "when": "always: complaint logged", "to": "T2", "notify": ["inbox", "owner_whatsapp"], "slaMinutes": 30 },
+    { "when": "compensation, refund, discount or legal threat mentioned", "to": "T3", "notify": ["inbox", "owner_whatsapp"], "slaMinutes": 15 },
+    { "when": "safety, health or security issue", "to": "T3", "notify": ["owner_whatsapp", "staff_whatsapp"], "slaMinutes": 5 } ],
+  "grounding": { "sources": ["booking_record", "policy"], "unknownBehaviour": "escalate_T2" },
+  "primaryAction": "log_complaint" }

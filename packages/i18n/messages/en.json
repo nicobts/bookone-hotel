@@ -1,14 +1,23 @@
 {
   "common": {
-    "appName": "BookOne",
+    "appName": "BookOne Hotel",
     "loading": "Loading",
     "cancel": "Cancel",
     "save": "Save",
-    "retry": "Try again"
+    "retry": "Try again",
+    "notifications": "Notifications",
+    "close": "Close",
+    "thinking": "Writing a reply"
   },
   "auth": {
     "brandLine": "Every stay, handled.",
     "brandLineEmphasis": "handled.",
+    "brandTagline": "For independent hotels in Italy, Austria and Slovenia",
+    "coverAlt": "The reception desk of a small hotel at dusk, with a service bell and room keys",
+    "language": "Language",
+    "legal": "Legal",
+    "terms": "Terms and conditions",
+    "privacyPolicy": "Privacy policy",
     "email": "Email",
     "password": "Password",
     "emailPlaceholder": "you@hotel.example",
@@ -66,7 +75,10 @@
     "report": "Revenue",
     "setup": "Setup",
     "knowledge": "Knowledge",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "approvals": "Approvals",
+    "assistant": "Assistant",
+    "agents": "Agents"
   },
   "property": {
     "switcher": {
@@ -108,7 +120,13 @@
       "reason": "Reason",
       "waiting": "Waiting to be sent",
       "alloggiatiTitle": "Police registration overdue",
-      "alloggiatiBody": "This guest arrived more than 20 hours ago and the filing is not confirmed."
+      "alloggiatiBody": "This guest arrived more than 20 hours ago and the filing is not confirmed.",
+      "toast": {
+        "retrying": "Retry started",
+        "retryingDescription": "The row disappears as soon as the booking reaches your PMS.",
+        "unreachable": "The retry did not start",
+        "unreachableDescription": "The service did not respond. Try again in a moment."
+      }
     },
     "arrival": {
       "title": "Arrival",
@@ -128,7 +146,45 @@
       "documentDeleted": "Document deleted",
       "simulated": "No channel is connected — nothing is actually filed with any authority.",
       "receipt": "Receipt held",
-      "checksum": "Payload checksum"
+      "checksum": "Payload checksum",
+      "schedina": "Registration record (preview)",
+      "schedinaHint": "Exactly what would be filed. Nothing is sent from here; check it against the documents, then confirm.",
+      "schedinaNotReady": "Not ready — fields missing:",
+      "confirmDocuments": "Confirm",
+      "documentsConfirmed": "Confirmed by staff",
+      "confirmNote": "Confirming says the record matches the documents you checked. It is not an identity check.",
+      "schedinaFields": {
+        "guestType": "Guest type",
+        "arrivalDate": "Arrival",
+        "nights": "Nights",
+        "surname": "Surname",
+        "givenName": "Given name",
+        "sex": "Sex",
+        "birthDate": "Date of birth",
+        "birthPlaceCode": "Place of birth",
+        "birthProvince": "Province of birth",
+        "birthCountryCode": "Country of birth",
+        "citizenshipCode": "Citizenship",
+        "documentType": "Document type",
+        "documentNumber": "Document number",
+        "documentIssuerCode": "Issued in"
+      },
+      "ocrValid": "Document read: machine-readable zone checks out",
+      "ocrInvalid": "Photo unreadable — ask the guest for a new one",
+      "ocrPrinted": "Read from print only — check it against the document",
+      "ocrMismatch": "Differs from the document: {fields}",
+      "toast": {
+        "arrived": "Arrival recorded",
+        "arrivedDescription": "The guest's stay has started.",
+        "unreachable": "That did not go through",
+        "unreachableDescription": "The service did not respond. Try again in a moment.",
+        "filing": "Filing started",
+        "filingDescription": "The result appears on this page as soon as it arrives.",
+        "confirmed": "Documents confirmed",
+        "confirmedDescription": "The confirmation is recorded in your name.",
+        "notConfirmed": "Could not confirm",
+        "notConfirmedDescription": "A registration field or a guest's document is missing."
+      }
     },
     "conversations": {
       "title": "Conversations",
@@ -146,7 +202,7 @@
       "replyLabel": "Your reply",
       "replyPlaceholder": "Reply to the guest",
       "send": "Send",
-      "noModel": "No language model is connected. The assistant answers only from the property knowledge base and passes everything else to a person.",
+      "noModel": "The assistant answers only from the property's own information and tools, and never writes its own sentences. Everything else comes to a person.",
       "facts": {
         "reference": "Reference",
         "language": "Language",
@@ -184,6 +240,34 @@
           "settled": "Checked out",
           "closed": "Closed"
         }
+      },
+      "actions": "Assistant actions",
+      "undo": "Undo",
+      "undone": "Undone",
+      "pendingApproval": "waiting for approval",
+      "refused": "refused",
+      "failedAction": "failed",
+      "handoff": "Handed over because: {rule}",
+      "complaints": "Complaints",
+      "slaDue": "respond by {time}",
+      "slaBreached": "response overdue since {time}",
+      "rules": {
+        "emergency": "an emergency",
+        "money": "money, a refund or compensation",
+        "identity": "identity or legal status",
+        "unknown_twice": "the request was not understood twice"
+      },
+      "approved": "approved",
+      "declined": "rejected by staff",
+      "toast": {
+        "takenOver": "Conversation taken over",
+        "takenOverDescription": "This conversation is yours now.",
+        "handedBack": "Conversation released",
+        "handedBackDescription": "It is back with the unassigned ones.",
+        "sent": "Reply sent",
+        "undone": "Action undone",
+        "notUndone": "Could not undo",
+        "notUndoneDescription": "This action can no longer be undone."
       }
     },
     "report": {
@@ -234,7 +318,19 @@
           "credit": "Credit",
           "net": "Net",
           "evidence": "Attribution reason"
-        }
+        },
+        "done": "CSV downloaded"
+      },
+      "toast": {
+        "issued": "Statement confirmed",
+        "issuedDescription": "The period is closed: the invoice will follow these amounts.",
+        "alreadyIssued": "This statement is already confirmed.",
+        "notIssued": "No statement found for this period.",
+        "disputed": "Dispute recorded",
+        "disputedDescription": "The amount has been credited on the statement.",
+        "alreadyDisputed": "This line is already disputed.",
+        "notDisputed": "Could not dispute",
+        "notDisputedDescription": "This line cannot be disputed."
       }
     },
     "setup": {
@@ -316,7 +412,23 @@
       "save": "Save",
       "create": "Add",
       "newHeading": "Add an answer",
-      "newHint": "A language left empty is a language the assistant will fetch a person for. It never translates."
+      "newHint": "A language left empty is a language the assistant will fetch a person for. It never translates.",
+      "toast": {
+        "saved": "Answer saved",
+        "savedDescription": "The concierge uses it straight away.",
+        "savedDraft": "Draft saved",
+        "published": "Answer published",
+        "publishedDescription": "The concierge uses it straight away.",
+        "unpublished": "Answer withdrawn",
+        "unpublishedDescription": "The concierge no longer uses it. It stays in the history.",
+        "notSaved": "Answer not saved",
+        "reasons": {
+          "topicRequired": "A topic is required.",
+          "topicTooLong": "A topic should be a word or two.",
+          "answerRequired": "Write the answer in at least one language.",
+          "other": "Try again in a moment."
+        }
+      }
     },
     "privacy": {
       "title": "Privacy",
@@ -361,7 +473,306 @@
         "fee_events": "What we charged this property",
         "alloggiati_submissions": "The Questura filing",
         "privacy_requests": "This request"
+      },
+      "toast": {
+        "exportRecorded": "Request recorded: the download is starting",
+        "erasureQueued": "Erasure started",
+        "erasurePending": "Erasure recorded, not yet applied",
+        "exportFailed": "The export could not be started. Try again."
       }
+    },
+    "approvals": {
+      "title": "Approvals",
+      "subtitle": "Actions the assistant held for a person. Nothing here has happened yet.",
+      "empty": "Nothing is waiting for a decision.",
+      "approve": "Approve",
+      "reject": "Reject",
+      "openThread": "Open the conversation",
+      "rejectNote": "Rejecting sends the guest a reply that a person will follow up.",
+      "tools": {
+        "cancel_booking": "Cancel the booking",
+        "create_payment_link": "Send a payment link",
+        "request_late_checkout": "Late checkout"
+      },
+      "toast": {
+        "approved": "Approved",
+        "approvedDescription": "The guest has the reply in their conversation.",
+        "rejected": "Rejected",
+        "rejectedDescription": "The guest was told someone will follow up.",
+        "gone": "This request has already been decided.",
+        "failed": "The action could not be carried out",
+        "failedDescription": "Reason: {reason}. Nothing was sent to the guest."
+      }
+    },
+    "assistant": {
+      "title": "Assistant",
+      "subtitle": "Ask about your property: arrivals, missing documents, complaints, approvals.",
+      "placeholder": "How many arrivals tomorrow?",
+      "examples": "It answers from your own data and changes nothing.",
+      "ask": "Ask",
+      "working": "Looking it up…",
+      "notUnderstood": "I can answer about arrivals, missing documents, complaints and approvals.",
+      "emptyTitle": "Ask about your property",
+      "emptyDescription": "The assistant reads your own data and changes nothing.",
+      "suggestions": [
+        "Who hasn't sent their documents yet?",
+        "How many arrivals tomorrow?",
+        "Are there open complaints?",
+        "What is waiting for my approval?"
+      ],
+      "unavailable": "The assistant could not be reached. Try again in a moment.",
+      "timeout": "No answer yet. The assistant may be busy; try again in a moment."
+    },
+    "settings": {
+      "supportTitle": "BookOne support access",
+      "supportBody": "Every time someone at BookOne opened a read-only view of this property, with the reason they gave. A view lasts 30 minutes and cannot change anything.",
+      "supportNone": "Nobody from BookOne has viewed this property.",
+      "supportWho": "Who",
+      "supportWhen": "When",
+      "supportWhy": "Reason",
+      "supportUntil": "Until"
+    },
+    "agents": {
+      "title": "Agents",
+      "subtitle": "What each assistant does for this property, and how it behaves",
+      "active": "Active",
+      "off": "Not included",
+      "paused": "Paused by BookOne",
+      "background": "Runs on its own",
+      "ownerOnly": "Only the owner can talk to it",
+      "whoFor": "For",
+      "profiles": {
+        "pre-sale": {
+          "name": "Before booking",
+          "description": "People who have not booked yet: availability, prices, which room fits, and a link to book directly."
+        },
+        "general-info": {
+          "name": "Information",
+          "description": "Questions about the property and the area, answered only from your knowledge base."
+        },
+        "pre-arrival": {
+          "name": "Before arrival",
+          "description": "The pre-arrival link, the arrival time, the documents still missing, and how to get here."
+        },
+        "booking-support": {
+          "name": "Existing booking",
+          "description": "Looking up the booking, requesting changes, cancelling within your policy — a cancellation waits for you."
+        },
+        "payments": {
+          "name": "Payments",
+          "description": "Payment status and charges explained. A payment link waits for you; refunds always go to a person."
+        },
+        "checkout": {
+          "name": "Checkout",
+          "description": "Late checkout (waits for your approval), invoice requests, luggage and transport."
+        },
+        "complaints": {
+          "name": "Complaints",
+          "description": "Acknowledged, logged with a deadline, and the manager told at once. Compensation is never decided by the assistant."
+        },
+        "owner-backoffice": {
+          "name": "Owner questions",
+          "description": "Arrivals, missing documents, open complaints and pending approvals, read from your data."
+        }
+      },
+      "tools": {
+        "search_knowledge": {
+          "label": "Answer from your knowledge base",
+          "would": "answer from your knowledge base"
+        },
+        "get_hotel_policy": {
+          "label": "Quote one of your policies",
+          "would": "quote one of your policies"
+        },
+        "find_booking": {
+          "label": "Look up the guest's own booking",
+          "would": "look up the guest's own booking"
+        },
+        "check_availability": {
+          "label": "Check availability",
+          "would": "check availability"
+        },
+        "quote_stay": {
+          "label": "Quote a stay from your rates",
+          "would": "quote a stay from your rates"
+        },
+        "create_booking_link": {
+          "label": "Send a link to your booking page",
+          "would": "send a link to your booking page"
+        },
+        "modify_booking": {
+          "label": "Request a change to dates or guests",
+          "would": "ask the property to change the booking's dates or guests"
+        },
+        "cancel_booking": {
+          "label": "Cancel within your policy",
+          "would": "cancel the booking within your policy"
+        },
+        "create_payment_link": {
+          "label": "Send a payment link",
+          "would": "send the guest a payment link"
+        },
+        "get_payment_status": {
+          "label": "Check a payment's status",
+          "would": "check the payment's status"
+        },
+        "explain_charges": {
+          "label": "Explain the charges",
+          "would": "explain the charges"
+        },
+        "send_prearrival_link": {
+          "label": "Send the pre-arrival link",
+          "would": "send the guest the pre-arrival link"
+        },
+        "record_eta": {
+          "label": "Note the arrival time",
+          "would": "note the guest's arrival time"
+        },
+        "get_capture_status": {
+          "label": "Check what the guest still has to send",
+          "would": "check what the guest still has to send"
+        },
+        "request_late_checkout": {
+          "label": "Request a late checkout",
+          "would": "ask you to approve a late checkout"
+        },
+        "request_invoice": {
+          "label": "Pass on an invoice request",
+          "would": "pass the invoice request on to you"
+        },
+        "log_complaint": {
+          "label": "Log a complaint and tell the manager",
+          "would": "log the complaint and tell the manager"
+        },
+        "notify_owner": {
+          "label": "Tell the manager about the conversation",
+          "would": "tell the manager about this conversation"
+        },
+        "escalate": {
+          "label": "Hand the conversation to a person",
+          "would": "hand the conversation to a person"
+        },
+        "create_task": {
+          "label": "File a request for your team",
+          "would": "file a request for your team"
+        },
+        "list_arrivals": {
+          "label": "List arrivals",
+          "would": "list the arrivals"
+        },
+        "list_capture_status": {
+          "label": "Show who is missing documents",
+          "would": "show who is missing documents"
+        },
+        "list_open_complaints": {
+          "label": "List open complaints",
+          "would": "list the open complaints"
+        },
+        "list_pending_approvals": {
+          "label": "List what waits for your approval",
+          "would": "list what waits for your approval"
+        },
+        "classify_discrepancy": {
+          "label": "Classify a difference with your PMS",
+          "would": "classify a difference with your PMS"
+        },
+        "audit_attribution": {
+          "label": "Re-check fees against their evidence",
+          "would": "re-check fees against their evidence"
+        },
+        "credit_unevidenced_fee": {
+          "label": "Credit a fee without evidence",
+          "would": "credit a fee that lacks evidence"
+        },
+        "draft_knowledge": {
+          "label": "Draft answers from your website",
+          "would": "draft answers from your website"
+        }
+      },
+      "rules": {
+        "emergency": {
+          "name": "Emergency",
+          "description": "Someone may be in danger: the guest gets the emergency number, a person is alerted, and the assistant stops replying in that conversation."
+        },
+        "money": {
+          "name": "Money",
+          "description": "Refunds, compensation and discounts always go to a person, never to the assistant."
+        },
+        "identity": {
+          "name": "Identity and legal matters",
+          "description": "Identity, legal status or a compliance outcome is never decided by the assistant."
+        },
+        "unknown_twice": {
+          "name": "Not understood twice",
+          "description": "If the assistant cannot tell what a guest wants twice in a row, a person takes over with the full conversation."
+        }
+      },
+      "rulesIntro": "These are code, not instructions: they apply before any model is asked.",
+      "classRead": "Reads",
+      "classAction": "Acts",
+      "classApproval": "Needs your approval",
+      "legend": "Reads: looks something up and changes nothing. Acts: does something you can see in the console. Needs your approval: waits for a person before anything happens.",
+      "activity": "Last 7 days",
+      "turns": "{count, plural, =0 {No conversations} one {# conversation turn} other {# conversation turns}}",
+      "handedOver": "{count, plural, =0 {none handed to a person} one {# handed to a person} other {# handed to a person}}",
+      "pending": "{count, plural, =0 {nothing waiting for approval} one {# waiting for approval} other {# waiting for approval}}",
+      "lastRun": "Last run {when}",
+      "never": "No activity yet",
+      "try": "Try it",
+      "tryOwner": "Ask a question",
+      "previewTitle": "Try the concierge",
+      "previewDescription": "A preview: it answers from your real knowledge base and rules, but nothing is sent to anyone and no action is taken. Actions show what would happen.",
+      "previewAs": "Speak as",
+      "previewNoStay": "A guest without a booking",
+      "previewPlaceholder": "Write as a guest…",
+      "previewEmptyTitle": "Write as a guest would",
+      "previewEmptyDescription": "Try a question, a request, a complaint. Each reply shows which part of the assistant answered and what it would do.",
+      "outcomeAnswered": "Answered",
+      "outcomeEscalated": "Handed to a person",
+      "outcomeFailed": "Failed — handed to a person",
+      "outcomeRefused": "Refused",
+      "outcomeNotUnderstood": "Not understood",
+      "simulated": "would do, not done",
+      "approvalWaits": "would wait for approval",
+      "ruleFired": "Rule: {rule}",
+      "profileUsed": "Handled by: {profile}",
+      "previewSuggestions": [
+        "What time is breakfast?",
+        "Do you have a sauna?",
+        "Can we check out at 1 pm?",
+        "I want a refund.",
+        "The room is dirty, this is unacceptable."
+      ],
+      "agents": {
+        "AG-01": {
+          "name": "Guest concierge",
+          "purpose": "Answers your guests in their language, from what you have written, and hands anything else to your team.",
+          "audience": "Your guests, on the stay page and WhatsApp"
+        },
+        "AG-06": {
+          "name": "Owner's assistant",
+          "purpose": "Answers your questions about the property from your own data. It only reads; it changes nothing.",
+          "audience": "The owner"
+        },
+        "AG-05": {
+          "name": "PMS reconciliation",
+          "purpose": "Every night, compares bookings here with your PMS and explains any difference.",
+          "audience": "Runs on its own"
+        },
+        "AG-07": {
+          "name": "Fee auditor",
+          "purpose": "Re-checks every fee attributed to the assistant against its evidence, and credits it back when the evidence is missing.",
+          "audience": "Runs on its own"
+        },
+        "AG-03": {
+          "name": "Knowledge drafts",
+          "purpose": "Reads your website during setup and drafts answers for you to review. Nothing is published until you do.",
+          "audience": "Runs on its own"
+        }
+      },
+      "sectionProfiles": "What it handles",
+      "sectionTools": "What it can do",
+      "sectionRules": "Rules it never breaks"
     }
   },
   "noProperty": {
@@ -648,7 +1059,10 @@
       "replace": "Replace",
       "send": "Send document",
       "needParty": "Add the guests first, then attach a document for each of them.",
-      "retention": "The property deletes these once your stay is registered with the authorities. Only the receipt is kept."
+      "retention": "The property deletes these once your stay is registered with the authorities. Only the receipt is kept.",
+      "consent": "I have read how my data is used, and I agree that the property processes my identity document to register my stay.",
+      "retentionAfterStay": "The property deletes these photos {days, plural, one {the day} other {# days}} after you leave. Nothing is kept.",
+      "unreadable": "We could not read this photo clearly. Please send a sharper one: flat, in good light, with every line of the document visible."
     },
     "arrival": {
       "heading": "When will you arrive?",
@@ -668,7 +1082,8 @@
       "notConfigured": "Check-in is not available in this environment.",
       "upload": "That file could not be accepted. Use a JPEG, PNG or PDF under 10 MB.",
       "generic": "Something went wrong. Try again.",
-      "message": "Your message could not be sent. Please try again."
+      "message": "Your message could not be sent. Please try again.",
+      "consent": "Please read how your data is used and tick the box before sending a document."
     },
     "arrived": {
       "heading": "Are you here?",
@@ -706,6 +1121,21 @@
         "address": "Address (optional)",
         "sent": "Your invoice request has been passed to the property."
       }
+    },
+    "privacy": {
+      "heading": "How your data is used",
+      "controller": "{property} is responsible for your data. BookOne runs this page on its behalf.",
+      "purpose": "Your details and identity documents are collected because Italian law requires every guest to be registered with the police (TULPS art. 109).",
+      "retention": "Document photos are deleted once registration is done, or shortly after you leave. Registration details are kept for 30 days after your stay; the filing receipt is kept as the law requires.",
+      "location": "Everything is stored in the EU. Messages you write here, and document photos when the property uses automatic reading, may be processed by an automated service that can run outside the EU; it keeps nothing.",
+      "rights": "You can ask the property to see, correct or delete your data."
+    },
+    "toast": {
+      "partySaved": "Guest details saved",
+      "documentSaved": "Document received",
+      "documentSavedDescription": "The property checks it before you arrive.",
+      "arrivalSaved": "Arrival time saved",
+      "messageSent": "Message sent"
     }
   },
   "concierge": {
@@ -713,7 +1143,51 @@
     "reservationRoom": "Room: {room}.",
     "taskRecorded": "I have written this down and the property can see it. If nobody has come back to you, tell me again and I will make sure someone does.",
     "escalated": "I do not want to guess at this one, so I have passed it to the property. Someone will reply here.",
+    "paused": "Your message has reached the property. Someone will reply here.",
     "escalatedOutOfHours": "I do not want to guess at this one, so I have passed it to the property. The desk answers {hours}, so it may be a little while.",
-    "disclosure": "You are messaging an assistant. It answers from what the property has written down, and passes anything else to a person."
+    "disclosure": "You are messaging an assistant. It answers from what the property has written down, and passes anything else to a person.",
+    "emergency": "If anyone is in danger, call 112 now. It is free from any phone, anywhere in the EU. I have marked this conversation urgent for the property's staff, and automatic replies here have stopped.",
+    "approvalPending": "This needs a person's approval, so I have passed it to the property. Someone will reply here.",
+    "availability": "For {arrival} to {departure} we have: {rooms}.",
+    "availabilityNone": "I am sorry, nothing is free from {arrival} to {departure}.",
+    "bookingLink": "You can book it directly here: {url}",
+    "changeAvailable": "Your room is free from {arrival} to {departure}. I have passed the change to the property to confirm; someone will reply here.",
+    "changeUnavailable": "Your room is not free from {arrival} to {departure}. I have passed your request to the property; someone will reply here.",
+    "paymentNone": "No payment has been recorded on your booking yet. The total is {total}.",
+    "paymentStatus": "We have received {paid} of {total} for your booking.",
+    "charges": "Your booking comes to {total}. {paid} has been paid and {balance} remains. Extras and the tourist tax are settled at the property.",
+    "prearrivalSent": "I have sent the pre-arrival link to the email address on your booking.",
+    "etaRecorded": "Noted: you expect to arrive around {time}.",
+    "captureMissing": "Before you arrive we still need: {items}. You can do it from the link in your email.",
+    "captureComplete": "Everything we need before your arrival is in.",
+    "captureDetails": "your guest details",
+    "captureDocuments": "your identity documents",
+    "lateCheckoutRequested": "I have asked the property about checking out at {time}. Someone will confirm here.",
+    "invoiceRequested": "I have passed your invoice request to the property. They issue invoices themselves and will send it to you.",
+    "complaintLogged": "I am sorry about this. I have recorded it and told the manager straight away.",
+    "ownerNotified": "I have let the manager know.",
+    "ownerArrivals": "{count} arrivals on {date}: {names}.",
+    "ownerArrivalsNone": "No arrivals on {date}.",
+    "ownerCapture": "Still missing pre-arrival: {list}.",
+    "ownerCaptureNone": "Every arriving guest has sent what we need.",
+    "ownerComplaints": "{count} open complaints: {list}.",
+    "ownerComplaintsNone": "No open complaints.",
+    "ownerApprovals": "{count} actions are waiting for your approval: {list}.",
+    "ownerApprovalsNone": "Nothing is waiting for your approval.",
+    "complaintCategories": {
+      "room": "room",
+      "noise": "noise",
+      "cleanliness": "cleanliness",
+      "staff": "staff",
+      "billing": "billing",
+      "safety": "safety",
+      "other": "other"
+    },
+    "decisionLateCheckout": "Good news: your checkout at {time} is confirmed.",
+    "decisionCancelled": "Your booking is now cancelled, as you asked.",
+    "decisionPaymentLink": "Here is your payment link: {url}",
+    "decisionRejected": "The property could not approve this request. Someone will reply here with the alternatives.",
+    "unmatchedSender": "This number belongs to {property}. We could not match yours to a current booking, so nothing has been passed on. If you have a booking, write from the number you gave when booking or use the link in your confirmation. To book: {link}",
+    "previewSimulated": "Preview: at this point the assistant would {action}. Nothing was done and nobody was contacted."
   }
 }

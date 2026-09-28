@@ -1345,6 +1345,20 @@ export const messageAuthor = pgEnum('message_author', ['guest', 'agent', 'staff'
 /** A task's life. Small on purpose — see `stayTasks`. */
 export const taskStatus = pgEnum('task_status', ['open', 'done', 'cancelled'])
 
+/** What a complaint is about (Guest Desk WP0.3). `safety` has the shortest SLA. */
+export const complaintCategory = pgEnum('complaint_category', [
+  'room',
+  'noise',
+  'cleanliness',
+  'staff',
+  'billing',
+  'safety',
+  'other',
+])
+
+/** Open until somebody resolves it; acknowledged when a person has picked it up. */
+export const complaintStatus = pgEnum('complaint_status', ['open', 'acknowledged', 'resolved'])
+
 /** Which side of the folio line an extra came from. See `stayExtras`. */
 export const extraSource = pgEnum('extra_source', ['platform', 'pms'])
 
@@ -1588,6 +1602,109 @@ export const stayTasks = pgTable(
     check('stay_tasks_summary_not_empty', sql`length(btrim(${t.summary})) > 0`),
     /** Done means done at a time. A completed task with no timestamp cannot be reported on. */
     check('stay_tasks_done_has_time', sql`${t.status} <> 'done' or ${t.completedAt} is not null`),
+  ],
+)
+
+/**
+ * Every operator action, append-only (ADR-031, Guest Desk WP0.8).
+ *
+ * Written by `apps/admin` through `withAdminAudit`, one row per mutation, with
+ * the reason the operator gave and what changed. A trigger refuses UPDATE and
+ * DELETE (see the paired migration): the record of who changed a hotel's
+ * configuration is not itself configurable.
+ *
+ * `property_id` carries no foreign key on purpose. A cascade from a deleted
+ * property would have to delete or null these rows, which is exactly what an
+ * append-only table must not do; the id stays as the record of which property
+ * was touched.
+ *
+ * No client policy: nothing but the admin app's service path reads or writes it.
+ */
+export const adminAudit = pgTable(
+  'admin_audit',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** `staff:{id}` — an identity from the staff IdP, never a hotel user (ADR-031). */
+    actor: text('actor').notNull(),
+    actorEmail: text('actor_email'),
+    /** Verb-noun, e.g. `feature.grant`, `agent.pause`. */
+    action: text('action').notNull(),
+    targetType: text('target_type').notNull(),
+    targetId: text('target_id').notNull(),
+    propertyId: uuid('property_id'),
+    /** Why — required for every mutation. */
+    reason: text('reason').notNull(),
+    before: jsonb('before'),
+    after: jsonb('after'),
+    ip: text('ip'),
+    at: timestamp('at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('admin_audit_property_idx').on(t.propertyId, t.at),
+    index('admin_audit_actor_idx').on(t.actor, t.at),
+    check('admin_audit_reason_not_empty', sql`length(btrim(${t.reason})) >= 3`),
+  ],
+)
+
+/**
+ * A guest's complaint (Guest Desk WP0.3, the `complaints` profile).
+ *
+ * Not a task. A task records something to do; a complaint records that a guest
+ * is unhappy, with a clock on how soon a person must respond. The profile
+ * always hands a complaint to a person (T2), and the owner is told when it is
+ * logged, not when the SLA runs out.
+ *
+ * **The deadline comes from the database's clock.** `sla_due_at` is computed in
+ * the insert from `now()` and `sla_minutes`, so the deadline and `created_at`
+ * share one clock — the rule the entitlements constraint bug taught (Sprint 9).
+ *
+ * Nothing here is money. A complaint that mentions a refund has already been
+ * stopped by the money hard rule before any profile runs (ADR-021); a
+ * compensation decision, if there is one, is a person's, made elsewhere.
+ */
+export const complaints = pgTable(
+  'complaints',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+    reservationId: uuid('reservation_id')
+      .notNull()
+      .references(() => reservations.id, { onDelete: 'cascade' }),
+    /** The conversation it came from, when it came from one. */
+    threadId: uuid('thread_id').references(() => messageThreads.id, { onDelete: 'set null' }),
+
+    category: complaintCategory('category').notNull(),
+    /** What the guest said, in their words where possible. */
+    summary: text('summary').notNull(),
+
+    status: complaintStatus('status').notNull().default('open'),
+
+    /** How soon a person must respond: 5 for safety, 30 otherwise. */
+    slaMinutes: integer('sla_minutes').notNull(),
+    slaDueAt: timestamp('sla_due_at', { withTimezone: true }).notNull(),
+
+    /** `guest`, `staff:{uuid}`, `agent:AG-01` — the actor vocabulary of `domain_events`. */
+    createdBy: text('created_by').notNull(),
+
+    ownerAlertedAt: timestamp('owner_alerted_at', { withTimezone: true }),
+    /** Stamped when the SLA ran out unresolved and the manager was told, so they are told once (WP0.6). */
+    breachAlertedAt: timestamp('breach_alerted_at', { withTimezone: true }),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+    resolvedBy: text('resolved_by'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('complaints_property_status_idx').on(t.propertyId, t.status),
+    index('complaints_reservation_idx').on(t.reservationId),
+    check('complaints_summary_not_empty', sql`length(btrim(${t.summary})) > 0`),
+    check('complaints_sla_positive', sql`${t.slaMinutes} > 0`),
+    /** Resolved means resolved at a time, by someone. */
+    check(
+      'complaints_resolved_has_time',
+      sql`${t.status} <> 'resolved' or (${t.resolvedAt} is not null and ${t.resolvedBy} is not null)`,
+    ),
   ],
 )
 

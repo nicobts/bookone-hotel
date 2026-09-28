@@ -1,4 +1,10 @@
-import type { JobQueue } from '@bookone/core/jobs'
+import type { JobHandler, JobName, JobQueue } from '@bookone/core/jobs'
+import {
+  createFeatureCheck,
+  gateOpen,
+  JOB_FEATURE,
+  type FeatureCheck,
+} from '@bookone/core/onboarding'
 import type { PmsAdapter } from '@bookone/core/adapters'
 import { refreshAvailability, reconcileBookingDomain, reflectReservation } from '@bookone/core/sync'
 import { expireHolds } from '@bookone/core/booking'
@@ -20,7 +26,9 @@ import {
 import {
   alertEscalation,
   auditToolBoundary,
+  listBreachedComplaints,
   listOverdueEscalations,
+  markComplaintBreachAlerted,
   markSlaAlerted,
   propertiesWithAgentReplies,
 } from '@bookone/core/concierge'
@@ -41,8 +49,29 @@ import {
 import { eraseGuest, resolveRequest, runRetention } from '@bookone/core/privacy'
 import { guestActor, systemActor, userActor } from '@bookone/core/events'
 import { runAgent } from '@bookone/agents/runner'
+import { listProviders } from '@bookone/core/llm'
+import { readDocument } from '@bookone/core/alloggiati'
+import { getDocumentPath, recordDocumentReading } from '@bookone/core/journey'
 import { respondToGuestMessage } from '@bookone/agents/concierge'
+import { respondToOwner } from '@bookone/agents/owner'
+import {
+  channelTarget,
+  getPropertyBasics,
+  pendingReplies,
+  recordDelivery,
+  recordDeliveryFailure,
+  threadsWithPendingReplies,
+} from '@bookone/core/channels'
+import { isEntitled } from '@bookone/core/onboarding'
+import { recordPreview } from '@bookone/core/preview'
+import {
+  getReservationFacts,
+  ownerNotUnderstoodPhrase,
+  unmatchedSenderPhrase,
+} from '@bookone/core/concierge'
 import type { Logger } from 'pino'
+import { traceJob } from '@bookone/core/telemetry'
+import { syncPropertySchedules } from './schedules'
 
 /**
  * Job handlers.
@@ -68,6 +97,11 @@ export interface HandlerDeps {
    */
   deleteObject: (path: string) => Promise<boolean>
   /**
+   * Reads one stored document as base64 (WP0.4). Injected for the same reason
+   * as `deleteObject`. Optional: without it the extraction job reads nothing.
+   */
+  readObject?: (path: string) => Promise<{ mediaType: string; data: string } | null>
+  /**
    * The public base URL, for links a guest or an owner will click.
    *
    * Injected rather than read from the environment here, like every other
@@ -76,6 +110,25 @@ export interface HandlerDeps {
    */
   appUrl: string
   logger: Logger
+  /**
+   * A fresh feature check per job run (ADR-019). Defaults to reading
+   * entitlements; injected so the gating test needs no database.
+   */
+  featureCheck?: () => FeatureCheck
+  /**
+   * WhatsApp and SMS (ADR-035), when configured. Provider-neutral on purpose:
+   * the handlers send through the port and ask for a purge, and never learn
+   * which provider that is. Absent, the channel jobs log and do nothing.
+   */
+  messaging?: {
+    provider: NotificationProvider
+    /** Delete a finished message from the provider's log. */
+    purge: (providerMessageId: string) => Promise<void>
+    /** Whether a send error is worth retrying (rate limit, provider down). */
+    retryable: (error: unknown) => boolean
+  } | null
+  /** Approved WhatsApp template ids by notification template (ADR-035). */
+  whatsappTemplates?: Readonly<Record<string, string>>
 }
 
 /**
@@ -144,8 +197,52 @@ const ATTRIBUTION_AUDIT_WINDOW_DAYS = 40
 
 export async function registerHandlers(deps: HandlerDeps): Promise<void> {
   const { queue, adapter, notifications, payments, alloggiati, deleteObject, appUrl, logger } = deps
+  const featureCheck = deps.featureCheck ?? (() => createFeatureCheck())
+  const messaging = deps.messaging ?? null
 
-  await queue.work('reservation.reflect', async (job) => {
+  /**
+   * `queue.work`, gated (ADR-019).
+   *
+   * A job whose payload names a property does nothing for a property without
+   * the job's feature — whoever enqueued it, and whenever. Checked when the job
+   * runs, not when it was sent, so a revoke stops work already queued.
+   *
+   * Cross-property sweeps carry no property; they filter inside, in the query
+   * that feeds them.
+   */
+  async function work<N extends JobName>(name: N, handler: JobHandler<N>): Promise<void> {
+    const gate = JOB_FEATURE[name]
+
+    await queue.work(name, async (job) => {
+      const propertyId = (job.data as { propertyId?: unknown }).propertyId
+
+      // One span per job run, with duration and outcome as metrics (ADR-036).
+      await traceJob(
+        {
+          name,
+          id: job.id,
+          propertyId: typeof propertyId === 'string' ? propertyId : null,
+          ...(job.trace ? { trace: job.trace } : {}),
+        },
+        () => run(job, propertyId),
+      )
+    })
+
+    async function run(job: Parameters<JobHandler<N>>[0], propertyId: unknown): Promise<void> {
+      if (
+        gate !== 'core' &&
+        typeof propertyId === 'string' &&
+        !(await gateOpen(featureCheck(), propertyId, gate))
+      ) {
+        logger.info({ jobId: job.id, job: name, propertyId, feature: gate }, 'skipped: feature off')
+        return
+      }
+
+      await handler(job)
+    }
+  }
+
+  await work('reservation.reflect', async (job) => {
     const { propertyId, reservationId } = job.data
 
     const outcome = await reflectReservation({ adapter }, { propertyId, reservationId })
@@ -156,7 +253,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     )
   })
 
-  await queue.work('availability.refresh', async (job) => {
+  await work('availability.refresh', async (job) => {
     const { propertyId, from, to } = job.data
 
     const result = await refreshAvailability({ adapter }, { propertyId, from, to })
@@ -179,7 +276,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     )
   })
 
-  await queue.work('reconcile.nightly', async (job) => {
+  await work('reconcile.nightly', async (job) => {
     const { propertyId, domain } = job.data
 
     if (domain !== 'booking') {
@@ -227,7 +324,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('agent.run', async (job) => {
+  await work('agent.run', async (job) => {
     const { propertyId, agent, triggerEventId } = job.data
 
     const outcome = await runAgent({
@@ -250,10 +347,17 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     )
   })
 
-  await queue.work('notification.send', async (job) => {
+  await work('notification.send', async (job) => {
     const { propertyId, notificationId } = job.data
 
-    const outcome = await sendNotification({ provider: notifications }, { notificationId })
+    const outcome = await sendNotification(
+      {
+        provider: notifications,
+        ...(messaging ? { providers: [messaging.provider] } : {}),
+        ...(deps.whatsappTemplates ? { templateIds: deps.whatsappTemplates } : {}),
+      },
+      { notificationId },
+    )
 
     logger.info(
       { jobId: job.id, propertyId, notificationId, outcome: outcome.status },
@@ -268,7 +372,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('notification.sweep', async (job) => {
+  await work('notification.sweep', async (job) => {
     const pending = await listPendingNotifications({
       olderThanSeconds: SWEEP_AFTER_SECONDS,
       limit: SWEEP_BATCH,
@@ -290,7 +394,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('payment.replay', async (job) => {
+  await work('payment.replay', async (job) => {
     const result = await replayLostPayments(
       { adapter: payments },
       { olderThanSeconds: PAYMENT_REPLAY_AFTER_SECONDS, limit: SWEEP_BATCH },
@@ -307,10 +411,11 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('precheckin.sweep', async (job) => {
+  await work('precheckin.sweep', async (job) => {
     const due = await listPrecheckinDue({
       withinHours: PRECHECKIN_WINDOW_HOURS,
       limit: SWEEP_BATCH,
+      feature: 'prearrival',
     })
 
     for (const stay of due) {
@@ -329,7 +434,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('precheckin.invite', async (job) => {
+  await work('precheckin.invite', async (job) => {
     const { propertyId, reservationId } = job.data
 
     const outcome = await sendPrecheckinInvite({ propertyId, reservationId })
@@ -345,7 +450,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('alloggiati.file', async (job) => {
+  await work('alloggiati.file', async (job) => {
     const { propertyId, reservationId } = job.data
 
     const staged = await stageAlloggiati({ propertyId, reservationId, channel: alloggiati.channel })
@@ -381,7 +486,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('alloggiati.check', async (job) => {
+  await work('alloggiati.check', async (job) => {
     const result = await checkPendingAcknowledgements(
       { adapter: alloggiati },
       { limit: SWEEP_BATCH },
@@ -399,7 +504,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('documents.purge', async (job) => {
+  await work('documents.purge', async (job) => {
     const due = await listDocumentsToDelete({ limit: SWEEP_BATCH })
 
     let deleted = 0
@@ -431,7 +536,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * acknowledging would lose the message entirely if the agent were slow, which
    * is the one outcome worse than a slow answer.
    */
-  await queue.work('concierge.reply', async (job) => {
+  await work('concierge.reply', async (job) => {
     const { propertyId, reservationId, threadId, locale, message, intent } = job.data
 
     const outcome = await respondToGuestMessage({
@@ -440,6 +545,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       threadId,
       locale,
       message,
+      appUrl,
       ...(intent ? { intent } : {}),
     })
 
@@ -448,7 +554,47 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
       'concierge.reply',
     )
 
-    if (outcome.status === 'escalated') {
+    // A handover reaches the owner's phone now, not at the SLA reminder
+    // (plan §4: within 60 s). Phone only: the email is the 30-minute reminder.
+    // A paused concierge escalates every message and is excluded — the
+    // operator paused it on purpose and the owner would be paged for each one.
+    if (outcome.status === 'escalated' || outcome.status === 'failed') {
+      await alertEscalation({
+        propertyId,
+        reservationId,
+        threadId,
+        escalatedAt: new Date(),
+        appUrl,
+        reach: 'phone',
+      })
+    }
+
+    // Anything this turn queued for the property — that alert, or one a
+    // complaint tool raised — goes now rather than at the next sweep.
+    for (const row of await listPendingNotifications({
+      olderThanSeconds: -5,
+      limit: SWEEP_BATCH,
+      propertyId,
+    })) {
+      await queue.send(
+        'notification.send',
+        { propertyId: row.propertyId, notificationId: row.id },
+        { singletonKey: `notify:${row.id}` },
+      )
+    }
+
+    // Whatever the turn wrote — an answer, the handover phrase, the paused
+    // acknowledgement — goes to the guest's phone if that is where they wrote
+    // from (ADR-035). A no-op for stay-page threads.
+    if (messaging && outcome.status !== 'silenced') {
+      await queue.send(
+        'channel.deliver',
+        { propertyId, threadId },
+        { singletonKey: `deliver:${threadId}` },
+      )
+    }
+
+    if (outcome.status === 'escalated' || outcome.status === 'paused') {
       // Nudge the SLA sweep's clock into motion rather than waiting up to its
       // whole interval: the property has a guest waiting from now, not from the
       // next tick.
@@ -463,10 +609,11 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * escalation — `sla_alerted_at` is what makes that true. An alert that
    * repeated every sweep would be an alert somebody filters.
    */
-  await queue.work('escalation.sweep', async (job) => {
+  await work('escalation.sweep', async (job) => {
     const overdue = await listOverdueEscalations({
       minutes: ESCALATION_SLA_MINUTES,
       limit: SWEEP_BATCH,
+      feature: 'inbox',
     })
 
     for (const thread of overdue) {
@@ -505,7 +652,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * are occasionally down. A retry here re-attempts the side effects without
    * re-asserting a transition that already happened.
    */
-  await queue.work('arrival.complete', async (job) => {
+  await work('arrival.complete', async (job) => {
     const { propertyId, reservationId, source, userId } = job.data
 
     const outcome = await completeArrival({
@@ -554,7 +701,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * We issue nothing. This forwards what the guest asked for, unaltered, to the
    * people whose certified chain issues the document (D11, binding rule 6).
    */
-  await queue.work('invoice.route', async (job) => {
+  await work('invoice.route', async (job) => {
     const pending = await listUnroutedInvoiceRequests(SWEEP_BATCH)
 
     for (const request of pending) {
@@ -586,7 +733,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * adoption number honest: a stay closed by a sweep and a stay the guest
    * closed themselves are different facts.
    */
-  await queue.work('departure.sweep', async (job) => {
+  await work('departure.sweep', async (job) => {
     const departed = await listDepartedStays({ limit: SWEEP_BATCH })
 
     let closed = 0
@@ -617,7 +764,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * does, and the way it stops holding is somebody adding a helpful sentence
    * eighteen months from now.
    */
-  await queue.work('toolboundary.audit', async (job) => {
+  await work('toolboundary.audit', async (job) => {
     const since = new Date(Date.now() - AUDIT_WINDOW_HOURS * 3_600_000)
     const properties = await propertiesWithAgentReplies(since)
 
@@ -663,7 +810,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * the property has to notice. The only direction this agent can move money is
    * down (06 §2).
    */
-  await queue.work('attribution.audit', async (job) => {
+  await work('attribution.audit', async (job) => {
     const to = new Date()
     const from = new Date(to.getTime() - ATTRIBUTION_AUDIT_WINDOW_DAYS * 86_400_000)
 
@@ -721,7 +868,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * single period chosen by whatever enqueued this would put a midnight booking
    * in the wrong month for any house outside the scheduler's zone.
    */
-  await queue.work('report.generate', async (job) => {
+  await work('report.generate', async (job) => {
     const rows = await listPropertiesForReports()
 
     let built = 0
@@ -760,7 +907,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * Everything it writes is unpublished. There is no tool granted that could
    * publish one, so a failure here costs an owner nothing and reaches no guest.
    */
-  await queue.work('onboarding.ingest', async (job) => {
+  await work('onboarding.ingest', async (job) => {
     const { propertyId, url, locale } = job.data
 
     const run = await runAgent({
@@ -798,7 +945,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * detect afterwards — the data would be half-gone and the deadline evidence
    * would say it was handled.
    */
-  await queue.work('privacy.erase', async (job) => {
+  await work('privacy.erase', async (job) => {
     const { propertyId, guestId, requestId, userId } = job.data
 
     const outcome = await eraseGuest(
@@ -844,7 +991,7 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * renamed, a constraint added — is visible as itself instead of as a total
    * that is quietly lower than last night's.
    */
-  await queue.work('retention.sweep', async (job) => {
+  await work('retention.sweep', async (job) => {
     const { propertyId } = job.data
 
     const outcome = await runRetention({ propertyId })
@@ -870,11 +1017,279 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
-  await queue.work('reservation.expire_holds', async (job) => {
+  await work('reservation.expire_holds', async (job) => {
     const { expired } = await expireHolds()
 
     if (expired > 0) {
       logger.info({ jobId: job.id, expired }, 'reservation.expire_holds')
+    }
+  })
+
+  /**
+   * Read one guest's document with the vision model (WP0.4).
+   *
+   * Gated by `document_ocr` in the wrapper. Skips quietly without a registered
+   * model, without a stored image, or for a PDF (the model reads images). What
+   * is logged is whether the MRZ checked out — never a field from the document.
+   */
+  await work('documents.extract', async (job) => {
+    const { propertyId, reservationId, guestIndex } = job.data
+    const llm = listProviders()[0]
+    if (!llm || !deps.readObject) {
+      logger.info(
+        { jobId: job.id, propertyId },
+        'documents.extract skipped: no model or no storage',
+      )
+      return
+    }
+
+    const path = await getDocumentPath(propertyId, reservationId, guestIndex)
+    if (!path) return
+
+    const image = await deps.readObject(path)
+    if (!image || !image.mediaType.startsWith('image/')) {
+      logger.info(
+        { jobId: job.id, propertyId, mediaType: image?.mediaType ?? null },
+        'documents.extract skipped: not an image',
+      )
+      return
+    }
+
+    const reading = await readDocument(llm, image)
+    await recordDocumentReading({ propertyId, reservationId, guestIndex, reading })
+
+    logger.info(
+      {
+        jobId: job.id,
+        propertyId,
+        reservationId,
+        guestIndex,
+        source: reading.source,
+        mrzValid: reading.mrz.valid,
+      },
+      'documents.extract',
+    )
+  })
+
+  /**
+   * Complaint SLA breaches (WP0.6): an open complaint past its deadline tells
+   * the manager, once. A complaint with no conversation still gets stamped, so
+   * it is not re-found every sweep; it stays loud in the console either way.
+   */
+  await work('complaints.sla', async (job) => {
+    const breached = await listBreachedComplaints(SWEEP_BATCH)
+
+    for (const complaint of breached) {
+      if (complaint.threadId) {
+        await alertEscalation({
+          propertyId: complaint.propertyId,
+          reservationId: complaint.reservationId,
+          threadId: complaint.threadId,
+          escalatedAt: complaint.slaDueAt,
+          appUrl,
+        })
+      }
+      await markComplaintBreachAlerted(complaint.propertyId, complaint.id)
+    }
+
+    if (breached.length > 0)
+      logger.info({ jobId: job.id, breached: breached.length }, 'complaints.sla')
+  })
+
+  /**
+   * The owner's question from the console (AG-06, WP0.7). Read-only tools; the
+   * answer is the run's own output, which the console reads back.
+   */
+  await work('owner.ask', async (job) => {
+    const { propertyId, userId, message, locale, requestId } = job.data
+    const run = await runAgent({
+      agent: 'AG-06',
+      propertyId,
+      locale,
+      input: { message, askedBy: userId },
+      ...(requestId ? { inputRef: requestId } : {}),
+    })
+    logger.info({ jobId: job.id, propertyId, runId: run.runId, status: run.status }, 'owner.ask')
+  })
+
+  /**
+   * Send a thread's pending replies on WhatsApp/SMS (ADR-035). Whoever wrote
+   * them — the concierge, a person, the product — this is the one place a
+   * reply leaves for a phone.
+   */
+  await work('channel.deliver', async (job) => {
+    const { propertyId, threadId } = job.data
+    if (!messaging) return
+
+    const target = await channelTarget(propertyId, threadId)
+    if (!target) return
+    if (!(await isEntitled(propertyId, target.channel))) {
+      logger.info({ jobId: job.id, propertyId, channel: target.channel }, 'skipped: channel off')
+      return
+    }
+
+    const pending = await pendingReplies(propertyId, threadId, messaging.provider.name)
+    if (pending.length === 0) return
+
+    if (!target.withinWindow) {
+      // Free text after 24 hours is refused by WhatsApp; it needs a template.
+      // Left pending and visible in the console rather than sent to fail.
+      logger.warn(
+        { jobId: job.id, threadId, pending: pending.length },
+        'channel.deliver: outside window',
+      )
+      return
+    }
+
+    for (const reply of pending) {
+      try {
+        const sent = await messaging.provider.send({
+          channel: target.channel,
+          to: target.to,
+          subject: null,
+          body: reply.body,
+          locale: 'it',
+        })
+        await recordDelivery({
+          propertyId,
+          threadId,
+          messageId: reply.messageId,
+          provider: messaging.provider.name,
+          providerMessageId: sent.providerMessageId ?? `unknown:${reply.messageId}`,
+          channel: target.channel,
+        })
+      } catch (error) {
+        if (messaging.retryable(error)) throw error
+        await recordDeliveryFailure({
+          propertyId,
+          threadId,
+          messageId: reply.messageId,
+          provider: messaging.provider.name,
+          channel: target.channel,
+          reason: error instanceof Error ? error.message : String(error),
+        })
+        logger.warn(
+          { jobId: job.id, threadId, messageId: reply.messageId },
+          'channel.deliver: refused',
+        )
+      }
+    }
+  })
+
+  /** Catches replies written outside a concierge turn (ADR-035). */
+  await work('channel.sweep', async () => {
+    if (!messaging) return
+    for (const { propertyId, threadId } of await threadsWithPendingReplies(
+      messaging.provider.name,
+    )) {
+      await queue.send(
+        'channel.deliver',
+        { propertyId, threadId },
+        { singletonKey: `deliver:${threadId}` },
+      )
+    }
+  })
+
+  /** A sender who is neither the owner nor a current guest (ADR-035). */
+  await work('channel.unmatched', async (job) => {
+    const { propertyId, channel, to, locale } = job.data
+    if (!messaging || !(await isEntitled(propertyId, channel))) return
+
+    const property = await getPropertyBasics(propertyId)
+    if (!property) return
+    await messaging.provider.send({
+      channel,
+      to,
+      subject: null,
+      body: unmatchedSenderPhrase(
+        locale,
+        property.name,
+        `${appUrl.replace(/\/$/, '')}/${locale}/book/${property.slug}`,
+      ),
+      locale,
+    })
+  })
+
+  /** Twilio's copy of a finished message goes (ADR-035). */
+  await work('channel.purge', async (job) => {
+    if (!messaging) return
+    try {
+      await messaging.purge(job.data.providerMessageId)
+    } catch (error) {
+      if (messaging.retryable(error)) throw error
+      logger.warn({ jobId: job.id }, 'channel.purge: refused')
+    }
+  })
+
+  /**
+   * The owner wrote to the property's number (AG-06, ADR-035). `respondToOwner`
+   * checks the number against the recorded owner phones again: the webhook's
+   * routing is not the only thing standing between a guest and this agent.
+   */
+  await work('owner.message', async (job) => {
+    const { propertyId, channel, phone, message, locale } = job.data
+    if (!messaging || !(await isEntitled(propertyId, channel))) return
+
+    const outcome = await respondToOwner({ propertyId, phone, message, locale })
+    if (outcome.status === 'refused') {
+      logger.warn({ jobId: job.id, propertyId }, 'owner.message refused')
+      return
+    }
+    await messaging.provider.send({
+      channel,
+      to: phone,
+      subject: null,
+      body: outcome.status === 'answered' ? outcome.reply : ownerNotUnderstoodPhrase(locale),
+      locale,
+    })
+    logger.info(
+      { jobId: job.id, propertyId, runId: outcome.runId, status: outcome.status },
+      'owner.message',
+    )
+  })
+
+  /**
+   * A console preview of the concierge (ADR-038): the same orchestrator,
+   * profiles, rules and model as a guest gets, with every tool that is not
+   * read-only simulated by the runner. No thread, so no message, no escalation
+   * and no alert. Who tried it is recorded as an event.
+   */
+  await work('agent.preview', async (job) => {
+    const { propertyId, userId, message, locale, requestId, reservationId } = job.data
+
+    const facts = reservationId ? await getReservationFacts(propertyId, reservationId) : null
+
+    const run = await runAgent({
+      agent: 'AG-01',
+      propertyId,
+      locale,
+      appUrl,
+      preview: true,
+      inputRef: requestId,
+      // Only a stay the property actually holds; anything else previews as a
+      // guest without a booking.
+      ...(facts && reservationId ? { reservationId } : {}),
+      input: {
+        message,
+        history: [],
+        hasBooking: Boolean(facts),
+        ...(facts?.businessHours ? { businessHours: facts.businessHours } : {}),
+      },
+    })
+
+    await recordPreview({ propertyId, userId, runId: run.runId })
+    logger.info(
+      { jobId: job.id, propertyId, runId: run.runId, status: run.status },
+      'agent.preview',
+    )
+  })
+
+  /** Re-derive per-property schedules from properties and entitlements (ADR-019). */
+  await work('schedules.sync', async (job) => {
+    const outcome = await syncPropertySchedules({ queue, logger, features: featureCheck() })
+
+    if (outcome.removed > 0) {
+      logger.info({ jobId: job.id, ...outcome }, 'schedules.sync')
     }
   })
 }

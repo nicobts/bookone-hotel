@@ -5,26 +5,69 @@ A decision recorded is not a decision shipped. This table is the gap.
 Update it in the same PR that changes the answer — a status file that lags is
 worse than none, because it is read as current.
 
+## Guest Desk Phase 0 — acceptance (plan §4), as of 2026-09-27
+
+**Not complete.** The code is in place for every item. What is left is
+verification with real accounts and three human tasks.
+
+| Acceptance item | State | What is left |
+|---|---|---|
+| Profiles 1–7 + owner agent end to end on webchat, IT and EN | ✅ | — |
+| …and on WhatsApp | 🟨 built (ADR-035) | Run it against the Twilio sandbox; Meta Business verification for a real number |
+| Every action in the audit log (actor, tool, input, result, reversibility) | ✅ | — |
+| No money action without human approval, shown live | ✅ | — |
+| Schedina preview from CIE, EU passport, non-EU passport | ✅ | Tests for both document formats; a real CIE photo check with a volunteer |
+| Handoff reaches the owner's phone ≤ 60 s, agent stops on that thread | 🟨 built | Alert at the moment of handover to `ownerPhones`; needs Twilio configured and the approved template (`TWILIO_TEMPLATE_ESCALATION_ALERT`) |
+| Demo from a clean tenant in < 20 min without a terminal | 🟨 | Script and `pnpm demo:reset` ready; two rehearsals by someone who did not build it |
+| DPA template and guest privacy notice; notice on first contact | 🟨 | Notice ✅; DPA is a draft for counsel (`docs/legal/dpa-template.md`) |
+| WP0.8: OpenTelemetry in every service | ✅ (ADR-036) | Traces, metrics and logs from all four services, verified end to end locally; backend account (Grafana Cloud EU or self-hosted) and dashboards still to set up (`docs/runbooks/observability.md`) |
+| WP0.8: one UI for both consoles | ✅ | `packages/ui`, shared by `apps/web` and `apps/admin` |
+
+**Temporary, delete before GA:** the development-only "?" on both login pages
+fills in the seeded demo accounts. It renders only when `NODE_ENV` is
+`development`, and no password reaches a client bundle (checked in a production
+build). Remove every piece with `grep -rn DEV-LOGIN-HELPER`.
+
 | ADR | Decision | Built? | Where |
 |---|---|---|---|
 | 001 | Platform UUIDs; external systems via `external_refs` | ✅ as-built | Platform UUIDs everywhere; `external_refs` the only home for a foreign id; AuthorityMap + write-router in `src/authority` with both routes tested per domain (E6.2) |
 | 002 | Fiscal core gated | ✅ as-built | Nothing fiscal exists, and the authority router refuses to grant the domain to the platform whatever a property row says — a row is data, so "we would never configure that" is not a control |
-| 003 | Two deployables; worker is persistent | ✅ as-built | `apps/web`, `apps/worker`; constraint stated in the worker README |
-| 004 | Hono on `@hono/node-server` | ✅ as-built | `apps/worker/src/app.ts` |
+| 003 | Two deployables; worker is persistent | ✅ as-built · superseded by 030 | `apps/web`, `apps/worker`; constraint stated in the worker README. ADR-030 adds `apps/admin` as a third |
+| 004 | Hono on `@hono/node-server` | ✅ as-built | `apps/api/src/app.ts` (in `apps/worker` until ADR-034) |
 | 005 | pg-boss behind a `JobQueue` interface | ✅ as-built | `JobQueue` port in core, `PgBossQueue` the only file importing pg-boss. Verified live: enqueue to reflected in 780ms, against a 60s requirement |
 | 006 | Supabase EU; Drizzle for domain access | 🟨 partial | Schema, access layer and Auth built on local Supabase. Cloud EU project not yet provisioned |
-| 007 | RLS on every client-reachable table, tested in CI | ✅ as-built | 30/30 tables, 54 policies, both suites green, negative control verified, and a CI job of its own. Counted by query against the database rather than by reading the schema — the row said 11/11 from Sprint 2 until Sprint 10 checked it. The public booking surface has no JWT to police, so it runs under `asService` with explicit scoping — asserted by handing each function the other property's ids (`booking.test.ts`) |
+| 007 | RLS on every client-reachable table, tested in CI | ✅ as-built | 31/31 tables, 57 policies (counted by query 2026-09-27, `complaints` added in WP0.3), both suites green, negative control verified, and a CI job of its own. Counted by query against the database rather than by reading the schema — the row said 11/11 from Sprint 2 until Sprint 10 checked it. The public booking surface has no JWT to police, so it runs under `asService` with explicit scoping — asserted by handing each function the other property's ids (`booking.test.ts`) |
 | 008 | Mock-first connector | ✅ as-built | `MockEricsoftAdapter` with counted failure injection, plus the shared contract suite the real adapter must pass before the swap. Verified by negative control: removing the idempotency guard fails the contract |
 | 009 | Voice hard tool boundaries | 🟨 discipline applied to chat | Voice is WS-B. The *boundary* is built and measured here: every AG-01 tool returns a pre-formed `phrase`, the reply is that phrase verbatim, and a nightly job re-reads what was sent against the tool outputs of its own run. Zero violations is the gate |
 | 010 | Stripe behind `PaymentAdapter` | 🟨 port built, **provider not connected** | `PaymentAdapter` + `MockPaymentAdapter`, which moves no money. The interface, policy engine, `payments` ledger, `fee_events`, webhook-as-authority, signature check, redelivery idempotency and lost-webhook replay are all real and exercised. Blocked on 04 §0 item 6 (Stripe account, Connect Standard, commercialista). A real adapter must pass `describePaymentAdapterContract` — the suite the mock passes — before the swap, and the worker refuses to boot simulated in production |
 | 011 | Agents as first-class workers, tiered autonomy | ✅ as-built | Registry, runner and typed tools; AG-01, AG-05 and AG-07 live. The runner refuses an ungranted tool, scopes to one property, and records every run — including the ones that fail. AG-07 is the first agent that moves money, and it can only move it **down**: there is no tool that raises a fee, which is the asymmetry that makes a T1 agent near billing defensible |
-| 012 | `LlmProvider` abstraction; no vendor SDK imports | 🟨 port built, **no provider registered** | Interface and registry in `src/llm`; registration refuses any provider without declared EU processing, a region, a verification under a year old, and a sub-processor register entry **that exists** — Sprint 10 made that last one a lookup against `privacy/subprocessors.ts` rather than a non-empty-string check, which any typo satisfied. `LLM_API_KEY` is empty and AG-01 runs as a deterministic router — which is not a stopgap for the tool boundary but the shape it has to keep: a model would widen recall, never authorship (binding rule 7) |
+| 012 | `LlmProvider` abstraction; no vendor SDK imports | ✅ as-built · amended by 029 | Interface and registry in `src/llm`; registration refuses a provider without declared EU processing — or ADR-029's recorded exception — a region, a verification under a year old, and a sub-processor register entry **that exists**. OpenRouter is the first concrete provider (`src/llm/openrouter.ts`, SP-006), registered at worker boot when `OPENROUTER_API_KEY` and the two model ids are set. Eslint bans `ai`, `@ai-sdk/*` and `@openrouter/*` outside `@bookone/core/llm` |
 | 013 | Journey state machine is the single source of stay truth | ✅ as-built | Five dimensions, evented commands, `applyJourneyCommand` the only writer. Illegal transitions refused and separated from retries; every transition emits its event in the same transaction, so G1 is computable from the log alone. `journey_states` has no write policy at all — the console's arrival button will take the same command a door sensor will |
 | 014 | Reference implementations over blank-page design | 🟨 as-built, **one note written late** | Seven notes in [design-notes/](../design-notes/README.md), all but one written before their surface; [pre-arrival.md](../design-notes/pre-arrival.md) records a Sprint 5 surface that shipped without one and says so at the top rather than being backdated. Three surfaces had no reference row in 08 §3 — in-stay messaging, the monthly report and the privacy desk — and each note proposes its own and argues the deviations. The table now carries all three |
 | 015 | Pricing in €/room/month equivalence | ✅ as-built | On the monthly report, **including the percentage fees** — the number shown is the number billed. Null rather than a guess when the subscription records no room count: `room_types` holds types, not rooms, and a derived figure would be wrong and look authoritative on the one line built for comparison against a competitor's price |
 | 016 | Property is a URL segment | ✅ as-built | `/[locale]/[property]/console/…`; verified in a browser that a non-member typing another slug gets a 404, not a redirect. Sprint 9 adds the same treatment for role: a staff member typing an owner-only URL gets 404, so "you are not a member" and "you may not see this" are indistinguishable from outside |
 | 017 | Identity tables sit outside tenancy | ✅ as-built | `profiles` isolated by `auth.uid()`; asserted separately in the suite |
 | 018 | RLS enforced on the Drizzle path via `withUser` | ✅ as-built | `packages/core/src/db/session.ts`; removing the role-drop fails 8 of 21 |
+| 019 | Feature flags are entitlements, gated where the property is known | ✅ as-built (WP0.1 Part B) | `FEATURES` has the plan §2 keys that exist in code; `JOB_FEATURE` classifies every job, `ROUTE_FEATURE` every `/jobs/*` route, each agent declares its feature. Gates: worker middleware (404), gated `work()` wrapper, sweep queries filtered before the batch limit, per-property schedules re-synced every 10 min by `schedules.sync`, runner refusal recorded in `agent_runs`, `requireFeature` on console pages and actions, guest surfaces per section, nav from a pure `navBands`. Asserted as exact lists for all-off and Phase 0; negative control (both worker gates disabled) fails 11 tests; verified live: revoking `booking_engine` 404s `/book` on the next request, no restart. Per-tool gating arrives with profiles (WP0.2) — today every tool belongs to one agent |
+| 020 | Statutory registration reporting is not fiscal core | ✅ decided, nothing to build | Scoping record. Imposta *collection* through payments still needs its own ADR before WP1.4 |
+| 021 | One orchestrator, profiles as data, hard rules in code | ✅ as-built (WP0.2) | `packages/agents/src/orchestrator.ts`, `router/{hard-rules,route}.ts`, `profiles/*.json` validated at worker boot (a bad file stops the process, naming it). Allow-list refusal and approval holds are recorded, never executed. Sticky profile and unknown-twice read the thread's own runs (`recentRouting`), no migration. The emergency rule silences the agent until staff hand the thread back. WP0.3's action tools are stubs that **refuse** rather than return seeded data |
+| 022 | The model selects; tools author every guest-facing sentence | ✅ as-built | Model calls are classification and tool selection only. Emergency and approval-pending texts come out of the `escalate` tool, so `reply ⊆ tool output` still holds on every turn and the tool-boundary audit is unchanged |
+| 023 | AI SDK behind `LlmProvider`, no agent framework | ✅ as-built | `ai` 7 + `@openrouter/ai-sdk-provider` in core only. Tools stay in-process with JSON-schema inputs; the SDK never executes a tool. No MCP (ADR-034) |
+| 029 | Stored data EU-only; model/vision processing may run outside the EU | 🟨 partial | SP-006 (OpenRouter) in the register as the recorded exception; `registerProvider` refuses a non-EU provider without it; requests set `zdr: true` and `data_collection: deny` (`packages/core/src/llm/openrouter.ts`). The guest privacy notice names processing outside the EU for messages and, when `document_ocr` is on, document photos (`stay.privacy.location`, four languages). The DPA draft names the transfer and its safeguards; counsel review pending. Reassess EU-only processing at production with paying properties |
+| 030 | Three deployables; admin in its own container | superseded by 034 · admin part ✅ (WP0.8) | `apps/admin` exists, builds as a standalone container (`infra/docker/admin.Dockerfile`) and has no public port in `infra/vm/compose.yaml` (tailnet only). **Deviation:** the admin API is Next server actions inside `apps/admin`, not a separate Hono app — each action runs staff auth → role → `withAdminAudit`; Next checks the Origin of every action. Same boundary, one fewer server; revisit if a non-browser client ever needs the API |
+| 031 | Operators act only through an audited console | 🟨 Phase 0 core ✅ (WP0.8) | `packages/core/src/admin`: `withAdminAudit` (role check, required reason, change + `admin_audit` row in one transaction), feature grant/revoke, the concierge kill switch, property list, audit trail, queue health. `admin_audit` append-only by trigger and with no client privileges. `apps/admin`: separate staff IdP (`ADMIN_SUPABASE_*`; production refuses the tenant project), role from `app_metadata.staff_role`, MFA (aal2) required in production, TOTP enrol/verify. View-as-tenant ✅: any staff role, reason required, the `tenant.view` audit row is the 30-minute grant, a read-only snapshot without message text or documents, and the property sees each access in its console settings (`support_access.started`). Not done: passkeys, daily export of `admin_audit` to immutable storage, the staff project itself (SP-009, planned) |
+| 032 | Ops and security baseline, in priority order | 🟨 partial | Done: Stripe webhook verification + idempotency, webhook rate limit and 256 KiB body cap (`apps/api/src/rate-limit.ts`), retention/export/erasure, register (Tailscale, Hetzner, Infisical, staff project entered as `planned`), logical backup drill, container images and VM compose with Caddy exposing only `/webhooks/*` and `/health`, OpenTofu skeletons validated. Not done: Tailscale/Infisical actually provisioned, OTel backend account and dashboards (instrumentation done, ADR-036), PITR drill, host rebuild drill, signed images in CI, dependency scanning |
+| 033 | Self-hosted until the first signed contract, then Cloud Run | 🟨 prepared (WP0.8) | `infra/vm` (compose, Caddyfile, Tailscale serve, `tofu/` for a Hetzner EU host with 80/443 only and Tailscale SSH) and `infra/gcp` (Artifact Registry, Secret Manager with per-service accessors, Cloud Run for api/worker/admin with internal ingress for worker and admin). Both `validate` clean from WSL. Nothing applied; no GCP project or CI deploy pipeline yet |
+| 034 | `apps/api` split from the worker; worker jobs-only | ✅ as-built | `apps/api`: webhooks, health, `/jobs/*` and the feature gate, moved with history; producer-only pg-boss client (no supervision, no schedules). `apps/worker`: no HTTP. `PgBossQueue` moved to `@bookone/adapters/pg-boss`, still the only pg-boss importer. Mock payment intents live in the api process, so worker replay skips them in development; a real provider holds that state. Web config unchanged (`WORKER_URL` now points at the api). Rejected: JWT-only web, MCP server, package renames |
+| 035 | WhatsApp and SMS go through Twilio, initially | 🟨 core path ✅ | `packages/adapters/src/twilio` (plain `fetch`, no SDK): client with delete-after-final-state, signature check, inbound/status parsing, `TwilioNotificationProvider` admitted only as the ADR-035 exception with SP-013. `packages/core/src/channels`: routing by the number written to, owner by `ownerPhones`, guests by exact E.164 on a current stay, idempotent on `MessageSid` via `external_refs`; pending-reply delivery for every writer. `apps/api` webhooks, worker jobs (`channel.deliver/sweep/unmatched/purge`, `owner.message`), features `whatsapp` and `sms`. Owner handover alert to `ownerPhones` at the moment of handover (plan §4, ≤ 60 s), through the outbox, as the approved template when `TWILIO_TEMPLATE_ESCALATION_ALERT` is set. Not built: the pre-arrival invitation template, per-property sender numbers, pre-sale threads without a reservation, replayed WhatsApp conversations in `test:evals`. Runbook: `docs/runbooks/whatsapp.md` |
+| 036 | Every service emits OpenTelemetry traces, metrics and logs | ✅ as-built | `packages/telemetry` (SDK start, redacted and trace-correlated pino logger, URL scrubbing exporter), `@bookone/core/telemetry` (job and GenAI spans, lazy metrics), api server-span middleware, Next `instrumentation.ts` in web and admin, trace context carried through pg-boss. Collector config with content and URL stripping (`infra/otel/collector.yaml`), local LGTM stack, VM collector, GCP endpoint variable. A test fails if an app's entry point does not start it. Not done: Phoenix, tail sampling, dashboards and alerts |
+| 037 | A shared chat interface on the AI SDK UI protocol, first as an agent preview | ✅ playground · ⬜ embed | `@bookone/ui/components/chat/*` (adapted from shadcn's chatbot-template, MIT) over `useChat`; `apps/admin` → Agent playground: speak to AG-01 as any current guest of a demo property, or to AG-06 as its owner; each reply carries the run's profile, hard rule, tier, tools and outcome. Server side runs `previewGuestTurn` / `previewOwnerTurn` (real turns, never a direct model call), demo properties only (`settings.demo`). Not built: the hotel-website embed (needs pre-sale threads and a public, rate-limited endpoint in `apps/api`) |
+| 038 | Hotels see and preview their agents in the console, without side effects | ✅ as-built | Runner preview mode, fail-closed: only `READ_ONLY_TOOLS` run, everything else is recorded as `simulated` with a "would do, nothing done" phrase; no thread, so no message, escalation or alert; approvals never list a preview. `create_task` now flagged as a write (fixes its idempotency). Console chat endpoint `apps/web/src/app/api/agents/chat` enqueues through `apps/api` (`/jobs/agent-preview` → worker `agent.preview`; `owner.ask` with `requestId`) and reads the run back by `input_ref` under the member's session. `/console/agents`: every agent's purpose, status, 7-day activity, profiles, tools classed read / act / needs approval, hard rules, from `@bookone/agents/catalog` (tested against registry, profiles, tools and all four locales); "Try it" opens the shared chat in a side sheet, optionally as a current stay. The owner's assistant page now uses the same chat |
+| 024 | Replay conversations extend the evals gate | ✅ as-built (WP0.2) | 57 conversations in `packages/agents/src/evals/conversations/wp0.2/`, replayed by `evals/wp0.2/orchestrator.eval.ts`: unsafe actions 0 (gate), routing ≥ 90%, hard-rule negatives. Negative control: disabling the hard rules fails 13. The rules score is coverage, not generalisation. **Live, 2026-09-27** (Haiku 4.5 routing, Sonnet 5 actions, via OpenRouter): 85.7% on the first run — invoice/luggage sent to payments, "which documents" flagged as identity — then **100%, 0 unsafe** once the routing prompt carried each profile's description and sharper flag definitions. 35 routed turns written by us: evidence the design works on a model, not a measure of real traffic. Phoenix not yet |
+| 025 | Workflow engine deferred until a named trigger | Proposed | Decided in Phase 1 on observed evidence |
+| 026 | ComplianceAdapter with a manual fallback | ⬜ Phase 1 (WP1.1) | `AlloggiatiAdapter` becomes its first implementation |
+| 027 | BookOne never asserts identity; de visu staff-assisted | ✅ holds (nothing asserts identity); module ⬜ Phase 3, gated | Gate: Viminale guidelines + written legal opinion |
+| 028 | Region-first expansion, region registry | ⬜ Phase 1 (WP1.1) | FVG first |
 
 ## Sprint 3 additions
 
@@ -93,7 +136,7 @@ worse than none, because it is read as current.
 | Invoice request | ✅ | **Issues nothing.** Recorded and routed to the property, who issue the fattura through their own certified chain (D11) |
 | Review request | ✅ | After departure is confirmed, once, unconditional on what the guest said — not on the checkout screen beside a payment step |
 | Departure sweep | ✅ | Nightly backstop under `system`, so a guest-confirmed checkout and an inferred one stay distinguishable |
-| **A language model** | ⬜ **not connected** | `LLM_API_KEY` empty; no provider passes D9 registration yet. The eval set is what makes connecting one a measurement rather than a leap |
+| **A language model** | ✅ **connected in development** | OpenRouter under ADR-029: `anthropic/claude-haiku-4.5` (small), `anthropic/claude-sonnet-5` (strong), ZDR endpoints only. Registers at worker boot through the residency gate. Demo data only until the transfer assessment (ADR-029) |
 | **WhatsApp** | ⬜ **blocked** | BSP verification (04 §0). The thread is stored channel-agnostically; adding it is a provider, not a re-model |
 
 ## Sprint 8 additions
@@ -173,6 +216,86 @@ Both `ended_at` writes now use `now()`. The rule: **two timestamps compared by a
 constraint must come from one clock**, and the database already has one. This is
 the same class as the bug AG-07 caught in Sprint 8, which is the second time it
 has cost something — worth remembering as a class rather than as two incidents.
+
+## Guest Desk WP0.3 — real actions
+
+| Thing | Status | Note |
+|---|---|---|
+| Desk tools | ✅ | `check_availability`/`quote_stay` (rate cache; stale → a person, never "nothing free"), `create_booking_link` (only with `booking_engine`), `modify_booking` (checked against availability, **recorded as a task for a person**, never written to the booking), `get_payment_status`, `explain_charges`, `send_prearrival_link`, `record_eta` (through the journey machine), `get_capture_status`, `request_late_checkout`, `request_invoice` (routed; we issue nothing, D11), `log_complaint`, `notify_owner`, and the owner's four read-only lists. Every phrase from rows, in four languages |
+| `complaints` table | ✅ | Category, SLA from the database clock (5 min safety, 30 otherwise), owner alerted on logging, no member delete. Both access paths verified by query; negative control failed the isolation test |
+| Write idempotency | ✅ | thread + tool + canonical input hash, recorded on the call in `agent_runs.tool_calls`; a repeat returns the earlier output and is marked `replayed`. Negative control: bypassing the lookup logs a second complaint |
+| Handoff | ✅ | A tool may answer and still hand to a person (`handoff: true`): date changes, late checkouts, complaints — T2 |
+| Tool-boundary audit, hardened | ✅ | Evidence is now **what tools returned**, not the run's recorded reply (which made every reply sourced by definition) and not tool inputs; multi-phrase replies checked paragraph by paragraph. Verified on the real reply path: zero violations |
+| `cancel_booking`, `create_payment_link` | ⬜ WP0.6 | Approval-held, so they run from the approval step; and the mock payment adapter's intents live in `apps/api` (ADR-034) |
+| Owner notified by WhatsApp | ⬜ | Email through the outbox today (`alertEscalation`); WhatsApp templates wait on the BSP |
+| `knowledge_chunks` + pgvector | ⬜ **not built, deliberately** | The spec's hybrid search needs an embedding provider (another sub-processor) and duplicates `kb_articles`, which already has an editor. Revisit when the knowledge base outgrows keyword matching — the eval set will show it |
+| Agents database suite | ✅ | `packages/agents` `test:rls` (15 tests) in CI's `rls` job, after core's (turbo `^test:rls`); own property, never truncates |
+
+## Guest Desk WP0.4 — pre-arrival capture
+
+| Thing | Status | Note |
+|---|---|---|
+| MRZ (TD1, TD3) | ✅ | ICAO 9303 check digits in TypeScript, tested on ICAO specimens; a miscounted `<` run is corrected (never a character) and the digits still decide — the exact miscount a vision model made live |
+| Schedina preview | ✅ | `buildPayload` cut back into its fields: staff see what would be filed, not a second rendering |
+| Staff "Conferma" | ✅ | `documents.validate` + `validated_at`, refused unless complete with a document per guest. Verified in a browser end to end |
+| Consent | ✅ | Before the first document, once per stay, as a domain event with the notice version; beside a **draft** guest privacy notice (four languages) that needs the property's counsel |
+| Document deletion without Alloggiati | ✅ | `documentRetentionDays` (default 1) after departure. Before this, images of a property that files elsewhere were kept indefinitely. Negative control verified |
+| OCR | ✅ behind `document_ocr` | Vision model via OpenRouter reads the photo; MRZ fields win when their digits agree; everything else low-confidence; stored beside the typed data, mismatches shown to staff, unreadable photos prompt a retake. **Off by default** — ADR-029: a real guest's document waits for the transfer assessment. Live on a synthetic ICAO specimen: 5.3 s, MRZ valid after filler repair |
+| PDFs | ⬜ | Stored and filed as before; not read by the model, which reads images |
+| `capture_sessions` / `guest_identity_documents` | ⬜ **not built, deliberately** | The spec's tables duplicate `journey_states` + `registration_records` + the private bucket; the inventory chose to extend |
+
+## Guest Desk WP0.5 — demo property and owner agent
+
+| Thing | Status | Note |
+|---|---|---|
+| `pnpm demo:seed` | ✅ | Fictional "Hotel Demo Trieste": 25 stays through the domain's own commands (5 departed, 4 in the house, arrivals in every pre-arrival state, 11 future), 13 knowledge articles IT/EN from `content/demo/kb.json`, 2 open complaints, owner and staff logins. Re-runnable; removes only the demo property |
+| Demo features | ✅ | Phase 0 set + `pms_sync` (mock PMS, so availability exists) + `booking_engine` (so pre-sale can hand out a link — the matrix has it off for hotels; the demo needs it) + `document_ocr` (demo documents only). `alloggiati` off |
+| Knowledge golden set | ✅ | 21 IT/EN questions reach the right article; four adjacent ones reach none. Its first run found a real near miss — a pool question answered with the seafront — fixed with content, not the matcher |
+| Owner agent (AG-06) | ✅ | `owner-backoffice` profile for recorded owner numbers only (`settings.ownerPhones`); a guest's number is refused before anything runs. Verified live: arrivals, missing documents, open complaints |
+| Owner reached by WhatsApp | ⬜ | `respondToOwner` is the entry point; the channel waits on the BSP |
+| `knowledge_chunks` / embeddings | ⬜ deliberately | See WP0.3 |
+| AG-02 (document extraction) in `agent_runs` | ⬜ | 06 names extraction AG-02. It runs as the `documents.extract` job, audited by `document.read` events; routing it through the runner would put the image or identity fields in `agent_runs`. Decide how to record it before the model sees a real document |
+
+## Guest Desk WP0.6 — the inbox
+
+| Thing | Status | Note |
+|---|---|---|
+| Approvals | ✅ | Console page listing what the concierge held (`agent_runs.outcome` null). Approve carries it out, then records the decision once (`outcome`, `reviewed_by`, `approval.decided`) and tells the guest in their language; reject always sends the guest a reply. Verified in a browser: German guest, Italian owner, confirmation delivered |
+| Runs that hold an action | ✅ fixed | They were recorded `outcome: auto`; now null until a person decides, which is what lists them |
+| Actions in the thread | ✅ | Per reply: each tool, its status and the decision on held ones |
+| "Annulla" | ✅ where real | Cancels the task a date change or late checkout created, once, as its own event linked to the run. Links sent and emails delivered have no undo, and no button pretends otherwise |
+| "Prendo io" silences the agent | ✅ | And a pre-existing bug fixed: taking over a thread nobody had escalated violated `message_threads_escalated_has_time` — a 500 on the button. Regression test in core |
+| Hard rule shown to staff | ✅ | The rule that last handed the thread over, in the stay card |
+| Complaint SLA | ✅ | Deadline and overdue state in the thread; `complaints.sla` sweep (every 2 min, filtered by feature in its query) alerts the manager once via `breach_alerted_at` (additive migration) |
+| `cancel_booking` on approval | ✅ | Through the api's cancel, which applies the refund policy |
+| `create_payment_link` on approval | 🟨 | Calls the booking flow's checkout, which refuses a confirmed stay; staff see the reason. A balance link for an existing booking needs the real payment provider |
+| Owner handoff on WhatsApp within 60 s | ⬜ | Email today; the channel waits on the BSP |
+| Realtime | ⬜ | Supabase Realtime is off in this repo's local setup; pages refresh on action |
+
+## Guest Desk WP0.7 — demo collateral
+
+| Thing | Status | Note |
+|---|---|---|
+| Demo script | ✅ | [docs/demo/script.md](../demo/script.md): 12 steps, 20 minutes, no terminal during the run; maps each step to plan §4 and says what the demo does not show |
+| Roadmap slide, one-pager (IT) | ✅ | [roadmap-slide.md](../demo/roadmap-slide.md), [one-pager.it.md](../demo/one-pager.it.md). "EU-hosted", never "EU-processed" (ADR-029); no fiscal or identity claims |
+| `pnpm demo:reset` | ✅ | ≈ 4 s, against a 30 s target |
+| Owner's assistant in the console | ✅ | Owner-only "Assistente" page: the session is the identity (`requireOwner`), the question runs AG-06 through the worker, the answer is read back from the run. How the demo reaches the owner agent without WhatsApp |
+| Rehearsal by someone who did not build it | ⬜ | WP0.7 AC — twice, from reset, under 20 minutes |
+| DPA template | 🟨 draft | [docs/legal/dpa-template.md](../legal/dpa-template.md): the Commission's 2021/915 clauses with annexes completed from the code (data map periods, TOMs with where each lives, the generated register as the sub-processor annex) and six open questions. **Needs counsel before any hotel signs it** |
+
+## Guest Desk WP0.8 — admin and ops foundation
+
+| Thing | Status | Note |
+|---|---|---|
+| `admin_audit` | ✅ | Append-only by trigger (UPDATE, DELETE, TRUNCATE raise, even on the service connection); `revoke all` from `anon`/`authenticated` because Supabase's default grants include TRUNCATE; in the data map; isolation verified by query with a negative control (policy map) |
+| Audited operations | ✅ | `packages/core/src/admin`; `grantEntitlementIn` / `revokeEntitlementIn` run inside the audit transaction, so the change, its domain event and its audit row commit together. Tests: `rls/admin.test.ts` |
+| Concierge kill switch | ✅ | `properties.settings.agentPausedAt`, read per turn: the guest gets the `paused` phrase as a system message, the thread is escalated, no model call and no agent run. Tested in `inbox.db.test.ts` |
+| `apps/admin` | ✅ | Properties, features with reasons, pause/resume, audit trail, queue health (pg-boss tables). Local operators: `ops@bookone.test` (admin), `support@bookone.test` (read-only), from `pnpm db:seed` |
+| Webhook rate limit | ✅ | Per-client fixed window before the signature check; `TRUST_PROXY` only behind Caddy/Cloud Run |
+| Containers + compose | ✅ | api and admin images built and smoke-tested locally; the worker uses the same Dockerfile as the api |
+| OpenTofu skeletons | ✅ | Validated with Terraform 1.15 from WSL (OpenTofu is not installed there yet; the HCL is compatible) |
+| View-as-tenant | ✅ | `startTenantView` / `activeTenantView` / `tenantSnapshot`; the admin page redirects outside the window; the owner's settings page lists every access with operator, reason and end time (RLS on `domain_events`). Tests in `rls/admin.test.ts` |
+| Host rebuild drill | ⬜ | Written in `backup-restore.md`; ADR-033 makes it a precondition for pilot data |
 
 ## CI gates
 

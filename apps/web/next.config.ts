@@ -25,7 +25,16 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 const nextConfig: NextConfig = {
   // Internal packages ship TypeScript source rather than a build step
   // (docs/03-ARCHITECTURE.md §10) — Next compiles them with the app.
-  transpilePackages: ['@bookone/core', '@bookone/i18n'],
+  transpilePackages: [
+    '@bookone/core',
+    '@bookone/agents',
+    '@bookone/i18n',
+    '@bookone/ui',
+    '@bookone/telemetry',
+  ],
+  // The OpenTelemetry SDK and pino stay Node modules rather than bundled
+  // (ADR-036): both load optional pieces at runtime that a bundle would miss.
+  serverExternalPackages: ['@opentelemetry/sdk-node', 'pino'],
   typedRoutes: true,
   // Next 16 blocks dev resources requested from a host it does not consider
   // its own origin, and serves the JS chunks as 403 — the page renders but

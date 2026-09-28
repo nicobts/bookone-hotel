@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 import { FlaskConicalIcon } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@bookone/ui/lib/utils'
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════

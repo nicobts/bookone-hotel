@@ -1,0 +1,23 @@
+# Public ingress for the api — and only the parts a third party must reach
+# (ADR-032: no internal surface gets a public ingress). /jobs/* is not proxied;
+# apps/web reaches it over the tailnet. Caddy sets X-Forwarded-For, which is why
+# the api runs with TRUST_PROXY=true behind it and never without it.
+
+{$API_HOST} {
+	encode zstd gzip
+
+	@public path /webhooks/* /health
+	handle @public {
+		reverse_proxy api:8787
+	}
+
+	handle {
+		respond 404
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		-Server
+	}
+}

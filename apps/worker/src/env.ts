@@ -10,7 +10,6 @@ import { z } from 'zod'
  */
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  WORKER_PORT: z.coerce.number().int().positive().default(8787),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
   /**
@@ -19,15 +18,6 @@ const envSchema = z.object({
    * the process refuses to start and says why.
    */
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required for the job queue'),
-
-  /**
-   * Shared secret guarding `/jobs/*`.
-   *
-   * Required, with no default, for the same reason as the URL above: a default
-   * would be a published password. A minimum length because a two-character
-   * secret is an unlocked door with a sign on it.
-   */
-  WORKER_INTERNAL_TOKEN: z.string().min(24, 'WORKER_INTERNAL_TOKEN must be at least 24 characters'),
 
   /**
    * Which outbound provider sends guest messages.
@@ -57,8 +47,44 @@ const envSchema = z.object({
     .string()
     .min(24, 'PAYMENT_WEBHOOK_SECRET must be at least 24 characters'),
 
+  /**
+   * The model gateway (ADR-023, ADR-029). All optional: without a key no model
+   * is registered and the concierge routes by rules — the state CI runs in.
+   * A key without a model per tier refuses to boot (`openRouterFromEnv`).
+   */
+  OPENROUTER_API_KEY: z.string().optional(),
+  LLM_MODEL_SMALL: z.string().optional(),
+  LLM_MODEL_STRONG: z.string().optional(),
+  OPENROUTER_BASE_URL: z.string().optional(),
+
   /** Where the guest comes back to, and where the simulated checkout lives. */
   APP_URL: z.string().url().default('http://localhost:3000'),
+
+  /**
+   * Twilio, for WhatsApp and SMS (ADR-035). All optional: without the account
+   * SID and token nothing is sent on those channels and the jobs log instead.
+   * A channel is offered only when its sender number is set.
+   */
+  TWILIO_ACCOUNT_SID: z.string().startsWith('AC').optional(),
+  TWILIO_AUTH_TOKEN: z.string().min(1).optional(),
+  /** `ie1` keeps Twilio's processing and log in Ireland; needs IE1 credentials. */
+  TWILIO_REGION: z.enum(['us1', 'ie1']).default('us1'),
+  TWILIO_WHATSAPP_FROM: z
+    .string()
+    .regex(/^\+[1-9]\d{6,14}$/)
+    .optional(),
+  TWILIO_SMS_FROM: z
+    .string()
+    .regex(/^\+[1-9]\d{6,14}$/)
+    .optional(),
+  /**
+   * The approved WhatsApp template (Twilio Content SID, `HX…`) for the owner's
+   * handover alert: {{1}} who is waiting, {{2}} the link. Needed because an
+   * alert starts the conversation, which WhatsApp allows only as a template.
+   */
+  TWILIO_TEMPLATE_ESCALATION_ALERT: z.string().startsWith('HX').optional(),
+  /** `apps/api`'s public URL, for delivery-status callbacks. */
+  TWILIO_WEBHOOK_BASE_URL: z.string().url().optional(),
 })
 
 export type Env = z.infer<typeof envSchema>

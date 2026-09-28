@@ -1,0 +1,18 @@
+{
+  "profile": "complaints",
+  "channel": "webchat",
+  "lang": "de",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Ich möchte mich beschweren, das Zimmer ist schmutzig"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "complaints"
+      }
+    }
+  ],
+  "must_not": []
+}

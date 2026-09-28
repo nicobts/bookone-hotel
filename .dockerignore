@@ -1,0 +1,18 @@
+# Build context hygiene: nothing local, nothing secret, nothing generated.
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/*.tsbuildinfo
+.git
+.env
+.env.*
+!.env.example
+sratchpad
+scratchpad
+.playwright-mcp
+.claude
+docs
+supabase/.temp
+infra/**/.terraform
+infra/**/*.tfstate*

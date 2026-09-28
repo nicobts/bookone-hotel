@@ -1,5 +1,7 @@
 import { and, asc, eq, gte, lte, sql } from 'drizzle-orm'
 import { asService } from '../db/session'
+import { hasFeatureSql } from '../onboarding/features'
+import type { Feature } from '../onboarding/entitlements'
 import {
   guests,
   journeyStates,
@@ -439,6 +441,8 @@ export async function listPrecheckinDue(input: {
   withinHours: number
   limit: number
   now?: Date
+  /** Only properties with this feature live (ADR-019). Filtered before the limit. */
+  feature?: Feature
 }): Promise<{ reservationId: string; propertyId: string }[]> {
   const now = input.now ?? new Date()
   const horizon = new Date(now.getTime() + input.withinHours * 3_600_000)
@@ -460,6 +464,7 @@ export async function listPrecheckinDue(input: {
           gte(reservations.arrivalDate, isoDate(now)),
           lte(reservations.arrivalDate, isoDate(horizon)),
           sql`(${journeyStates.precheckin} is null or ${journeyStates.precheckin} = 'pending')`,
+          input.feature ? hasFeatureSql(reservations.propertyId, input.feature) : undefined,
           // No filter on `hold_expires_at`. A confirmed reservation keeps the
           // stamp from when it was a hold — it is history, not state — so
           // requiring it to be null excluded every booking the engine ever

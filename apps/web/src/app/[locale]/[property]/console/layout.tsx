@@ -1,5 +1,5 @@
 import { AppSidebar } from '@/components/shell/app-sidebar'
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { SidebarInset, SidebarProvider } from '@bookone/ui/components/sidebar'
 import { requireProperty, switcherProperties } from '@/lib/auth/current-property'
 
 /**

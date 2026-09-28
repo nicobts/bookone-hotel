@@ -15,6 +15,16 @@ import {
   submitAlloggiati,
 } from '../../../alloggiati/submit'
 import { FakeAlloggiatiAdapter } from './fake-alloggiati-adapter'
+import {
+  confirmDocuments,
+  getDocumentPath,
+  getSchedinaPreview,
+  recordDocumentReading,
+  hasDocumentConsent,
+  recordDocumentConsent,
+} from '../../../journey/confirm'
+import { grantEntitlement, revokeEntitlement } from '../../../onboarding/entitlements'
+import { interpretReading } from '../../../alloggiati/extract'
 
 /**
  * The Alloggiati chain against a real database (E2.3, E2.4).
@@ -532,5 +542,133 @@ describe('deleting identity documents (E2.4)', () => {
 
     expect(outcome).toEqual({ deleted: 0, failed: 0 })
     expect(deleteObject).not.toHaveBeenCalled()
+  })
+})
+
+/*
+ * Guest Desk WP0.4 — pre-arrival capture ends at a person's confirmation, with
+ * consent recorded and documents deleted even where nothing is filed.
+ */
+describe('staff confirmation (WP0.4)', () => {
+  it('shows the record as it would be filed, and confirms it once complete', async () => {
+    const reservationId = await fileableStay(fixture.alpha.propertyId)
+
+    const preview = await getSchedinaPreview(fixture.alpha.propertyId, reservationId)
+    expect(preview?.ready).toBe(true)
+    expect(preview?.documentsHeld).toBe(2)
+    expect(preview?.guests[0]?.fields.find((f) => f.name === 'surname')?.value).toBe('WEBER')
+
+    const outcome = await confirmDocuments({
+      propertyId: fixture.alpha.propertyId,
+      reservationId,
+      userId: fixture.alpha.user.id,
+    })
+    expect(outcome).toEqual({ status: 'confirmed' })
+
+    const journey = await readJourney(fixture.alpha.propertyId, reservationId)
+    expect(journey?.documents).toBe('validated')
+    expect(
+      (await getSchedinaPreview(fixture.alpha.propertyId, reservationId))?.confirmedAt,
+    ).not.toBeNull()
+  })
+
+  it('refuses to confirm an incomplete record — a person would be vouching for a gap', async () => {
+    const reservationId = await confirmedStay(fixture.alpha.propertyId)
+
+    const outcome = await confirmDocuments({
+      propertyId: fixture.alpha.propertyId,
+      reservationId,
+      userId: fixture.alpha.user.id,
+    })
+    expect(outcome.status).toBe('rejected')
+  })
+})
+
+describe('document consent (WP0.4)', () => {
+  it('is recorded once, as an event with the notice version', async () => {
+    const reservationId = await confirmedStay(fixture.alpha.propertyId)
+    expect(await hasDocumentConsent(fixture.alpha.propertyId, reservationId)).toBe(false)
+
+    for (let i = 0; i < 2; i += 1) {
+      await recordDocumentConsent({
+        propertyId: fixture.alpha.propertyId,
+        reservationId,
+        noticeVersion: 'v-test',
+      })
+    }
+
+    const [row] = await db.execute<{ n: number; version: string }>(
+      sql`select count(*)::int as n, max(payload->>'noticeVersion') as version from domain_events
+          where entity_id = ${reservationId} and event_type = 'privacy.document_consent'`,
+    )
+    expect(row).toEqual({ n: 1, version: 'v-test' })
+    expect(await hasDocumentConsent(fixture.alpha.propertyId, reservationId)).toBe(true)
+  })
+})
+
+describe('document deletion where nothing is filed (WP0.4)', () => {
+  it('deletes a departed stay’s documents when the property does not file through BookOne', async () => {
+    // Arrived four days ago, left two days ago; alpha has no `alloggiati` feature.
+    const departed = await fileableStay(fixture.alpha.propertyId, -4)
+    const current = await fileableStay(fixture.alpha.propertyId)
+
+    const ids = (await listDocumentsToDelete({ limit: 200 })).map((row) => row.reservationId)
+    expect(ids).toContain(departed)
+    // Still in the house: the documents stay until they leave.
+    expect(ids).not.toContain(current)
+  })
+
+  it('keeps them for a property that files, until the filing is acknowledged', async () => {
+    const departed = await fileableStay(fixture.alpha.propertyId, -4)
+    await grantEntitlement({ propertyId: fixture.alpha.propertyId, feature: 'alloggiati' })
+
+    try {
+      const ids = (await listDocumentsToDelete({ limit: 200 })).map((row) => row.reservationId)
+      // Deleting before the authority accepts the filing would destroy the data
+      // needed to re-file it.
+      expect(ids).not.toContain(departed)
+    } finally {
+      await revokeEntitlement({ propertyId: fixture.alpha.propertyId, feature: 'alloggiati' })
+    }
+  })
+})
+
+describe('document reading (WP0.4)', () => {
+  it('stores the reading beside what the guest typed, and events it without personal data', async () => {
+    const reservationId = await fileableStay(fixture.alpha.propertyId)
+    expect(await getDocumentPath(fixture.alpha.propertyId, reservationId, 0)).toBe(
+      `${fixture.alpha.propertyId}/${reservationId}/0`,
+    )
+
+    const reading = interpretReading(
+      {
+        mrzLines: [
+          'P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<',
+          'L898902C36UTO7408122F1204159ZE184226B<<<<<10',
+        ],
+      },
+      'fake-vision',
+    )
+    expect(
+      await recordDocumentReading({
+        propertyId: fixture.alpha.propertyId,
+        reservationId,
+        guestIndex: 0,
+        reading,
+      }),
+    ).toBe(true)
+
+    const [row] = await db.execute<{ surname: string; ocr: string; typed: string }>(
+      sql`select data->>'surname' as typed, data->'ocr'->'fields'->>'surname' as ocr
+          from registration_records where reservation_id = ${reservationId} and guest_index = 0`,
+    )
+    // The guest's own entry is untouched; the reading sits beside it.
+    expect(row).toMatchObject({ typed: 'Weber', ocr: 'ERIKSSON' })
+
+    const [event] = await db.execute<{ payload: Record<string, unknown> }>(
+      sql`select payload from domain_events where event_type = 'document.read'
+          and property_id = ${fixture.alpha.propertyId} order by id desc limit 1`,
+    )
+    expect(event!.payload).toEqual({ guestIndex: 0, source: 'mrz', mrzValid: true })
   })
 })

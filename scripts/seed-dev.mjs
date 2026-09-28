@@ -61,7 +61,7 @@ async function admin(path, init = {}) {
 }
 
 /** Idempotent: delete any existing test user first, so re-running is safe. */
-async function createUser(email, fullName) {
+async function createUser(email, fullName, appMetadata) {
   const { users } = await admin('/auth/v1/admin/users?per_page=200')
   const existing = users.find((u) => u.email === email)
   if (existing) await admin(`/auth/v1/admin/users/${existing.id}`, { method: 'DELETE' })
@@ -73,6 +73,7 @@ async function createUser(email, fullName) {
       password: PASSWORD,
       email_confirm: true,
       user_metadata: { full_name: fullName },
+      ...(appMetadata ? { app_metadata: appMetadata } : {}),
     }),
   })
   return user.id
@@ -86,6 +87,13 @@ try {
 
   const ownerId = await createUser('owner@bookone.test', 'Markus Rainer')
   const staffId = await createUser('staff@bookone.test', 'Lena Fischer')
+
+  // Operator accounts for apps/admin (ADR-031). Locally they live in the one
+  // Supabase; deployed, in the separate staff project. The role is in
+  // app_metadata, which only the service role can write. No property membership:
+  // an operator is not a hotel user.
+  await createUser('ops@bookone.test', 'Ops Admin', { staff_role: 'admin' })
+  await createUser('support@bookone.test', 'Ops Support', { staff_role: 'support' })
 
   // Settings carry what the booking surface reads: the whitelabel colours
   // (PRD A1), the contact the stale-source fallback offers, the tourist-tax
@@ -147,6 +155,38 @@ try {
       (${alpin.id}, ${ownerId}, 'staff'),
       (${sonja.id}, ${staffId}, 'staff')`
 
+  /*
+   * Every feature, for both properties (ADR-019).
+   *
+   * Entitlements fail closed, so a seed that grants nothing produces a console
+   * with no conversations, a booking page that 404s and a stay page with no
+   * forms — correct, and useless for development. Everything on keeps local
+   * behaviour what it was before the gates existed. The Guest Desk demo property
+   * gets the Phase 0 set instead, from its own seed (WP0.5).
+   *
+   * Mirrors `FEATURES` in packages/core/src/onboarding/entitlements.ts; this
+   * file is plain JS and cannot import it.
+   */
+  const features = [
+    'inbox',
+    'concierge',
+    'prearrival',
+    'document_ocr',
+    'payments',
+    'booking_engine',
+    'pms_sync',
+    'alloggiati',
+    'rooms',
+    'reporting',
+  ]
+  for (const property of [sonja, alpin]) {
+    for (const feature of features) {
+      await sql`
+        insert into entitlements (property_id, feature, note)
+        values (${property.id}, ${feature}, 'seed-dev: everything on')`
+    }
+  }
+
   // Room types, so the booking surface has something real to read in Sprint 3.
   for (const property of [sonja, alpin]) {
     await sql`
@@ -207,6 +247,8 @@ try {
   console.log('')
   console.log('  owner@bookone.test  owner of Hotel Sonja, staff at Garni Alpin')
   console.log('  staff@bookone.test  staff at Hotel Sonja only')
+  console.log('  ops@bookone.test      operator console admin   (http://127.0.0.1:3100)')
+  console.log('  support@bookone.test  operator console, read-only')
   console.log(`  password: ${PASSWORD}`)
 } finally {
   await sql.end()

@@ -1,0 +1,18 @@
+{
+  "profile": "complaints",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Voglio fare un reclamo"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "complaints"
+      }
+    }
+  ],
+  "must_not": []
+}

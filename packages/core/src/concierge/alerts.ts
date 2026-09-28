@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { asService } from '../db/session'
 import { guests, properties, reservations } from '../db/schema'
 import { readContactEmail } from '../booking/request'
@@ -29,6 +29,13 @@ export async function alertEscalation(input: {
   /** Public base URL, so the alert links to the thread rather than describing it. */
   appUrl: string
   now?: Date
+  /**
+   * Who is told (ADR-035). `all` — the contact email and the owner's phones —
+   * for the SLA reminder and a complaint. `phone` — the owner's phones only —
+   * at the moment of handover, so the owner hears within seconds while the
+   * email stays the 30-minute reminder rather than arriving twice.
+   */
+  reach?: 'all' | 'phone'
 }): Promise<string | null> {
   const now = input.now ?? new Date()
 
@@ -54,37 +61,81 @@ export async function alertEscalation(input: {
 
     if (!row) return null
 
-    const contact = readContactEmail(row.settings)
-    if (!contact) return null
+    const reach = input.reach ?? 'all'
+    const contact = reach === 'all' ? readContactEmail(row.settings) : null
 
     const minutesWaiting = input.escalatedAt
       ? Math.max(0, Math.round((now.getTime() - input.escalatedAt.getTime()) / 60_000))
       : 0
 
-    return db.transaction((tx) =>
-      queueNotification(tx, {
-        propertyId: input.propertyId,
-        /*
-         * Deliberately *not* scoped to the reservation.
-         *
-         * The outbox deduplicates on (reservation, template, channel), which is
-         * exactly right for a confirmation and exactly wrong here: a guest who
-         * is left waiting twice during one stay must produce two alerts. The
-         * once-only guarantee for a single escalation is `sla_alerted_at` on
-         * the thread, which is where it belongs — it is a fact about the
-         * escalation, not about the message.
-         */
-        channel: 'email',
-        template: ESCALATION_ALERT,
-        locale: row.localeDefault,
-        recipient: contact,
-        payload: {
-          guestName: row.guestName ?? row.reference ?? 'A guest',
-          reference: row.reference ?? '',
-          minutesWaiting,
-          threadUrl: `${input.appUrl.replace(/\/$/, '')}/${row.localeDefault}/${row.slug}/console/conversations/${input.threadId}`,
-        },
-      }),
-    )
+    const payload = {
+      guestName: row.guestName ?? row.reference ?? 'A guest',
+      reference: row.reference ?? '',
+      minutesWaiting,
+      threadUrl: `${input.appUrl.replace(/\/$/, '')}/${row.localeDefault}/${row.slug}/console/conversations/${input.threadId}`,
+    }
+
+    // The owner's phones, on the first messaging channel the property has on:
+    // WhatsApp, else SMS (ADR-035). Numbers come only from `ownerPhones`, the
+    // same recorded list that gates the owner agent.
+    const [channels] = await db.execute<{ whatsapp: boolean; sms: boolean }>(sql`
+      select exists (select 1 from entitlements where property_id = ${input.propertyId}
+                      and feature = 'whatsapp' and ended_at is null) as whatsapp,
+             exists (select 1 from entitlements where property_id = ${input.propertyId}
+                      and feature = 'sms' and ended_at is null) as sms`)
+    const phoneChannel = channels?.whatsapp ? 'whatsapp' : channels?.sms ? 'sms' : null
+    const phones = phoneChannel ? readOwnerPhones(row.settings) : []
+
+    if (!contact && phones.length === 0) return null
+
+    return db.transaction(async (tx) => {
+      /*
+       * Deliberately *not* scoped to the reservation.
+       *
+       * The outbox deduplicates on (reservation, template, channel), which is
+       * exactly right for a confirmation and exactly wrong here: a guest who
+       * is left waiting twice during one stay must produce two alerts. The
+       * once-only guarantee for a single escalation is `sla_alerted_at` on
+       * the thread, which is where it belongs — it is a fact about the
+       * escalation, not about the message.
+       */
+      const email = contact
+        ? await queueNotification(tx, {
+            propertyId: input.propertyId,
+            channel: 'email',
+            template: ESCALATION_ALERT,
+            locale: row.localeDefault,
+            recipient: contact,
+            payload,
+          })
+        : null
+
+      let first: string | null = null
+      for (const phone of phones) {
+        const id = await queueNotification(tx, {
+          propertyId: input.propertyId,
+          channel: phoneChannel!,
+          template: ESCALATION_ALERT,
+          locale: row.localeDefault,
+          recipient: phone,
+          payload,
+        })
+        first ??= id
+      }
+
+      return email ?? first
+    })
   })
+}
+
+/** `settings.ownerPhones` as E.164; anything without a country code is dropped. */
+function readOwnerPhones(settings: unknown): string[] {
+  const raw = (settings as { ownerPhones?: unknown } | null)?.ownerPhones
+  if (!Array.isArray(raw)) return []
+  const phones = raw
+    .map((value) => String(value).trim())
+    .filter((value) => value.startsWith('+'))
+    .map((value) => `+${value.replace(/\D/g, '')}`)
+    .filter((value) => /^\+[1-9]\d{6,14}$/.test(value))
+  return [...new Set(phones)]
 }

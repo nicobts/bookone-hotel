@@ -1,5 +1,11 @@
 import { asService, properties } from '@bookone/core/db'
-import type { JobQueue } from '@bookone/core/jobs'
+import type { JobName, JobQueue } from '@bookone/core/jobs'
+import {
+  createFeatureCheck,
+  gateOpen,
+  JOB_FEATURE,
+  type FeatureCheck,
+} from '@bookone/core/onboarding'
 import type { Logger } from 'pino'
 
 /**
@@ -105,6 +111,13 @@ const ESCALATION_SWEEP = '*/5 * * * *'
 const INVOICE_ROUTE = '*/10 * * * *'
 
 /**
+ * Replies bound for WhatsApp/SMS that no concierge turn sent: a staff reply,
+ * an approval decided later (ADR-035). Every minute, so a person's answer
+ * reaches the guest's phone about as fast as it reaches the stay page.
+ */
+const CHANNEL_SWEEP = '* * * * *'
+
+/**
  * Closes stays that ended and nobody checked out of (E4.1).
  *
  * 04:30, an hour after reconciliation, so a stay is closed against a picture
@@ -162,69 +175,130 @@ const REPORT_GENERATE = '0 6 2 * *'
  */
 const RETENTION_SWEEP = '15 2 * * *'
 
-export async function registerSchedules(deps: { queue: JobQueue; logger: Logger }): Promise<void> {
-  const { queue, logger } = deps
+/**
+ * How often per-property schedules are re-derived (ADR-019).
+ *
+ * Ten minutes is the longest an owner waits between a feature being granted or
+ * revoked and its nightly work starting or stopping. The gated handlers refuse
+ * a revoked property's work immediately regardless; this only decides whether
+ * the schedule still fires into that refusal.
+ */
+const SCHEDULES_SYNC = '*/10 * * * *'
 
-  // Read at boot. A property added afterwards is not scheduled until the next
-  // restart — acceptable while onboarding is a founder-run process (Sprint 9
-  // makes it self-service), and stated here rather than discovered when a new
-  // hotel's first reconciliation never runs.
-  const rows = await asService((db) =>
-    db.select({ id: properties.id, slug: properties.slug }).from(properties),
-  )
+/** Complaint SLA breaches: every two minutes, because the shortest SLA is five (WP0.6). */
+const COMPLAINTS_SLA = '*/2 * * * *'
+
+/** The per-property schedules, and what each one is for. */
+const PER_PROPERTY = [
+  'reconcile.nightly',
+  'availability.refresh',
+  'retention.sweep',
+] as const satisfies readonly JobName[]
+
+export interface ScheduleDeps {
+  queue: JobQueue
+  logger: Pick<Logger, 'info'>
+  /** Defaults to reading entitlements. Injected so the test needs no database. */
+  features?: FeatureCheck
+  /** Defaults to every property. Injected for the same reason. */
+  listProperties?: () => Promise<{ id: string }[]>
+}
+
+async function allProperties(): Promise<{ id: string }[]> {
+  return asService((db) => db.select({ id: properties.id }).from(properties))
+}
+
+/**
+ * Bring every per-property schedule in line with the properties that exist and
+ * the features they have.
+ *
+ * Idempotent: `schedule` upserts by name and key, and anything that should no
+ * longer fire is removed. Run at boot and then by `schedules.sync`, which also
+ * retires the old "a new property waits for a restart" caveat and moves the
+ * availability window forward with the calendar instead of freezing it at boot.
+ */
+export async function syncPropertySchedules(
+  deps: ScheduleDeps,
+): Promise<{ scheduled: number; removed: number }> {
+  const { queue, logger } = deps
+  const features = deps.features ?? createFeatureCheck()
+  const rows = await (deps.listProperties ?? allProperties)()
 
   const today = new Date()
   const horizon = new Date(today.getTime() + AVAILABILITY_HORIZON_DAYS * 86_400_000)
 
-  for (const property of rows) {
-    await queue.schedule(
-      'reconcile.nightly',
-      NIGHTLY_RECONCILE,
-      { propertyId: property.id, domain: 'booking' },
-      { key: property.id },
-    )
-
-    // The window is fixed at boot rather than rolling. A cron payload is static
-    // — pg-boss stores it once — so a long-running process would otherwise keep
-    // refreshing a window that recedes into the past. The restart that fixes it
-    // is the same restart that picks up new properties, which is the honest
-    // shape of this until Sprint 9 replaces both.
-    await queue.schedule(
-      'availability.refresh',
-      AVAILABILITY_REFRESH,
-      { propertyId: property.id, from: isoDate(today), to: isoDate(horizon) },
-      { key: property.id },
-    )
-
-    await queue.schedule(
-      'retention.sweep',
-      RETENTION_SWEEP,
-      { propertyId: property.id },
-      { key: property.id },
-    )
+  const live: Record<(typeof PER_PROPERTY)[number], Set<string>> = {
+    'reconcile.nightly': new Set(),
+    'availability.refresh': new Set(),
+    'retention.sweep': new Set(),
   }
 
-  // Remove schedules that no longer correspond to a property.
+  for (const property of rows) {
+    if (await gateOpen(features, property.id, JOB_FEATURE['reconcile.nightly'])) {
+      await queue.schedule(
+        'reconcile.nightly',
+        NIGHTLY_RECONCILE,
+        { propertyId: property.id, domain: 'booking' },
+        { key: property.id },
+      )
+      live['reconcile.nightly'].add(property.id)
+    }
+
+    // The payload carries the window, and a cron payload is stored once — so
+    // each sync rewrites it, and the window rolls forward with the calendar.
+    if (await gateOpen(features, property.id, JOB_FEATURE['availability.refresh'])) {
+      await queue.schedule(
+        'availability.refresh',
+        AVAILABILITY_REFRESH,
+        { propertyId: property.id, from: isoDate(today), to: isoDate(horizon) },
+        { key: property.id },
+      )
+      live['availability.refresh'].add(property.id)
+    }
+
+    if (await gateOpen(features, property.id, JOB_FEATURE['retention.sweep'])) {
+      await queue.schedule(
+        'retention.sweep',
+        RETENTION_SWEEP,
+        { propertyId: property.id },
+        { key: property.id },
+      )
+      live['retention.sweep'].add(property.id)
+    }
+  }
+
+  // Remove schedules that no longer correspond to a property with the feature.
   //
   // Schedules outlive the process that created them, so without this the set
   // only ever grows: a property removed keeps being reconciled, and — the case
   // that actually happened here — a keyless schedule written by an older build
   // keeps firing alongside the keyed ones, refreshing one property twice and
   // making the log look like the fix did not work.
-  const live = new Set(rows.map((property) => property.id))
+  let removed = 0
 
-  for (const name of ['availability.refresh', 'reconcile.nightly', 'retention.sweep'] as const) {
+  for (const name of PER_PROPERTY) {
     for (const schedule of await queue.listSchedules(name)) {
-      if (live.has(schedule.key)) continue
+      if (live[name].has(schedule.key)) continue
 
       await queue.unschedule(name, schedule.key)
-      logger.info({ job: name, key: schedule.key }, 'removed a stale schedule')
+      removed += 1
+      logger.info({ job: name, key: schedule.key }, 'removed a schedule')
     }
   }
 
+  const scheduled = PER_PROPERTY.reduce((sum, name) => sum + live[name].size, 0)
+  return { scheduled, removed }
+}
+
+export async function registerSchedules(deps: ScheduleDeps): Promise<void> {
+  const { queue, logger } = deps
+
+  const perProperty = await syncPropertySchedules(deps)
+
   // Cross-property maintenance. Scheduled once, and therefore needing no key:
   // a hold that expired at a property this loop never reached is exactly the
-  // hold that needs expiring.
+  // hold that needs expiring. The gated ones among them skip properties without
+  // their feature inside the sweep (ADR-019).
   await queue.schedule('reservation.expire_holds', EXPIRE_HOLDS, {})
   await queue.schedule('notification.sweep', NOTIFICATION_SWEEP, {})
   await queue.schedule('payment.replay', PAYMENT_REPLAY, {})
@@ -237,19 +311,23 @@ export async function registerSchedules(deps: { queue: JobQueue; logger: Logger 
   await queue.schedule('toolboundary.audit', TOOLBOUNDARY_AUDIT, {})
   await queue.schedule('attribution.audit', ATTRIBUTION_AUDIT, {})
   await queue.schedule('report.generate', REPORT_GENERATE, {})
+  await queue.schedule('schedules.sync', SCHEDULES_SYNC, {})
+  await queue.schedule('complaints.sla', COMPLAINTS_SLA, {})
+  await queue.schedule('channel.sweep', CHANNEL_SWEEP, {})
 
   logger.info(
     {
-      properties: rows.length,
+      perPropertySchedules: perProperty.scheduled,
+      removed: perProperty.removed,
       reconcile: NIGHTLY_RECONCILE,
       availability: AVAILABILITY_REFRESH,
-      availabilityThrough: isoDate(horizon),
       expireHolds: EXPIRE_HOLDS,
       notificationSweep: NOTIFICATION_SWEEP,
       paymentReplay: PAYMENT_REPLAY,
       precheckinSweep: PRECHECKIN_SWEEP,
       alloggiatiCheck: ALLOGGIATI_CHECK,
       documentPurge: DOCUMENT_PURGE,
+      schedulesSync: SCHEDULES_SYNC,
     },
     'schedules registered',
   )

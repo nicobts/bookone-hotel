@@ -1,0 +1,18 @@
+{
+  "profile": "booking-support",
+  "channel": "webchat",
+  "lang": "en",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Can I add one more night to my reservation?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "booking-support"
+      }
+    }
+  ],
+  "must_not": []
+}

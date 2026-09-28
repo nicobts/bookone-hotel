@@ -3,9 +3,12 @@ import { Geist_Mono, Inter, Instrument_Serif } from 'next/font/google'
 import { NextIntlClientProvider, hasLocale } from 'next-intl'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
-import { ThemeProvider } from '@/components/theme/theme-provider'
-import { Toaster } from '@/components/ui/sonner'
-import { TooltipProvider } from '@/components/ui/tooltip'
+import { ThemeProvider } from '@bookone/ui/components/theme-provider'
+import { Suspense } from 'react'
+import { getTranslations } from 'next-intl/server'
+import { FlashToaster } from '@bookone/ui/components/flash-toaster'
+import { Toaster } from '@bookone/ui/components/sonner'
+import { TooltipProvider } from '@bookone/ui/components/tooltip'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { loadProfile } from '@/lib/auth/current-property'
 import '../globals.css'
@@ -33,7 +36,7 @@ const instrumentSerif = Instrument_Serif({
   style: ['normal', 'italic'],
 })
 
-const TITLE = 'BookOne'
+const TITLE = 'BookOne Hotel'
 const DESCRIPTION = 'Guest-journey-first hospitality platform for independent hotels.'
 
 export const metadata: Metadata = {
@@ -64,6 +67,7 @@ export default async function LocaleLayout({
   // layout renders for visitors who have every right to be signed out.
   const user = await getCurrentUser()
   const profile = user ? await loadProfile(user.id) : null
+  const t = await getTranslations({ locale, namespace: 'common' })
 
   return (
     // suppressHydrationWarning is required, not optional: next-themes sets the
@@ -81,7 +85,12 @@ export default async function LocaleLayout({
                 them — assume a tooltip provider exists above them, and mounting
                 per page means discovering the omission one page at a time. */}
             <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
-            <Toaster position="top-center" />
+            {/* Feedback from server actions arrives as flash cookies
+                (@bookone/ui/lib/flash); FlashToaster turns them into toasts. */}
+            <Toaster containerLabel={t('notifications')} closeLabel={t('close')} />
+            <Suspense fallback={null}>
+              <FlashToaster />
+            </Suspense>
           </NextIntlClientProvider>
         </ThemeProvider>
       </body>

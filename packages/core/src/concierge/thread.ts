@@ -1,7 +1,9 @@
-import { and, asc, desc, eq, isNull, lt, or } from 'drizzle-orm'
+import { and, asc, desc, eq, isNull, lt, or, sql } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { asService } from '../db/session'
-import { messageThreads, messages, reservations, stayTasks } from '../db/schema'
+import { hasFeatureSql } from '../onboarding/features'
+import type { Feature } from '../onboarding/entitlements'
+import { externalRefs, messageThreads, messages, reservations, stayTasks } from '../db/schema'
 import type * as schema from '../db/schema'
 import { emit } from '../events'
 import { agentActor, guestActor, systemActor, userActor, type Actor } from '../events/actor'
@@ -33,6 +35,12 @@ export interface ThreadRow {
   reservationId: string
   status: 'open' | 'awaiting_reply' | 'escalated' | 'answered' | 'closed'
   locale: string
+  /**
+   * Where the guest last reached us. `email` is the column's historical
+   * default and means "the stay page"; `whatsapp` and `sms` mean replies are
+   * also delivered there (ADR-035).
+   */
+  channel: 'email' | 'sms' | 'whatsapp'
   assignedTo: string | null
   escalationReason: string | null
   lastGuestMessageAt: Date | null
@@ -140,12 +148,41 @@ export async function appendGuestMessage(input: {
   locale: string
   body: string
   at?: Date
-}): Promise<{ thread: ThreadRow; messageId: string }> {
+  /**
+   * Where the guest wrote from, when it is a messaging channel (ADR-035). The
+   * thread remembers it so the reply goes back the same way.
+   */
+  channel?: 'whatsapp' | 'sms'
+  /**
+   * The provider's id for this message. Recorded in `external_refs` in the same
+   * transaction, so a redelivered webhook finds it and changes nothing.
+   */
+  externalRef?: { system: string; externalId: string }
+}): Promise<{ thread: ThreadRow; messageId: string; duplicate: boolean }> {
   const body = normaliseBody(input.body)
   const at = input.at ?? new Date()
 
   return asService((db) =>
     db.transaction(async (tx) => {
+      if (input.externalRef) {
+        const [seen] = await tx
+          .select({ entityId: externalRefs.entityId })
+          .from(externalRefs)
+          .where(
+            and(
+              eq(externalRefs.propertyId, input.propertyId),
+              eq(externalRefs.system, input.externalRef.system),
+              eq(externalRefs.entityType, 'message'),
+              eq(externalRefs.externalId, input.externalRef.externalId),
+            ),
+          )
+          .limit(1)
+        if (seen) {
+          const thread = await openThreadIn(tx, input)
+          return { thread, messageId: seen.entityId, duplicate: true }
+        }
+      }
+
       const thread = await openThreadIn(tx, input)
 
       if (thread.status === 'closed') {
@@ -178,6 +215,30 @@ export async function appendGuestMessage(input: {
         .where(eq(messageThreads.id, thread.id))
         .returning(threadColumns)
 
+      if (input.externalRef) {
+        // A concurrent redelivery that passed the check above fails here on the
+        // unique constraint and rolls this whole turn back; its retry then sees
+        // the row and returns the duplicate.
+        await tx.insert(externalRefs).values({
+          propertyId: input.propertyId,
+          system: input.externalRef.system,
+          entityType: 'message',
+          entityId: messageId,
+          externalId: input.externalRef.externalId,
+          lastSyncedAt: at,
+        })
+      }
+
+      let channelled = updated ?? thread
+      if (input.channel && channelled.channel !== input.channel) {
+        const [moved] = await tx
+          .update(messageThreads)
+          .set({ channel: input.channel })
+          .where(eq(messageThreads.id, thread.id))
+          .returning(threadColumns)
+        channelled = moved ?? channelled
+      }
+
       await emit(tx, {
         propertyId: input.propertyId,
         entityType: 'message_thread',
@@ -185,10 +246,14 @@ export async function appendGuestMessage(input: {
         eventType: 'message.received',
         origin: 'platform',
         actor: guestActor(input.reservationId),
-        payload: { messageId, length: body.length },
+        payload: {
+          messageId,
+          length: body.length,
+          ...(input.channel ? { channel: input.channel } : {}),
+        },
       })
 
-      return { thread: updated ?? thread, messageId }
+      return { thread: channelled, messageId, duplicate: false }
     }),
   )
 }
@@ -394,7 +459,17 @@ export async function takeOverThread(input: {
     db.transaction(async (tx) => {
       await tx
         .update(messageThreads)
-        .set({ assignedTo: input.userId, status: 'escalated', updatedAt: new Date() })
+        .set({
+          assignedTo: input.userId,
+          status: 'escalated',
+          // Taking over a conversation the concierge was answering happily is
+          // escalating it — by a person. Before WP0.6 only already-escalated
+          // threads were ever taken over, and doing it to any other violated
+          // `message_threads_escalated_has_time`: a 500 on "Prendo io". An
+          // existing escalation keeps its own time.
+          escalatedAt: sql`coalesce(${messageThreads.escalatedAt}, now())`,
+          updatedAt: new Date(),
+        })
         .where(
           and(
             eq(messageThreads.id, input.threadId),
@@ -528,6 +603,8 @@ export async function listOverdueEscalations(input: {
   minutes: number
   now?: Date
   limit?: number
+  /** Only properties with this feature live (ADR-019). Filtered before the limit. */
+  feature?: Feature
 }): Promise<{ id: string; propertyId: string; reservationId: string; escalatedAt: Date | null }[]> {
   const now = input.now ?? new Date()
   const cutoff = new Date(now.getTime() - input.minutes * 60_000)
@@ -546,6 +623,7 @@ export async function listOverdueEscalations(input: {
           eq(messageThreads.status, 'escalated'),
           isNull(messageThreads.slaAlertedAt),
           lt(messageThreads.escalatedAt, cutoff),
+          input.feature ? hasFeatureSql(messageThreads.propertyId, input.feature) : undefined,
         ),
       )
       .orderBy(asc(messageThreads.escalatedAt))
@@ -636,6 +714,7 @@ const threadColumns = {
   reservationId: messageThreads.reservationId,
   status: messageThreads.status,
   locale: messageThreads.locale,
+  channel: messageThreads.channel,
   assignedTo: messageThreads.assignedTo,
   escalationReason: messageThreads.escalationReason,
   lastGuestMessageAt: messageThreads.lastGuestMessageAt,

@@ -5,12 +5,14 @@ import {
   alloggiatiSubmissions,
   externalRefs,
   journeyStates,
+  properties,
   registrationRecords,
   reservations,
 } from '../db/schema'
 import { emit } from '../events'
 import { systemActor, userActor, type Actor } from '../events/actor'
 import { applyJourneyCommandIn } from '../journey/apply'
+import { hasFeatureSql } from '../onboarding/features'
 import { AlloggiatiError, type AlloggiatiAdapter } from './adapter'
 import { buildPayload, validateParty, type GuestDetails, type ValidationIssue } from './record'
 
@@ -465,10 +467,29 @@ export async function listUnconfirmedAlloggiati(input: {
  * this deletes objects, so it is deliberately a list to work through rather
  * than a single sweeping statement.
  */
+/**
+ * How long after departure a stay's identity-document images are kept when the
+ * property does not file through BookOne (Guest Desk Phase 0: Alloggiati off).
+ * One day by default; a property can set `settings.documentRetentionDays`.
+ * Common practice in Italy is to keep no copy once the stay is registered —
+ * the default is the shortest window that still covers a late-evening checkout.
+ */
+export const DOCUMENT_RETENTION_DAYS_DEFAULT = 1
+
+/**
+ * Stays whose identity-document images are due for deletion (E2.4).
+ *
+ * Two routes, one job:
+ *   - **Filed through BookOne:** on acknowledgement, as E2.4 always did.
+ *   - **Not filed through BookOne** — the property lacks the `alloggiati`
+ *     feature (ADR-019): a set number of days after departure. Without this the
+ *     images of a property that files elsewhere would never be deleted, because
+ *     the acknowledgement that triggers deletion never comes.
+ */
 export async function listDocumentsToDelete(input: {
   limit: number
 }): Promise<{ propertyId: string; reservationId: string }[]> {
-  return asService((db) =>
+  const acknowledged = await asService((db) =>
     db
       .selectDistinct({
         propertyId: alloggiatiSubmissions.propertyId,
@@ -487,6 +508,33 @@ export async function listDocumentsToDelete(input: {
       )
       .limit(input.limit),
   )
+
+  const room = input.limit - acknowledged.length
+  if (room <= 0) return acknowledged
+
+  const departed = await asService((db) =>
+    db
+      .selectDistinct({
+        propertyId: registrationRecords.propertyId,
+        reservationId: registrationRecords.reservationId,
+      })
+      .from(registrationRecords)
+      .innerJoin(reservations, eq(reservations.id, registrationRecords.reservationId))
+      .innerJoin(properties, eq(properties.id, registrationRecords.propertyId))
+      .where(
+        and(
+          isNotNull(registrationRecords.documentPath),
+          sql`not ${hasFeatureSql(registrationRecords.propertyId, 'alloggiati')}`,
+          sql`${reservations.departureDate} <= current_date - coalesce(
+                nullif(${properties.settings} ->> 'documentRetentionDays', '')::int,
+                ${DOCUMENT_RETENTION_DAYS_DEFAULT}
+              )`,
+        ),
+      )
+      .limit(room),
+  )
+
+  return [...acknowledged, ...departed]
 }
 
 export interface DeleteOutcome {

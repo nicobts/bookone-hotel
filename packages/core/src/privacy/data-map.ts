@@ -172,6 +172,22 @@ export const DATA_MAP: DataMapEntry[] = [
     exportVia: 'none',
   },
   {
+    table: 'admin_audit',
+    subject: 'staff',
+    categories: ['identity'],
+    basis:
+      'Legitimate interest (Art. 6(1)(f)) and the accountability principle — who operated on a property, when and why (ADR-031).',
+    retention: {
+      kind: 'keep',
+      why: 'Append-only by trigger. The operator trail is the evidence ISO 27001 and a customer audit ask for; it holds BookOne staff identities and configuration, not guest data. A daily export to immutable storage is decided (ADR-031) and not yet built; until then the database refuses edits and the provider’s backups are the copies.',
+    },
+    erasure: {
+      kind: 'keep',
+      why: 'Not a guest table: operations are recorded as configuration changes, never guest content. Out of the guest erasure routine by design.',
+    },
+    exportVia: 'none',
+  },
+  {
     table: 'profiles',
     subject: 'staff',
     categories: ['identity', 'contact'],
@@ -314,7 +330,7 @@ export const DATA_MAP: DataMapEntry[] = [
       anchor: 'departure',
       columns: { data: "'{}'::jsonb" },
       stamp: 'deleted_at',
-      why: 'The registration fields are needed while the guest is in the house and for a short tail afterwards — a correction, a query from the Questura. After that the filed payload is the record and this is a duplicate of identity data with no purpose. The *document image* goes earlier, on acknowledgement, under the E2.4 job.',
+      why: 'The registration fields are needed while the guest is in the house and for a short tail afterwards — a correction, a query from the Questura. After that the filed payload is the record and this is a duplicate of identity data with no purpose. The *document image* goes earlier, under the E2.4 job: on acknowledgement where the property files through BookOne, or `documentRetentionDays` (default 1) after departure where it does not (WP0.4) — otherwise a property that files elsewhere would keep images forever.',
     },
     erasure: {
       kind: 'redact',
@@ -510,6 +526,20 @@ export const DATA_MAP: DataMapEntry[] = [
       afterDays: DAYS.twoYears,
       anchor: 'created_at',
       why: 'A summary of what a guest asked for. Same category and same clock as the message it came from.',
+    },
+    erasure: { kind: 'delete', why: 'Goes with the conversation it came from.' },
+    exportVia: 'reservation',
+  },
+  {
+    table: 'complaints',
+    subject: 'guest',
+    categories: ['content'],
+    basis: 'Performance of contract (Art. 6(1)(b)) — a complaint a guest made about their stay.',
+    retention: {
+      kind: 'delete-rows',
+      afterDays: DAYS.twoYears,
+      anchor: 'created_at',
+      why: 'What a guest complained about, in their words. Same category and same clock as the message it came from.',
     },
     erasure: { kind: 'delete', why: 'Goes with the conversation it came from.' },
     exportVia: 'reservation',

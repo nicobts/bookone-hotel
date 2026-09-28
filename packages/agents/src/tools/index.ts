@@ -3,6 +3,7 @@ import type { PmsReservation } from '@bookone/core/adapters'
 import { billingTools } from './billing'
 import { conciergeTools } from './concierge'
 import { draftKnowledgeTool } from './onboarding'
+import { guestDeskTools } from './guest-desk'
 
 /**
  * Typed domain tools — the complete surface through which agents act.
@@ -36,6 +37,8 @@ export interface ToolContext {
   threadId?: string
   /** The guest's language. A phrase exists in it or the tool reports a miss. */
   locale?: string
+  /** The public base URL, for links a guest will click. Fixed by the runner. */
+  appUrl?: string
 }
 
 export interface ToolResult {
@@ -46,6 +49,19 @@ export interface ToolResult {
 export type Tool = {
   name: string
   description: string
+  /**
+   * JSON Schema of the input, for a model choosing this tool (ADR-023). Absent
+   * on tools no model ever chooses. The context — property, stay, thread —
+   * is never part of it: the runner fixes those, and a model cannot name them.
+   */
+  input?: Record<string, unknown>
+  /** Whether the action can be undone (the per-call record, ADR-021). */
+  reversible?: boolean
+  /**
+   * The tool changes something. The runner keys each write on thread + tool +
+   * input and does not execute the same write twice (WP0.3).
+   */
+  write?: boolean
   run: (context: ToolContext, input: Record<string, unknown>) => Promise<ToolResult>
 }
 
@@ -105,8 +121,11 @@ export const tools: Record<string, Tool> = {
   ...Object.fromEntries(conciergeTools.map((tool) => [tool.name, tool])),
   ...Object.fromEntries(billingTools.map((tool) => [tool.name, tool])),
   [draftKnowledgeTool.name]: draftKnowledgeTool,
+  ...Object.fromEntries(guestDeskTools.map((tool) => [tool.name, tool])),
 }
 
 export function getTool(name: string): Tool | undefined {
   return tools[name]
 }
+
+export { READ_ONLY_TOOLS } from './read-only'

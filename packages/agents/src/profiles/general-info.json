@@ -1,0 +1,23 @@
+{
+  "id": "general-info",
+  "version": 1,
+  "phase": 0,
+  "description": "Infopoint: hotel content and tenant-curated local guide over one retrieval tool. Phase 0 KB only; Phase 2 adds allow-listed search.",
+  "modelTier": "small",
+  "maxSteps": 3,
+  "prompt": "general-info",
+  "tools": ["search_knowledge"],
+  "approvalRequired": [],
+  "escalation": [
+    {
+      "when": "no KB hit above threshold",
+      "to": "T2",
+      "notify": ["inbox"]
+    }
+  ],
+  "grounding": {
+    "sources": ["hotel_content", "local_guide"],
+    "unknownBehaviour": "escalate_T2"
+  },
+  "primaryAction": "search_knowledge"
+}

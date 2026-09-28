@@ -1,0 +1,19 @@
+{
+  "profile": "pre-sale",
+  "channel": "webchat",
+  "lang": "de",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Haben Sie ein freies Zimmer im Juli?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "pre-sale",
+        "hasBooking": false
+      }
+    }
+  ],
+  "must_not": []
+}

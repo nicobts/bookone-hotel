@@ -54,7 +54,7 @@ A multi-tenant platform for small independent hotels (30–120 rooms, IT/AT/SI) 
 | D3 | Ericsoft first; canonical model from commit one | Tech annexes |
 | D4 | PMS access read-mostly; writes only where platform is authoritative | PRD |
 | D5 | Conditional forwarding entry for voice; never the main line | Concierge PRD |
-| D9 | EU data residency, no exceptions | All |
+| D9 | EU data residency, no exceptions — *amended by ADR-029: storage stays EU-only; model/vision processing may run outside the EU until reassessed at production* | All |
 | **D10** | **Platform owns its data model day one; external PMS = sync source with per-domain authority** | Piattaforma annex |
 | **D11** | **Fiscal core gated behind C1–C6 (≥25 properties at Rung 5, 6-month shadow parity incl. year-end close, compliance hire, revenue-funded, insurance, written revision)** | Piattaforma annex |
 | D12 | Direct booking engine is the first platform-authoritative domain | Piattaforma annex |

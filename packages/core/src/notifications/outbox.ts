@@ -11,6 +11,8 @@ import {
   renderBookingConfirmation,
   renderBookingRequest,
   renderEscalationAlert,
+  renderEscalationAlertShort,
+  escalationAlertTemplateVariables,
   renderInvoiceRequest,
   renderPrecheckinInvite,
   renderReviewRequest,
@@ -122,11 +124,20 @@ export type SendOutcome =
  * measurement, per message, with nobody having to instrument anything.
  */
 export async function sendNotification(
-  deps: { provider: NotificationProvider },
+  deps: {
+    /** The email provider; also the fallback when nothing else takes a channel. */
+    provider: NotificationProvider
+    /** Further providers by channel — WhatsApp and SMS (ADR-035). */
+    providers?: readonly NotificationProvider[]
+    /**
+     * Approved WhatsApp template ids per notification template (ADR-035). A
+     * business-started WhatsApp message outside the 24-hour window must be a
+     * template; without an id the text is sent and may be refused.
+     */
+    templateIds?: Readonly<Record<string, string>>
+  },
   input: { notificationId: string },
 ): Promise<SendOutcome> {
-  const { provider } = deps
-
   const loaded = await asService(async (db) => {
     const [row] = await db
       .select({
@@ -152,6 +163,10 @@ export async function sendNotification(
   if (loaded.status === 'sent') return { status: 'already-sent' }
   if (loaded.status === 'suppressed') return { status: 'already-sent' }
 
+  const provider =
+    [deps.provider, ...(deps.providers ?? [])].find((p) => p.channels.includes(loaded.channel)) ??
+    deps.provider
+
   if (!provider.channels.includes(loaded.channel)) {
     const error = new UnsupportedChannelError(provider.name, loaded.channel)
     await recordFailure(loaded, provider.name, error.message)
@@ -161,7 +176,7 @@ export async function sendNotification(
 
   let rendered
   try {
-    rendered = render(loaded.template, loaded.locale, loaded.payload)
+    rendered = render(loaded.template, loaded.locale, loaded.payload, loaded.channel)
   } catch (cause) {
     // A template that cannot render will not render on the next attempt
     // either. Recorded and left alone rather than retried forever.
@@ -172,12 +187,17 @@ export async function sendNotification(
   }
 
   try {
+    const templateId =
+      loaded.channel === 'whatsapp' ? deps.templateIds?.[loaded.template] : undefined
+    const variables = templateId ? templateVariables(loaded.template, loaded.payload) : null
+
     const result = await provider.send({
       channel: loaded.channel,
       to: loaded.recipient,
       subject: rendered.subject,
       body: rendered.body,
       locale: loaded.locale,
+      ...(templateId && variables ? { template: { id: templateId, variables } } : {}),
     })
 
     await asService((db) =>
@@ -255,7 +275,15 @@ async function recordFailure(
   )
 }
 
-function render(template: string, locale: string, payload: unknown) {
+/** WhatsApp template variables per notification template; null where none is defined. */
+function templateVariables(template: string, payload: unknown): Record<string, string> | null {
+  if (template === ESCALATION_ALERT) {
+    return escalationAlertTemplateVariables(payload as EscalationAlertFacts)
+  }
+  return null
+}
+
+function render(template: string, locale: string, payload: unknown, channel = 'email') {
   if (template === BOOKING_CONFIRMATION) {
     return renderBookingConfirmation(locale, payload as BookingConfirmationFacts)
   }
@@ -281,7 +309,9 @@ function render(template: string, locale: string, payload: unknown) {
   }
 
   if (template === ESCALATION_ALERT) {
-    return renderEscalationAlert(locale, payload as EscalationAlertFacts)
+    return channel === 'email'
+      ? renderEscalationAlert(locale, payload as EscalationAlertFacts)
+      : renderEscalationAlertShort(locale, payload as EscalationAlertFacts)
   }
 
   throw new Error(`unknown notification template "${template}"`)
@@ -298,9 +328,12 @@ function render(template: string, locale: string, payload: unknown) {
  * things we meant to send.
  */
 export async function listPendingNotifications(input: {
+  /** Negative means "including rows written a moment from now" — clock-drift margin. */
   olderThanSeconds: number
   limit: number
   now?: Date
+  /** One property's queue, for sending right after a turn rather than at the sweep. */
+  propertyId?: string
 }): Promise<{ id: string; propertyId: string }[]> {
   const cutoff = new Date((input.now ?? new Date()).getTime() - input.olderThanSeconds * 1000)
 
@@ -308,7 +341,13 @@ export async function listPendingNotifications(input: {
     db
       .select({ id: notifications.id, propertyId: notifications.propertyId })
       .from(notifications)
-      .where(and(inArray(notifications.status, ['queued']), lt(notifications.createdAt, cutoff)))
+      .where(
+        and(
+          inArray(notifications.status, ['queued']),
+          lt(notifications.createdAt, cutoff),
+          input.propertyId ? eq(notifications.propertyId, input.propertyId) : undefined,
+        ),
+      )
       .orderBy(asc(notifications.createdAt))
       .limit(input.limit),
   )

@@ -3,12 +3,12 @@ import { BotIcon, EyeOffIcon } from 'lucide-react'
 import { listArticles, missingLocales, type KbArticleRow } from '@bookone/core/onboarding'
 import { PageShell } from '@/components/shell/page-shell'
 import { requireOwner } from '@/lib/auth/current-property'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
-import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@bookone/ui/components/badge'
+import { PendingButton } from '@bookone/ui/components/pending-button'
+import { Input } from '@bookone/ui/components/input'
+import { Label } from '@bookone/ui/components/label'
+import { Separator } from '@bookone/ui/components/separator'
+import { Textarea } from '@bookone/ui/components/textarea'
 import { save, togglePublished } from './actions'
 
 /**
@@ -33,17 +33,13 @@ import { save, togglePublished } from './actions'
  */
 export default async function KnowledgePage({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: string; property: string }>
-  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const { locale, property: slug } = await params
   setRequestLocale(locale)
 
   const { property } = await requireOwner(locale, slug)
-  const query = await searchParams
-  const error = typeof query.error === 'string' ? query.error : null
   const articles = await listArticles(property.id)
   const t = await getTranslations('console.knowledge')
 
@@ -65,12 +61,6 @@ export default async function KnowledgePage({
         ) : null
       }
     >
-      {error && (
-        <p role="alert" className="text-destructive text-sm">
-          {error}
-        </p>
-      )}
-
       {articles.length === 0 && <p className="text-muted-foreground text-sm">{t('empty')}</p>}
 
       {articles.map((article) => (
@@ -149,9 +139,9 @@ async function ArticleForm({
             published: !article.published,
           })}
         >
-          <Button type="submit" variant="ghost" size="sm" className="h-7 px-2 text-xs">
+          <PendingButton variant="ghost" size="sm" className="h-7 px-2 text-xs">
             {article.published ? t('unpublish') : t('publish')}
-          </Button>
+          </PendingButton>
         </form>
       </div>
 
@@ -229,9 +219,7 @@ async function ArticleFields({
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-muted-foreground text-xs">{t('liveHint')}</p>
-        <Button type="submit" size="sm">
-          {article ? t('save') : t('create')}
-        </Button>
+        <PendingButton size="sm">{article ? t('save') : t('create')}</PendingButton>
       </div>
     </form>
   )

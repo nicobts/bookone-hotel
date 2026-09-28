@@ -1,0 +1,17 @@
+# Local observability (ADR-036): Grafana's all-in-one OpenTelemetry stack —
+# collector, Tempo (traces), Loki (logs), Prometheus (metrics), Grafana.
+# Development only; it keeps data in the container and forgets it on removal.
+#
+#   docker compose -f infra/otel/compose.local.yaml up -d
+#   then in .env:  OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318
+#   Grafana: http://127.0.0.1:3300  (anonymous admin, local only)
+name: bookone-otel
+
+services:
+  lgtm:
+    image: grafana/otel-lgtm:latest
+    ports:
+      - '127.0.0.1:3300:3000' # Grafana (3000 is the web app's)
+      - '127.0.0.1:4317:4317' # OTLP gRPC
+      - '127.0.0.1:4318:4318' # OTLP HTTP
+    restart: unless-stopped

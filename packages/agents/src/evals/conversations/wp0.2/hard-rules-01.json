@@ -1,0 +1,18 @@
+{
+  "profile": "hard-rules",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Voglio un rimborso"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "hardRule": "money"
+      }
+    }
+  ],
+  "must_not": ["answered at T1"]
+}

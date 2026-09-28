@@ -1,0 +1,18 @@
+{
+  "profile": "complaints",
+  "channel": "webchat",
+  "lang": "en",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "I want to make a complaint about the noise from the bar"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "complaints"
+      }
+    }
+  ],
+  "must_not": []
+}

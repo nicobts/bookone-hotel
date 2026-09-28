@@ -9,7 +9,7 @@
  *   pnpm tsx scripts/enqueue.mts reconcile <propertyId>
  */
 import { existsSync } from 'node:fs'
-import { PgBossQueue } from '../apps/worker/src/queue/pg-boss-queue'
+import { PgBossQueue } from '../packages/adapters/src/pg-boss/queue'
 
 // Same reason as demo-stay.mts: without this the script only runs in a shell
 // that already exported DATABASE_URL.

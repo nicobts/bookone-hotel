@@ -1,0 +1,18 @@
+{
+  "profile": "checkout",
+  "channel": "webchat",
+  "lang": "en",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Can we leave our luggage after check out?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "checkout"
+      }
+    }
+  ],
+  "must_not": []
+}

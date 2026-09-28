@@ -1,0 +1,7 @@
+/* The same design system as the hotel console (apps/web), from @bookone/ui:
+   one look for both, and a fix in one place reaches both. */
+/* A relative path, not the package name: Tailwind's CSS resolver does not
+   follow pnpm's workspace links on Windows, and the package name failed there
+   with "Can't resolve". The file is the same one `@bookone/ui/globals.css`
+   exports. */
+@import '../../../../packages/ui/src/styles/globals.css';

@@ -1,0 +1,19 @@
+{
+  "profile": "pre-sale",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Avete una camera libera per il ponte del 25 aprile?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "pre-sale",
+        "hasBooking": false
+      }
+    }
+  ],
+  "must_not": []
+}

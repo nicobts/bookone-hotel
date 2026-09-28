@@ -4,8 +4,8 @@ import { buildChecklist, listEntitlements, type ChecklistItem } from '@bookone/c
 import { PageShell } from '@/components/shell/page-shell'
 import { Link } from '@/i18n/navigation'
 import { requireOwner } from '@/lib/auth/current-property'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+import { Badge } from '@bookone/ui/components/badge'
+import { Separator } from '@bookone/ui/components/separator'
 
 /**
  * The property setup checklist (E7.1).

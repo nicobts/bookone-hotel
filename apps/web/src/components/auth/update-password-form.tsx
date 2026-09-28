@@ -7,8 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 import { isSupabaseConfigured } from '@/lib/supabase/env'
 import { authErrorKey } from '@/lib/supabase/auth-errors'
 import { useRouter } from '@/i18n/navigation'
-import { Label } from '@/components/ui/label'
-import { PasswordInput } from '@/components/ui/password-input'
+import { Label } from '@bookone/ui/components/label'
+import { PasswordInput } from '@bookone/ui/components/password-input'
 import { SubmitButton } from '@/components/auth/submit-button'
 
 export function UpdatePasswordForm() {

@@ -1,14 +1,23 @@
 {
   "common": {
-    "appName": "BookOne",
+    "appName": "BookOne Hotel",
     "loading": "Nalaganje",
     "cancel": "Prekliči",
     "save": "Shrani",
-    "retry": "Poskusi znova"
+    "retry": "Poskusi znova",
+    "notifications": "Obvestila",
+    "close": "Zapri",
+    "thinking": "Piše odgovor"
   },
   "auth": {
     "brandLine": "Vsako bivanje, urejeno.",
     "brandLineEmphasis": "urejeno.",
+    "brandTagline": "Za neodvisne hotele v Italiji, Avstriji in Sloveniji",
+    "coverAlt": "Recepcija majhnega hotela ob mraku, z zvoncem in ključi sob",
+    "language": "Jezik",
+    "legal": "Pravno",
+    "terms": "Pogoji uporabe",
+    "privacyPolicy": "Pravilnik o zasebnosti",
     "email": "E-pošta",
     "password": "Geslo",
     "emailPlaceholder": "vi@hotel.example",
@@ -66,7 +75,10 @@
     "report": "Prihodki",
     "setup": "Nastavitev",
     "knowledge": "Znanje",
-    "privacy": "Zasebnost"
+    "privacy": "Zasebnost",
+    "approvals": "Odobritve",
+    "assistant": "Pomočnik",
+    "agents": "Agenti"
   },
   "property": {
     "switcher": {
@@ -108,7 +120,13 @@
       "reason": "Razlog",
       "waiting": "Čaka na pošiljanje",
       "alloggiatiTitle": "Prijava policiji zamuja",
-      "alloggiatiBody": "Ta gost je prispel pred več kot 20 urami, prijava pa ni potrjena."
+      "alloggiatiBody": "Ta gost je prispel pred več kot 20 urami, prijava pa ni potrjena.",
+      "toast": {
+        "retrying": "Nov poskus se je začel",
+        "retryingDescription": "Vrstica izgine, takoj ko rezervacija prispe v vaš PMS.",
+        "unreachable": "Poskus se ni začel",
+        "unreachableDescription": "Storitev se ni odzvala. Poskusite znova čez trenutek."
+      }
     },
     "arrival": {
       "title": "Prihod",
@@ -128,7 +146,45 @@
       "documentDeleted": "Dokument izbrisan",
       "simulated": "Noben kanal ni povezan — nič se ne pošlje nobenemu organu.",
       "receipt": "Potrdilo shranjeno",
-      "checksum": "Kontrolna vsota"
+      "checksum": "Kontrolna vsota",
+      "schedina": "Prijavnica (predogled)",
+      "schedinaHint": "Natančno to, kar bi bilo oddano. Od tu se nič ne pošlje; preverite z dokumenti in nato potrdite.",
+      "schedinaNotReady": "Ni pripravljeno — manjkajoča polja:",
+      "confirmDocuments": "Potrdi",
+      "documentsConfirmed": "Potrdilo osebje",
+      "confirmNote": "Potrditev pomeni, da se prijavnica ujema s preverjenimi dokumenti. To ni preverjanje identitete.",
+      "schedinaFields": {
+        "guestType": "Vrsta gosta",
+        "arrivalDate": "Prihod",
+        "nights": "Noči",
+        "surname": "Priimek",
+        "givenName": "Ime",
+        "sex": "Spol",
+        "birthDate": "Datum rojstva",
+        "birthPlaceCode": "Kraj rojstva",
+        "birthProvince": "Pokrajina rojstva",
+        "birthCountryCode": "Država rojstva",
+        "citizenshipCode": "Državljanstvo",
+        "documentType": "Vrsta dokumenta",
+        "documentNumber": "Številka dokumenta",
+        "documentIssuerCode": "Izdano v"
+      },
+      "ocrValid": "Dokument prebran: strojno berljivo polje se ujema",
+      "ocrInvalid": "Fotografija ni berljiva — gosta prosite za novo",
+      "ocrPrinted": "Prebrano samo iz tiska — preverite z dokumentom",
+      "ocrMismatch": "Se razlikuje od dokumenta: {fields}",
+      "toast": {
+        "arrived": "Prihod zabeležen",
+        "arrivedDescription": "Bivanje gosta se je začelo.",
+        "unreachable": "To ni uspelo",
+        "unreachableDescription": "Storitev se ni odzvala. Poskusite znova čez trenutek.",
+        "filing": "Prijava se je začela",
+        "filingDescription": "Rezultat se prikaže na tej strani, takoj ko prispe.",
+        "confirmed": "Dokumenti potrjeni",
+        "confirmedDescription": "Potrditev je zabeležena na vaše ime.",
+        "notConfirmed": "Potrditev ni mogoča",
+        "notConfirmedDescription": "Manjka podatek prijavnice ali dokument vsaj enega gosta."
+      }
     },
     "conversations": {
       "title": "Pogovori",
@@ -146,7 +202,7 @@
       "replyLabel": "Vaš odgovor",
       "replyPlaceholder": "Odgovorite gostu",
       "send": "Pošlji",
-      "noModel": "Noben jezikovni model ni povezan. Asistent odgovarja samo s tem, kar piše v bazi znanja nastanitve, vse drugo pa preda osebi.",
+      "noModel": "Pomočnik odgovarja le s podatki in orodji nastanitve in nikoli ne piše lastnih stavkov. Vse drugo gre k osebi.",
       "facts": {
         "reference": "Sklic",
         "language": "Jezik",
@@ -184,6 +240,34 @@
           "settled": "Odjavljen",
           "closed": "Zaključeno"
         }
+      },
+      "actions": "Dejanja pomočnika",
+      "undo": "Razveljavi",
+      "undone": "Razveljavljeno",
+      "pendingApproval": "čaka na odobritev",
+      "refused": "zavrnjeno",
+      "failedAction": "ni uspelo",
+      "handoff": "Predano zaradi: {rule}",
+      "complaints": "Pritožbe",
+      "slaDue": "odgovor do {time}",
+      "slaBreached": "odgovor zamuja od {time}",
+      "rules": {
+        "emergency": "nujni primer",
+        "money": "denar, vračilo ali odškodnina",
+        "identity": "identiteta ali pravni status",
+        "unknown_twice": "zahteva dvakrat ni bila razumljena"
+      },
+      "approved": "odobreno",
+      "declined": "zavrnilo osebje",
+      "toast": {
+        "takenOver": "Pogovor prevzet",
+        "takenOverDescription": "Pogovor je zdaj vaš.",
+        "handedBack": "Pogovor sproščen",
+        "handedBackDescription": "Spet je med nedodeljenimi.",
+        "sent": "Odgovor poslan",
+        "undone": "Dejanje razveljavljeno",
+        "notUndone": "Razveljavitev ni mogoča",
+        "notUndoneDescription": "Tega dejanja ni več mogoče razveljaviti."
       }
     },
     "report": {
@@ -234,7 +318,19 @@
           "credit": "Dobropis",
           "net": "Neto",
           "evidence": "Razlog pripisa"
-        }
+        },
+        "done": "CSV prenesen"
+      },
+      "toast": {
+        "issued": "Obračun potrjen",
+        "issuedDescription": "Obdobje je zaključeno: račun bo sledil tem zneskom.",
+        "alreadyIssued": "Ta obračun je že potrjen.",
+        "notIssued": "Za to obdobje ni obračuna.",
+        "disputed": "Ugovor zabeležen",
+        "disputedDescription": "Znesek je bil dobropisan na obračunu.",
+        "alreadyDisputed": "Tej postavki je že bilo ugovarjano.",
+        "notDisputed": "Ugovor ni mogoč",
+        "notDisputedDescription": "Tej postavki ni mogoče ugovarjati."
       }
     },
     "setup": {
@@ -316,7 +412,23 @@
       "save": "Shrani",
       "create": "Dodaj",
       "newHeading": "Dodaj odgovor",
-      "newHint": "Jezik, ki ga pustite praznega, je jezik, za katerega asistent pripelje osebo. Nikoli ne prevaja."
+      "newHint": "Jezik, ki ga pustite praznega, je jezik, za katerega asistent pripelje osebo. Nikoli ne prevaja.",
+      "toast": {
+        "saved": "Odgovor shranjen",
+        "savedDescription": "Concierge ga uporablja takoj.",
+        "savedDraft": "Osnutek shranjen",
+        "published": "Odgovor objavljen",
+        "publishedDescription": "Concierge ga uporablja takoj.",
+        "unpublished": "Odgovor umaknjen",
+        "unpublishedDescription": "Concierge ga ne uporablja več. Ostane v zgodovini.",
+        "notSaved": "Odgovor ni shranjen",
+        "reasons": {
+          "topicRequired": "Tema je obvezna.",
+          "topicTooLong": "Tema naj bo ena ali dve besedi.",
+          "answerRequired": "Odgovor napišite v vsaj enem jeziku.",
+          "other": "Poskusite znova čez trenutek."
+        }
+      }
     },
     "privacy": {
       "title": "Zasebnost",
@@ -361,7 +473,306 @@
         "fee_events": "Kar smo zaračunali temu objektu",
         "alloggiati_submissions": "Prijava policiji (Questura)",
         "privacy_requests": "Ta zahteva"
+      },
+      "toast": {
+        "exportRecorded": "Zahteva zabeležena: prenos se začenja",
+        "erasureQueued": "Izbris se je začel",
+        "erasurePending": "Izbris zabeležen, še ni izveden",
+        "exportFailed": "Izvoza ni bilo mogoče začeti. Poskusite znova."
       }
+    },
+    "approvals": {
+      "title": "Odobritve",
+      "subtitle": "Dejanja, ki jih je pomočnik prepustil osebi. Nič od tega se še ni zgodilo.",
+      "empty": "Nič ne čaka na odločitev.",
+      "approve": "Odobri",
+      "reject": "Zavrni",
+      "openThread": "Odpri pogovor",
+      "rejectNote": "Zavrnitev gostu pošlje odgovor, da se bo nekdo oglasil.",
+      "tools": {
+        "cancel_booking": "Preklic rezervacije",
+        "create_payment_link": "Pošiljanje povezave za plačilo",
+        "request_late_checkout": "Kasnejša odjava"
+      },
+      "toast": {
+        "approved": "Odobreno",
+        "approvedDescription": "Gost je odgovor prejel v pogovoru.",
+        "rejected": "Zavrnjeno",
+        "rejectedDescription": "Gost je bil obveščen, da ga bo nekdo kontaktiral.",
+        "gone": "O tej zahtevi je bilo že odločeno.",
+        "failed": "Dejanja ni bilo mogoče izvesti",
+        "failedDescription": "Razlog: {reason}. Gostu ni bilo poslano nič."
+      }
+    },
+    "assistant": {
+      "title": "Pomočnik",
+      "subtitle": "Vprašajte o svoji nastanitvi: prihodi, manjkajoči dokumenti, pritožbe, odobritve.",
+      "placeholder": "Koliko prihodov je jutri?",
+      "examples": "Odgovarja iz vaših podatkov in ničesar ne spreminja.",
+      "ask": "Vprašaj",
+      "working": "Iščem …",
+      "notUnderstood": "Odgovorim lahko o prihodih, manjkajočih dokumentih, pritožbah in odobritvah.",
+      "emptyTitle": "Vprašajte o svoji nastanitvi",
+      "emptyDescription": "Pomočnik bere vaše podatke in ničesar ne spreminja.",
+      "suggestions": [
+        "Kdo še ni poslal dokumentov?",
+        "Koliko prihodov je jutri?",
+        "Ali so odprte pritožbe?",
+        "Kaj čaka na mojo odobritev?"
+      ],
+      "unavailable": "Pomočnika ni bilo mogoče doseči. Poskusite znova čez trenutek.",
+      "timeout": "Še ni odgovora. Pomočnik je morda zaseden; poskusite znova čez trenutek."
+    },
+    "settings": {
+      "supportTitle": "Dostopi podpore BookOne",
+      "supportBody": "Vsakič, ko je nekdo iz BookOne odprl pogled samo za branje te nastanitve, z navedenim razlogom. Pogled traja 30 minut in ne more ničesar spremeniti.",
+      "supportNone": "Nihče iz BookOne si te nastanitve ni ogledal.",
+      "supportWho": "Kdo",
+      "supportWhen": "Kdaj",
+      "supportWhy": "Razlog",
+      "supportUntil": "Do"
+    },
+    "agents": {
+      "title": "Agenti",
+      "subtitle": "Kaj vsak pomočnik počne za to nastanitev in kako se obnaša",
+      "active": "Aktiven",
+      "off": "Ni vključen",
+      "paused": "Začasno ustavil BookOne",
+      "background": "Deluje samostojno",
+      "ownerOnly": "Z njim lahko govori samo lastnik",
+      "whoFor": "Za",
+      "profiles": {
+        "pre-sale": {
+          "name": "Pred rezervacijo",
+          "description": "Kdor še ni rezerviral: razpoložljivost, cene, katera soba ustreza in povezava za neposredno rezervacijo."
+        },
+        "general-info": {
+          "name": "Informacije",
+          "description": "Vprašanja o nastanitvi in okolici, z odgovori samo iz vaše baze znanja."
+        },
+        "pre-arrival": {
+          "name": "Pred prihodom",
+          "description": "Povezava za prijavo pred prihodom, čas prihoda, manjkajoči dokumenti in kako priti."
+        },
+        "booking-support": {
+          "name": "Obstoječa rezervacija",
+          "description": "Pregled rezervacije, prošnje za spremembe, odpoved v skladu z vašimi pogoji — odpoved čaka na vas."
+        },
+        "payments": {
+          "name": "Plačila",
+          "description": "Stanje plačil in pojasnila stroškov. Povezava za plačilo čaka na vas; vračila vedno prevzame oseba."
+        },
+        "checkout": {
+          "name": "Odjava",
+          "description": "Kasnejša odjava (čaka na vašo odobritev), zahteve za račun, prtljaga in prevoz."
+        },
+        "complaints": {
+          "name": "Pritožbe",
+          "description": "Potrjene, zabeležene z rokom in vodja takoj obveščen. O nadomestilih nikoli ne odloča pomočnik."
+        },
+        "owner-backoffice": {
+          "name": "Vprašanja lastnika",
+          "description": "Prihodi, manjkajoči dokumenti, odprte pritožbe in čakajoče odobritve, iz vaših podatkov."
+        }
+      },
+      "tools": {
+        "search_knowledge": {
+          "label": "Odgovori iz vaše baze znanja",
+          "would": "odgovoril iz vaše baze znanja"
+        },
+        "get_hotel_policy": {
+          "label": "Navede vaše pravilo",
+          "would": "navedel vaše pravilo"
+        },
+        "find_booking": {
+          "label": "Poišče gostovo rezervacijo",
+          "would": "poiskal gostovo rezervacijo"
+        },
+        "check_availability": {
+          "label": "Preveri razpoložljivost",
+          "would": "preveril razpoložljivost"
+        },
+        "quote_stay": {
+          "label": "Izračuna ceno iz vaših cen",
+          "would": "izračunal ceno iz vaših cen"
+        },
+        "create_booking_link": {
+          "label": "Pošlje povezavo do vaše strani za rezervacije",
+          "would": "poslal povezavo do vaše strani za rezervacije"
+        },
+        "modify_booking": {
+          "label": "Zaprosi za spremembo datumov ali oseb",
+          "would": "prosil nastanitev za spremembo datumov ali oseb"
+        },
+        "cancel_booking": {
+          "label": "Odpove v skladu z vašimi pogoji",
+          "would": "odpovedal rezervacijo v skladu z vašimi pogoji"
+        },
+        "create_payment_link": {
+          "label": "Pošlje povezavo za plačilo",
+          "would": "poslal gostu povezavo za plačilo"
+        },
+        "get_payment_status": {
+          "label": "Preveri stanje plačila",
+          "would": "preveril stanje plačila"
+        },
+        "explain_charges": {
+          "label": "Pojasni stroške",
+          "would": "pojasnil stroške"
+        },
+        "send_prearrival_link": {
+          "label": "Pošlje povezavo za prijavo pred prihodom",
+          "would": "poslal gostu povezavo za prijavo pred prihodom"
+        },
+        "record_eta": {
+          "label": "Zabeleži čas prihoda",
+          "would": "zabeležil čas gostovega prihoda"
+        },
+        "get_capture_status": {
+          "label": "Preveri, kaj mora gost še poslati",
+          "would": "preveril, kaj mora gost še poslati"
+        },
+        "request_late_checkout": {
+          "label": "Zaprosi za kasnejšo odjavo",
+          "would": "prosil za vašo odobritev kasnejše odjave"
+        },
+        "request_invoice": {
+          "label": "Posreduje zahtevo za račun",
+          "would": "vam posredoval zahtevo za račun"
+        },
+        "log_complaint": {
+          "label": "Zabeleži pritožbo in obvesti vodjo",
+          "would": "zabeležil pritožbo in obvestil vodjo"
+        },
+        "notify_owner": {
+          "label": "Obvesti vodjo o pogovoru",
+          "would": "obvestil vodjo o tem pogovoru"
+        },
+        "escalate": {
+          "label": "Preda pogovor osebi",
+          "would": "predal pogovor osebi"
+        },
+        "create_task": {
+          "label": "Zabeleži nalogo za vašo ekipo",
+          "would": "zabeležil nalogo za vašo ekipo"
+        },
+        "list_arrivals": {
+          "label": "Našteje prihode",
+          "would": "naštel prihode"
+        },
+        "list_capture_status": {
+          "label": "Pokaže, komu manjkajo dokumenti",
+          "would": "pokazal, komu manjkajo dokumenti"
+        },
+        "list_open_complaints": {
+          "label": "Našteje odprte pritožbe",
+          "would": "naštel odprte pritožbe"
+        },
+        "list_pending_approvals": {
+          "label": "Našteje, kar čaka na vašo odobritev",
+          "would": "naštel, kar čaka na vašo odobritev"
+        },
+        "classify_discrepancy": {
+          "label": "Razvrsti razliko z vašim PMS",
+          "would": "razvrstil razliko z vašim PMS"
+        },
+        "audit_attribution": {
+          "label": "Preveri provizije glede na dokazila",
+          "would": "preveril provizije glede na dokazila"
+        },
+        "credit_unevidenced_fee": {
+          "label": "Dobropiše provizijo brez dokazil",
+          "would": "dobropisal provizijo brez dokazil"
+        },
+        "draft_knowledge": {
+          "label": "Pripravi osnutke odgovorov z vaše spletne strani",
+          "would": "pripravil osnutke odgovorov z vaše spletne strani"
+        }
+      },
+      "rules": {
+        "emergency": {
+          "name": "Nujni primer",
+          "description": "Nekdo je morda v nevarnosti: gost dobi številko za nujne primere, oseba je obveščena, pomočnik pa v tem pogovoru ne odgovarja več."
+        },
+        "money": {
+          "name": "Denar",
+          "description": "Vračila, nadomestila in popusti vedno gredo k osebi, nikoli k pomočniku."
+        },
+        "identity": {
+          "name": "Identiteta in pravne zadeve",
+          "description": "O identiteti, pravnem statusu ali skladnosti nikoli ne odloča pomočnik."
+        },
+        "unknown_twice": {
+          "name": "Dvakrat nerazumljeno",
+          "description": "Če pomočnik dvakrat zapored ne razume, kaj gost želi, prevzame oseba s celotnim pogovorom."
+        }
+      },
+      "rulesIntro": "To je koda, ne navodila: pravila veljajo, še preden je vprašan kateri koli model.",
+      "classRead": "Bere",
+      "classAction": "Ukrepa",
+      "classApproval": "Potrebuje vašo odobritev",
+      "legend": "Bere: nekaj poišče in nič ne spremeni. Ukrepa: naredi nekaj, kar vidite v konzoli. Potrebuje vašo odobritev: počaka na osebo, preden se kar koli zgodi.",
+      "activity": "Zadnjih 7 dni",
+      "turns": "{count, plural, =0 {Brez pogovorov} one {# odgovor} two {# odgovora} few {# odgovori} other {# odgovorov}}",
+      "handedOver": "{count, plural, =0 {nobeden predan osebi} one {# predan osebi} two {# predana osebi} few {# predani osebi} other {# predanih osebi}}",
+      "pending": "{count, plural, =0 {nič ne čaka na odobritev} one {# čaka na odobritev} two {# čakata na odobritev} few {# čakajo na odobritev} other {# čaka na odobritev}}",
+      "lastRun": "Nazadnje aktiven {when}",
+      "never": "Še brez dejavnosti",
+      "try": "Preizkusi",
+      "tryOwner": "Postavi vprašanje",
+      "previewTitle": "Preizkusite concierge",
+      "previewDescription": "Predogled: odgovarja iz vaše prave baze znanja in po vaših pravilih, vendar nikomur nič ne pošlje in ne izvede nobenega dejanja. Dejanja pokažejo, kaj bi se zgodilo.",
+      "previewAs": "Govori kot",
+      "previewNoStay": "Gost brez rezervacije",
+      "previewPlaceholder": "Pišite kot gost…",
+      "previewEmptyTitle": "Pišite, kot bi pisal gost",
+      "previewEmptyDescription": "Preizkusite vprašanje, prošnjo, pritožbo. Vsak odgovor pokaže, kateri del pomočnika je odgovoril in kaj bi naredil.",
+      "outcomeAnswered": "Odgovorjeno",
+      "outcomeEscalated": "Predano osebi",
+      "outcomeFailed": "Napaka — predano osebi",
+      "outcomeRefused": "Zavrnjeno",
+      "outcomeNotUnderstood": "Ni razumljeno",
+      "simulated": "bi naredil, ni izvedeno",
+      "approvalWaits": "bi čakal na odobritev",
+      "ruleFired": "Pravilo: {rule}",
+      "profileUsed": "Obravnaval: {profile}",
+      "previewSuggestions": [
+        "Kdaj je zajtrk?",
+        "Ali imate savno?",
+        "Se lahko odjavimo ob 13h?",
+        "Želim vračilo denarja.",
+        "Soba je umazana, to je nesprejemljivo."
+      ],
+      "agents": {
+        "AG-01": {
+          "name": "Concierge za goste",
+          "purpose": "Odgovarja vašim gostom v njihovem jeziku iz tega, kar ste zapisali, vse drugo pa preda vaši ekipi.",
+          "audience": "Vaši gostje, na strani bivanja in prek WhatsAppa"
+        },
+        "AG-06": {
+          "name": "Pomočnik lastnika",
+          "purpose": "Odgovarja na vaša vprašanja o nastanitvi iz vaših podatkov. Samo bere, ničesar ne spreminja.",
+          "audience": "Lastnik"
+        },
+        "AG-05": {
+          "name": "Usklajevanje s PMS",
+          "purpose": "Vsako noč primerja rezervacije z vašim PMS in pojasni vsako razliko.",
+          "audience": "Deluje samostojno"
+        },
+        "AG-07": {
+          "name": "Revizija provizij",
+          "purpose": "Preveri vsako provizijo, pripisano pomočniku, glede na dokazila in jo dobropiše, če dokazil ni.",
+          "audience": "Deluje samostojno"
+        },
+        "AG-03": {
+          "name": "Osnutki znanja",
+          "purpose": "Med nastavitvijo prebere vašo spletno stran in pripravi odgovore v pregled. Brez vas se nič ne objavi.",
+          "audience": "Deluje samostojno"
+        }
+      },
+      "sectionProfiles": "S čim se ukvarja",
+      "sectionTools": "Kaj lahko naredi",
+      "sectionRules": "Pravila, ki jih nikoli ne prekrši"
     }
   },
   "noProperty": {
@@ -648,7 +1059,10 @@
       "replace": "Zamenjaj",
       "send": "Pošlji dokument",
       "needParty": "Najprej dodajte goste, nato priložite dokument za vsakega.",
-      "retention": "Nastanitev jih izbriše, ko je vaše bivanje prijavljeno pri organih. Ohrani se le potrdilo."
+      "retention": "Nastanitev jih izbriše, ko je vaše bivanje prijavljeno pri organih. Ohrani se le potrdilo.",
+      "consent": "Prebral sem, kako se uporabljajo moji podatki, in soglašam, da nastanitev obdela moj osebni dokument za prijavo bivanja.",
+      "retentionAfterStay": "Nastanitev te fotografije izbriše {days, plural, one {dan} two {# dni} few {# dni} other {# dni}} po vašem odhodu. Nič se ne hrani.",
+      "unreadable": "Te fotografije ne moremo dobro prebrati. Pošljite ostrejšo: dokument naj leži ravno, pri dobri svetlobi, z vidnimi vsemi vrsticami."
     },
     "arrival": {
       "heading": "Kdaj boste prispeli?",
@@ -668,7 +1082,8 @@
       "notConfigured": "Prijava v tem okolju ni na voljo.",
       "upload": "Datoteke ni bilo mogoče sprejeti. Uporabite JPEG, PNG ali PDF pod 10 MB.",
       "generic": "Nekaj je šlo narobe. Poskusite znova.",
-      "message": "Sporočila ni bilo mogoče poslati. Poskusite znova."
+      "message": "Sporočila ni bilo mogoče poslati. Poskusite znova.",
+      "consent": "Preden pošljete dokument, preberite, kako se uporabljajo vaši podatki, in označite polje."
     },
     "arrived": {
       "heading": "Ste že prispeli?",
@@ -706,6 +1121,21 @@
         "address": "Naslov (neobvezno)",
         "sent": "Vaša zahteva za račun je bila posredovana nastanitvi."
       }
+    },
+    "privacy": {
+      "heading": "Kako se uporabljajo vaši podatki",
+      "controller": "Za vaše podatke je odgovorna nastanitev {property}. BookOne upravlja to stran v njenem imenu.",
+      "purpose": "Vaše podatke in osebne dokumente zbiramo, ker italijanska zakonodaja zahteva prijavo vsakega gosta policiji (člen 109 TULPS).",
+      "retention": "Fotografije dokumentov se izbrišejo po opravljeni prijavi ali kmalu po vašem odhodu. Podatki za prijavo se hranijo 30 dni po bivanju; potrdilo o oddaji se hrani, kot zahteva zakon.",
+      "location": "Vse se hrani v EU. Sporočila, ki jih napišete tukaj, in – če nastanitev uporablja samodejno branje – fotografije dokumentov lahko obdela samodejna storitev, ki lahko deluje zunaj EU; ničesar ne hrani.",
+      "rights": "Nastanitev lahko prosite za vpogled, popravek ali izbris vaših podatkov."
+    },
+    "toast": {
+      "partySaved": "Podatki gostov shranjeni",
+      "documentSaved": "Dokument prejet",
+      "documentSavedDescription": "Nastanitev ga preveri pred vašim prihodom.",
+      "arrivalSaved": "Čas prihoda shranjen",
+      "messageSent": "Sporočilo poslano"
     }
   },
   "concierge": {
@@ -713,7 +1143,51 @@
     "reservationRoom": "Soba: {room}.",
     "taskRecorded": "To sem zabeležil in nastanitev to vidi. Če se vam nihče ni oglasil, mi povejte še enkrat in poskrbel bom, da se.",
     "escalated": "Pri tem ne želim ugibati, zato sem vprašanje predal nastanitvi. Nekdo vam bo odgovoril tukaj.",
+    "paused": "Vaše sporočilo je prispelo do nastanitve. Nekdo vam bo odgovoril tukaj.",
     "escalatedOutOfHours": "Pri tem ne želim ugibati, zato sem vprašanje predal nastanitvi. Recepcija odgovarja {hours}, zato lahko traja nekaj časa.",
-    "disclosure": "Pišete z asistentom. Odgovarja samo s tem, kar je nastanitev zapisala, vse drugo pa preda osebi."
+    "disclosure": "Pišete z asistentom. Odgovarja samo s tem, kar je nastanitev zapisala, vse drugo pa preda osebi.",
+    "emergency": "Če je kdo v nevarnosti, takoj pokličite 112. Klic je brezplačen s katerega koli telefona, povsod v EU. Ta pogovor je zdaj za osebje nastanitve označen kot nujen, samodejni odgovori pa so tukaj ustavljeni.",
+    "approvalPending": "Za to je potrebna odobritev osebe, zato je bila zahteva posredovana nastanitvi. Nekdo vam bo odgovoril tukaj.",
+    "availability": "Od {arrival} do {departure} imamo: {rooms}.",
+    "availabilityNone": "Žal od {arrival} do {departure} ni prostih sob.",
+    "bookingLink": "Rezervirate lahko neposredno tukaj: {url}",
+    "changeAvailable": "Vaša soba je prosta od {arrival} do {departure}. Sprememba je bila posredovana nastanitvi v potrditev; nekdo vam bo odgovoril tukaj.",
+    "changeUnavailable": "Vaša soba od {arrival} do {departure} ni prosta. Zahteva je bila posredovana nastanitvi; nekdo vam bo odgovoril tukaj.",
+    "paymentNone": "Na vaši rezervaciji še ni zabeleženega plačila. Skupni znesek je {total}.",
+    "paymentStatus": "Za vašo rezervacijo smo prejeli {paid} od {total}.",
+    "charges": "Vaša rezervacija znaša {total}. Plačano je {paid}, ostaja {balance}. Dodatne storitve in turistično takso poravnate v nastanitvi.",
+    "prearrivalSent": "Povezava za pripravo na prihod je bila poslana na e-poštni naslov vaše rezervacije.",
+    "etaRecorded": "Zabeleženo: prihod pričakujete okoli {time}.",
+    "captureMissing": "Pred prihodom potrebujemo še: {items}. To lahko uredite prek povezave v e-pošti.",
+    "captureComplete": "Pred vašim prihodom imamo vse, kar potrebujemo.",
+    "captureDetails": "podatke o gostih",
+    "captureDocuments": "osebne dokumente",
+    "lateCheckoutRequested": "Nastanitev je bila vprašana za odjavo ob {time}. Nekdo vam bo to potrdil tukaj.",
+    "invoiceRequested": "Zahteva za račun je bila posredovana nastanitvi. Račune izdajajo sami in vam ga bodo poslali.",
+    "complaintLogged": "Žal nam je. Zadeva je zabeležena in vodja je bil takoj obveščen.",
+    "ownerNotified": "Vodja je bil obveščen.",
+    "ownerArrivals": "Prihodi dne {date} ({count}): {names}.",
+    "ownerArrivalsNone": "Dne {date} ni prihodov.",
+    "ownerCapture": "Še nedokončana priprava na prihod: {list}.",
+    "ownerCaptureNone": "Vsi gostje, ki prihajajo, so poslali vse potrebno.",
+    "ownerComplaints": "Odprte pritožbe ({count}): {list}.",
+    "ownerComplaintsNone": "Ni odprtih pritožb.",
+    "ownerApprovals": "Dejanja, ki čakajo na vašo odobritev ({count}): {list}.",
+    "ownerApprovalsNone": "Nič ne čaka na vašo odobritev.",
+    "complaintCategories": {
+      "room": "soba",
+      "noise": "hrup",
+      "cleanliness": "čistoča",
+      "staff": "osebje",
+      "billing": "račun",
+      "safety": "varnost",
+      "other": "drugo"
+    },
+    "decisionLateCheckout": "Dobra novica: vaša odjava ob {time} je potrjena.",
+    "decisionCancelled": "Vaša rezervacija je preklicana, kot ste želeli.",
+    "decisionPaymentLink": "Tukaj je vaša povezava za plačilo: {url}",
+    "decisionRejected": "Nastanitev te zahteve ni mogla odobriti. Nekdo vam bo tukaj odgovoril z možnostmi.",
+    "unmatchedSender": "Ta številka pripada nastanitvi {property}. Vaše številke nismo mogli povezati s trenutno rezervacijo, zato sporočilo ni bilo posredovano. Če imate rezervacijo, pišite s številke, ki ste jo navedli ob rezervaciji, ali uporabite povezavo v potrditvi. Za rezervacijo: {link}",
+    "previewSimulated": "Predogled: na tem mestu bi pomočnik {action}. Nič ni bilo izvedeno in nihče ni bil obveščen."
   }
 }

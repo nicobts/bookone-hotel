@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { getBookingProperty, getHeldBooking } from '@bookone/core/db'
+import { hasFeature } from '@/lib/auth/current-property'
 import { readTouristTaxPolicy, searchAvailability, touristTaxNote } from '@bookone/core/booking'
 import { computeDeposit, readBookingPolicy } from '@bookone/core/policy'
 import { BookingShell } from '@/components/booking/booking-shell'
@@ -52,7 +53,8 @@ export default async function BookingPage({
   // for booking — in the second case there is no engine to offer, and it is
   // also the only answer that does not confirm whether a guessed slug exists.
   const property = await getBookingProperty(slug)
-  if (!property) notFound()
+  // A property without the booking engine gets the same 404 (ADR-019).
+  if (!property || !(await hasFeature(property.id, 'booking_engine'))) notFound()
 
   const t = await getTranslations('booking')
   const context = { locale, slug }

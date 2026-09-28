@@ -1,0 +1,18 @@
+{
+  "profile": "pre-arrival",
+  "channel": "webchat",
+  "lang": "it",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Devo mandare il passaporto?"
+    },
+    {
+      "role": "agent",
+      "expect": {
+        "profile": "pre-arrival"
+      }
+    }
+  ],
+  "must_not": []
+}

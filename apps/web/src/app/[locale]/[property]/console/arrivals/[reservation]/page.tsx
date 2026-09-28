@@ -2,14 +2,20 @@ import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { CheckCircle2Icon, FlaskConicalIcon, TriangleAlertIcon } from 'lucide-react'
 import { getArrival } from '@bookone/core/db'
-import { registrationToGuestDetails, validateParty } from '@bookone/core/alloggiati'
+import { getSchedinaPreview } from '@bookone/core/journey'
+import {
+  readingMismatches,
+  registrationToGuestDetails,
+  validateParty,
+  type DocumentReading,
+} from '@bookone/core/alloggiati'
 import { PageShell } from '@/components/shell/page-shell'
-import { requireProperty } from '@/lib/auth/current-property'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
+import { hasFeature, requireProperty } from '@/lib/auth/current-property'
+import { Badge } from '@bookone/ui/components/badge'
+import { PendingButton } from '@bookone/ui/components/pending-button'
+import { Separator } from '@bookone/ui/components/separator'
 import { formatDate } from '@/components/booking/format'
-import { fileNow, markArrived } from './actions'
+import { confirmDocumentsAction, fileNow, markArrived } from './actions'
 
 /**
  * One arrival, and the registry filing that follows it (E2.3, E3.1).
@@ -44,6 +50,13 @@ export default async function ArrivalPage({
   if (!arrival) notFound()
 
   const t = await getTranslations('console.arrival')
+  // Without the feature there is no filing to make — the section still shows
+  // what the record is missing, which pre-arrival capture needs regardless.
+  const filing = await hasFeature(property.id, 'alloggiati')
+  // The schedina preview and its confirmation belong to pre-arrival (WP0.4).
+  const schedina = (await hasFeature(property.id, 'prearrival'))
+    ? await getSchedinaPreview(property.id, reservationId)
+    : null
   const context = { locale, slug, reservationId }
 
   // The same validator the staging path runs, so what the console promises and
@@ -75,7 +88,7 @@ export default async function ArrivalPage({
           </Badge>
         ) : (
           <form action={markArrived.bind(null, context)}>
-            <Button type="submit">{t('confirmArrival')}</Button>
+            <PendingButton>{t('confirmArrival')}</PendingButton>
           </form>
         )
       }
@@ -96,6 +109,7 @@ export default async function ArrivalPage({
                 <p className="text-muted-foreground mt-0.5 text-xs">
                   {t('guest', { n: member.guestIndex + 1 })}
                 </p>
+                <OcrStatus data={member.data} t={t} />
               </div>
 
               {member.documentDeleted ? (
@@ -112,6 +126,72 @@ export default async function ArrivalPage({
 
       <Separator />
 
+      {schedina && (
+        <>
+          <section>
+            <div className="mb-3 flex items-center justify-between gap-4">
+              <h2 className="bo-label text-muted-foreground">{t('schedina')}</h2>
+
+              {schedina.confirmedAt ? (
+                <Badge variant="secondary" className="gap-1">
+                  <CheckCircle2Icon
+                    className="size-3 text-[color:var(--bo-success-500)]"
+                    aria-hidden
+                  />
+                  {t('documentsConfirmed')}
+                </Badge>
+              ) : schedina.ready && schedina.documentsHeld >= schedina.guests.length ? (
+                <form action={confirmDocumentsAction.bind(null, context)}>
+                  <PendingButton size="sm">{t('confirmDocuments')}</PendingButton>
+                </form>
+              ) : null}
+            </div>
+
+            <p className="text-muted-foreground mb-3 text-xs">{t('schedinaHint')}</p>
+
+            {!schedina.ready && schedina.issues.length > 0 && (
+              <p className="text-muted-foreground mb-3 text-xs">
+                {t('schedinaNotReady')}{' '}
+                {schedina.issues
+                  .map((issue) =>
+                    issue.guestIndex >= 0
+                      ? `${t('guest', { n: issue.guestIndex + 1 })}: ${issue.field}`
+                      : issue.field,
+                  )
+                  .join(', ')}
+              </p>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {schedina.guests.map((guest) => (
+                <dl
+                  key={guest.guestIndex}
+                  className="bg-card grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-lg border p-4 text-xs"
+                >
+                  {guest.fields.map((field) => (
+                    <div key={field.name} className="contents">
+                      <dt className="text-muted-foreground">
+                        {t.has(`schedinaFields.${field.name}`)
+                          ? t(`schedinaFields.${field.name}`)
+                          : field.name}
+                      </dt>
+                      {/* Tabular: these get compared character by character against a document. */}
+                      <dd className="num text-foreground truncate font-mono">
+                        {field.value || '—'}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ))}
+            </div>
+
+            <p className="text-muted-foreground mt-3 text-xs">{t('confirmNote')}</p>
+          </section>
+
+          <Separator />
+        </>
+      )}
+
       <section>
         <h2 className="bo-label text-muted-foreground mb-3">{t('filing')}</h2>
 
@@ -120,15 +200,18 @@ export default async function ArrivalPage({
             <p className="text-foreground text-sm font-medium">{filingLabel}</p>
 
             {/*
-              Always present, whatever the automation did (E2.3 acceptance
-              criterion). The property is the declarant; automation they cannot
-              override is automation they cannot answer for.
+              Always present while the property files through BookOne, whatever
+              the automation did (E2.3 acceptance criterion). The property is
+              the declarant; automation they cannot override is automation they
+              cannot answer for. Absent when they do not file through us.
             */}
-            <form action={fileNow.bind(null, context)}>
-              <Button type="submit" variant="outline" size="sm">
-                {t('submitNow')}
-              </Button>
-            </form>
+            {filing && (
+              <form action={fileNow.bind(null, context)}>
+                <PendingButton variant="outline" size="sm">
+                  {t('submitNow')}
+                </PendingButton>
+              </form>
+            )}
           </div>
 
           {arrival.submission && (
@@ -183,5 +266,52 @@ export default async function ArrivalPage({
         </div>
       </section>
     </PageShell>
+  )
+}
+
+/**
+ * What the vision model read from this guest's document, for the person about
+ * to confirm (WP0.4): whether the machine-readable zone checked out, and every
+ * field where what the guest typed disagrees with the document. A suggestion
+ * for a person, never a verdict (ADR-027).
+ */
+function OcrStatus({
+  data,
+  t,
+}: {
+  data: Record<string, unknown>
+  t: Awaited<ReturnType<typeof getTranslations<'console.arrival'>>>
+}) {
+  const reading = data.ocr as DocumentReading | undefined
+  if (!reading || typeof reading !== 'object' || !reading.mrz) return null
+
+  const mismatches = readingMismatches(registrationToGuestDetails(data), reading)
+  const status = reading.mrz.valid
+    ? t('ocrValid')
+    : reading.mrz.present
+      ? t('ocrInvalid')
+      : t('ocrPrinted')
+
+  return (
+    <div className="mt-1 space-y-0.5 text-xs">
+      <p
+        className={
+          reading.mrz.valid
+            ? 'text-[color:var(--bo-success-500)]'
+            : 'text-[color:var(--bo-warning-500)]'
+        }
+      >
+        {status}
+      </p>
+      {mismatches.length > 0 && (
+        <p className="text-destructive">
+          {t('ocrMismatch', {
+            fields: mismatches
+              .map((name) => (t.has(`schedinaFields.${name}`) ? t(`schedinaFields.${name}`) : name))
+              .join(', '),
+          })}
+        </p>
+      )}
+    </div>
   )
 }

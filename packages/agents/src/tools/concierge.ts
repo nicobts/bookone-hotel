@@ -1,5 +1,7 @@
 import {
+  approvalPendingPhrase,
   createStayTask,
+  emergencyPhrase,
   escalatedOutOfHoursPhrase,
   escalatedPhrase,
   getReservationFacts,
@@ -172,6 +174,10 @@ export const getPropertyInfoTool: Tool = {
 export const createTaskTool: Tool = {
   name: 'create_task',
   description: 'Record a guest request as a task the property can see',
+  // A write: without the flag the runner's idempotency (WP0.3) skipped it, and a
+  // retried job could file the same request twice. Found while classifying
+  // tools for preview (ADR-038).
+  write: true,
 
   run: async (context, input) => {
     if (!context.reservationId) {
@@ -217,14 +223,23 @@ export const escalateTool: Tool = {
     const hours = typeof input.businessHours === 'string' ? input.businessHours.trim() : ''
     const locale = context.locale ?? 'en'
 
-    return {
-      ok: true,
-      output: {
-        escalate: true,
-        reason,
-        phrase: hours ? escalatedOutOfHoursPhrase(locale, hours) : escalatedPhrase(locale),
-      },
-    }
+    /*
+     * Two fixed templates beside the ordinary handover (ADR-021, ADR-022): the
+     * emergency hard rule and an action waiting for approval. They come out of
+     * this tool rather than out of the orchestrator so that what the guest
+     * reads is still a tool's phrase — the audit's `reply ⊆ tool output` holds
+     * for these turns too.
+     */
+    const phrase =
+      input.kind === 'emergency'
+        ? emergencyPhrase(locale)
+        : input.kind === 'approval'
+          ? approvalPendingPhrase(locale)
+          : hours
+            ? escalatedOutOfHoursPhrase(locale, hours)
+            : escalatedPhrase(locale)
+
+    return { ok: true, output: { escalate: true, reason, phrase } }
   },
 }
 
