@@ -53,11 +53,27 @@ import {
 import { zonedStartOfDay } from '../packages/core/src/policy/booking-policy'
 import { MockAlloggiatiAdapter } from '../packages/adapters/src/mock-alloggiati'
 
-const envFile = new URL('../.env', import.meta.url)
+/**
+ * Where it seeds: local by default (`.env`), or the staging project with
+ * `pnpm demo:seed -- --staging` (`.env.staging`, docs/runbooks/staging.md).
+ * Never production — there is no flag for it, and the guard below refuses any
+ * host it cannot name.
+ */
+const STAGING = process.argv.includes('--staging')
+const envFile = new URL(STAGING ? '../.env.staging' : '../.env', import.meta.url)
 if (existsSync(envFile)) process.loadEnvFile(envFile.pathname.replace(/^\/([A-Za-z]:)/, '$1'))
+else if (STAGING) {
+  console.error('No .env.staging: see docs/runbooks/staging.md.')
+  process.exit(1)
+}
 
 const SLUG = 'demo-trieste'
-const PASSWORD = 'devpassword123!'
+/**
+ * Local: the published dev password, which the dev login helper fills in.
+ * Staging: a generated one from `.env.staging` — staging is reachable from the
+ * internet, and a password printed in a repository is nobody's secret.
+ */
+const PASSWORD = STAGING ? (process.env.DEMO_PASSWORD ?? '') : 'devpassword123!'
 const OWNER_EMAIL = 'owner@demo.bookone.test'
 const STAFF_EMAIL = 'staff@demo.bookone.test'
 /** Fictional numbers, in the reserved 040 000 range. The owner agent answers only these (ADR-021). */
@@ -80,7 +96,22 @@ const DEMO_GUEST_PHONE = process.env.DEMO_GUEST_PHONE?.trim() || null
 
 const apiUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
-if (
+if (STAGING) {
+  // Staging only, and only the project `.env.staging` names: the API and the
+  // database must both be that project, the file must say it is staging, and
+  // the demo password must be a generated one. Anything else is refused.
+  const ref = process.env.SUPABASE_STAGING_PROJECT_REF ?? ''
+  if (
+    process.env.BOOKONE_ENVIRONMENT !== 'staging' ||
+    !/^[a-z]{20}$/.test(ref) ||
+    apiUrl !== `https://${ref}.supabase.co` ||
+    !(process.env.DATABASE_URL ?? '').includes(`postgres.${ref}:`) ||
+    PASSWORD.length < 16
+  ) {
+    console.error('Refusing to seed: .env.staging does not describe the staging project.')
+    process.exit(1)
+  }
+} else if (
   !/(127\.0\.0\.1|localhost|\[::1\])/.test(apiUrl) ||
   !/@(127\.0\.0\.1|localhost)[:/]/.test(process.env.DATABASE_URL ?? '')
 ) {
@@ -453,7 +484,9 @@ console.log(
 )
 console.log('')
 console.log(`  console   http://localhost:3000/it/${SLUG}/console/today`)
-console.log(`            ${OWNER_EMAIL} (owner) · ${STAFF_EMAIL} (staff) · password ${PASSWORD}`)
+console.log(
+  `            ${OWNER_EMAIL} (owner) · ${STAFF_EMAIL} (staff) · password ${STAGING ? 'DEMO_PASSWORD in .env.staging' : PASSWORD}`,
+)
 console.log(`  booking   http://localhost:3000/en/book/${SLUG}`)
 console.log(
   `  guest     http://localhost:3000/${arriving.locale}/stay/${signStayToken(arriving.reservationId, arriving.departure)}  (${arriving.name}, arriving tomorrow)`,

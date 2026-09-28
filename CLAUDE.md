@@ -5,7 +5,7 @@ Guest-journey-first hospitality platform for small independent hotels (IT/AT/SI)
 ## Read first, in order
 1. `docs/00-PROJECT-OVERVIEW.md` — scope, decision register D1–D21, non-goals
 2. `docs/03-ARCHITECTURE.md` — topology, schema, conventions (§10 = repo layout)
-3. `docs/adr/` — ADR-001…039, one file each ([index](docs/adr/README.md)); **ADRs override anything conflicting in older annex documents**
+3. `docs/adr/` — ADR-001…040, one file each ([index](docs/adr/README.md)); **ADRs override anything conflicting in older annex documents**
 4. `docs/01-PRD.md` + `docs/02-USER-STORIES.md` — what to build, acceptance criteria
 5. `docs/04-IMPLEMENTATION-PLAN.md` — current sprint scope and DoD
 6. `docs/06-AI-AGENT-LAYER.md` — agent roster, `agent_runs`, autonomy tiers
@@ -14,11 +14,11 @@ Guest-journey-first hospitality platform for small independent hotels (IT/AT/SI)
 Historical/context docs live in `docs/annexes/` (technical annexes, Concierge workstream PRD/gameplan) and `docs/business/` (proposals, cost references). They inform but never override. Precedence: ADRs > docs/00–08 > annexes/business.
 
 ## Stack (ADR-034, ADR-004…006, D13)
-- `apps/web` — Next.js App Router, shadcn/ui, Tailwind, next-intl (it/de/en/sl). Vercel fra1.
+- `apps/web` — Next.js App Router, shadcn/ui, Tailwind, next-intl (it/de/en/sl). Vercel, in the region of its database (ADR-040: `dub1` for staging).
 - `apps/worker` — **Persistent Node process. NEVER edge, NEVER serverless.** Our own EU container (self-hosted VM → Cloud Run, ADR-033). Jobs via **pg-boss** (not Redis/BullMQ — ADR-005); the client is `@bookone/adapters/pg-boss`.
 - `apps/api` (ADR-034) — Hono on @hono/node-server: payment and provider webhooks, `/health*`, the bearer-token `/jobs/*` surface web calls, and the per-property feature gate. Answers and enqueues; persistent process, never edge or serverless. `apps/worker` runs pg-boss jobs only and has **no HTTP ingress**.
 - `apps/admin` (Guest Desk WP0.8, ADR-031/034) — operator console + its admin API (server actions, each through `withAdminAudit` in `packages/core/src/admin`) in **one container of our own, Tailscale-only, never on a third-party platform**. Staff sign in to a separate Supabase Auth project; never imports tenant-app auth.
-- Supabase EU (Frankfurt): Postgres + Auth + Storage. **Drizzle** for all domain access.
+- Supabase EU (any EU region, ADR-040; staging is `eu-west-1`): Postgres + Auth + Storage. **Drizzle** for all domain access.
 - `packages/core` — canonical domain: schema, types, event emitter, journey state machine, AuthorityMap router, policy engine, `LlmProvider`, adapter interfaces. **All domain logic lives here; neither app reimplements it.**
 - `packages/adapters` — `MockEricsoftAdapter` (with failure injection) until real API access; real adapter must pass the mock's contract-test suite before swap (ADR-008).
 - `packages/agents` — registry, runner (pg-boss consumer), typed tools, prompts, evals; Guest Desk adds `profiles/` and `router/` (ADR-021).
@@ -57,6 +57,7 @@ External decisions still blocking real deployment, all in 04 §0 and none of the
 
 ## Environments
 `local` (Supabase CLI, mock adapter, Stripe test) → `staging` (EU project, seeded demo property) → `prod` (EU, migrations via CI only).
+Staging exists (`bookone-hotel-staging`, `eu-west-1`, its own BookOne Supabase org): credentials in `.env.staging`, CLI via the BookOne token in `.env`, migrations by CI after main passes, demo via `pnpm demo:seed -- --staging` — `docs/runbooks/staging.md`. Never run the RLS suite, `db:seed` or `db reset` against it. Prod is not created yet.
 
 **Residency (D9 as amended by ADR-029).** Everything that *stores* platform data is EU-resident: database, file storage (identity documents included), backups, logs, traces, job state — that part is not negotiable. Model and vision API *calls* may be processed outside the EU for development, testing and early production (OpenRouter initially), with zero data retention, no training on our data, a transfer mechanism (DPA/SCCs or DPF) and a sub-processor register entry stating non-EU processing. Whether model processing must become EU-only is reassessed at production with paying properties, on evidence, in a new ADR. Any new service — EU or not — goes in the sub-processor register first.
 
