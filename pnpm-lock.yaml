@@ -35,6 +35,9 @@ importers:
       supabase:
         specifier: ^2.116.0
         version: 2.116.0
+      tsx:
+        specifier: ^4.23.12
+        version: 4.23.12
       turbo:
         specifier: ^2.10.12
         version: 2.10.12
