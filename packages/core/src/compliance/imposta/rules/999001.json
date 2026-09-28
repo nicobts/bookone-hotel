@@ -1,0 +1,65 @@
+{
+  "comune": "999001",
+  "name": "Comune di Esempio (fittizio)",
+  "fictional": true,
+  "versions": [
+    {
+      "effectiveFrom": "2025-01-01",
+      "effectiveTo": "2026-06-30",
+      "currency": "EUR",
+      "seasons": [
+        { "name": "alta", "from": "06-01", "to": "09-30" },
+        { "name": "bassa", "from": "10-01", "to": "05-31" }
+      ],
+      "rates": [
+        { "category": "hotel-3", "season": "alta", "amountCents": 300 },
+        { "category": "hotel-3", "season": "bassa", "amountCents": 200 },
+        { "category": "b&b", "season": "alta", "amountCents": 150 },
+        { "category": "b&b", "season": "bassa", "amountCents": 100 }
+      ],
+      "maxNights": 5,
+      "exemptions": [
+        { "kind": "age", "code": "minori-14", "underAge": 14 },
+        { "kind": "reason", "code": "residente", "description": "Residente nel comune" },
+        { "kind": "reason", "code": "autista", "description": "Autista di pullman turistico" },
+        {
+          "kind": "reason",
+          "code": "accompagnatore-ricovero",
+          "description": "Accompagnatore di un paziente ricoverato"
+        }
+      ],
+      "reductions": [{ "code": "ridotta-14-17", "fromAge": 14, "underAge": 18, "percent": 50 }],
+      "rounding": "per-night",
+      "attribution": "night"
+    },
+    {
+      "effectiveFrom": "2026-07-01",
+      "effectiveTo": null,
+      "currency": "EUR",
+      "seasons": [
+        { "name": "alta", "from": "06-01", "to": "09-30" },
+        { "name": "bassa", "from": "10-01", "to": "05-31" }
+      ],
+      "rates": [
+        { "category": "hotel-3", "season": "alta", "amountCents": 350 },
+        { "category": "hotel-3", "season": "bassa", "amountCents": 250 },
+        { "category": "b&b", "season": "alta", "amountCents": 175 },
+        { "category": "b&b", "season": "bassa", "amountCents": 125 }
+      ],
+      "maxNights": 7,
+      "exemptions": [
+        { "kind": "age", "code": "minori-14", "underAge": 14 },
+        { "kind": "reason", "code": "residente", "description": "Residente nel comune" },
+        { "kind": "reason", "code": "autista", "description": "Autista di pullman turistico" },
+        {
+          "kind": "reason",
+          "code": "accompagnatore-ricovero",
+          "description": "Accompagnatore di un paziente ricoverato"
+        }
+      ],
+      "reductions": [{ "code": "ridotta-14-17", "fromAge": 14, "underAge": 18, "percent": 50 }],
+      "rounding": "per-night",
+      "attribution": "night"
+    }
+  ]
+}

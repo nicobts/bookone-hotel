@@ -119,6 +119,57 @@ file format. The transport is a port (`IstatTransport`), and only the mock exist
 no transport is registered, so the day shows as having no channel and the manual route applies.
 The portal's own pages are never automated without the Regione's agreement.
 
+## The tourist tax (WP1.4)
+
+The imposta di soggiorno is computed by a rules engine (`compliance/imposta`). Each comune's rules
+are data, one file per comune in `compliance/imposta/rules/<ISTAT code>.json`, with dated
+versions. A version holds:
+- the seasons, and the rates by property category and season;
+- the most nights charged per person per stay;
+- exemptions, either by age or by a declared reason;
+- reductions by age;
+- rounding, per night or once per stay;
+- how nights are attributed to a declaration period: each night to its own period, or the whole
+  stay to the period of its departure.
+
+**How a stay is charged.** Night by night, under the version in force that night. The cap on nights
+comes from the version in force at arrival: a deliberation taking effect mid-stay changes the
+rate, not the guest's free nights. Ages are taken at arrival. Amounts are integers, in cents or in
+hundredths of a cent under a reduction, and rounding is half up.
+
+**A declaration** for a period sums each stay's tax attributed to it. It exports as semicolon CSV:
+one line per stay, with nights by status and the amount. **Reconciliation** compares it, stay by
+stay and to the cent, with what the property collected; any stay that differs is listed.
+
+**Where the inputs come from.** `declarationForProperty` reads:
+
+| Input | Where |
+|---|---|
+| The comune | `settings.jurisdiction.comune` |
+| The category | `settings.accommodationCategory` |
+| Each guest's birth date | their registration record |
+| A declared exemption | the record's `taxExemption` code |
+
+A comune with no rules file has nothing to compute (`no-rules`). Guests beyond the records are
+charged as adults, and the declaration flags it.
+
+**Mocks only.** The only rule files are two fictional comuni (`999001`, `999002`), both marked
+`fictional`. WP1.4 is blocked on the Comune di Trieste's regolamento and its declaration model. A
+real comune's file is written from its regolamento and checked by a person; never invent a rate.
+
+Not built, by decision:
+- **Collection.** Nothing here charges a guest or moves money; that needs its own ADR (ADR-020).
+  The booking flow still shows the tax as a note (`booking/quote.ts`).
+- **The declaration obligation and its deadline.** They wait for the comune's period and due date.
+
+**Open, for privacy.** Some exemption reasons reveal special-category data (Art. 9); a patient's
+companion is one. Only a code is used, never the evidence. Where the code and its evidence are
+kept, and for how long, must be decided before a real comune's rules go live. Registration records are purged 30 days after departure, while declarations can be quarterly. The
+same purge takes the birth dates the engine needs: a declaration computed after it would charge
+children and teenagers as adults. So each stay's tax must be computed and kept, counts and amounts
+only, before its records are purged, or the retention must change. Decide which with the first
+real comune.
+
 ## Where things run
 
 | Piece | Where |
@@ -215,6 +266,6 @@ on its own.
   the official code tables, and the owner's go-ahead.
 - **WP1.3, the real transport.** The series, the per-day obligations, the fallback file and the
   comparison are built on a mock transport. The real one waits for the Regione's specification.
-- **WP1.4:** the imposta adapter. The registry already names it, and the generation job reports it
-  as unsupported until it exists.
+- **WP1.4, a real comune.** The engine, the declaration and its reconciliation are built on fictional
+  comuni. Trieste's rules wait for its regolamento; collection waits for an ADR.
 - **WP1.6:** the compliance dashboard, the inspection export and the manual-receipt screen.

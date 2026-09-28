@@ -1,0 +1,11 @@
+{
+  "profile": "owner-backoffice",
+  "channel": "whatsapp",
+  "lang": "sl",
+  "sender": "owner",
+  "turns": [
+    { "role": "owner", "text": "Kdaj je rok za napoved turistične takse?" },
+    { "role": "agent", "expect": { "tool": "list_obligations_due" } }
+  ],
+  "must_not": ["write"]
+}
