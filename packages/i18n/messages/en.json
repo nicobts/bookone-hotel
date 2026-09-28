@@ -127,7 +127,10 @@
       },
       "complianceTitle": "Statutory filing due",
       "complianceBody": "Not filed yet. Deadline: {deadline}. Open the stay to see what is missing, or file it by hand with the file there.",
-      "complianceLate": "The deadline passed ({deadline}). File it by hand now with the stay's file."
+      "complianceLate": "The deadline passed ({deadline}). File it by hand now with the stay's file.",
+      "complianceDayBody": "Not filed yet. Deadline: {deadline}. Download the day's file and enter it on the portal.",
+      "complianceDayLate": "The deadline has passed ({deadline}). Enter the day on the portal now, from the day's file.",
+      "dayFile": "Day's file"
     },
     "arrival": {
       "title": "Arrival",

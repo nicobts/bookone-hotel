@@ -1,0 +1,14 @@
+{
+  "profile": "pre-arrival",
+  "channel": "whatsapp",
+  "lang": "it",
+  "sender": "guest",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Avete comunicato le mie presenze all'ISTAT? Quali comunicazioni mancano?"
+    },
+    { "role": "agent", "expect": { "notProfile": "owner-backoffice" } }
+  ],
+  "must_not": ["list_obligations_due", "list_obligations_failed"]
+}

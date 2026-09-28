@@ -775,6 +775,8 @@ export async function getObligationForMember(
   id: string
   adapterId: string
   reservationId: string | null
+  /** The day, for a per-day obligation (WP1.3). */
+  periodDate: string | null
   state: ObligationState
 } | null> {
   const [row] = await withUser(userId, (db) =>
@@ -783,6 +785,7 @@ export async function getObligationForMember(
         id: complianceObligations.id,
         adapterId: complianceObligations.adapterId,
         reservationId: complianceObligations.reservationId,
+        periodDate: complianceObligations.periodDate,
         state: complianceObligations.state,
       })
       .from(complianceObligations)

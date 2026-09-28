@@ -1,11 +1,15 @@
 import {
+  ADAPTER_FEATURES,
   ALLOGGIATI_ADAPTER_ID,
   ManualFallbackUnavailable,
+  WEBTUR_FVG_ADAPTER_ID,
   alloggiatiManualFallback,
   getObligationForMember,
   noteFallbackDownloaded,
+  webturManualFallback,
+  type ManualFallback,
 } from '@bookone/core/compliance'
-import { requireFeature } from '@/lib/auth/current-property'
+import { hasFeature, requireProperty } from '@/lib/auth/current-property'
 
 /**
  * The manual fallback for one obligation, as a download (ADR-026, WP1.1).
@@ -19,27 +23,35 @@ import { requireFeature } from '@/lib/auth/current-property'
  * and the obligation read under the member's session, so another property's id
  * is a 404 like one that does not exist.
  *
- * Only Alloggiati has an implementation today; the others arrive with their
- * adapters (WP1.3, WP1.4) and answer 404 until then.
+ * Alloggiati's file for a stay, WebTur's for a day (WP1.3). The tourist-tax
+ * declaration arrives with its adapter (WP1.4) and answers 404 until then.
  */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ locale: string; property: string; obligation: string }> },
 ) {
   const { locale, property: slug, obligation: obligationId } = await params
-  const { user, property } = await requireFeature(locale, slug, 'alloggiati')
+  const { user, property } = await requireProperty(locale, slug)
 
   const obligation = await getObligationForMember(user.id, property.id, obligationId)
-  if (!obligation || obligation.adapterId !== ALLOGGIATI_ADAPTER_ID || !obligation.reservationId) {
+  // The adapter's own feature (ADR-019): off, the property cannot reach it.
+  const feature = obligation ? ADAPTER_FEATURES[obligation.adapterId] : undefined
+  if (!obligation || !feature || !(await hasFeature(property.id, feature))) {
     return new Response('Not found', { status: 404 })
   }
 
-  let fallback
+  let fallback: ManualFallback
   try {
-    fallback = await alloggiatiManualFallback({
-      propertyId: property.id,
-      reservationId: obligation.reservationId,
-    })
+    if (obligation.adapterId === ALLOGGIATI_ADAPTER_ID && obligation.reservationId) {
+      fallback = await alloggiatiManualFallback({
+        propertyId: property.id,
+        reservationId: obligation.reservationId,
+      })
+    } else if (obligation.adapterId === WEBTUR_FVG_ADAPTER_ID && obligation.periodDate) {
+      fallback = await webturManualFallback(property.id, obligation.periodDate)
+    } else {
+      return new Response('Not found', { status: 404 })
+    }
   } catch (error) {
     if (error instanceof ManualFallbackUnavailable) {
       return new Response(`Not ready: ${error.reasons.join('; ')}`, { status: 409 })

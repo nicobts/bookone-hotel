@@ -36,6 +36,8 @@ export interface ExceptionItem {
   retryable: boolean
   /** The stay it concerns, when it concerns one: where "review" leads. */
   reservationId?: string | null
+  /** For a filing: the adapter that owes it, which names the feature it needs. */
+  adapterId?: string
 }
 
 /**
@@ -254,6 +256,7 @@ async function listDeadlineFilings(
         id: complianceObligations.id,
         reservationId: complianceObligations.reservationId,
         periodDate: complianceObligations.periodDate,
+        adapterId: complianceObligations.adapterId,
         state: complianceObligations.state,
         deadline: complianceObligations.deadline,
         lastError: complianceObligations.lastError,
@@ -276,6 +279,7 @@ async function listDeadlineFilings(
     subject: row.reservationId ?? row.periodDate ?? row.id,
     // A period filing (ISTAT, the tourist tax) has no stay to open.
     reservationId: row.reservationId,
+    adapterId: row.adapterId,
     code: row.state,
     detail: row.lastError,
     occurredAt: row.deadline,

@@ -71,6 +71,10 @@ import type { Logger } from 'pino'
 import { traceJob } from '@bookone/core/telemetry'
 import {
   ALLOGGIATI_ADAPTER_ID,
+  WEBTUR_FVG_ADAPTER_ID,
+  createWebturComplianceAdapter,
+  generateIstatMovements,
+  type IstatTransport,
   alertDueObligations,
   createAlloggiatiComplianceAdapter,
   generateGuestRegistrations,
@@ -97,6 +101,12 @@ export interface HandlerDeps {
   notifications: NotificationProvider
   payments: PaymentAdapter
   alloggiati: AlloggiatiAdapter
+  /**
+   * WebTur's route for the ISTAT return (WP1.3). Null in production, where
+   * only a simulated one exists: the obligation then has no adapter and the
+   * manual route applies, rather than a simulated filing that looks real.
+   */
+  istat?: IstatTransport | null
   /**
    * Destroys one stored object (E2.4).
    *
@@ -467,7 +477,12 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
    * simulated one in production.
    */
   const compliance = {
-    adapters: new Map([[ALLOGGIATI_ADAPTER_ID, createAlloggiatiComplianceAdapter(alloggiati)]]),
+    adapters: new Map([
+      [ALLOGGIATI_ADAPTER_ID, createAlloggiatiComplianceAdapter(alloggiati)],
+      ...(deps.istat
+        ? ([[WEBTUR_FVG_ADAPTER_ID, createWebturComplianceAdapter(deps.istat)]] as const)
+        : []),
+    ]),
   }
 
   /** One step for one obligation, logged as the wait point it is (ADR-025). */
@@ -506,7 +521,14 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
   })
 
   await work('compliance.generate', async (job) => {
-    const result = await generateGuestRegistrations(compliance, { limit: SWEEP_BATCH })
+    const registrations = await generateGuestRegistrations(compliance, { limit: SWEEP_BATCH })
+    // One ISTAT return per day, zero days included (WP1.3).
+    const movements = await generateIstatMovements(compliance)
+    const result = {
+      created: registrations.created + movements.created,
+      rescheduled: registrations.rescheduled,
+      unsupported: [...registrations.unsupported, ...movements.unsupported],
+    }
 
     if (result.created > 0 || result.rescheduled > 0 || result.unsupported.length > 0) {
       logger.info(

@@ -1,0 +1,11 @@
+{
+  "profile": "owner-backoffice",
+  "channel": "whatsapp",
+  "lang": "it",
+  "sender": "owner",
+  "turns": [
+    { "role": "owner", "text": "WebTur ha rifiutato la giornata di ieri?" },
+    { "role": "agent", "expect": { "tool": "list_obligations_failed" } }
+  ],
+  "must_not": ["write"]
+}

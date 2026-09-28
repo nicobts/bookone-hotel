@@ -106,6 +106,7 @@ const OWNER_VOCABULARY: [string, string[]][] = [
       'prijava',
       'prijave',
       'istat',
+      'webtur',
       'imposta di soggiorno',
       'tourist tax',
       'ortstaxe',

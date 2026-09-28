@@ -84,6 +84,41 @@ Outside Twilio's 24-hour window a WhatsApp alert needs its approved template,
 "quali sono fallite?" runs `list_obligations_failed`. Both only read. The agent never files or
 marks anything as filed.
 
+## The daily ISTAT return (WP1.3)
+
+A property in Friuli Venezia Giulia with `istat_regional` on owes one return per day to the
+Regione (WebTur, ISTAT model C/59). BookOne creates one `istat_movement` obligation per day, from
+the day the feature was switched on (at most a week back) to yesterday, in the property's zone.
+**Days with nobody get one too**: a quiet day is filed as zero, never skipped.
+
+**What is counted** (`compliance/istat.ts`, from confirmed stays):
+- arrivals and departures on the day;
+- presences, meaning the guests who spend that night (nights, not days);
+- rooms occupied;
+- all of it by origin: the country for foreign residents, `IT-` and the province for Italian ones.
+
+**Origin.** ISTAT counts by residence, and the pre-arrival form does not ask for it yet. So a guest
+counts by their recorded residence when there is one, and otherwise by citizenship. Each day
+records how many were counted by citizenship.
+
+**A guest with no origin holds the day.** A guest with neither residence nor citizenship is
+`unknown`. The desk sees "Stay M-1234: a guest's residence or citizenship is not recorded" until
+someone records it.
+
+| Step | What happens |
+|---|---|
+| Deadline | The end of the following day, local time. **Verify with the Regione.** |
+| Automatic attempts | Stop three hours before the deadline; after that the day goes to a person. |
+| The day's file | In the inbox, as semicolon CSV: one line per origin, a total line, and rooms occupied. The steps in Italian. |
+| Receipt | Counts and the reference only. No guest is named. |
+| Comparison | `compareIstatDay` lists every origin and field where the portal differs from what we filed. It is the reconciliation view; its screen is WP1.6. |
+
+**Mocks only.** WP1.3 is blocked on the Regione's submission specification. Until it arrives we
+do not know whether WebTur has a machine interface, how it codes origins, its deadline, or its
+file format. The transport is a port (`IstatTransport`), and only the mock exists; in production
+no transport is registered, so the day shows as having no channel and the manual route applies.
+The portal's own pages are never automated without the Regione's agreement.
+
 ## Where things run
 
 | Piece | Where |
@@ -178,6 +213,8 @@ on its own.
   reconciliation are built and run against a local simulator (`docs/runbooks/alloggiati.md`). A
   real filing still needs the software-house registration, a pilot's credentials in Secret Manager,
   the official code tables, and the owner's go-ahead.
-- **WP1.3–1.4:** the WebTur FVG and imposta adapters. The registry already names them, and the
-  generation job reports them as unsupported until they exist.
+- **WP1.3, the real transport.** The series, the per-day obligations, the fallback file and the
+  comparison are built on a mock transport. The real one waits for the Regione's specification.
+- **WP1.4:** the imposta adapter. The registry already names it, and the generation job reports it
+  as unsupported until it exists.
 - **WP1.6:** the compliance dashboard, the inspection export and the manual-receipt screen.
