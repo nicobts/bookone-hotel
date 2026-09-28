@@ -59,7 +59,8 @@ select p.id, c.role, c.label, c.phone
   cross join lateral (
     select r.role, r.label,
            case
-             when btrim(r.raw) like '+%' then '+' || regexp_replace(r.raw, '\D', '', 'g')
+             when regexp_replace(r.raw, '^\s+', '') like '+%'
+               then '+' || regexp_replace(r.raw, '\D', '', 'g')
              when regexp_replace(r.raw, '\D', '', 'g') like '00%'
                then '+' || substr(regexp_replace(r.raw, '\D', '', 'g'), 3)
            end as phone

@@ -26,7 +26,9 @@ function strings(context: Context) {
 
 function back(context: Context): never {
   revalidatePath(`/${context.locale}/${context.slug}/console/members`)
-  redirect(`/${context.slug}/console/members`)
+  // With the locale: without it the proxy picks one, which may not be the
+  // language the owner was reading.
+  redirect(`/${context.locale}/${context.slug}/console/members`)
 }
 
 export async function addContactAction(context: Context, formData: FormData): Promise<void> {
