@@ -32,7 +32,7 @@ build). Remove every piece with `grep -rn DEV-LOGIN-HELPER`.
 
 The Phase 1 gate (5 named pilots and the Regione letter) has not been passed. Phase 1 is being
 built ahead of it **on mocks only**, with the owner's approval of 2026-09-28. No authority is
-called and nothing is filed. Branch `guest-desk/wp1.1`.
+called and nothing is filed. Branches `guest-desk/wp1.1`, then `guest-desk/wp1.5`.
 
 | WP1.1 acceptance item | State | What is left |
 |---|---|---|
@@ -44,6 +44,22 @@ Not in WP1.1, by design:
 - **Replayed conversations.** WP1.1 adds no agent behaviour. The owner agent's obligation tools come
   with WP1.5, and their conversations with them.
 - **The dashboard and manual-receipt screen.** Those are WP1.6.
+
+| WP1.5 acceptance item | State | What is left |
+|---|---|---|
+| Fake-clock tests: alerts fire at configured offsets; nothing fires twice | ✅ | `compliance/alerts.test.ts` drives the ladder every five minutes with the sweep run twice per tick: each rung fires once, within one sweep of its offset, never at or after the deadline. Against the database (`rls/compliance-alerts.test.ts`), two sweeps at once send one set of messages; with the conditional claim removed that test fails |
+| Zero missed 24h Alloggiati deadlines across a 30-day simulation with injected failures | ✅ | Seeded simulation: 0–6 arrivals a day for 30 days, six channel outages of 2–10 h, 15% transient and 3% refused calls, late and missing confirmations. Every obligation is met before its deadline. The assumption is written into it: a person paged about a hand-over files within 90 minutes, inside the 2-hour margin. With the phone rungs switched off, the same run misses 8 |
+
+WP1.5 as built: the ladder is inbox → staff phones → owner phones at T−12h / T−6h / T−3h by
+default, per property in `settings.complianceAlerts` (a setting that does not validate falls back
+to the defaults entirely), staff numbers in `settings.staffPhones`. A hand-over (`manual`) goes to
+the staff rung at once. The rung reached is stored on the obligation (`alert_rung`, `alerted_at`),
+raised only by a conditional update, and every rise is a `compliance_obligation.alerted` event
+that also records a rung nobody could be paged on. The exceptions inbox now reads obligations (the
+inbox rung, or overdue) instead of the Sprint 6 T-20h query. Owner agent: `list_obligations_due`
+and `list_obligations_failed`, read-only, with 9 replayed conversations in `test:evals`
+(`conversations/wp1.5/`). The WhatsApp message needs an approved template
+(`TWILIO_TEMPLATE_COMPLIANCE_ALERT`) before it reaches a phone outside Twilio's 24-hour window.
 
 | ADR | Decision | Built? | Where |
 |---|---|---|---|
@@ -132,7 +148,7 @@ Not in WP1.1, by design:
 | `AlloggiatiAdapter` port + mock | ✅ | Contract suite; the mock validates record width rather than accepting anything |
 | `alloggiati_submissions` audit trail | ✅ | Exact payload, checksum and receipt retained |
 | Auto-file on arrival, manual file always | ✅ | E2.3 requires the override; the property is the declarant |
-| T-20h overdue alert | ✅ | In the exceptions inbox, linking to the arrival screen |
+| T-20h overdue alert | ✅ superseded by WP1.5 | The inbox shows a filing from the ladder's first rung (T−12h by default) and staff and owner are paged after it — earlier than T-20h, so PRD E2.3 still holds |
 | Document deletion on acknowledgement (E2.4) | ✅ | Object first, row second; a failed delete leaves the row honest |
 | Contract mirror | 🟨 **drafted, not reviewed** | [alloggiati-responsibility.md](../contracts/alloggiati-responsibility.md) — five open questions for counsel |
 | **A real channel** | ⬜ **blocked** | Direct web service vs certified intermediary (04 §0 item 5) |

@@ -1,0 +1,11 @@
+{
+  "profile": "owner-backoffice",
+  "channel": "whatsapp",
+  "lang": "de",
+  "sender": "owner",
+  "turns": [
+    { "role": "owner", "text": "Welche Meldungen haben heute noch eine Frist?" },
+    { "role": "agent", "expect": { "tool": "list_obligations_due" } }
+  ],
+  "must_not": ["write"]
+}

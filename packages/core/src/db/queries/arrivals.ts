@@ -146,48 +146,6 @@ export async function getArrival(
   })
 }
 
-/**
- * Stays whose filing is overdue, for the exceptions inbox (E2.3: T-20h).
- *
- * Read through `withUser` like the rest of the inbox, so an owner sees their
- * own and nobody else's.
- */
-export async function listOverdueAlloggiati(
-  userId: string,
-  propertyId: string,
-  input: { hoursAfterArrival: number; now?: Date },
-): Promise<{ reservationId: string; reference: string; arrivalDate: string; state: string }[]> {
-  const now = input.now ?? new Date()
-  const cutoff = new Date(now.getTime() - input.hoursAfterArrival * 3_600_000)
-    .toISOString()
-    .slice(0, 10)
-
-  return withUser(userId, (db) =>
-    db
-      .select({
-        reservationId: reservations.id,
-        reference: sql<string>`coalesce(${reservations.reference}, '')`,
-        arrivalDate: reservations.arrivalDate,
-        state: journeyStates.alloggiati,
-      })
-      .from(reservations)
-      .innerJoin(journeyStates, eq(journeyStates.reservationId, reservations.id))
-      .where(
-        and(
-          eq(reservations.propertyId, propertyId),
-          eq(reservations.status, 'confirmed'),
-          // Arrived, and long enough ago to be overdue. A guest still in
-          // transit is not late, and listing them would train an owner to
-          // ignore this section.
-          eq(journeyStates.arrival, 'confirmed'),
-          sql`${reservations.arrivalDate} <= ${cutoff}`,
-          sql`${journeyStates.alloggiati} <> 'acknowledged'`,
-        ),
-      )
-      .orderBy(asc(reservations.arrivalDate)),
-  )
-}
-
 /** Stays still holding documents after acknowledgement — the E2.4 backstop. */
 export async function countUndeletedDocuments(userId: string, propertyId: string): Promise<number> {
   return withUser(userId, async (db) => {

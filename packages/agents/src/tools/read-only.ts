@@ -33,6 +33,8 @@ export const READ_ONLY_TOOLS: ReadonlySet<string> = new Set([
   'list_capture_status',
   'list_open_complaints',
   'list_pending_approvals',
+  'list_obligations_due',
+  'list_obligations_failed',
   // Arithmetic on its input.
   'classify_discrepancy',
 ])

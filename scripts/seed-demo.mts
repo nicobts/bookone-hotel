@@ -78,6 +78,8 @@ const OWNER_EMAIL = 'owner@demo.bookone.test'
 const STAFF_EMAIL = 'staff@demo.bookone.test'
 /** Fictional numbers, in the reserved 040 000 range. The owner agent answers only these (ADR-021). */
 const OWNER_PHONES = ['+39 040 0000001']
+/** The front desk's phone: the staff rung of the filing-deadline alerts (WP1.5). */
+const STAFF_PHONES = ['+39 040 0000002']
 
 /**
  * WhatsApp for the demo (ADR-035), all optional:
@@ -87,12 +89,15 @@ const OWNER_PHONES = ['+39 040 0000001']
  *                          they can ask the owner agent on WhatsApp.
  *   DEMO_GUEST_PHONE     — a second phone, given to the guest arriving tomorrow,
  *                          so the guest side can be played on WhatsApp.
+ *   DEMO_STAFF_PHONE     — a phone added to the staff numbers, so the filing
+ *                          deadline alert (WP1.5) can be shown arriving.
  * Real numbers of people who volunteered them, used only on this fictional
  * property. Unset, the demo is webchat-only, as before.
  */
 const WHATSAPP_NUMBER = process.env.TWILIO_WHATSAPP_FROM?.trim() || null
 const DEMO_OWNER_PHONE = process.env.DEMO_OWNER_PHONE?.trim() || null
 const DEMO_GUEST_PHONE = process.env.DEMO_GUEST_PHONE?.trim() || null
+const DEMO_STAFF_PHONE = process.env.DEMO_STAFF_PHONE?.trim() || null
 
 const apiUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
@@ -198,6 +203,7 @@ const [property] = await sql`
       // this flag (ADR-037). Only this seed sets it.
       demo: true,
       ownerPhones: DEMO_OWNER_PHONE ? [...OWNER_PHONES, DEMO_OWNER_PHONE] : OWNER_PHONES,
+      staffPhones: DEMO_STAFF_PHONE ? [...STAFF_PHONES, DEMO_STAFF_PHONE] : STAFF_PHONES,
       ...(WHATSAPP_NUMBER ? { whatsappNumber: WHATSAPP_NUMBER } : {}),
     })}
   )
@@ -493,6 +499,9 @@ console.log(
 )
 console.log(
   `  owner     ${[...OWNER_PHONES, ...(DEMO_OWNER_PHONE ? [DEMO_OWNER_PHONE] : [])].join(', ')} — the only numbers the owner agent answers`,
+)
+console.log(
+  `  staff     ${[...STAFF_PHONES, ...(DEMO_STAFF_PHONE ? [DEMO_STAFF_PHONE] : [])].join(', ')} — the staff rung of the filing alerts`,
 )
 console.log(
   WHATSAPP_NUMBER

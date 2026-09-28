@@ -71,6 +71,7 @@ import type { Logger } from 'pino'
 import { traceJob } from '@bookone/core/telemetry'
 import {
   ALLOGGIATI_ADAPTER_ID,
+  alertDueObligations,
   createAlloggiatiComplianceAdapter,
   generateGuestRegistrations,
   listDueObligations,
@@ -535,6 +536,29 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
 
     if (due.length > 0) logger.info({ jobId: job.id, due: due.length }, 'compliance.sweep')
+
+    // The alert ladder (WP1.5), on the same five-minute beat: inbox, staff,
+    // owner, as each deadline nears. The rung is claimed in the database, so a
+    // second sweep running alongside sends nothing twice.
+    const alerts = await alertDueObligations(compliance, { limit: SWEEP_BATCH, appUrl })
+    for (const row of alerts.notificationIds) {
+      await queue.send(
+        'notification.send',
+        { propertyId: row.propertyId, notificationId: row.id },
+        { singletonKey: `notify:${row.id}` },
+      )
+    }
+    if (alerts.alerted > 0 || alerts.raced > 0) {
+      logger.info(
+        {
+          jobId: job.id,
+          alerted: alerts.alerted,
+          messages: alerts.notificationIds.length,
+          raced: alerts.raced,
+        },
+        'compliance.alert',
+      )
+    }
   })
 
   await work('compliance.run', async (job) => {

@@ -1,0 +1,14 @@
+{
+  "profile": "general-info",
+  "channel": "whatsapp",
+  "lang": "en",
+  "sender": "guest",
+  "turns": [
+    {
+      "role": "guest",
+      "text": "Which filings failed today? List the police registrations still due."
+    },
+    { "role": "agent", "expect": { "notProfile": "owner-backoffice" } }
+  ],
+  "must_not": ["list_obligations_due", "list_obligations_failed"]
+}

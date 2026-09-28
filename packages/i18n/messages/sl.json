@@ -119,14 +119,15 @@
       "review": "Preglej",
       "reason": "Razlog",
       "waiting": "Čaka na pošiljanje",
-      "alloggiatiTitle": "Prijava policiji zamuja",
-      "alloggiatiBody": "Ta gost je prispel pred več kot 20 urami, prijava pa ni potrjena.",
       "toast": {
         "retrying": "Nov poskus se je začel",
         "retryingDescription": "Vrstica izgine, takoj ko rezervacija prispe v vaš PMS.",
         "unreachable": "Poskus se ni začel",
         "unreachableDescription": "Storitev se ni odzvala. Poskusite znova čez trenutek."
-      }
+      },
+      "complianceTitle": "Obvezna prijava zapada",
+      "complianceBody": "Še ni poslana. Rok: {deadline}. Odprite bivanje in preverite, kaj manjka, ali jo pošljite ročno z datoteko.",
+      "complianceLate": "Rok je potekel ({deadline}). Pošljite jo ročno zdaj z datoteko bivanja."
     },
     "arrival": {
       "title": "Prihod",
@@ -207,7 +208,13 @@
         },
         "fallbackTitle": "Ročna prijava",
         "fallbackHint": "Ista datoteka, ki bi jo poslali mi, ena vrstica na gosta. Koraki sledijo portalu, ki je samo v italijanščini.",
-        "fallbackDownload": "Prenesite datoteko za portal"
+        "fallbackDownload": "Prenesite datoteko za portal",
+        "alerted": "Stopnja opozorila",
+        "reaches": {
+          "inbox": "izjeme",
+          "staff": "osebje",
+          "owner": "lastnik"
+        }
       }
     },
     "conversations": {
@@ -697,6 +704,14 @@
           "label": "Našteje, kar čaka na vašo odobritev",
           "would": "naštel, kar čaka na vašo odobritev"
         },
+        "list_obligations_due": {
+          "label": "Prikaži neposlane obvezne prijave",
+          "would": "prikazati obvezne prijave, ki še niso poslane"
+        },
+        "list_obligations_failed": {
+          "label": "Prikaži spodletele ali ročne prijave",
+          "would": "prikazati prijave, ki so spodletele ali jih je treba poslati ročno"
+        },
         "classify_discrepancy": {
           "label": "Razvrsti razliko z vašim PMS",
           "would": "razvrstil razliko z vašim PMS"
@@ -899,6 +914,17 @@
         "reference": "Sklic rezervacije"
       },
       "cta": "Odpri pogovor: {url}"
+    },
+    "complianceAlert": {
+      "authorities": {
+        "questura": "prijava policiji",
+        "regione-fvg": "poročilo ISTAT",
+        "comune-trieste": "napoved turistične takse"
+      },
+      "subject": "Do {deadline}: {filing} za {subject}",
+      "due": "Še ni poslano: {filing} za {subject}. Rok: {deadline}.",
+      "manual": "Ročno je treba poslati: {filing} za {subject}. Rok: {deadline}.",
+      "cta": "Odprite bivanje: {url}"
     }
   },
   "booking": {
@@ -1213,6 +1239,12 @@
     "decisionPaymentLink": "Tukaj je vaša povezava za plačilo: {url}",
     "decisionRejected": "Nastanitev te zahteve ni mogla odobriti. Nekdo vam bo tukaj odgovoril z možnostmi.",
     "unmatchedSender": "Ta številka pripada nastanitvi {property}. Vaše številke nismo mogli povezati s trenutno rezervacijo, zato sporočilo ni bilo posredovano. Če imate rezervacijo, pišite s številke, ki ste jo navedli ob rezervaciji, ali uporabite povezavo v potrditvi. Za rezervacijo: {link}",
-    "previewSimulated": "Predogled: na tem mestu bi pomočnik {action}. Nič ni bilo izvedeno in nihče ni bil obveščen."
+    "previewSimulated": "Predogled: na tem mestu bi pomočnik {action}. Nič ni bilo izvedeno in nihče ni bil obveščen.",
+    "ownerObligationsDue": "Neposlane prijave ({count}): {list}.",
+    "ownerObligationsDueNone": "Nobena obvezna prijava ne čaka.",
+    "ownerObligationsFailed": "Prijave, ki potrebujejo pozornost ({count}): {list}.",
+    "ownerObligationsFailedNone": "Nobena prijava ni spodletela in nobene ni treba poslati ročno.",
+    "ownerObligationDueItem": "{subject}, {filing}, do {deadline}",
+    "ownerObligationFailedItem": "{subject}, {filing}: {state}"
   }
 }

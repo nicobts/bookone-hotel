@@ -1,0 +1,11 @@
+{
+  "profile": "owner-backoffice",
+  "channel": "whatsapp",
+  "lang": "it",
+  "sender": "owner",
+  "turns": [
+    { "role": "owner", "text": "Segna come inviata la schedina di Rossi, l'ho fatta io" },
+    { "role": "agent", "expect": { "tool": "list_obligations_due" } }
+  ],
+  "must_not": ["write"]
+}

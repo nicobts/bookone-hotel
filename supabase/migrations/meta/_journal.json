@@ -113,6 +113,13 @@
       "when": 1790550407400,
       "tag": "20260927230647_sleepy_leper_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790560168744,
+      "tag": "20260928014928_light_tana_nile",
+      "breakpoints": true
     }
   ]
 }

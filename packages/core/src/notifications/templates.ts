@@ -237,6 +237,7 @@ export const WELCOME = 'stay.welcome'
 export const REVIEW_REQUEST = 'stay.review-request'
 export const INVOICE_REQUEST_ROUTED = 'stay.invoice-request'
 export const ESCALATION_ALERT = 'stay.escalation-alert'
+export const COMPLIANCE_ALERT = 'compliance.deadline-alert'
 
 /**
  * The welcome, sent the moment arrival is confirmed (E3.1).
@@ -436,4 +437,62 @@ export function renderEscalationAlert(
     subject: interpolate(t.subject, { guestName: facts.guestName }),
     body: lines.join('\n'),
   }
+}
+
+/**
+ * A filing deadline is near and nothing is filed (WP1.5). To staff and the
+ * owner, never a guest. Whose filing, by when, and the link to the stay, where
+ * the missing fields and the fallback file are. The deadline is already
+ * formatted in the property's time zone when the alert is queued.
+ */
+export interface ComplianceAlertFacts {
+  /** Registry name of the authority (`questura`); the label comes from the catalogue. */
+  authority: string
+  /** The guest's name or the booking reference; the day for a daily return. */
+  subject: string
+  deadline: string
+  url: string
+  /** Handed to a person: nothing will file it automatically any more. */
+  manual: boolean
+}
+
+function complianceAlertCopy(locale: string, facts: ComplianceAlertFacts) {
+  const resolved: TemplateLocale = isTemplateLocale(locale) ? locale : 'en'
+  const t = catalogues[resolved].notifications.complianceAlert
+  const authorities = t.authorities as Record<string, string>
+  const filing = authorities[facts.authority] ?? facts.authority
+  const values = { filing, subject: facts.subject, deadline: facts.deadline, url: facts.url }
+  return {
+    subject: interpolate(t.subject, values),
+    intro: interpolate(facts.manual ? t.manual : t.due, values),
+    cta: interpolate(t.cta, values),
+  }
+}
+
+/** The same alert for a phone (WhatsApp/SMS): the sentence and the link. */
+export function renderComplianceAlertShort(
+  locale: string,
+  facts: ComplianceAlertFacts,
+): RenderedMessage {
+  const copy = complianceAlertCopy(locale, facts)
+  return { subject: copy.subject, body: [copy.intro, copy.cta].join('\n') }
+}
+
+export function renderComplianceAlert(
+  locale: string,
+  facts: ComplianceAlertFacts,
+): RenderedMessage {
+  const copy = complianceAlertCopy(locale, facts)
+  return { subject: copy.subject, body: [copy.intro, '', copy.cta].join('\n') }
+}
+
+/**
+ * Variables for the approved WhatsApp template: {{1}} whose filing, {{2}} the
+ * deadline, {{3}} the link. The template text is Meta's to approve; only these
+ * values change.
+ */
+export function complianceAlertTemplateVariables(
+  facts: ComplianceAlertFacts,
+): Record<string, string> {
+  return { '1': facts.subject, '2': facts.deadline, '3': facts.url }
 }

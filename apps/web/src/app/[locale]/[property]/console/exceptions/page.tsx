@@ -3,6 +3,7 @@ import { CheckCircle2Icon, RefreshCwIcon, TriangleAlertIcon } from 'lucide-react
 import { listExceptions, type ExceptionItem } from '@bookone/core/db'
 import type { Feature } from '@bookone/core/onboarding'
 import { PageShell } from '@/components/shell/page-shell'
+import { KNOWN_OBLIGATION_ERRORS } from '@/lib/compliance/errors'
 import { propertyFeatures, requireProperty } from '@/lib/auth/current-property'
 import { Badge } from '@bookone/ui/components/badge'
 import { Button } from '@bookone/ui/components/button'
@@ -23,7 +24,9 @@ import { retryReflectionAction } from './actions'
 const EXCEPTION_FEATURE: Partial<Record<ExceptionItem['kind'], Feature>> = {
   'unreflected-reservation': 'pms_sync',
   discrepancy: 'pms_sync',
-  'alloggiati-overdue': 'alloggiati',
+  // The only adapter with obligations today; WP1.3–1.4 carry their own
+  // feature on the item when they add theirs.
+  'compliance-deadline': 'alloggiati',
 }
 
 export default async function ExceptionsPage({
@@ -67,7 +70,13 @@ export default async function ExceptionsPage({
       ) : (
         <ul className="flex flex-col gap-3">
           {exceptions.map((item) => (
-            <ExceptionRow key={item.id} item={item} locale={locale} context={context} />
+            <ExceptionRow
+              key={item.id}
+              item={item}
+              locale={locale}
+              timeZone={property.timezone}
+              context={context}
+            />
           ))}
         </ul>
       )}
@@ -78,27 +87,60 @@ export default async function ExceptionsPage({
 async function ExceptionRow({
   item,
   locale,
+  timeZone,
   context,
 }: {
   item: ExceptionItem
   locale: string
+  timeZone: string
   context: { locale: string; slug: string }
 }) {
   const t = await getTranslations('console.exceptions')
+  const states = await getTranslations('console.arrival.obligation.states')
+  const errors = await getTranslations('console.arrival.obligation.errors')
 
   const title =
     item.kind === 'unreflected-reservation'
       ? t('unreflectedTitle')
-      : item.kind === 'alloggiati-overdue'
-        ? t('alloggiatiTitle')
+      : item.kind === 'compliance-deadline'
+        ? t('complianceTitle')
         : t('discrepancyTitle')
+
+  // A filing's row is its deadline, in the property's words: the one number an
+  // owner acts on (WP1.5).
+  const deadline = new Date(item.occurredAt).toLocaleString(locale, {
+    timeZone,
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  const late = new Date(item.occurredAt).getTime() <= Date.now()
 
   const body =
     item.kind === 'unreflected-reservation'
       ? t('unreflectedBody')
-      : item.kind === 'alloggiati-overdue'
-        ? t('alloggiatiBody')
+      : item.kind === 'compliance-deadline'
+        ? late
+          ? t('complianceLate', { deadline })
+          : t('complianceBody', { deadline })
         : t('discrepancyBody')
+
+  const knownError =
+    item.kind === 'compliance-deadline' && item.detail
+      ? KNOWN_OBLIGATION_ERRORS[item.detail]
+      : undefined
+  const detail = knownError ? errors(knownError) : item.detail
+
+  const reason =
+    item.kind === 'compliance-deadline'
+      ? states.has(item.code)
+        ? states(item.code)
+        : item.code
+      : item.code === 'pending'
+        ? t('waiting')
+        : item.code
 
   return (
     <li className="bg-card flex items-start gap-3 rounded-lg border p-4">
@@ -117,13 +159,11 @@ async function ExceptionRow({
           <span className="num">{item.subject}</span>
           {' · '}
           <span>
-            {t('reason')}: {item.code === 'pending' ? t('waiting') : item.code}
+            {t('reason')}: {reason}
           </span>
         </p>
 
-        {item.detail && (
-          <p className="text-muted-foreground mt-1 text-xs opacity-80">{item.detail}</p>
-        )}
+        {detail && <p className="text-muted-foreground mt-1 text-xs opacity-80">{detail}</p>}
       </div>
 
       <div className="shrink-0">
@@ -136,7 +176,7 @@ async function ExceptionRow({
           and stays disabled: a button that does nothing is worse than one that
           says what it will do.
         */}
-        {item.kind === 'alloggiati-overdue' ? (
+        {item.kind === 'compliance-deadline' ? (
           // Opens the arrival screen rather than firing a retry from here. A
           // late filing is usually late because the party is incomplete, and
           // that screen is where the missing fields are listed.

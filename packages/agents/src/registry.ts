@@ -147,7 +147,14 @@ export const AG_06: AgentDefinition = {
     "Owner's assistant — read-only answers about the property, for verified owner numbers",
   tier: 'T1',
   feature: 'concierge',
-  tools: ['list_arrivals', 'list_capture_status', 'list_open_complaints', 'list_pending_approvals'],
+  tools: [
+    'list_arrivals',
+    'list_capture_status',
+    'list_open_complaints',
+    'list_pending_approvals',
+    'list_obligations_due',
+    'list_obligations_failed',
+  ],
   model: 'classification',
   dailyBudgetCents: 0,
 }

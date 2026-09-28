@@ -1,7 +1,13 @@
-import { and, desc, eq, inArray, isNull, lt, notExists, sql } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, isNull, lt, lte, notExists, or, sql } from 'drizzle-orm'
 import { withUser } from '../session'
-import { discrepancies, domainEvents, externalRefs, reservations } from '../schema'
-import { listOverdueAlloggiati } from './arrivals'
+import {
+  complianceObligations,
+  discrepancies,
+  domainEvents,
+  externalRefs,
+  reservations,
+} from '../schema'
+import { ALERTING_STATES } from '../../compliance/lifecycle'
 
 /**
  * The exceptions inbox (PRD C1, D15).
@@ -14,7 +20,7 @@ import { listOverdueAlloggiati } from './arrivals'
  * come back (ADR-018).
  */
 
-export type ExceptionKind = 'unreflected-reservation' | 'discrepancy' | 'alloggiati-overdue'
+export type ExceptionKind = 'unreflected-reservation' | 'discrepancy' | 'compliance-deadline'
 
 export interface ExceptionItem {
   id: string
@@ -39,15 +45,6 @@ export interface ExceptionItem {
  * and an inbox that cries wolf gets ignored, which costs more than the delay.
  */
 export const UNREFLECTED_AFTER_SECONDS = 60
-
-/**
- * When a registry filing counts as overdue (E2.3).
- *
- * The obligation is 24 hours from arrival. Twenty leaves four hours to act — an
- * alert that fires after the deadline is a notification of a breach rather than
- * a chance to avoid one, and this inbox exists to be actionable (D15).
- */
-export const ALLOGGIATI_OVERDUE_HOURS = 20
 
 interface FailureDetail {
   code: string
@@ -215,41 +212,71 @@ export async function listOpenDiscrepancies(
 }
 
 /** Everything needing a person at this property, newest first. */
-export async function listExceptions(userId: string, propertyId: string): Promise<ExceptionItem[]> {
-  const [unreflected, open, overdue] = await Promise.all([
+export async function listExceptions(
+  userId: string,
+  propertyId: string,
+  now: Date = new Date(),
+): Promise<ExceptionItem[]> {
+  const [unreflected, open, filings] = await Promise.all([
     listUnreflectedReservations(userId, propertyId),
     listOpenDiscrepancies(userId, propertyId),
-    listOverdueFilings(userId, propertyId),
+    listDeadlineFilings(userId, propertyId, now),
   ])
 
-  return [...unreflected, ...open, ...overdue].sort(
+  return [...unreflected, ...open, ...filings].sort(
     (a, b) => b.occurredAt.getTime() - a.occurredAt.getTime(),
   )
 }
 
 /**
- * Registry filings that are late (E2.3, PRD C1).
+ * Filings the alert ladder has reached, or whose deadline has passed unfiled
+ * (WP1.5, E2.3, PRD C1).
  *
- * The obligation is the property's and the deadline is 24 hours from arrival,
- * so this is the one exception class where the cost of ignoring it is a fine
- * rather than an annoyed guest. It is retryable — pressing the action files
- * again — because the common causes are a channel that was down and a party
- * that was incomplete when the guest arrived.
+ * The inbox is the ladder's first rung (`compliance/alerts.ts`): an obligation
+ * appears here once its `alert_rung` is at least 1, which by default is twelve
+ * hours before the deadline, and at once when it has been handed to a person.
+ * It stays until the authority has it — `submitted` or `acknowledged` — so a
+ * missed deadline is still here, with the fallback file one click away.
+ *
+ * The deadline is `occurredAt`, because that is what an owner sorts by when
+ * several are due.
  */
-async function listOverdueFilings(userId: string, propertyId: string): Promise<ExceptionItem[]> {
-  const rows = await listOverdueAlloggiati(userId, propertyId, {
-    hoursAfterArrival: ALLOGGIATI_OVERDUE_HOURS,
-  })
+async function listDeadlineFilings(
+  userId: string,
+  propertyId: string,
+  now: Date,
+): Promise<ExceptionItem[]> {
+  const rows = await withUser(userId, (tx) =>
+    tx
+      .select({
+        id: complianceObligations.id,
+        reservationId: complianceObligations.reservationId,
+        periodDate: complianceObligations.periodDate,
+        state: complianceObligations.state,
+        deadline: complianceObligations.deadline,
+        lastError: complianceObligations.lastError,
+      })
+      .from(complianceObligations)
+      .where(
+        and(
+          eq(complianceObligations.propertyId, propertyId),
+          inArray(complianceObligations.state, [...ALERTING_STATES]),
+          or(gte(complianceObligations.alertRung, 1), lte(complianceObligations.deadline, now)),
+        ),
+      )
+      .orderBy(complianceObligations.deadline)
+      .limit(200),
+  )
 
   return rows.map((row) => ({
-    id: `alloggiati:${row.reservationId}`,
-    kind: 'alloggiati-overdue' as const,
-    subject: row.reservationId,
+    id: `compliance:${row.id}`,
+    kind: 'compliance-deadline' as const,
+    subject: row.reservationId ?? row.periodDate ?? row.id,
     code: row.state,
-    detail: row.reference || null,
-    // The arrival day, because that is what the deadline runs from and what an
-    // owner sorts by when several are late.
-    occurredAt: new Date(`${row.arrivalDate}T00:00:00Z`),
-    retryable: true,
+    detail: row.lastError,
+    occurredAt: row.deadline,
+    // Filed by the lifecycle or by a person with the fallback file; pressing
+    // retry here would only race the sweep.
+    retryable: false,
   }))
 }

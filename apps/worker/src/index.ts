@@ -5,6 +5,7 @@ import { MockEricsoftAdapter } from '@bookone/adapters/mock-ericsoft'
 import { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
 import { MockAlloggiatiAdapter } from '@bookone/adapters/mock-alloggiati'
 import {
+  COMPLIANCE_ALERT,
   ESCALATION_ALERT,
   getNotificationProvider,
   registerNotificationProvider,
@@ -187,9 +188,14 @@ await registerHandlers({
   appUrl: env.APP_URL,
   logger,
   messaging,
-  ...(env.TWILIO_TEMPLATE_ESCALATION_ALERT
-    ? { whatsappTemplates: { [ESCALATION_ALERT]: env.TWILIO_TEMPLATE_ESCALATION_ALERT } }
-    : {}),
+  whatsappTemplates: {
+    ...(env.TWILIO_TEMPLATE_ESCALATION_ALERT
+      ? { [ESCALATION_ALERT]: env.TWILIO_TEMPLATE_ESCALATION_ALERT }
+      : {}),
+    ...(env.TWILIO_TEMPLATE_COMPLIANCE_ALERT
+      ? { [COMPLIANCE_ALERT]: env.TWILIO_TEMPLATE_COMPLIANCE_ALERT }
+      : {}),
+  },
 })
 await registerSchedules({ queue, logger })
 logger.info(

@@ -35,6 +35,13 @@ export const TRANSITIONS: Readonly<Record<ObligationState, readonly ObligationSt
 
 export const FINAL_STATES: readonly ObligationState[] = ['acknowledged']
 
+/**
+ * States that still need someone to act, which is what the alert ladder and
+ * the exceptions inbox watch (WP1.5). `submitted` is not one: the authority has
+ * it, and only the channel's answer is outstanding.
+ */
+export const ALERTING_STATES: readonly ObligationState[] = ['pending', 'queued', 'failed', 'manual']
+
 /** How often an obligation waiting on data, or on an answer, is looked at again. */
 export const RECHECK_SECONDS = 10 * 60
 

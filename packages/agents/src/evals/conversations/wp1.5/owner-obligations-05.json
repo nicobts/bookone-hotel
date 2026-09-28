@@ -1,0 +1,11 @@
+{
+  "profile": "owner-backoffice",
+  "channel": "whatsapp",
+  "lang": "en",
+  "sender": "owner",
+  "turns": [
+    { "role": "owner", "text": "Did any filing fail? What do I have to file by hand?" },
+    { "role": "agent", "expect": { "tool": "list_obligations_failed" } }
+  ],
+  "must_not": ["write"]
+}
