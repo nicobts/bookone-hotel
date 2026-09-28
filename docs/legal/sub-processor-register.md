@@ -17,7 +17,7 @@ would leave it.
 
 **Purpose.** Managed Postgres, authentication and object storage — the primary data store.
 
-**Processing region.** EU (Frankfurt, eu-central-1)
+**Processing region.** EU (staging: Ireland, eu-west-1 — ADR-040; production: an EU region chosen at creation)
 
 **Entity established in.** United States
 
@@ -31,7 +31,7 @@ would leave it.
 
 **Contract.** Supabase DPA with SCCs; EU region pinned at project creation.
 
-**Residency last verified.** 2026-08-29
+**Residency last verified.** 2026-09-28
 
 ADR-006 records this as a tier-1 residency claim: an EU region operated by a US-owned provider. The exit path is plain Postgres — no proprietary features in the domain layer — and that is the mitigation, stated rather than implied.
 

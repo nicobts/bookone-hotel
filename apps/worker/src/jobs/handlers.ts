@@ -19,8 +19,6 @@ import {
   checkPendingAcknowledgements,
   deleteDocumentsForStay,
   listDocumentsToDelete,
-  stageAlloggiati,
-  submitAlloggiati,
   type AlloggiatiAdapter,
 } from '@bookone/core/alloggiati'
 import {
@@ -71,6 +69,14 @@ import {
 } from '@bookone/core/concierge'
 import type { Logger } from 'pino'
 import { traceJob } from '@bookone/core/telemetry'
+import {
+  ALLOGGIATI_ADAPTER_ID,
+  createAlloggiatiComplianceAdapter,
+  generateGuestRegistrations,
+  listDueObligations,
+  listObligationIds,
+  runObligation,
+} from '@bookone/core/compliance'
 import { syncPropertySchedules } from './schedules'
 
 /**
@@ -450,40 +456,89 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     }
   })
 
+  /*
+   * Compliance obligations (ADR-039). The adapters this process can run, by
+   * registry id; an id the registry names without one here is reported by
+   * generation, never guessed at. Alloggiati is the Sprint 6 port behind its
+   * bridge — the mock outside production, and the boot guard refuses a
+   * simulated one in production.
+   */
+  const compliance = {
+    adapters: new Map([[ALLOGGIATI_ADAPTER_ID, createAlloggiatiComplianceAdapter(alloggiati)]]),
+  }
+
+  /** One step for one obligation, logged as the wait point it is (ADR-025). */
+  async function stepObligation(jobId: string, obligationId: string): Promise<void> {
+    const result = await runObligation(compliance, obligationId)
+    logger.info({ jobId, obligationId, ...result }, 'compliance.run')
+
+    if (result.status === 'advanced' && result.to === 'acknowledged') {
+      // The filing is accepted: identity documents may go now (E2.4).
+      await queue.send('documents.purge', {}, { singletonKey: 'documents-purge' })
+    }
+  }
+
+  /*
+   * The arrival path and the console's "file now". Creates the stay's
+   * obligation if the sweep has not yet, then advances it at once rather than
+   * waiting for the next sweep. Everything else — confirmation, retries, the
+   * hand-over before the deadline — is the lifecycle's.
+   */
   await work('alloggiati.file', async (job) => {
     const { propertyId, reservationId } = job.data
 
-    const staged = await stageAlloggiati({ propertyId, reservationId, channel: alloggiati.channel })
-
-    if (staged.status === 'incomplete') {
-      // Not an error and not retryable: the party is missing a field only the
-      // guest can supply. It surfaces in the exceptions inbox with the list.
-      logger.warn(
-        { jobId: job.id, reservationId, issues: staged.issues.length },
-        'alloggiati.file — party incomplete',
-      )
-      return
-    }
-
-    if (staged.status === 'rejected') {
-      logger.warn({ jobId: job.id, reservationId, reason: staged.reason }, 'alloggiati.file')
-      return
-    }
-
-    const filed = await submitAlloggiati({ adapter: alloggiati }, { propertyId, reservationId })
+    const generated = await generateGuestRegistrations(compliance, {
+      limit: 1,
+      propertyId,
+      reservationId,
+    })
+    const obligations = await listObligationIds({ propertyId, reservationId })
 
     logger.info(
-      { jobId: job.id, reservationId, outcome: filed.status, channel: alloggiati.channel },
+      { jobId: job.id, reservationId, created: generated.created, obligations: obligations.length },
       'alloggiati.file',
     )
 
-    // Rethrown so the queue retries. A rejected payload is not retryable and is
-    // already recorded on the row for the console to show.
-    if (filed.status === 'failed' && filed.retryable) throw new Error(filed.reason)
+    for (const obligationId of obligations) await stepObligation(job.id, obligationId)
+  })
 
-    if (filed.status === 'acknowledged') {
-      await queue.send('documents.purge', {}, { singletonKey: 'documents-purge' })
+  await work('compliance.generate', async (job) => {
+    const result = await generateGuestRegistrations(compliance, { limit: SWEEP_BATCH })
+
+    if (result.created > 0 || result.rescheduled > 0 || result.unsupported.length > 0) {
+      logger.info(
+        {
+          jobId: job.id,
+          created: result.created,
+          rescheduled: result.rescheduled,
+          unsupported: result.unsupported.length,
+        },
+        'compliance.generate',
+      )
     }
+    if (result.created > 0) {
+      await queue.send('compliance.sweep', {}, { singletonKey: 'compliance-sweep' })
+    }
+  })
+
+  await work('compliance.sweep', async (job) => {
+    const due = await listDueObligations({ limit: SWEEP_BATCH })
+
+    for (const obligation of due) {
+      await queue.send(
+        'compliance.run',
+        { propertyId: obligation.propertyId, obligationId: obligation.id },
+        // One run per obligation in flight: the lifecycle's conditional writes
+        // would make a second harmless, but not free.
+        { singletonKey: `compliance:${obligation.id}` },
+      )
+    }
+
+    if (due.length > 0) logger.info({ jobId: job.id, due: due.length }, 'compliance.sweep')
+  })
+
+  await work('compliance.run', async (job) => {
+    await stepObligation(job.id, job.data.obligationId)
   })
 
   await work('alloggiati.check', async (job) => {

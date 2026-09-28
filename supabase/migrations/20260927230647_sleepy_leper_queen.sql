@@ -1,0 +1,5 @@
+ALTER TABLE "compliance_obligations" DROP CONSTRAINT "compliance_obligations_subject_shape";--> statement-breakpoint
+ALTER TABLE "compliance_obligations" DROP CONSTRAINT "compliance_obligations_reservation_id_reservations_id_fk";
+--> statement-breakpoint
+ALTER TABLE "compliance_obligations" ADD CONSTRAINT "compliance_obligations_reservation_id_reservations_id_fk" FOREIGN KEY ("reservation_id") REFERENCES "public"."reservations"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "compliance_obligations" ADD CONSTRAINT "compliance_obligations_subject_shape" CHECK ("compliance_obligations"."subject_key" like 'reservation:%' or ("compliance_obligations"."period_date" is not null and "compliance_obligations"."subject_key" like 'day:%') or "compliance_obligations"."subject_key" like 'period:%');

@@ -90,6 +90,20 @@ const ALLOGGIATI_CHECK = '*/10 * * * *'
 const DOCUMENT_PURGE = '23 * * * *'
 
 /**
+ * Creates compliance obligations from confirmed schedine and arrivals
+ * (ADR-039). The arrival path also creates one at once for its stay; this is
+ * the net under it.
+ */
+const COMPLIANCE_GENERATE = '*/10 * * * *'
+
+/**
+ * Enqueues the obligations that are due: new, retrying, or waiting on an
+ * answer. Five minutes, against a 24-hour deadline and a two-hour manual
+ * margin: a filing is never more than one sweep late to its next step.
+ */
+const COMPLIANCE_SWEEP = '*/5 * * * *'
+
+/**
  * Checks whether anybody has answered an escalated guest (E3.2).
  *
  * Every five minutes. The alert fires once per escalation — `sla_alerted_at`
@@ -305,6 +319,8 @@ export async function registerSchedules(deps: ScheduleDeps): Promise<void> {
   await queue.schedule('precheckin.sweep', PRECHECKIN_SWEEP, {})
   await queue.schedule('alloggiati.check', ALLOGGIATI_CHECK, {})
   await queue.schedule('documents.purge', DOCUMENT_PURGE, {})
+  await queue.schedule('compliance.generate', COMPLIANCE_GENERATE, {})
+  await queue.schedule('compliance.sweep', COMPLIANCE_SWEEP, {})
   await queue.schedule('escalation.sweep', ESCALATION_SWEEP, {})
   await queue.schedule('invoice.route', INVOICE_ROUTE, {})
   await queue.schedule('departure.sweep', DEPARTURE_SWEEP, {})
@@ -327,6 +343,8 @@ export async function registerSchedules(deps: ScheduleDeps): Promise<void> {
       precheckinSweep: PRECHECKIN_SWEEP,
       alloggiatiCheck: ALLOGGIATI_CHECK,
       documentPurge: DOCUMENT_PURGE,
+      complianceGenerate: COMPLIANCE_GENERATE,
+      complianceSweep: COMPLIANCE_SWEEP,
       schedulesSync: SCHEDULES_SYNC,
     },
     'schedules registered',

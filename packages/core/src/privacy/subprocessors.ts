@@ -71,11 +71,12 @@ export const SUBPROCESSORS: SubProcessor[] = [
       'guest messages',
       'staff account records',
     ],
-    region: 'EU (Frankfurt, eu-central-1)',
+    region:
+      'EU (staging: Ireland, eu-west-1 — ADR-040; production: an EU region chosen at creation)',
     established: 'United States',
     status: 'in-use',
     contract: 'Supabase DPA with SCCs; EU region pinned at project creation.',
-    verifiedAt: '2026-08-29',
+    verifiedAt: '2026-09-28',
     note: 'ADR-006 records this as a tier-1 residency claim: an EU region operated by a US-owned provider. The exit path is plain Postgres — no proprietary features in the domain layer — and that is the mitigation, stated rather than implied.',
   },
   {

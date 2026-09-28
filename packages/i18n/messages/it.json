@@ -184,6 +184,30 @@
         "confirmedDescription": "La conferma è registrata a tuo nome.",
         "notConfirmed": "Non è stato possibile confermare",
         "notConfirmedDescription": "Manca un dato della scheda o il documento di almeno un ospite."
+      },
+      "obligation": {
+        "authorities": {
+          "questura": "Comunicazione alla Questura (Alloggiati Web)"
+        },
+        "states": {
+          "pending": "In attesa",
+          "queued": "In coda",
+          "submitted": "Inviata, in attesa di ricevuta",
+          "acknowledged": "Ricevuta",
+          "failed": "Nuovo tentativo in programma",
+          "manual": "Da inviare a mano"
+        },
+        "deadline": "Scadenza",
+        "attempts": "Tentativi",
+        "evidence": "Ricevuta (impronta)",
+        "evidenceManual": "Ricevuta registrata a mano (impronta)",
+        "errors": {
+          "notConfirmed": "Nessuno ha ancora confermato gli ospiti sui documenti: confermali qui sopra.",
+          "deadlineClose": "La scadenza è vicina: inviala a mano con il file qui sotto."
+        },
+        "fallbackTitle": "Invio a mano",
+        "fallbackHint": "Lo stesso file che invieremmo noi, una riga per ospite. I passaggi seguono le voci del portale, che è solo in italiano.",
+        "fallbackDownload": "Scarica il file per il portale"
       }
     },
     "conversations": {
@@ -472,7 +496,8 @@
         "payments": "I pagamenti",
         "fee_events": "Quanto abbiamo addebitato alla struttura",
         "alloggiati_submissions": "La schedina alla Questura",
-        "privacy_requests": "Questa richiesta"
+        "privacy_requests": "Questa richiesta",
+        "compliance_obligations": "Il registro delle comunicazioni obbligatorie"
       },
       "toast": {
         "exportRecorded": "Richiesta registrata: il download sta partendo",

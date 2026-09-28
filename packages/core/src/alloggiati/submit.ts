@@ -680,3 +680,146 @@ export function registrationToGuestDetails(data: unknown): Partial<GuestDetails>
 function isoDate(value: Date): string {
   return value.toISOString().slice(0, 10)
 }
+
+/**
+ * Where one stay's filing stands on one channel, with the channel's reference
+ * and the receipt (ADR-039: the ComplianceAdapter bridge reads it to answer a
+ * repeated `submit` without filing again).
+ */
+export async function readAlloggiatiFiling(input: {
+  propertyId: string
+  reservationId: string
+  channel: string
+}): Promise<{
+  submissionId: string
+  status: 'staged' | 'submitted' | 'acknowledged' | 'failed'
+  reference: string | null
+  receipt: Record<string, unknown> | null
+  lastError: string | null
+} | null> {
+  const [row] = await asService((db) =>
+    db
+      .select({
+        submissionId: alloggiatiSubmissions.id,
+        status: alloggiatiSubmissions.status,
+        receipt: alloggiatiSubmissions.receipt,
+        lastError: alloggiatiSubmissions.lastError,
+        reference: externalRefs.externalId,
+      })
+      .from(alloggiatiSubmissions)
+      .leftJoin(
+        externalRefs,
+        and(
+          eq(externalRefs.entityId, alloggiatiSubmissions.id),
+          eq(externalRefs.entityType, 'alloggiati_submission'),
+          eq(externalRefs.system, input.channel),
+        ),
+      )
+      .where(
+        and(
+          eq(alloggiatiSubmissions.propertyId, input.propertyId),
+          eq(alloggiatiSubmissions.reservationId, input.reservationId),
+          eq(alloggiatiSubmissions.channel, input.channel),
+        ),
+      )
+      .limit(1),
+  )
+
+  if (!row) return null
+  return {
+    submissionId: row.submissionId,
+    status: row.status,
+    reference: row.reference ?? null,
+    receipt: (row.receipt as Record<string, unknown> | null) ?? null,
+    lastError: row.lastError,
+  }
+}
+
+/**
+ * Asks the channel about one submitted filing, and records the answer when it
+ * is an acknowledgement. The single-stay form of `checkPendingAcknowledgements`.
+ */
+export async function refreshAlloggiatiAcknowledgement(
+  deps: { adapter: AlloggiatiAdapter },
+  input: { propertyId: string; reservationId: string },
+): Promise<'acknowledged' | 'pending' | 'failed' | 'not-submitted'> {
+  const filing = await readAlloggiatiFiling({ ...input, channel: deps.adapter.channel })
+  if (!filing) return 'not-submitted'
+  if (filing.status === 'acknowledged') return 'acknowledged'
+  if (filing.status !== 'submitted' || !filing.reference) return 'not-submitted'
+
+  const result = await deps.adapter.checkAcknowledgement({
+    propertyId: input.propertyId,
+    reference: filing.reference,
+  })
+
+  if (result.status === 'acknowledged') {
+    await acknowledge({
+      propertyId: input.propertyId,
+      reservationId: input.reservationId,
+      submissionId: filing.submissionId,
+      receipt: result.receipt,
+    })
+    return 'acknowledged'
+  }
+
+  return result.status
+}
+
+/**
+ * The fixed-width file for one stay, built from its registration records
+ * exactly as it would be transmitted — the manual fallback's content
+ * (ADR-026). Nothing is recorded; building it twice is harmless.
+ */
+export async function buildAlloggiatiFile(input: {
+  propertyId: string
+  reservationId: string
+}): Promise<
+  | { status: 'ready'; content: string; guestCount: number; arrivalDate: string }
+  | { status: 'incomplete'; issues: ValidationIssue[] }
+  | { status: 'unknown' }
+> {
+  const loaded = await asService(async (db) => {
+    const [reservation] = await db
+      .select({ arrivalDate: reservations.arrivalDate, departureDate: reservations.departureDate })
+      .from(reservations)
+      .where(
+        and(
+          eq(reservations.id, input.reservationId),
+          eq(reservations.propertyId, input.propertyId),
+        ),
+      )
+      .limit(1)
+    if (!reservation) return null
+
+    const records = await db
+      .select({ data: registrationRecords.data })
+      .from(registrationRecords)
+      .where(
+        and(
+          eq(registrationRecords.reservationId, input.reservationId),
+          eq(registrationRecords.propertyId, input.propertyId),
+        ),
+      )
+      .orderBy(asc(registrationRecords.guestIndex))
+
+    return { reservation, records }
+  })
+
+  if (!loaded) return { status: 'unknown' }
+
+  const party = loaded.records.map((record) => registrationToGuestDetails(record.data))
+  const stay = {
+    arrivalDate: loaded.reservation.arrivalDate,
+    departureDate: loaded.reservation.departureDate,
+  }
+  const issues = validateParty(party, stay)
+  if (issues.length > 0 || party.length === 0) return { status: 'incomplete', issues }
+
+  return {
+    status: 'ready',
+    content: buildPayload(party as GuestDetails[], stay),
+    guestCount: party.length,
+    arrivalDate: stay.arrivalDate,
+  }
+}

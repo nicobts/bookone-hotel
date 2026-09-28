@@ -184,6 +184,30 @@
         "confirmedDescription": "Die Bestätigung ist auf Ihren Namen erfasst.",
         "notConfirmed": "Bestätigung nicht möglich",
         "notConfirmedDescription": "Ein Meldefeld oder das Dokument eines Gastes fehlt."
+      },
+      "obligation": {
+        "authorities": {
+          "questura": "Meldung an die Questura (Alloggiati Web)"
+        },
+        "states": {
+          "pending": "Wartet",
+          "queued": "In der Warteschlange",
+          "submitted": "Gesendet, Quittung ausstehend",
+          "acknowledged": "Bestätigt",
+          "failed": "Neuer Versuch geplant",
+          "manual": "Von Hand melden"
+        },
+        "deadline": "Frist",
+        "attempts": "Versuche",
+        "evidence": "Quittung (Prüfsumme)",
+        "evidenceManual": "Quittung von Hand erfasst (Prüfsumme)",
+        "errors": {
+          "notConfirmed": "Niemand hat die Gäste bisher anhand der Dokumente bestätigt: bitte oben bestätigen.",
+          "deadlineClose": "Die Frist läuft bald ab: bitte mit der Datei unten von Hand melden."
+        },
+        "fallbackTitle": "Meldung von Hand",
+        "fallbackHint": "Dieselbe Datei, die wir senden würden, eine Zeile pro Gast. Die Schritte folgen dem Portal, das nur auf Italienisch ist.",
+        "fallbackDownload": "Datei für das Portal herunterladen"
       }
     },
     "conversations": {
@@ -472,7 +496,8 @@
         "payments": "Zahlungsdaten",
         "fee_events": "Was wir diesem Haus berechnet haben",
         "alloggiati_submissions": "Die Meldung an die Questura",
-        "privacy_requests": "Diese Anfrage"
+        "privacy_requests": "Diese Anfrage",
+        "compliance_obligations": "Das Verzeichnis der Pflichtmeldungen"
       },
       "toast": {
         "exportRecorded": "Anfrage erfasst: Der Download startet",

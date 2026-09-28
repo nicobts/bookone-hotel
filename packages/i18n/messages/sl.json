@@ -184,6 +184,30 @@
         "confirmedDescription": "Potrditev je zabeležena na vaše ime.",
         "notConfirmed": "Potrditev ni mogoča",
         "notConfirmedDescription": "Manjka podatek prijavnice ali dokument vsaj enega gosta."
+      },
+      "obligation": {
+        "authorities": {
+          "questura": "Prijava policiji (Alloggiati Web)"
+        },
+        "states": {
+          "pending": "Čaka",
+          "queued": "V čakalni vrsti",
+          "submitted": "Poslano, čaka na potrdilo",
+          "acknowledged": "Potrjeno",
+          "failed": "Nov poskus je načrtovan",
+          "manual": "Pošljite ročno"
+        },
+        "deadline": "Rok",
+        "attempts": "Poskusi",
+        "evidence": "Potrdilo (prstni odtis)",
+        "evidenceManual": "Potrdilo, vneseno ročno (prstni odtis)",
+        "errors": {
+          "notConfirmed": "Nihče še ni potrdil gostov na podlagi dokumentov: potrdite jih zgoraj.",
+          "deadlineClose": "Rok se izteka: pošljite ročno z datoteko spodaj."
+        },
+        "fallbackTitle": "Ročna prijava",
+        "fallbackHint": "Ista datoteka, ki bi jo poslali mi, ena vrstica na gosta. Koraki sledijo portalu, ki je samo v italijanščini.",
+        "fallbackDownload": "Prenesite datoteko za portal"
       }
     },
     "conversations": {
@@ -472,7 +496,8 @@
         "payments": "Zapisi o plačilih",
         "fee_events": "Kar smo zaračunali temu objektu",
         "alloggiati_submissions": "Prijava policiji (Questura)",
-        "privacy_requests": "Ta zahteva"
+        "privacy_requests": "Ta zahteva",
+        "compliance_obligations": "Evidenca obveznih prijav"
       },
       "toast": {
         "exportRecorded": "Zahteva zabeležena: prenos se začenja",

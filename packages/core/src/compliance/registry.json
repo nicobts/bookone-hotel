@@ -1,0 +1,39 @@
+{
+  "$comment": "The region registry (ADR-028, ADR-039). Data, not code: a property's settings.jurisdiction (region as ISO 3166-2, comune as its ISTAT code) selects the adapters below. A region or comune missing here, or an adapter id with no implementation registered at boot, means the obligation is not generated and the console says the manual route applies. Adding a region is adding an entry here and an adapter; no code branches on a region.",
+  "national": [
+    {
+      "adapter": "alloggiati",
+      "authority": "questura",
+      "obligation": "guest_registration"
+    }
+  ],
+  "regions": {
+    "IT-36": {
+      "name": "Friuli Venezia Giulia",
+      "regional": [
+        {
+          "adapter": "webtur-fvg",
+          "authority": "regione-fvg",
+          "obligation": "istat_movement"
+        }
+      ],
+      "comuni": {
+        "032006": {
+          "name": "Trieste",
+          "municipal": [
+            {
+              "adapter": "imposta-trieste",
+              "authority": "comune-trieste",
+              "obligation": "tourist_tax_declaration"
+            }
+          ]
+        }
+      }
+    },
+    "IT-34": {
+      "name": "Veneto",
+      "regional": [],
+      "comuni": {}
+    }
+  }
+}

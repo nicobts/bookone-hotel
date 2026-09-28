@@ -30,7 +30,8 @@
     "./admin": "./src/admin/index.ts",
     "./channels": "./src/channels/index.ts",
     "./telemetry": "./src/telemetry/index.ts",
-    "./preview": "./src/preview/index.ts"
+    "./preview": "./src/preview/index.ts",
+    "./compliance": "./src/compliance/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
