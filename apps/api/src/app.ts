@@ -274,6 +274,14 @@ export function createApp(deps: {
               { singletonKey: `unmatched:${message.messageSid}` },
             )
             break
+          case 'ambiguous-number':
+            // Two properties record the number written to. Nothing is routed
+            // until an operator fixes the configuration.
+            logger.error(
+              { channel: message.channel },
+              'twilio inbound: number recorded by more than one property; not routed',
+            )
+            break
           default:
             break
         }

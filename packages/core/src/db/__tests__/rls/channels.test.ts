@@ -51,9 +51,12 @@ beforeAll(async () => {
   const [property] = await db.execute<{ id: string }>(sql`
     insert into properties (slug, name, settings)
     values (${slug}, 'Channels Test',
-            jsonb_build_object('whatsappNumber', '+39 040 999 0001', 'ownerPhones', jsonb_build_array(${OWNER}::text)))
+            jsonb_build_object('whatsappNumber', '+39 040 999 0001'))
     returning id`)
   propertyId = property!.id
+  await db.execute(sql`
+    insert into property_contacts (property_id, role, name, phone)
+    values (${propertyId}, 'owner', 'Owner', ${OWNER})`)
 
   const [roomType] = await db.execute<{ id: string }>(
     sql`insert into room_types (property_id, code, capacity) values (${propertyId}, 'DBL', 2) returning id`,

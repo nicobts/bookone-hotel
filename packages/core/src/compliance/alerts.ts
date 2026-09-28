@@ -5,7 +5,8 @@ import { complianceObligations, guests, properties, reservations } from '../db/s
 import { emit } from '../events'
 import { systemActor } from '../events/actor'
 import { isEntitled } from '../onboarding/entitlements'
-import { phoneChannelFor, readPhones } from '../concierge/alerts'
+import { phoneChannelFor } from '../concierge/alerts'
+import { contactPhones } from '../contacts'
 import { COMPLIANCE_ALERT, queueNotification, type ComplianceAlertFacts } from '../notifications'
 import { ALERTING_STATES, type ObligationState } from './lifecycle'
 import type { ComplianceDeps } from './obligations'
@@ -16,8 +17,8 @@ import type { ComplianceDeps } from './obligations'
  * An obligation nobody has filed yet climbs three rungs as its deadline nears:
  *
  *   1. **inbox** — it appears in the console's exceptions inbox;
- *   2. **staff** — the numbers in `settings.staffPhones` get a WhatsApp (or SMS);
- *   3. **owner** — the numbers in `settings.ownerPhones` get one too.
+ *   2. **staff** — the property's `staff` contacts get a WhatsApp (or SMS);
+ *   3. **owner** — its `owner` contacts get one too (`property_contacts`).
  *
  * Each rung has an offset before the deadline, per property
  * (`settings.complianceAlerts`), defaulting to 12, 6 and 3 hours. An obligation
@@ -308,7 +309,7 @@ export async function alertDueObligations(
         let unreachable = 0
         for (const reach of phoneReaches) {
           const phones = channel
-            ? readPhones(row.settings, reach === 'staff' ? 'staffPhones' : 'ownerPhones')
+            ? await contactPhones(tx, row.propertyId, reach === 'staff' ? 'staff' : 'owner')
             : []
           if (phones.length === 0) unreachable += 1
           for (const phone of phones) {
@@ -322,6 +323,7 @@ export async function alertDueObligations(
               locale: row.locale,
               recipient: phone,
               payload: { ...facts!, manual: row.state === 'manual' },
+              alert: { about: row.reservationId },
             })
             if (id) queued.push(id)
           }

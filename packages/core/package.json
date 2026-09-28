@@ -31,7 +31,8 @@
     "./channels": "./src/channels/index.ts",
     "./telemetry": "./src/telemetry/index.ts",
     "./preview": "./src/preview/index.ts",
-    "./compliance": "./src/compliance/index.ts"
+    "./compliance": "./src/compliance/index.ts",
+    "./contacts": "./src/contacts/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

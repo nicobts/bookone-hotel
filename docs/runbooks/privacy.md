@@ -52,7 +52,7 @@ bundle exists for the length of one HTTP response.
 | | |
 |---|---|
 | Deleted outright | messages, stay tasks, attribution touches, identity document files |
-| Blanked in place | the guest's name, email, phone and locale; registration fields; notification recipients; billing details; agent-run inputs and outputs; discrepancy snapshots; event payloads |
+| Blanked in place | the guest's name, email, phone and locale; registration fields; notification recipients; pages to staff about the stay (the staff number stays); billing details; agent-run inputs and outputs, the owner agent's answers that named the stay included; discrepancy snapshots; event payloads |
 | Kept, with a reason | the reservation, its payments, our fee rows, the Alloggiati filing, and the privacy request itself |
 
 ### The one place a name survives, and why
@@ -84,82 +84,99 @@ the day the desk has a bug.
 
 ## Owner and staff contact numbers
 
-`properties.settings` holds people, not only configuration:
+The property pages people by phone. They are listed in `property_contacts`, one
+row per person and role, and managed by the owner under **Team → Who we page**
+(`/{locale}/{slug}/console/members`):
 
-| Key | Whose | Used for |
-|---|---|---|
-| `ownerPhones` | the owner, or whoever the property names | recognising the owner on WhatsApp (the owner agent answers only these numbers); paging when a guest waits; the owner rung of the filing-deadline alert |
-| `staffPhones` | reception staff the property names | the staff rung of the filing-deadline alert |
-| `contact.email` | often the owner's own address | guest-facing contact, booking requests, escalation email |
+| Role | Receives |
+|---|---|
+| `owner` | the owner agent on WhatsApp (it answers only these numbers); the page when a guest is left waiting; the owner rung of the filing-deadline alert |
+| `staff` | the staff rung of the filing-deadline alert |
 
-**The property is the controller** for these people, as their employer or as
-the owner themselves; we are its processor, exactly as for guests. What that
-means in practice:
+Until 2026-09-28 these numbers were `ownerPhones` and `staffPhones` in
+`properties.settings`, which every member of the property could read. The
+migration that created the table moved them there and removed the keys.
+Carried-over contacts have no `informed_at` and the screen flags them until the
+owner confirms.
 
-- **The property informs the people it lists** (Art. 13): that their number is
-  used to page them about waiting guests and filing deadlines, and that the
-  message travels through Twilio and, on WhatsApp, Meta (SP-013). Onboarding
-  must say so when a number is added.
-- **A person who asks, or leaves, is removed by the property.** Nothing else
-  knows that somebody left. The guest desk does not reach these numbers and
-  must not: a staff member is not a guest, and their request goes to their
-  employer.
-- **Only the numbers travel.** No event, log line or span carries one:
-  `compliance_obligation.alerted` records how many messages were queued and how
-  many rungs had nobody to page, never who; `owner_message.received` records
-  the channel only; the logger redacts `phone` and `recipient` (ADR-036).
+**The property is the controller** for these people, as their employer or as the
+owner themselves; we are its processor, exactly as for guests. What that means
+in practice:
+
+- **The property tells each person before listing them** (Art. 13): that their
+  number is used to page them about waiting guests and filing deadlines, and
+  that the message travels through Twilio and, on WhatsApp, Meta (SP-013). The
+  add form will not save without the owner confirming it, and `informed_at`
+  records when.
+- **A person who asks, or leaves, is removed by the owner** on the same screen,
+  in one step. Nothing else knows that somebody left. The guest desk does not
+  reach these numbers and must not: a staff member is not a guest, and their
+  request goes to their employer.
+- **Only owners see the list.** `property_contacts` is owner-only under RLS for
+  every command, on both access paths, so a receptionist cannot read the
+  owner's personal number (`rls/property-contacts.test.ts`).
+- **Only the numbers travel.** No event, log line or span carries a number or a
+  name. `property_contact.added`, `.removed` and `.informed` record the contact's
+  id and role. `compliance_obligation.alerted` records how many messages were
+  queued and how many rungs had nobody to page, never who.
+  `owner_message.received` records the channel only. The logger redacts `phone`
+  and `recipient` (ADR-036).
+
+`properties.settings` still holds the contact email, which at a family-run
+property is usually the owner's own address. The data map records it.
 
 ### Tenant isolation
 
 Each number is read only for its own property:
 
-- A page is sent only from the property's own `settings` (`readPhones`), for
+- A page is sent only from the property's own contacts (`contactPhones`), for
   that property's obligation or thread.
 - An inbound WhatsApp message is matched to an owner only within the property
-  whose number it was sent to (`channels/inbound.ts`).
-- `properties` is readable by that property's members only (RLS,
-  `properties_select`), and guest pages — booking and stay — render on the
-  server and never send `settings` to the browser.
+  whose number it was sent to (`channels/inbound.ts`). A number that two
+  properties record is routed nowhere (`ambiguous-number`, logged as an error by
+  `apps/api`), and the admin console refuses to switch WhatsApp or SMS on for a
+  property whose number another property already records. Today there is one
+  sender per deployment (`docs/runbooks/whatsapp.md`), so enabling a second
+  property on it needs per-property senders first.
+- `properties` is readable by that property's members only, and guest pages
+  (booking and stay) render on the server and never send `settings` to the
+  browser.
 - The admin playground shows an owner number for demo properties only
   (`listPreviewTargets`).
 
-A number listed at two properties is two independent entries. Neither property
-can see the other's list.
+A number listed at two properties is two independent rows. Neither property can
+see the other's.
 
 ### Where a number is copied
 
 | Where | What | For how long |
 |---|---|---|
-| `notifications.recipient` | every page and every owner-agent reply sent | two years, then deleted with the row (the delivery record) |
+| `notifications.recipient`, rows with `alert = true` | every page sent | 90 days, then deleted with the row |
 | Twilio, and Meta for WhatsApp (SP-013) | in transit | Twilio's copy is deleted once delivered; Meta's transient copy is outside our control |
 
-### Open gaps
+The owner agent's replies are sent directly and are not stored as
+notifications; the run behind each one is in `agent_runs`.
 
-Each needs a code change and is proposed, not yet made:
+### A guest named in a page or an owner answer
 
-1. **Staff alerts and owner-agent replies can name a guest, and guest
-   erasure and export do not reach them.** These `notifications` rows, and the
-   owner agent's `agent_runs` output, have no `reservation_id` or thread, which
-   is how the erasure routine and the export find a guest's rows. The two-year
-   clock is the only thing that removes them.
-2. **There is no screen to manage the numbers.** Today they are set by the
-   demo seed or by hand in the database, so a property cannot add, correct or
-   remove a person itself (Art. 16, 17) without asking us.
-3. **Any member reads the whole list.** `properties_select` gives every
-   member of a property the full `settings`, so reception staff can read the
-   owner's personal number. That is inside the tenant, but more than a
-   receptionist needs.
-4. **An operational page is kept as long as a guest conversation.** Two years
-   is right for what the hotel told a guest. A filing-deadline page to a
-   receptionist is worth a much shorter period.
-5. **Two properties on one WhatsApp number would be routed as one.** An
-   inbound message finds its property by `settings.whatsappNumber`, taking the
-   first match, and nothing stops two properties from recording the same
-   number. Today there is one sender per deployment (`docs/runbooks/whatsapp.md`),
-   so the second property enabled on WhatsApp would share it. Its owner and
-   guests would then be matched against the first property's lists: they get
-   refused rather than served, and nothing is disclosed, but that relies on
-   the match failing.
+A page to staff names the guest it is about, and so does an owner-agent answer
+("who arrives tomorrow?"). Neither is attached to the stay the usual way: a page
+has no `reservation_id`, whose deduplication would drop every recipient after
+the first, and an owner question has no thread. So each records the stay it
+names:
+
+- a page, in `payload.reservationId`;
+- an owner-agent run, in `output.reservationIds`.
+
+The guest's **erasure** finds both through those fields. It blanks the page's
+payload and keeps the staff number, which is not the guest's. It blanks the
+run's input and output. The guest's **export** includes the pages about their
+stay without the staff number. The erasure test plants one of each and searches
+every text column in the database afterwards.
+
+What remains is the owner's own question text when it names a guest ("did
+Rossi arrive?"). It is erased with the rest of the run only if the answer also
+named that stay; otherwise it goes with `agent_runs` on its two-year clock.
 
 ## The deadline
 

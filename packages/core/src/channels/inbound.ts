@@ -5,6 +5,7 @@ import { appendGuestMessage } from '../concierge/thread'
 import { emit } from '../events'
 import { systemActor } from '../events/actor'
 import { isEntitled } from '../onboarding/entitlements'
+import { contactPhones } from '../contacts'
 
 /**
  * Who an inbound WhatsApp or SMS message belongs to (ADR-035).
@@ -14,8 +15,8 @@ import { isEntitled } from '../onboarding/entitlements'
  *
  *   1. the number written **to** selects the property
  *      (`settings.whatsappNumber` / `settings.smsNumber`);
- *   2. a sender listed in `settings.ownerPhones` is the owner — the only path to
- *      the owner agent, as before;
+ *   2. a sender among the property's `owner` contacts (`property_contacts`) is
+ *      the owner — the only path to the owner agent, as before;
  *   3. a sender whose number is a guest's on a current stay is that guest, and
  *      the message joins the stay's thread;
  *   4. anyone else is unknown and gets a fixed reply.
@@ -56,6 +57,8 @@ export type InboundRoute =
       locale: string
     }
   | { kind: 'unknown'; propertyId: string; locale: string }
+  /** More than one property records the number written to. Not routed. */
+  | { kind: 'ambiguous-number' }
 
 /** `+39 333 123 4567` → `+393331234567`; `0039…` → `+39…`; anything else → null. */
 export function normalisePhone(value: string | null | undefined): string | null {
@@ -78,22 +81,28 @@ export async function routeInboundMessage(input: InboundInput): Promise<InboundR
 
   const numberKey = input.channel === 'whatsapp' ? 'whatsappNumber' : 'smsNumber'
 
-  const [property] = await asService((db) =>
-    db.execute<{ id: string; owner_phones: unknown; default_locale: string | null }>(sql`
-      select id, settings->'ownerPhones' as owner_phones, locale_default as default_locale
+  const matches = await asService((db) =>
+    db.execute<{ id: string; default_locale: string | null }>(sql`
+      select id, locale_default as default_locale
         from properties
        where '+' || regexp_replace(coalesce(settings->>${numberKey}, ''), '\\D', '', 'g') = ${to}
-       limit 1`),
+       limit 2`),
   )
+  /*
+   * One number, one property. With two properties recording the same number,
+   * whichever row came first would decide, and the other property's owner and
+   * guests would be matched against the wrong lists. Nothing is routed until
+   * the configuration is fixed; the admin console refuses to create it.
+   */
+  if (matches.length > 1) return { kind: 'ambiguous-number' }
+  const [property] = matches
   if (!property) return { kind: 'no-property' }
   const propertyId = property.id
 
   // Off means unreachable: nothing is stored, nothing is answered.
   if (!(await isEntitled(propertyId, input.channel))) return { kind: 'channel-off', propertyId }
 
-  const ownerPhones = Array.isArray(property.owner_phones)
-    ? property.owner_phones.map((p) => normalisePhone(String(p)))
-    : []
+  const ownerPhones = await asService((db) => contactPhones(db, propertyId, 'owner'))
 
   if (ownerPhones.includes(from)) {
     const fresh = await recordNonGuest(input, propertyId, 'owner_message')
