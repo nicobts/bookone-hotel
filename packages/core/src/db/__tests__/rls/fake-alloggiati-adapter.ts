@@ -4,6 +4,7 @@ import {
   RECORD_WIDTH,
   type AcknowledgementResult,
   type AlloggiatiAdapter,
+  type CodeResolver,
   type SubmitInput,
   type SubmitResult,
 } from '../../../alloggiati'
@@ -26,13 +27,27 @@ export class FakeAlloggiatiAdapter implements AlloggiatiAdapter {
 
   private readonly filings = new Map<string, { propertyId: string; checks: number }>()
   private readonly pendingChecks: number
-  private failSubmitTimes: number
+  /** Failures still to inject. Public so a test can end an outage. */
+  failSubmitTimes: number
+  /** The registry's codes, for the WP1.2 path; absent, what the guest wrote is filed. */
+  readonly codes?: CodeResolver
+  /** What `dailyReceipt` answers (WP1.2 reconciliation). */
+  receiptAvailable = true
+  /** Every payload filed, to assert what was sent. */
+  readonly payloads: string[] = []
   private readonly instance = randomUUID().slice(0, 8)
   private sequence = 0
 
-  constructor(options: { pendingChecks?: number; failSubmitTimes?: number } = {}) {
+  constructor(
+    options: { pendingChecks?: number; failSubmitTimes?: number; codes?: CodeResolver } = {},
+  ) {
     this.pendingChecks = options.pendingChecks ?? 0
     this.failSubmitTimes = options.failSubmitTimes ?? 0
+    if (options.codes) this.codes = options.codes
+  }
+
+  async dailyReceipt(): Promise<{ available: boolean }> {
+    return { available: this.receiptAvailable }
   }
 
   async submit(input: SubmitInput): Promise<SubmitResult> {
@@ -48,6 +63,7 @@ export class FakeAlloggiatiAdapter implements AlloggiatiAdapter {
 
     this.submitCount += 1
     this.sequence += 1
+    this.payloads.push(input.payload)
 
     // Unique per instance, like a real channel. Two adapters sharing a database
     // collided on `external_refs` the last time a fake reused ids.

@@ -6,6 +6,8 @@ import {
   type StayDetails,
   type ValidationIssue,
 } from './record'
+import type { CodeResolver } from './codes'
+import { resolveParty } from './resolve'
 
 /**
  * The schedina preview (WP0.4): what would be filed, shown before anything is.
@@ -38,8 +40,19 @@ export interface SchedinaPreview {
 export function schedinaPreview(
   party: readonly Partial<GuestDetails>[],
   stay: StayDetails,
+  /**
+   * The registry's codes (WP1.2). With them the preview shows the codes that
+   * would be filed, and anything that does not resolve is an issue here, while
+   * the guest is still at the desk.
+   */
+  codes?: CodeResolver | null,
 ): SchedinaPreview {
-  const issues = validateParty(party, stay)
+  const validated = validateParty(party, stay)
+  const coded =
+    validated.length === 0 && party.length > 0 && codes
+      ? resolveParty(party as GuestDetails[], stay, codes)
+      : null
+  const issues = coded ? coded.issues : validated
 
   if (issues.length > 0 || party.length === 0) {
     // Not ready: show what there is, in field order, so staff can see the gap
@@ -57,7 +70,7 @@ export function schedinaPreview(
     }
   }
 
-  const records = buildPayload(party as GuestDetails[], stay).split('\r\n')
+  const records = buildPayload(coded ? coded.party : (party as GuestDetails[]), stay).split('\r\n')
 
   return {
     ready: true,

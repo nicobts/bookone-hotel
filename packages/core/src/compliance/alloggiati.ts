@@ -1,4 +1,5 @@
 import type { AlloggiatiAdapter } from '../alloggiati/adapter'
+import { configuredCodes, type CodeResolver } from '../alloggiati/codes'
 import {
   buildAlloggiatiFile,
   readAlloggiatiFiling,
@@ -87,7 +88,10 @@ export function createAlloggiatiComplianceAdapter(port: AlloggiatiAdapter): Comp
 
     async validate(obligation) {
       const reservationId = stayOf(obligation)
-      const preview = await getSchedinaPreview(obligation.propertyId, reservationId)
+      // With the channel's codes: every value resolves now, so the desk sees
+      // "“Tristee” is not a comune" while there is time to ask the guest, not
+      // as the authority's refusal after the deadline.
+      const preview = await getSchedinaPreview(obligation.propertyId, reservationId, port.codes)
 
       if (!preview) {
         return {
@@ -132,7 +136,11 @@ export function createAlloggiatiComplianceAdapter(port: AlloggiatiAdapter): Comp
 
       if (existing?.status === 'acknowledged') return answerFor(existing)
 
-      const staged = await stageAlloggiati({ ...key, channel: port.channel })
+      const staged = await stageAlloggiati({
+        ...key,
+        channel: port.channel,
+        ...(port.codes ? { codes: port.codes } : {}),
+      })
       if (staged.status === 'incomplete') {
         return {
           status: 'failed',
@@ -151,7 +159,14 @@ export function createAlloggiatiComplianceAdapter(port: AlloggiatiAdapter): Comp
       if (filed.status === 'failed') {
         return {
           status: 'failed',
-          code: filed.retryable ? 'unavailable' : 'rejected',
+          // "unauthorized" is kept apart from "rejected": wrong credentials
+          // are fixed in the credentials, not by asking the guest.
+          code:
+            filed.code === 'unauthorized'
+              ? 'unauthorized'
+              : filed.retryable
+                ? 'unavailable'
+                : 'rejected',
           message: filed.reason,
           retryable: filed.retryable,
         }
@@ -172,6 +187,7 @@ export function createAlloggiatiComplianceAdapter(port: AlloggiatiAdapter): Comp
       return alloggiatiManualFallback({
         propertyId: obligation.propertyId,
         reservationId: stayOf(obligation),
+        codes: port.codes ?? null,
       })
     },
   }
@@ -205,8 +221,14 @@ function answerFor(filing: Awaited<ReturnType<typeof readAlloggiatiFiling>>): Su
 export async function alloggiatiManualFallback(input: {
   propertyId: string
   reservationId: string
+  /**
+   * The registry's codes. Undefined means "whatever this process has
+   * configured" (`configuredCodes`), which is what the console wants.
+   */
+  codes?: CodeResolver | null
 }): Promise<ManualFallback> {
-  const built = await buildAlloggiatiFile(input)
+  const codes = input.codes === undefined ? await configuredCodes() : input.codes
+  const built = await buildAlloggiatiFile({ ...input, codes })
 
   if (built.status !== 'ready') {
     const missing =

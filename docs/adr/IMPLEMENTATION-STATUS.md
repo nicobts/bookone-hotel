@@ -32,7 +32,8 @@ build). Remove every piece with `grep -rn DEV-LOGIN-HELPER`.
 
 The Phase 1 gate (5 named pilots and the Regione letter) has not been passed. Phase 1 is being
 built ahead of it **on mocks only**, with the owner's approval of 2026-09-28. No authority is
-called and nothing is filed. Branches `guest-desk/wp1.1`, then `guest-desk/wp1.5`.
+called and nothing is filed. Branches `guest-desk/wp1.1`, then `guest-desk/wp1.5`, then
+`guest-desk/wp1.2`.
 
 | WP1.1 acceptance item | State | What is left |
 |---|---|---|
@@ -60,6 +61,25 @@ inbox rung, or overdue) instead of the Sprint 6 T-20h query. Owner agent: `list_
 and `list_obligations_failed`, read-only, with 9 replayed conversations in `test:evals`
 (`conversations/wp1.5/`). The WhatsApp message needs an approved template
 (`TWILIO_TEMPLATE_COMPLIANCE_ALERT`) before it reaches a phone outside Twilio's 24-hour window.
+
+| WP1.2 acceptance item | State | What is left |
+|---|---|---|
+| Test-environment submission of the three fixture guests (CIE, EU passport, non-EU passport) acknowledged | 🟨 simulator | Filed and acknowledged against the local simulator (`alloggiati-web/adapter.test.ts`), with the synthetic code tables. The authority's test environment needs the software-house registration and a pilot's credentials |
+| Invalid comune/stato code caught before submission with a staff-fixable message | ✅ | Resolved before staging, per guest and field ("“Tristee” is not a comune in the registry's list; check the spelling"; a shared name asks for its province). Shown on the stay's preview and held as the obligation's reason, with nothing sent (`rls/alloggiati-web.test.ts`). A line the service itself refuses names the guest and the field too |
+| Outage simulation: retries, then manual fallback, then evidence once resubmitted | ✅ | Retried with backoff; at T−2h handed to a person with the coded file; **Try the channel again** files it once the service is back, and the channel's receipt is the evidence (`rls/alloggiati-web.test.ts`). A send that timed out is never retried: it may have been filed |
+
+WP1.2 as built, **on the simulator only**:
+- `packages/adapters/src/alloggiati-web`: a SOAP client over `fetch`, the adapter and a simulator.
+  The adapter refuses any host but this machine.
+- The registry's code tables, loaded from `ALLOGGIATI_TABLES_DIR` (`alloggiati/codes.ts`,
+  `resolve.ts`). The synthetic tables in `content/alloggiati/synthetic` are refused by a real channel.
+- `ALLOGGIATI_CHANNEL` chooses the mock or the simulator.
+- The `alloggiati.reconcile` job, at 05:15 per property.
+- 7 replayed conversations in `conversations/wp1.2/`.
+
+Not built, and not to be improvised: a Secret Manager `CredentialSource`, the official tables, and
+the real endpoint. The message layout and two filing rules come from public documentation; they are
+go-live checks in `docs/runbooks/alloggiati.md`.
 
 | ADR | Decision | Built? | Where |
 |---|---|---|---|
@@ -100,7 +120,7 @@ and `list_obligations_failed`, read-only, with 9 replayed conversations in `test
 | 040 | The staging database runs in Ireland, and the app runs beside its database | ✅ | Staging in `eu-west-1`; any EU region acceptable (residency unchanged); services co-located with their database (staging web on Vercel `dub1` when deployed). Register SP-001 updated |
 | 024 | Replay conversations extend the evals gate | ✅ as-built (WP0.2) | 57 conversations in `packages/agents/src/evals/conversations/wp0.2/`, replayed by `evals/wp0.2/orchestrator.eval.ts`: unsafe actions 0 (gate), routing ≥ 90%, hard-rule negatives. Negative control: disabling the hard rules fails 13. The rules score is coverage, not generalisation. **Live, 2026-09-27** (Haiku 4.5 routing, Sonnet 5 actions, via OpenRouter): 85.7% on the first run — invoice/luggage sent to payments, "which documents" flagged as identity — then **100%, 0 unsafe** once the routing prompt carried each profile's description and sharper flag definitions. 35 routed turns written by us: evidence the design works on a model, not a measure of real traffic. Phoenix not yet |
 | 025 | Workflow engine deferred until a named trigger | Proposed · data collection ✅ (WP1.1) | ADR-039 starts Phase 1 on a state table + pg-boss; every obligation transition is a `compliance_obligation.*` event with `waitedSeconds`, and one SQL query answers "where is it stuck" (`docs/runbooks/compliance.md`). Decide in Phase 1 on that evidence |
-| 026 | ComplianceAdapter with a manual fallback | 🟨 port + first implementation (WP1.1) | `packages/core/src/compliance/adapter.ts`: the four methods of the WP1.1 spec, capabilities as ADR-026 lists them. Alloggiati is the first implementation, as a bridge over the Sprint 6 chain (`compliance/alloggiati.ts`); its manual fallback is the exact fixed-width file, downloadable from the arrival page (`docs/runbooks/compliance.md`). Contract suite `packages/adapters/src/compliance/contract.ts` (idempotent submit, receipts, retryability, fallback), passed by `MockComplianceAdapter` in two modes. Not built: the real Alloggiati Web client (WP1.2), WebTur and imposta adapters (WP1.3–1.4) |
+| 026 | ComplianceAdapter with a manual fallback | 🟨 port + first implementation (WP1.1) | `packages/core/src/compliance/adapter.ts`: the four methods of the WP1.1 spec, capabilities as ADR-026 lists them. Alloggiati is the first implementation, as a bridge over the Sprint 6 chain (`compliance/alloggiati.ts`); its manual fallback is the exact fixed-width file, downloadable from the arrival page (`docs/runbooks/compliance.md`). Contract suite `packages/adapters/src/compliance/contract.ts` (idempotent submit, receipts, retryability, fallback), passed by `MockComplianceAdapter` in two modes. The Alloggiati Web client and adapter are built against a local simulator (WP1.2); not built: the real endpoint, and the WebTur and imposta adapters (WP1.3–1.4) |
 | 027 | BookOne never asserts identity; de visu staff-assisted | ✅ holds (nothing asserts identity); module ⬜ Phase 3, gated | Gate: Viminale guidelines + written legal opinion |
 | 028 | Region-first expansion, region registry | 🟨 registry ✅ (WP1.1) | `compliance/registry.json` (FVG with Trieste, Veneto empty), read through a schema; `properties.settings.jurisdiction` (ISO 3166-2 region, ISTAT comune). National obligations for every property; unknown region or comune yields no regional or municipal obligation. A test adds a fictional region with no code change, and another fails if compliance code names a region or comune. Not built: the regional adapters themselves |
 

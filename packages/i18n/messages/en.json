@@ -184,7 +184,9 @@
         "confirmed": "Documents confirmed",
         "confirmedDescription": "The confirmation is recorded in your name.",
         "notConfirmed": "Could not confirm",
-        "notConfirmedDescription": "A registration field or a guest's document is missing."
+        "notConfirmedDescription": "A registration field or a guest's document is missing.",
+        "retrying": "Trying the channel again",
+        "retryingDescription": "The result shows on this stay in a moment."
       },
       "obligation": {
         "authorities": {
@@ -214,7 +216,9 @@
           "inbox": "exceptions inbox",
           "staff": "staff",
           "owner": "owner"
-        }
+        },
+        "retryChannel": "Try the channel again",
+        "retryChannelHint": "If the service is back, the filing goes through it and its receipt is kept as proof. If not, the reason shows here and the filing stays with you."
       }
     },
     "conversations": {

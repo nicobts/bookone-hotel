@@ -73,6 +73,19 @@ const OWNER_VOCABULARY: [string, string[]][] = [
       'spodletela',
       'spodletele',
       'rocno',
+      // Refused by the channel (WP1.2): the same list, since a refusal leaves
+      // the filing failed or with a person.
+      'reject',
+      'refuse',
+      'rifiutata',
+      'rifiutate',
+      'rifiutato',
+      'rifiutati',
+      'respinta',
+      'respinte',
+      'abgelehnt',
+      'zavrnjena',
+      'zavrnjene',
     ],
   ],
   [

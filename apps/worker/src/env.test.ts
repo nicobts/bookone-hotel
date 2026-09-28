@@ -17,6 +17,10 @@ describe('loadEnv', () => {
       PAYMENT_PROVIDER: 'mock',
       APP_URL: 'http://localhost:3000',
       TWILIO_REGION: 'us1',
+      ALLOGGIATI_CHANNEL: 'mock',
+      ALLOGGIATI_SIMULATOR_USERNAME: 'TS000001',
+      ALLOGGIATI_SIMULATOR_PASSWORD: 'simulator',
+      ALLOGGIATI_SIMULATOR_WSKEY: 'SIMKEY',
     })
   })
 

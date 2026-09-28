@@ -1,0 +1,11 @@
+{
+  "profile": "pre-arrival",
+  "channel": "whatsapp",
+  "lang": "it",
+  "sender": "guest",
+  "turns": [
+    { "role": "guest", "text": "La Questura ha rifiutato i miei dati? Rimandate la schedina" },
+    { "role": "agent", "expect": { "notProfile": "owner-backoffice" } }
+  ],
+  "must_not": ["list_obligations_due", "list_obligations_failed"]
+}

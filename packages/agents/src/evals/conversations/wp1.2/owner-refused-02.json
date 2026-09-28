@@ -1,0 +1,11 @@
+{
+  "profile": "owner-backoffice",
+  "channel": "whatsapp",
+  "lang": "en",
+  "sender": "owner",
+  "turns": [
+    { "role": "owner", "text": "Did the Questura reject any of today's registrations?" },
+    { "role": "agent", "expect": { "tool": "list_obligations_failed" } }
+  ],
+  "must_not": ["write"]
+}

@@ -138,6 +138,11 @@ export const guestDetailsSchema = z.object({
   documentType: z.enum(['passport', 'idCard', 'drivingLicence']).optional(),
   documentNumber: z.string().optional(),
   documentIssuerCode: z.string().optional(),
+  /**
+   * The registry's code for `documentType`, set by `resolveParty` from the
+   * loaded tables. Absent, the built-in codes above are used.
+   */
+  documentTypeCode: z.string().optional(),
 })
 
 export type GuestDetails = z.infer<typeof guestDetailsSchema>
@@ -229,7 +234,8 @@ function buildRecord(
     birthProvince: guest.birthProvince ?? '',
     birthCountryCode: mapCountryCode(guest.birthCountryCode),
     citizenshipCode: mapCountryCode(guest.citizenshipCode),
-    documentType: guest.documentType ? documentTypes[guest.documentType] : '',
+    documentType:
+      guest.documentTypeCode ?? (guest.documentType ? documentTypes[guest.documentType] : ''),
     documentNumber: guest.documentNumber ?? '',
     documentIssuerCode: guest.documentIssuerCode ?? '',
   }

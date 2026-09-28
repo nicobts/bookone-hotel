@@ -1,3 +1,4 @@
+import type { CodeResolver } from '../alloggiati/codes'
 import { and, asc, eq, isNotNull, isNull, sql } from 'drizzle-orm'
 import { asService } from '../db/session'
 import { domainEvents, registrationRecords, reservations } from '../db/schema'
@@ -21,6 +22,8 @@ import { applyJourneyCommandIn } from './apply'
 export async function getSchedinaPreview(
   propertyId: string,
   reservationId: string,
+  /** The registry's codes, when the caller has them (WP1.2). */
+  codes?: CodeResolver | null,
 ): Promise<(SchedinaPreview & { documentsHeld: number; confirmedAt: Date | null }) | null> {
   const [stay] = await asService((db) =>
     db
@@ -52,6 +55,7 @@ export async function getSchedinaPreview(
   const preview = schedinaPreview(
     records.map((record) => registrationToGuestDetails(record.data)),
     { arrivalDate: stay.arrivalDate, departureDate: stay.departureDate },
+    codes,
   )
 
   const confirmed = records

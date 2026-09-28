@@ -1,3 +1,4 @@
+import type { CodeResolver } from './codes'
 /**
  * The Alloggiati channel port (E2.3).
  *
@@ -77,6 +78,12 @@ export interface AlloggiatiAdapter {
    */
   readonly simulated: boolean
 
+  /**
+   * The registry's code tables, when this channel needs codes rather than what
+   * the guest wrote (WP1.2). Staging resolves every value through them first.
+   */
+  readonly codes?: CodeResolver
+
   submit(input: SubmitInput): Promise<SubmitResult>
 
   /** Asks the channel whether a filing has been accepted yet. */
@@ -86,4 +93,10 @@ export interface AlloggiatiAdapter {
   }): Promise<AcknowledgementResult>
 
   healthCheck(): Promise<{ healthy: boolean; message?: string; checkedAt: Date }>
+
+  /**
+   * Whether the channel holds a receipt for one day's filings at a property
+   * (WP1.2 reconciliation). Optional: the mock has no days.
+   */
+  dailyReceipt?(input: { propertyId: string; day: string }): Promise<{ available: boolean }>
 }

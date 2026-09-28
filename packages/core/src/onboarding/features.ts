@@ -73,6 +73,9 @@ export const JOB_FEATURE: Record<JobName, Gate> = {
   'compliance.generate': 'core',
   'compliance.sweep': 'core',
   'compliance.run': 'core',
+  // Gated inside, by the obligation's adapter, like `compliance.run`.
+  'compliance.retry': 'core',
+  'alloggiati.reconcile': 'alloggiati',
   'documents.extract': 'document_ocr',
   'complaints.sla': 'inbox',
   'owner.ask': 'concierge',

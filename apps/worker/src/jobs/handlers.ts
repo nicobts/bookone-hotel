@@ -76,6 +76,8 @@ import {
   generateGuestRegistrations,
   listDueObligations,
   listObligationIds,
+  reconcileAlloggiatiDay,
+  retryManualObligation,
   runObligation,
 } from '@bookone/core/compliance'
 import { syncPropertySchedules } from './schedules'
@@ -563,6 +565,36 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
 
   await work('compliance.run', async (job) => {
     await stepObligation(job.id, job.data.obligationId)
+  })
+
+  /*
+   * A person asks the channel to try once more, for a filing handed to them
+   * (WP1.2). One attempt; a failure stays with the person, with the reason.
+   */
+  await work('compliance.retry', async (job) => {
+    const { propertyId, obligationId, userId } = job.data
+    const result = await retryManualObligation(compliance, { propertyId, obligationId, userId })
+    // The status only: a refusal names a guest's field, and logs carry ids.
+    logger.info({ jobId: job.id, obligationId, status: result.status }, 'compliance.retry')
+    if (result.status === 'acknowledged') {
+      await queue.send('documents.purge', {}, { singletonKey: 'documents-purge' })
+    }
+  })
+
+  /*
+   * Yesterday's filings against the channel's side (WP1.2). Changes nothing;
+   * a mismatch is an error line and an event for a person to look at.
+   */
+  await work('alloggiati.reconcile', async (job) => {
+    const day = job.data.day ?? new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
+    const result = await reconcileAlloggiatiDay(
+      { adapter: alloggiati },
+      { propertyId: job.data.propertyId, day },
+    )
+    const line = { jobId: job.id, propertyId: job.data.propertyId, ...result }
+    if (result.mismatch)
+      logger.error(line, 'alloggiati.reconcile: no receipt on the channel for a day we filed')
+    else logger.info(line, 'alloggiati.reconcile')
   })
 
   await work('alloggiati.check', async (job) => {

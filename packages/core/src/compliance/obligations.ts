@@ -484,6 +484,117 @@ async function insertEvidence(
   return row.id
 }
 
+export type ChannelRetryResult =
+  | { status: 'acknowledged' }
+  /** The channel still could not file it; it stays with a person. */
+  | { status: 'still-manual'; message: string }
+  /** The record does not pass the channel's checks; nothing was sent. */
+  | { status: 'invalid'; messages: string[] }
+  | { status: 'not-manual' }
+  | { status: 'unavailable'; reason: 'unknown' | 'no-adapter' | 'feature-off' | 'raced' }
+
+/**
+ * A person asks the channel to try once more, for a filing that was handed to
+ * them (WP1.2's outage drill: retries, then a person, then evidence once
+ * resubmitted).
+ *
+ * The usual case is an outage that ended: the channel went down, the lifecycle
+ * gave up two hours before the deadline, and the channel is back while there
+ * is still time. Filing through it gives the channel's own receipt as
+ * evidence, which is better proof than a protocol number typed in by hand.
+ *
+ * One attempt, now, chosen by a person. `manual` only ever moves to
+ * `acknowledged` (the transition table), so a failure leaves the filing with
+ * the person, with the channel's reason recorded, and the sweep never picks
+ * it up again on its own. The Alloggiati bridge never re-sends a filing the
+ * channel already holds, so this cannot declare the guests twice.
+ */
+export async function retryManualObligation(
+  deps: ComplianceDeps,
+  input: { propertyId: string; obligationId: string; userId: string },
+): Promise<ChannelRetryResult> {
+  const now = deps.now?.() ?? new Date()
+  const [row] = await asService((db) =>
+    db
+      .select()
+      .from(complianceObligations)
+      .where(
+        and(
+          eq(complianceObligations.id, input.obligationId),
+          eq(complianceObligations.propertyId, input.propertyId),
+        ),
+      )
+      .limit(1),
+  )
+  if (!row) return { status: 'unavailable', reason: 'unknown' }
+  if (row.state !== 'manual') return { status: 'not-manual' }
+
+  const adapter = deps.adapters.get(row.adapterId)
+  if (!adapter) return { status: 'unavailable', reason: 'no-adapter' }
+  if (!(await isEntitled(row.propertyId, adapter.capabilities().feature))) {
+    return { status: 'unavailable', reason: 'feature-off' }
+  }
+
+  const obligation: ObligationInput = {
+    obligationId: row.id,
+    propertyId: row.propertyId,
+    type: row.type,
+    reservationId: row.reservationId,
+    periodDate: row.periodDate,
+    deadline: row.deadline,
+    attempts: row.attempts,
+  }
+
+  const validation = await adapter.validate(obligation)
+  if (!validation.ok) {
+    return { status: 'invalid', messages: validation.issues.map((issue) => issue.message) }
+  }
+
+  const result = await adapter.submit(obligation)
+  const next: Next =
+    result.status === 'acknowledged'
+      ? { state: 'acknowledged', attempts: row.attempts + 1, nextAttemptAt: null, lastError: null }
+      : {
+          state: 'manual',
+          attempts: row.attempts + 1,
+          nextAttemptAt: null,
+          lastError:
+            result.status === 'failed'
+              ? result.message
+              : 'The channel took it but has not confirmed it yet: check the portal before filing by hand.',
+        }
+
+  const written = await write(row, next, {
+    outcome: { kind: 'submitted', result },
+    adapter,
+    now,
+  })
+  if (written.status === 'raced') return { status: 'unavailable', reason: 'raced' }
+
+  // Who asked, on the record: the transition's own event is the system's.
+  await asService((db) =>
+    db.transaction((tx) =>
+      emit(tx, {
+        propertyId: row.propertyId,
+        entityType: 'compliance_obligation',
+        entityId: row.id,
+        eventType: 'compliance_obligation.channel_retried',
+        origin: 'platform',
+        actor: userActor(input.userId),
+        payload: {
+          adapterId: row.adapterId,
+          outcome: result.status,
+          simulated: adapter.capabilities().simulated,
+        },
+      }),
+    ),
+  )
+
+  return next.state === 'acknowledged'
+    ? { status: 'acknowledged' }
+    : { status: 'still-manual', message: next.lastError ?? '' }
+}
+
 /**
  * A person filed by hand and records the proof (ADR-026's fallback, closing
  * the loop). Allowed from `manual`, `failed`, `pending` and `queued`: whoever

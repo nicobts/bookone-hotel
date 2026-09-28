@@ -24,6 +24,12 @@ import type { Logger } from 'pino'
 const NIGHTLY_RECONCILE = '30 3 * * *'
 
 /**
+ * The Alloggiati day, reconciled at 05:15: after the night's filings for the
+ * day before have all fallen due, and before the desk opens (WP1.2).
+ */
+const ALLOGGIATI_RECONCILE = '15 5 * * *'
+
+/**
  * Availability refresh, per property.
  *
  * Two minutes is what keeps the booking surface inside its staleness threshold
@@ -207,6 +213,7 @@ const PER_PROPERTY = [
   'reconcile.nightly',
   'availability.refresh',
   'retention.sweep',
+  'alloggiati.reconcile',
 ] as const satisfies readonly JobName[]
 
 export interface ScheduleDeps {
@@ -245,6 +252,7 @@ export async function syncPropertySchedules(
     'reconcile.nightly': new Set(),
     'availability.refresh': new Set(),
     'retention.sweep': new Set(),
+    'alloggiati.reconcile': new Set(),
   }
 
   for (const property of rows) {
@@ -278,6 +286,17 @@ export async function syncPropertySchedules(
         { key: property.id },
       )
       live['retention.sweep'].add(property.id)
+    }
+
+    // Yesterday's Alloggiati filings against the channel's side (WP1.2).
+    if (await gateOpen(features, property.id, JOB_FEATURE['alloggiati.reconcile'])) {
+      await queue.schedule(
+        'alloggiati.reconcile',
+        ALLOGGIATI_RECONCILE,
+        { propertyId: property.id },
+        { key: property.id },
+      )
+      live['alloggiati.reconcile'].add(property.id)
     }
   }
 
