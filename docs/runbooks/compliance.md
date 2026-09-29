@@ -121,7 +121,9 @@ someone records it.
 **Mocks only.** WP1.3 is blocked on the Regione's submission specification. Until it arrives we
 do not know whether WebTur has a machine interface, how it codes origins, its deadline, or its
 file format. The transport is a port (`IstatTransport`), and only the mock exists; in production
-no transport is registered, so the day shows as having no channel and the manual route applies.
+no transport is registered. Each day is then created already handed to a person (`manual`, with
+"no channel to file this with yet"), never queued, so its file for the portal and the manual route
+exist from the first day.
 The portal's own pages are never automated without the Regione's agreement.
 
 ## The tourist tax (WP1.4)
