@@ -4,6 +4,7 @@ import type * as schema from '../db/schema'
 import { and, asc, eq, inArray, isNull, lt, lte, or, sql } from 'drizzle-orm'
 import { asService, withUser } from '../db/session'
 import {
+  complianceAttachments,
   complianceEvidence,
   complianceObligations,
   externalRefs,
@@ -620,12 +621,18 @@ async function channelRetried(
  * the loop). Allowed from `manual`, `failed`, `pending` and `queued`: whoever
  * filed it by hand made the automatic attempt moot. The receipt is what they
  * have — a protocol number, the portal's confirmation — as data.
+ *
+ * With `attachment` (WP1.6), the file they uploaded is recorded beside the
+ * evidence, in the same transaction, and its SHA-256 goes into the receipt: the
+ * evidence hash then proves the file too, after the file itself has gone at
+ * two years. The caller has already stored the file at `receiptPath`.
  */
 export async function recordManualFiling(input: {
   propertyId: string
   obligationId: string
   userId: string
   receipt: Record<string, unknown>
+  attachment?: { path: string; contentType: string; sizeBytes: number; sha256: string }
   now?: Date
 }): Promise<{ status: 'recorded'; evidenceId: string } | { status: 'rejected'; reason: string }> {
   const now = input.now ?? new Date()
@@ -660,13 +667,37 @@ export async function recordManualFiling(input: {
         .set({ state: 'acknowledged', stateChangedAt: now, nextAttemptAt: null, lastError: null })
         .where(eq(complianceObligations.id, row.id))
 
+      const attachment = input.attachment
       const evidenceId = await insertEvidence(tx, {
         propertyId: row.propertyId,
         obligationId: row.id,
         source: 'manual',
-        receipt: input.receipt,
+        receipt: attachment
+          ? {
+              ...input.receipt,
+              attachment: {
+                sha256: attachment.sha256,
+                contentType: attachment.contentType,
+                sizeBytes: attachment.sizeBytes,
+              },
+            }
+          : input.receipt,
         recordedBy: input.userId,
       })
+
+      if (attachment) {
+        await tx.insert(complianceAttachments).values({
+          propertyId: row.propertyId,
+          obligationId: row.id,
+          evidenceId,
+          path: attachment.path,
+          contentType: attachment.contentType,
+          sizeBytes: attachment.sizeBytes,
+          sha256: attachment.sha256,
+          uploadedBy: input.userId,
+          uploadedAt: now,
+        })
+      }
 
       await emit(tx, {
         propertyId: row.propertyId,

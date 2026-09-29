@@ -64,6 +64,7 @@ describe('the classification', () => {
       'payment.replay',
       'alloggiati.check',
       'documents.purge',
+      'receipts.purge',
       'privacy.erase',
       'retention.sweep',
       'toolboundary.audit',

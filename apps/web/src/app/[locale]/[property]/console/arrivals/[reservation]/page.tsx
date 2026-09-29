@@ -460,13 +460,19 @@ function Obligation({
               <li key={step}>{step}</li>
             ))}
           </ol>
-          <Button asChild size="sm" variant="outline" className="mt-3">
-            {/* A plain anchor: it downloads a file, it does not navigate. */}
-            <a href={fallback.href} download>
-              <DownloadIcon className="size-4" aria-hidden />
-              {t('obligation.fallbackDownload')}
-            </a>
-          </Button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button asChild size="sm" variant="outline">
+              {/* A plain anchor: it downloads a file, it does not navigate. */}
+              <a href={fallback.href} download>
+                <DownloadIcon className="size-4" aria-hidden />
+                {t('obligation.fallbackDownload')}
+              </a>
+            </Button>
+            {/* Once the portal has taken it: the filing's own screen (WP1.6). */}
+            <Button asChild size="sm" variant="ghost">
+              <a href={fallback.href.replace(/\/fallback$/, '')}>{t('obligation.recordManual')}</a>
+            </Button>
+          </div>
           {retry && (
             // After an outage, before filing by hand: one more attempt through
             // the channel, whose receipt then becomes the evidence.

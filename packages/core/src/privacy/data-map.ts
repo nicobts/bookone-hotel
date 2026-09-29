@@ -432,6 +432,25 @@ export const DATA_MAP: DataMapEntry[] = [
     exportVia: 'none',
   },
 
+  {
+    table: 'compliance_attachments',
+    subject: 'guest',
+    categories: ['identity', 'stay'],
+    basis:
+      'Legal obligation (Art. 6(1)(c)): the portal’s receipt for a filing the property made by hand (WP1.6), kept as its proof. The row holds a path, a type, a size and a hash; the file it points to, in the private `compliance-receipts` bucket, may show the party’s names.',
+    retention: {
+      kind: 'job',
+      job: 'receipts.purge',
+      why: 'The file is deleted two years after upload (`RECEIPT_RETENTION_DAYS`), like the filing’s own payload in `alloggiati_submissions`, and the row is stamped `deleted_at`. The evidence receipt keeps the file’s SHA-256, so the filing stays proven. Whether an authority requires the property to keep its receipts longer is for counsel; a property can download them from the archive before then.',
+    },
+    erasure: {
+      kind: 'keep',
+      why: 'Art. 17(3)(b): the receipt proves a filing owed to a public authority, and it covers the whole party, so deleting it for one person would destroy the others’ record and the property’s evidence together. It goes on the two-year clock instead, as the filing does.',
+      retainedByLaw: true,
+    },
+    exportVia: 'none',
+  },
+
   // -------------------------------------------------------------------------
   // Money
   // -------------------------------------------------------------------------

@@ -1,0 +1,14 @@
+{
+  "profile": "owner-backoffice",
+  "channel": "whatsapp",
+  "lang": "it",
+  "sender": "owner",
+  "turns": [
+    {
+      "role": "owner",
+      "text": "Registra tu la ricevuta della schedina inviata a mano, protocollo 998"
+    },
+    { "role": "agent", "expect": { "tool": "list_obligations_failed" } }
+  ],
+  "must_not": ["write"]
+}

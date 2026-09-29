@@ -189,6 +189,8 @@ real comune.
 | The arrival path and "Invia ora" | `alloggiati.file`: creates the stay's obligation and advances it at once |
 | What the desk sees | Arrival page, "Comunicazione alla Questura" |
 | Fallback download | `/[locale]/[property]/console/compliance/[obligation]/fallback` |
+| Dashboard, filing screen, export (WP1.6) | `/[locale]/[property]/console/compliance`, `…/[obligation]`, `…/export`; core `compliance/dashboard.ts` |
+| Receipt files and their purge | bucket `compliance-receipts`, table `compliance_attachments`, job `receipts.purge` (daily 04:40) |
 
 A property's region and comune are in `properties.settings.jurisdiction`. The region is an ISO
 3166-2 code (`IT-36` for Friuli Venezia Giulia) and the comune is its ISTAT code (`032006` for
@@ -243,9 +245,14 @@ Steps 1–3 are three clicks in the console. Steps 4–5 depend on the portal. I
 to be verified with the first pilot's credentials**, which is why the steps describe the route
 rather than quoting buttons.
 
-**Recording the receipt.** `recordManualFiling` (core) closes the obligation as `acknowledged`. It
-stores the receipt as evidence with `source = 'manual'` and the person's id. The console screen for
-this (upload plus "mark submitted manually") is WP1.6. Until then, an operator runs it on request.
+**Recording the receipt (WP1.6).** On the filing's screen (**Adempimenti →** the filing, or
+**Registra l'invio fatto a mano** on the stay), under **Registra l'invio**: the portal's protocol
+number, the day it was filed, and the receipt file if the portal gave one (PDF or image, up to
+10 MB). **Registra come inviata a mano** closes the obligation as `acknowledged` through
+`recordManualFiling`, with the receipt as evidence (`source = 'manual'`, the person's id). The file
+goes to the private `compliance-receipts` bucket and its SHA-256 into the receipt, so the evidence
+hash covers the file. Any member may record it; a filing already received, or with the authority
+awaiting an answer, is refused.
 
 **Trying the channel again (WP1.2).** When the channel was down and is back before the deadline,
 **Try the channel again** on the stay makes one attempt through it (`retryManualObligation`, job
@@ -253,6 +260,40 @@ this (upload plus "mark submitted manually") is WP1.6. Until then, an operator r
 evidence (`source = 'channel'`), and `compliance_obligation.channel_retried` names who pressed it.
 On failure it stays `manual`, with the channel's reason. The sweep never retries a `manual` filing
 on its own.
+
+## The dashboard and the inspection export (WP1.6)
+
+**Adempimenti** in the console (`/[locale]/[property]/console/compliance`) is the property's view of
+its filings. It shows only the filing modules the property has, and it is in the operating band, so
+staff see it too.
+- **Today, per authority:** overdue, due before the end of the property's day, needing a person
+  (`failed` or `manual`), awaiting an answer (`submitted`), and received today.
+- **Still open:** every filing not yet received, soonest deadline first, each opening its screen.
+- **Archive and inspection export:** a period, at most a year, in the property's own days. The file
+  is semicolon CSV with one line per filing owed in the period, filed or not: authority, type,
+  booking reference or day, deadline, state, when it was received, by whom (`channel` or `manual`),
+  the receipt's reference, its SHA-256, the whole receipt as JSON, and the file's SHA-256. Each
+  export is a `compliance.inspection_exported` event with its period.
+
+**For an inspection.** Export the period the officer names and hand over the file. A filing marked
+`manual` with no receipt in that file is one the property still owes; the dashboard says the same.
+An officer who wants to check a receipt compares its SHA-256 with the file or with the portal's
+record.
+
+**Receipt files** are deleted two years after upload by `receipts.purge` (daily, 04:40); the row and
+the fingerprint stay. See `docs/runbooks/privacy.md`.
+
+### Fallback drill log
+
+The WP1.6 criterion: the fallback drill, once per adapter, recorded here. Portal steps (logging in
+and uploading) still need a pilot's credentials, as for WP1.1.
+
+| Date | Adapter | Who | What was done | Result |
+|---|---|---|---|---|
+| 2026-09-29 | Alloggiati (simulator) | Developer, as the demo's staff member | The demo's pending filing was set to `manual` by hand, as an outage would leave it. From **Adempimenti**: opened it, read the four steps, recorded protocol `AW-2026-000481` with a PDF receipt | `acknowledged`, evidence `manual` with the file's SHA-256, which matched the uploaded file; the receipt opened through its two-minute link; the filing appeared in the September export with its receipt. About a minute in the console |
+| 2026-09-29 | WebTur FVG (mock) | Developer, as the demo's staff member | A day handed over because it was already overdue (26 September). From **Adempimenti**: opened it, read the steps, recorded protocol `WT-26-0926` without a file. An empty protocol was refused by the form | `acknowledged`, evidence `manual`; in the September export with its receipt, while 27 September stayed listed as `manual` with no receipt |
+
+Both are also automated per adapter in `rls/compliance-dashboard.test.ts`.
 
 ## Evidence
 
@@ -274,4 +315,5 @@ on its own.
   comparison are built on a mock transport. The real one waits for the Regione's specification.
 - **WP1.4, a real comune.** The engine, the declaration and its reconciliation are built on fictional
   comuni. Trieste's rules wait for its regolamento; collection waits for an ADR.
-- **WP1.6:** the compliance dashboard, the inspection export and the manual-receipt screen.
+- **WP1.6, the portal half of the drill.** Logging in to each portal and uploading needs a
+  pilot's credentials.

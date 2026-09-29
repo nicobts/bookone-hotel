@@ -1,11 +1,16 @@
 import 'server-only'
 import { createClient } from '@supabase/supabase-js'
+import { createHash } from 'node:crypto'
 import {
   ALLOWED_DOCUMENT_TYPES,
   DOCUMENT_BUCKET,
   documentPath,
   isAllowedDocumentType,
+  isAllowedReceiptType,
   MAX_DOCUMENT_BYTES,
+  MAX_RECEIPT_BYTES,
+  RECEIPT_BUCKET,
+  receiptPath,
 } from '@bookone/core/storage'
 
 /**
@@ -127,4 +132,64 @@ export async function deleteIdentityDocument(path: string): Promise<boolean> {
   const { error } = await supabase.storage.from(DOCUMENT_BUCKET).remove([path])
 
   return !error
+}
+
+// ---------------------------------------------------------------------------
+// Manual-filing receipts (WP1.6)
+// ---------------------------------------------------------------------------
+
+export type ReceiptUpload =
+  | { status: 'stored'; path: string; contentType: string; sizeBytes: number; sha256: string }
+  | { status: 'rejected'; reason: 'too-large' | 'wrong-type' | 'empty' }
+  | { status: 'failed'; reason: string }
+
+/**
+ * Stores the portal's receipt for a filing made by hand, in the private
+ * `compliance-receipts` bucket, and returns its SHA-256 for the evidence.
+ *
+ * The same containment as the identity documents: the path is built here from
+ * the property and the obligation, never taken from the caller. The caller has
+ * already checked the membership, the feature and that the obligation is the
+ * property's. Overwrites, so a second attempt after a refused record replaces
+ * the first file rather than leaving an orphan.
+ */
+export async function storeComplianceReceipt(input: {
+  propertyId: string
+  obligationId: string
+  file: File
+}): Promise<ReceiptUpload> {
+  const { file } = input
+  if (file.size === 0) return { status: 'rejected', reason: 'empty' }
+  if (file.size > MAX_RECEIPT_BYTES) return { status: 'rejected', reason: 'too-large' }
+  if (!isAllowedReceiptType(file.type)) return { status: 'rejected', reason: 'wrong-type' }
+
+  const supabase = client()
+  if (!supabase) return { status: 'failed', reason: 'storage is not configured' }
+
+  const bytes = Buffer.from(await file.arrayBuffer())
+  const sha256 = createHash('sha256').update(bytes).digest('hex')
+  const path = receiptPath(input)
+
+  const { error } = await supabase.storage
+    .from(RECEIPT_BUCKET)
+    .upload(path, bytes, { upsert: true, contentType: file.type })
+  if (error) return { status: 'failed', reason: error.message }
+
+  return { status: 'stored', path, contentType: file.type, sizeBytes: file.size, sha256 }
+}
+
+/** Removes a receipt whose record was refused, so no file is left without a row. */
+export async function deleteComplianceReceipt(path: string): Promise<boolean> {
+  const supabase = client()
+  if (!supabase) return false
+  const { error } = await supabase.storage.from(RECEIPT_BUCKET).remove([path])
+  return !error
+}
+
+/** A link to a stored receipt, valid for two minutes, like a document's. */
+export async function signedReceiptUrl(path: string, seconds = 120): Promise<string | null> {
+  const supabase = client()
+  if (!supabase) return null
+  const { data, error } = await supabase.storage.from(RECEIPT_BUCKET).createSignedUrl(path, seconds)
+  return error ? null : (data?.signedUrl ?? null)
 }

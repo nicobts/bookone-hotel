@@ -61,6 +61,7 @@
   "nav": {
     "today": "Heute",
     "exceptions": "Ausnahmen",
+    "compliance": "Meldungen",
     "reservations": "Reservierungen",
     "guests": "Gäste",
     "sections": {
@@ -130,7 +131,7 @@
       "complianceLate": "Die Frist ist abgelaufen ({deadline}). Bitte jetzt mit der Datei des Aufenthalts von Hand melden.",
       "complianceDayBody": "Noch nicht gemeldet. Frist: {deadline}. Laden Sie die Datei des Tages herunter und tragen Sie sie im Portal ein.",
       "complianceDayLate": "Die Frist ist abgelaufen ({deadline}). Tragen Sie den Tag jetzt im Portal ein, aus der Datei des Tages.",
-      "dayFile": "Datei des Tages"
+      "dayFile": "Meldung öffnen"
     },
     "arrival": {
       "title": "Anreise",
@@ -214,6 +215,7 @@
         "fallbackTitle": "Meldung von Hand",
         "fallbackHint": "Dieselbe Datei, die wir senden würden, eine Zeile pro Gast. Die Schritte folgen dem Portal, das nur auf Italienisch ist.",
         "fallbackDownload": "Datei für das Portal herunterladen",
+        "recordManual": "Von Hand eingereichte Meldung erfassen",
         "alerted": "Alarmstufe",
         "reaches": {
           "inbox": "Ausnahmen",
@@ -511,7 +513,8 @@
         "fee_events": "Was wir diesem Haus berechnet haben",
         "alloggiati_submissions": "Die Meldung an die Questura",
         "privacy_requests": "Diese Anfrage",
-        "compliance_obligations": "Das Verzeichnis der Pflichtmeldungen"
+        "compliance_obligations": "Das Verzeichnis der Pflichtmeldungen",
+        "compliance_attachments": "Die Belege von Hand eingereichter Meldungen"
       },
       "toast": {
         "exportRecorded": "Anfrage erfasst: Der Download startet",
@@ -859,6 +862,89 @@
         "informed": "Bestätigen Sie, dass Sie diese Person vor dem Hinzufügen informiert haben.",
         "duplicate": "Diese Nummer steht für diese Rolle schon auf der Liste.",
         "generic": "Das hat nicht geklappt. Laden Sie die Seite neu und versuchen Sie es noch einmal."
+      }
+    },
+    "compliance": {
+      "title": "Meldungen",
+      "subtitle": "Was der Betrieb den Behörden schuldet, heute und je Zeitraum.",
+      "today": "Heute, {date}",
+      "counts": {
+        "overdue": "Überfällig",
+        "dueToday": "Heute fällig",
+        "failed": "Brauchen eine Person",
+        "submitted": "Antwort ausstehend",
+        "acknowledgedToday": "Heute bestätigt"
+      },
+      "authorities": {
+        "questura": "Questura (Alloggiati Web)",
+        "regione-fvg": "Region FVG (ISTAT)",
+        "comune-trieste": "Gemeinde Triest (Ortstaxe)"
+      },
+      "types": {
+        "guest_registration": "Gästemeldung",
+        "istat_movement": "Tägliche ISTAT-Meldung",
+        "tourist_tax_declaration": "Ortstaxe-Erklärung"
+      },
+      "states": {
+        "pending": "Wartend",
+        "queued": "In der Warteschlange",
+        "submitted": "Gesendet, Bestätigung ausstehend",
+        "acknowledged": "Bestätigt",
+        "failed": "Neuer Versuch geplant",
+        "manual": "Von Hand einreichen"
+      },
+      "openTitle": "Noch offen",
+      "openEmpty": "Nichts offen: Jede Meldung liegt bei der Behörde oder ist bestätigt.",
+      "noSubject": "Kein Aufenthalt",
+      "dueBy": "Fällig {deadline} ({relative})",
+      "overdueSince": "Überfällig seit {deadline} ({relative})",
+      "open": "Öffnen",
+      "archiveTitle": "Archiv und Export für Prüfungen",
+      "archiveHint": "Jede im Zeitraum fällige Meldung, eingereicht oder nicht, mit Beleg und Prüfsumme. Eine Tabellendatei für Beamte oder Prüfer.",
+      "from": "Von",
+      "to": "Bis",
+      "export": "Export herunterladen",
+      "back": "Alle Meldungen",
+      "statusTitle": "Status",
+      "deadline": "Frist",
+      "submittedHint": "Die Behörde hat sie; ihre Antwort steht aus. Hier ist nichts zu tun, außer sie wird abgelehnt.",
+      "manualTitle": "Von Hand einreichen",
+      "manualHint": "Reichen Sie sie im Portal der Behörde mit den Zugangsdaten des Betriebs ein und erfassen Sie sie dann unten.",
+      "notReady": "Die Datei für das Portal kann noch nicht erstellt werden:",
+      "download": "Datei für das Portal herunterladen",
+      "recordTitle": "Einreichung erfassen",
+      "recordHint": "Sobald das Portal sie angenommen hat: Protokollnummer, Tag und, falls vorhanden, der Beleg.",
+      "protocol": "Protokollnummer",
+      "filedOn": "Eingereicht am",
+      "receiptFile": "Beleg (PDF oder Bild, optional)",
+      "receiptFileHint": "Bis 10 MB. Er kann die Namen der Gäste zeigen und wird daher nach zwei Jahren gelöscht; seine Prüfsumme bleibt beim Eintrag.",
+      "record": "Als von Hand eingereicht erfassen",
+      "proofTitle": "Nachweis der Einreichung",
+      "source": "Erfasst durch",
+      "sources": {
+        "manual": "Eine Person, von Hand eingereicht",
+        "channel": "Den Kanal, automatisch"
+      },
+      "recordedAt": "Erfasst",
+      "fingerprint": "Prüfsumme (SHA-256)",
+      "openFile": "Beleg öffnen",
+      "fileDeleted": "Die Belegdatei wurde am {date} nach zwei Jahren gelöscht. Die Prüfsumme weist die Einreichung weiterhin nach.",
+      "toast": {
+        "invalid": "Nicht erfasst",
+        "protocolRequired": "Geben Sie die Protokollnummer des Portals ein (bis 64 Zeichen).",
+        "dateInvalid": "Geben Sie den Tag der Einreichung ein; er darf nicht in der Zukunft liegen.",
+        "fileRefused": "Beleg nicht angenommen",
+        "file": {
+          "too-large": "Die Datei ist größer als 10 MB.",
+          "wrong-type": "Verwenden Sie eine PDF-, JPEG-, PNG- oder WebP-Datei.",
+          "empty": "Die Datei ist leer."
+        },
+        "fileFailed": "Beleg konnte nicht gespeichert werden",
+        "fileFailedDescription": "Es wurde nichts erfasst. Versuchen Sie es gleich noch einmal.",
+        "refused": "Nicht erfasst",
+        "refusedDescription": "Diese Meldung ist bereits bestätigt, oder die Behörde hat sie und ihre Antwort steht aus.",
+        "recorded": "Erfasst",
+        "recordedDescription": "Die Meldung gilt als bestätigt, mit dem Beleg als Nachweis."
       }
     }
   },

@@ -80,6 +80,9 @@ const OWNER_VOCABULARY: [string, string[]][] = [
       'filings',
       'comunicazione',
       'comunicazioni',
+      // The console's word for them (WP1.6).
+      'adempimento',
+      'adempimenti',
       'meldung',
       'meldungen',
       'prijava',

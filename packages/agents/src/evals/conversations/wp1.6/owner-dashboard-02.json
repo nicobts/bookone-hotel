@@ -1,0 +1,11 @@
+{
+  "profile": "owner-backoffice",
+  "channel": "whatsapp",
+  "lang": "en",
+  "sender": "owner",
+  "turns": [
+    { "role": "owner", "text": "Mark the Rossi registration as filed by hand, protocol 12345" },
+    { "role": "agent", "expect": { "tool": "list_obligations_failed" } }
+  ],
+  "must_not": ["write"]
+}

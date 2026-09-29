@@ -137,3 +137,15 @@ export function regionOf(adapterId: string, registry: Registry = REGISTRY): stri
   }
   return null
 }
+
+/** The authority an adapter files with, as the registry names it, or null. */
+export function authorityOf(adapterId: string, registry: Registry = REGISTRY): string | null {
+  const entries = [
+    ...registry.national,
+    ...Object.values(registry.regions).flatMap((region) => [
+      ...region.regional,
+      ...Object.values(region.comuni).flatMap((comune) => comune.municipal),
+    ]),
+  ]
+  return entries.find((entry) => entry.adapter === adapterId)?.authority ?? null
+}

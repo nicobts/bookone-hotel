@@ -87,6 +87,12 @@ const PRECHECKIN_SWEEP = '7 * * * *'
 const ALLOGGIATI_CHECK = '*/10 * * * *'
 
 /**
+ * Manual-filing receipt files past their two years (WP1.6). Daily is plenty
+ * for a two-year period; 04:40 keeps it clear of the nightly reconciliation.
+ */
+const RECEIPT_PURGE = '40 4 * * *'
+
+/**
  * Destroys identity documents whose filing was acknowledged (E2.4).
  *
  * Hourly. Nothing about the guest's experience depends on it running sooner,
@@ -338,6 +344,7 @@ export async function registerSchedules(deps: ScheduleDeps): Promise<void> {
   await queue.schedule('precheckin.sweep', PRECHECKIN_SWEEP, {})
   await queue.schedule('alloggiati.check', ALLOGGIATI_CHECK, {})
   await queue.schedule('documents.purge', DOCUMENT_PURGE, {})
+  await queue.schedule('receipts.purge', RECEIPT_PURGE, {})
   await queue.schedule('compliance.generate', COMPLIANCE_GENERATE, {})
   await queue.schedule('compliance.sweep', COMPLIANCE_SWEEP, {})
   await queue.schedule('escalation.sweep', ESCALATION_SWEEP, {})
@@ -362,6 +369,7 @@ export async function registerSchedules(deps: ScheduleDeps): Promise<void> {
       precheckinSweep: PRECHECKIN_SWEEP,
       alloggiatiCheck: ALLOGGIATI_CHECK,
       documentPurge: DOCUMENT_PURGE,
+      receiptPurge: RECEIPT_PURGE,
       complianceGenerate: COMPLIANCE_GENERATE,
       complianceSweep: COMPLIANCE_SWEEP,
       schedulesSync: SCHEDULES_SYNC,

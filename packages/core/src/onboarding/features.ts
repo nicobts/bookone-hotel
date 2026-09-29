@@ -67,6 +67,8 @@ export const JOB_FEATURE: Record<JobName, Gate> = {
   'alloggiati.check': 'core',
   // Deletes identity documents. Privacy work is never switched off.
   'documents.purge': 'core',
+  // Deletes receipt files at two years. Privacy work is never switched off.
+  'receipts.purge': 'core',
   // Gated per obligation, by the adapter's own feature (ADR-039): generation
   // skips a property without it, and a run of one whose feature was revoked
   // is skipped. One job serves every authority, so the job cannot name one.

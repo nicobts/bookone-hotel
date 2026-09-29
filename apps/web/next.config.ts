@@ -41,6 +41,16 @@ const nextConfig: NextConfig = {
   // never hydrates, which looks like a broken form rather than a config issue.
   // 127.0.0.1 and localhost are the same machine and both get used.
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
+  experimental: {
+    serverActions: {
+      // Two server actions take a file: the guest's identity document and the
+      // portal receipt of a filing made by hand (WP1.6), each capped at 10 MB
+      // by its bucket and by `@bookone/core/storage`. The default 1 MB refused
+      // an ordinary phone photograph before either check could say why. The
+      // extra megabyte is the multipart overhead.
+      bodySizeLimit: '11mb',
+    },
+  },
 }
 
 export default withNextIntl(nextConfig)

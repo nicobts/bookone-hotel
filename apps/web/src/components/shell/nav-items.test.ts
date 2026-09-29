@@ -31,11 +31,23 @@ describe('navBands', () => {
     ])
   })
 
+  it('shows the filings with either filing module, and not without one (WP1.6)', () => {
+    for (const feature of ['alloggiati', 'istat_regional']) {
+      expect(navBands({ isOwner: false, features: new Set([feature]) }).operate).toContain(
+        'compliance',
+      )
+    }
+    expect(navBands({ isOwner: true, features: new Set(PHASE0_FEATURES) }).operate).not.toContain(
+      'compliance',
+    )
+  })
+
   it('gives staff the operating band only, whatever the property has', () => {
     expect(navBands({ isOwner: false, features: new Set(FEATURES) })).toEqual({
       operate: [
         'today',
         'exceptions',
+        'compliance',
         'conversations',
         'approvals',
         'agents',

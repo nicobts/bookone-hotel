@@ -196,12 +196,12 @@ async function ExceptionRow({
             </a>
           </Button>
         ) : item.kind === 'compliance-deadline' && item.adapterId ? (
-          // A day's return: the file to enter on the portal. The route checks
-          // the feature and the membership again.
+          // A day's return: its filing screen (WP1.6), with the file for the
+          // portal and the form that records it. The page checks the feature
+          // and the membership again.
           <Button asChild variant="outline" size="sm">
             <a
-              href={`/${context.locale}/${context.slug}/console/compliance/${item.id.replace('compliance:', '')}/fallback`}
-              download
+              href={`/${context.locale}/${context.slug}/console/compliance/${item.id.replace('compliance:', '')}`}
             >
               {t('dayFile')}
             </a>

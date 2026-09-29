@@ -61,6 +61,7 @@
   "nav": {
     "today": "Danes",
     "exceptions": "Izjeme",
+    "compliance": "Prijave",
     "reservations": "Rezervacije",
     "guests": "Gostje",
     "sections": {
@@ -130,7 +131,7 @@
       "complianceLate": "Rok je potekel ({deadline}). Pošljite jo ročno zdaj z datoteko bivanja.",
       "complianceDayBody": "Še ni poslano. Rok: {deadline}. Prenesite datoteko dneva in jo vnesite na portalu.",
       "complianceDayLate": "Rok je potekel ({deadline}). Dan zdaj vnesite na portalu, iz datoteke dneva.",
-      "dayFile": "Datoteka dneva"
+      "dayFile": "Odpri prijavo"
     },
     "arrival": {
       "title": "Prihod",
@@ -214,6 +215,7 @@
         "fallbackTitle": "Ročna prijava",
         "fallbackHint": "Ista datoteka, ki bi jo poslali mi, ena vrstica na gosta. Koraki sledijo portalu, ki je samo v italijanščini.",
         "fallbackDownload": "Prenesite datoteko za portal",
+        "recordManual": "Zabeleži ročno oddajo",
         "alerted": "Stopnja opozorila",
         "reaches": {
           "inbox": "izjeme",
@@ -511,7 +513,8 @@
         "fee_events": "Kar smo zaračunali temu objektu",
         "alloggiati_submissions": "Prijava policiji (Questura)",
         "privacy_requests": "Ta zahteva",
-        "compliance_obligations": "Evidenca obveznih prijav"
+        "compliance_obligations": "Evidenca obveznih prijav",
+        "compliance_attachments": "Potrdila ročno oddanih prijav"
       },
       "toast": {
         "exportRecorded": "Zahteva zabeležena: prenos se začenja",
@@ -859,6 +862,89 @@
         "informed": "Potrdite, da ste to osebo obvestili, preden jo dodate.",
         "duplicate": "Ta številka je za to vlogo že na seznamu.",
         "generic": "Ni uspelo. Znova naložite stran in poskusite še enkrat."
+      }
+    },
+    "compliance": {
+      "title": "Prijave",
+      "subtitle": "Kaj nastanitev dolguje organom, danes in po obdobjih.",
+      "today": "Danes, {date}",
+      "counts": {
+        "overdue": "Zamujene",
+        "dueToday": "Zapadejo danes",
+        "failed": "Potrebujejo osebo",
+        "submitted": "Čakajo na odgovor",
+        "acknowledgedToday": "Potrjene danes"
+      },
+      "authorities": {
+        "questura": "Questura (Alloggiati Web)",
+        "regione-fvg": "Dežela FJK (ISTAT)",
+        "comune-trieste": "Občina Trst (turistična taksa)"
+      },
+      "types": {
+        "guest_registration": "Prijava gostov",
+        "istat_movement": "Dnevno poročilo ISTAT",
+        "tourist_tax_declaration": "Obračun turistične takse"
+      },
+      "states": {
+        "pending": "Čaka",
+        "queued": "V vrsti",
+        "submitted": "Poslano, čaka na potrdilo",
+        "acknowledged": "Potrjeno",
+        "failed": "Nov poskus načrtovan",
+        "manual": "Oddati ročno"
+      },
+      "openTitle": "Še odprto",
+      "openEmpty": "Nič odprtega: vsaka prijava je pri organu ali potrjena.",
+      "noSubject": "Brez bivanja",
+      "dueBy": "Rok {deadline} ({relative})",
+      "overdueSince": "Zamujeno od {deadline} ({relative})",
+      "open": "Odpri",
+      "archiveTitle": "Arhiv in izvoz za inšpekcijo",
+      "archiveHint": "Vsaka prijava, ki zapade v obdobju, oddana ali ne, s potrdilom in prstnim odtisom. Datoteka za preglednico, za uradnika ali revizorja.",
+      "from": "Od",
+      "to": "Do",
+      "export": "Prenesi izvoz",
+      "back": "Vse prijave",
+      "statusTitle": "Stanje",
+      "deadline": "Rok",
+      "submittedHint": "Organ jo ima; odgovor še ni prišel. Tu ni kaj storiti, razen če jo zavrne.",
+      "manualTitle": "Ročna oddaja",
+      "manualHint": "Oddajte jo na portalu organa s poverilnicami nastanitve, nato jo zabeležite spodaj.",
+      "notReady": "Datoteke za portal še ni mogoče pripraviti:",
+      "download": "Prenesi datoteko za portal",
+      "recordTitle": "Zabeleži oddajo",
+      "recordHint": "Ko jo je portal sprejel: številka protokola, dan in potrdilo, če ga je izdal.",
+      "protocol": "Številka protokola",
+      "filedOn": "Oddano dne",
+      "receiptFile": "Potrdilo (PDF ali slika, neobvezno)",
+      "receiptFileHint": "Do 10 MB. Lahko prikazuje imena gostov, zato se po dveh letih izbriše; njegov prstni odtis ostane z zapisom.",
+      "record": "Zabeleži kot ročno oddano",
+      "proofTitle": "Dokaz o oddaji",
+      "source": "Zabeležil",
+      "sources": {
+        "manual": "Oseba, ročna oddaja",
+        "channel": "Kanal, samodejno"
+      },
+      "recordedAt": "Zabeleženo",
+      "fingerprint": "Prstni odtis (SHA-256)",
+      "openFile": "Odpri potrdilo",
+      "fileDeleted": "Datoteka potrdila je bila izbrisana {date}, po dveh letih. Prstni odtis še vedno dokazuje oddajo.",
+      "toast": {
+        "invalid": "Ni zabeleženo",
+        "protocolRequired": "Vnesite številko protokola s portala (do 64 znakov).",
+        "dateInvalid": "Vnesite dan oddaje; ne sme biti v prihodnosti.",
+        "fileRefused": "Potrdilo ni sprejeto",
+        "file": {
+          "too-large": "Datoteka je večja od 10 MB.",
+          "wrong-type": "Uporabite datoteko PDF, JPEG, PNG ali WebP.",
+          "empty": "Datoteka je prazna."
+        },
+        "fileFailed": "Potrdila ni bilo mogoče shraniti",
+        "fileFailedDescription": "Nič ni bilo zabeleženo. Poskusite znova čez trenutek.",
+        "refused": "Ni zabeleženo",
+        "refusedDescription": "Ta prijava je že potrjena ali pa jo ima organ in odgovor še ni prišel.",
+        "recorded": "Zabeleženo",
+        "recordedDescription": "Prijava je označena kot potrjena, s potrdilom kot dokazom."
       }
     }
   },
