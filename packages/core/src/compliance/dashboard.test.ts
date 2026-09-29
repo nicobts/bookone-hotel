@@ -146,6 +146,17 @@ describe('the inspection export, as a file', () => {
     ])
   })
 
+  it('stops a typed protocol number from running as a spreadsheet formula', () => {
+    const typed = structuredClone(data)
+    typed.rows = [
+      {
+        ...data.rows[0]!,
+        evidence: { ...data.rows[0]!.evidence!, receipt: { protocol: '=HYPERLINK("x")' } },
+      },
+    ]
+    expect(inspectionCsv(typed).split('\r\n')[1]).toContain(`;"'=HYPERLINK(""x"")";`)
+  })
+
   it('quotes a cell that holds the separator', () => {
     const odd = structuredClone(data)
     odd.rows = [{ ...data.rows[0]!, subject: 'A;B' }]

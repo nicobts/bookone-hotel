@@ -12,6 +12,7 @@ import {
   createWebturComplianceAdapter,
   generateIstatMovements,
   IstatTransportError,
+  NO_CHANNEL,
   webturManualFallback,
   WEBTUR_FVG_ADAPTER_ID,
   type IstatTransport,
@@ -270,5 +271,39 @@ describe('isolation', () => {
       'select=id&type=eq.istat_movement',
     )) as unknown[]
     expect(own.length).toBeGreaterThan(0)
+  })
+})
+
+describe('a region with no channel registered', () => {
+  it('still creates each day, straight to a person, never queued', async () => {
+    // Beta switches the return on with no transport, as in production until
+    // the Regione's specification exists.
+    await grantEntitlement({ propertyId: fixture.beta.propertyId, feature: 'istat_regional' })
+    await db.execute(sql`
+      update entitlements set granted_at = now() - interval '2 days'
+       where property_id = ${fixture.beta.propertyId} and feature = 'istat_regional'`)
+
+    const result = await generateIstatMovements(
+      { adapters: new Map() },
+      { propertyId: fixture.beta.propertyId },
+    )
+    expect(result.unsupported).toEqual([
+      { propertyId: fixture.beta.propertyId, adapter: WEBTUR_FVG_ADAPTER_ID },
+    ])
+    const rows = await db.execute<{
+      state: string
+      last_error: string
+      next_attempt_at: Date | null
+    }>(sql`
+      select state, last_error, next_attempt_at from compliance_obligations
+       where property_id = ${fixture.beta.propertyId} and type = 'istat_movement'`)
+    expect(rows.length).toBe(result.created)
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.every((row) => row.state === 'manual' && row.next_attempt_at === null)).toBe(true)
+    expect(rows[0]!.last_error).toBe(NO_CHANNEL)
+
+    // Its file for the portal exists, which is the point.
+    const file = await webturManualFallback(fixture.beta.propertyId, yesterday)
+    expect(file.content).toMatch(/^giorno;provenienza;arrivi;partenze;presenze\r\n/)
   })
 })
