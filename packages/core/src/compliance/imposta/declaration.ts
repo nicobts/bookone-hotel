@@ -1,5 +1,6 @@
 import { computeStayTax, type NightStatus, type StayTax, type TaxStay } from './engine'
 import type { ComuneRules } from './rules'
+import { csvCell } from '../csv'
 
 /**
  * The period declaration and its reconciliation (WP1.4).
@@ -127,7 +128,9 @@ export function declarationCsv(declaration: Declaration): string {
   ]
   const row = (reference: string, line: Omit<DeclarationLine, 'reference'>) =>
     [
-      reference,
+      // Escaped: a reference is data, and must neither run as a formula nor
+      // break the columns in the comune's spreadsheet.
+      csvCell(reference),
       line.persons,
       line.taxableNights,
       line.reducedNights,
