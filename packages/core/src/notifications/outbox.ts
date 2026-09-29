@@ -81,6 +81,14 @@ export interface QueueInput {
   recipient: string
   /** The facts the template will render from, captured now (see the column). */
   payload: Record<string, unknown>
+  /**
+   * A page to the property's own people (`property_contacts`), kept 90 days
+   * rather than two years. `about` is the stay it concerns. It goes in the
+   * payload as `reservationId`, not in the column, whose deduplication would
+   * drop every recipient after the first; a guest's erasure and export find
+   * the row there.
+   */
+  alert?: { about: string | null }
 }
 
 /**
@@ -104,7 +112,10 @@ export async function queueNotification(tx: Tx, input: QueueInput): Promise<stri
       template: input.template,
       locale: input.locale,
       recipient: input.recipient,
-      payload: input.payload,
+      payload: input.alert?.about
+        ? { ...input.payload, reservationId: input.alert.about }
+        : input.payload,
+      alert: input.alert !== undefined,
     })
     .onConflictDoNothing({
       target: [notifications.reservationId, notifications.template, notifications.channel],

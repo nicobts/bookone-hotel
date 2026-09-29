@@ -37,8 +37,12 @@ An obligation nobody has filed climbs a ladder as its deadline nears. Each rung 
 | Rung | Default | Who is told |
 |---|---|---|
 | 1 inbox | 12 h before the deadline | The filing appears in **Eccezioni**, with its deadline and a link to the stay |
-| 2 staff | 6 h before | Every number in `settings.staffPhones`, on WhatsApp (or SMS if only that is on) |
-| 3 owner | 3 h before | Every number in `settings.ownerPhones`, the same way |
+| 2 staff | 6 h before | Every `staff` contact (Team → Who we page), on WhatsApp (or SMS if only that is on) |
+| 3 owner | 3 h before | Every `owner` contact, the same way |
+
+The staff and owner numbers are personal data the property controls. Who may be listed, what the
+property must tell them, and where the numbers are copied: `docs/runbooks/privacy.md`, "Owner and
+staff contact numbers".
 
 - **A hand-over goes straight to rung 2.** An obligation in `manual` will not file itself, so the
   staff are paged at once, and the message says it must be filed by hand. A hand-over after a
@@ -76,7 +80,8 @@ where event_type = 'compliance_obligation.alerted' and property_id = :property
 order by at desc limit 20;
 ```
 
-The usual causes are no `staffPhones` recorded, or neither the `whatsapp` nor the `sms` feature on.
+The usual causes are no `staff` contact recorded (Team → Who we page), or neither the `whatsapp` nor the
+`sms` feature on.
 Outside Twilio's 24-hour window a WhatsApp alert needs its approved template,
 `TWILIO_TEMPLATE_COMPLIANCE_ALERT`: {{1}} whose filing, {{2}} the deadline, {{3}} the link.
 

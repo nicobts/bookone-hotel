@@ -820,6 +820,46 @@
       "sectionProfiles": "S čim se ukvarja",
       "sectionTools": "Kaj lahko naredi",
       "sectionRules": "Pravila, ki jih nikoli ne prekrši"
+    },
+    "contacts": {
+      "title": "Koga obveščamo",
+      "body": "Telefonske številke, ki jih platforma obvesti, ko gost čaka ali se izteka rok za zakonsko prijavo. Seznam vidijo samo lastniki. Vi ste upravljavec teh številk: vsako osebo obvestite, preden jo dodate, in odstranite vsakogar, ki to zahteva ali odide.",
+      "role": {
+        "owner": "Lastnik",
+        "staff": "Osebje"
+      },
+      "roleLabel": "Prejema",
+      "receives": {
+        "owner": "Goste, ki čakajo, lastnikovega pomočnika na WhatsAppu in zadnji opomnik pred rokom za prijavo.",
+        "staff": "Prvi opomnik pred rokom za prijavo."
+      },
+      "none": {
+        "owner": "Nihče. Ko gost čaka, ni obveščen nihče, in lastnikov pomočnik ne odgovarja nikomur.",
+        "staff": "Nihče. Prvi telefonski opomnik gre samo na lastnikove številke."
+      },
+      "informedOn": "Obveščen {date}",
+      "notInformed": "Ni potrjeno",
+      "confirmInformed": "Potrdi, da je obveščen",
+      "remove": "Odstrani",
+      "add": "Dodaj osebo",
+      "name": "Ime",
+      "nameExample": "Marta, recepcija",
+      "phone": "Mobilna številka",
+      "phoneHint": "S kodo države, npr. +386 ali 00386. Sporočila pridejo prek WhatsAppa ali SMS, če je vklopljen samo ta.",
+      "informed": "To osebo sem obvestil, da se njena številka uporablja za obvestila o gostih in rokih za prijave, prek Twilia in, pri WhatsAppu, Mete.",
+      "addButton": "Dodaj",
+      "toast": {
+        "added": "Dodano",
+        "removed": "Odstranjeno",
+        "confirmed": "Potrjeno"
+      },
+      "error": {
+        "phone": "Vnesite številko s kodo države, npr. +386 41 123 456.",
+        "name": "Vnesite ime z največ 80 znaki.",
+        "informed": "Potrdite, da ste to osebo obvestili, preden jo dodate.",
+        "duplicate": "Ta številka je za to vlogo že na seznamu.",
+        "generic": "Ni uspelo. Znova naložite stran in poskusite še enkrat."
+      }
     }
   },
   "noProperty": {

@@ -546,6 +546,15 @@ const notifyOwnerTool: Tool = {
 
 // ------------------------------------------------------------- owner, read-only
 
+/**
+ * The stays an owner answer names. Recorded beside the phrase, which names the
+ * guests, so a guest's erasure finds the run that listed them: no thread leads
+ * to an owner's question.
+ */
+function stayIds(rows: { reservationId: string | null }[]): string[] {
+  return [...new Set(rows.flatMap((row) => (row.reservationId ? [row.reservationId] : [])))]
+}
+
 function isoDay(offsetDays: number): string {
   return new Date(Date.now() + offsetDays * 86_400_000).toISOString().slice(0, 10)
 }
@@ -576,6 +585,7 @@ const listArrivalsTool: Tool = {
       ok: true,
       output: {
         count: rows.length,
+        reservationIds: stayIds(rows),
         phrase: deskPhrase(lang, 'ownerArrivals', { count: rows.length, date: when, names }),
       },
     }
@@ -604,7 +614,11 @@ const listCaptureStatusTool: Tool = {
 
     return {
       ok: true,
-      output: { count: rows.length, phrase: deskPhrase(lang, 'ownerCapture', { list }) },
+      output: {
+        count: rows.length,
+        reservationIds: stayIds(rows),
+        phrase: deskPhrase(lang, 'ownerCapture', { list }),
+      },
     }
   },
 }
@@ -627,6 +641,7 @@ const listOpenComplaintsTool: Tool = {
       ok: true,
       output: {
         count: rows.length,
+        reservationIds: stayIds(rows),
         phrase: deskPhrase(lang, 'ownerComplaints', { count: rows.length, list }),
       },
     }
@@ -703,6 +718,7 @@ const listObligationsDueTool: Tool = {
       output: {
         count: rows.length,
         more,
+        reservationIds: stayIds(rows),
         phrase: deskPhrase(lang, 'ownerObligationsDue', { count, list }),
       },
     }
@@ -737,6 +753,7 @@ const listObligationsFailedTool: Tool = {
       output: {
         count: rows.length,
         more,
+        reservationIds: stayIds(rows),
         phrase: deskPhrase(lang, 'ownerObligationsFailed', { count, list }),
       },
     }

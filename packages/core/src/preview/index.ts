@@ -58,9 +58,12 @@ export async function listPreviewTargets(): Promise<PreviewProperty[]> {
       locale_default: string
       owner_phone: string | null
     }>(sql`
-      select id, name, slug, locale_default, settings->'ownerPhones'->>0 as owner_phone
-        from properties
-       where coalesce((settings->>'demo')::boolean, false)
+      select p.id, p.name, p.slug, p.locale_default,
+             (select c.phone from property_contacts c
+               where c.property_id = p.id and c.role = 'owner'
+               order by c.created_at limit 1) as owner_phone
+        from properties p
+       where coalesce((p.settings->>'demo')::boolean, false)
        order by name`)
 
     const result: PreviewProperty[] = []
