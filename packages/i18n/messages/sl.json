@@ -210,7 +210,21 @@
         "evidenceManual": "Potrdilo, vneseno ročno (prstni odtis)",
         "errors": {
           "notConfirmed": "Nihče še ni potrdil gostov na podlagi dokumentov: potrdite jih zgoraj.",
-          "deadlineClose": "Rok se izteka: pošljite ročno z datoteko spodaj."
+          "deadlineClose": "Rok se izteka: pošljite ročno z datoteko spodaj.",
+          "stayGone": "Bivanje ne obstaja več.",
+          "checkFailed": "Kanal ni mogel povedati, ali je bila prijava sprejeta. Vprašali bomo znova.",
+          "nothingStaged": "Nič ni bilo pripravljeno za oddajo. Poskusili bomo znova.",
+          "noReference": "Kanal ni vrnil sklica za prijavo. Vprašali bomo znova.",
+          "notConfirmedByChannel": "Kanal jo je prejel, a je še ni potrdil: pred ročno oddajo preverite portal.",
+          "credentialsRefused": "Portal je zavrnil poverilnice nastanitve. Odgovor: „{said}“",
+          "channelHttp": "Kanal ni pravilno odgovoril (HTTP {status}).",
+          "ambiguous": "Po pošiljanju ni odgovora: prijava je morda prispela. Pred ročno oddajo preverite dnevno potrdilo na portalu.",
+          "unreadable": "Odgovora kanala ni bilo mogoče prebrati.",
+          "guestIssue": "Gost {guest}, {field}: {problem}",
+          "originMissing": "Bivanje {reference}: prebivališče ali državljanstvo gosta ni zabeleženo.",
+          "channelSaid": "Kanal je odgovoril: „{said}“",
+          "refused": "Sistem kvesture je zavrnil prijavo. Z njegovimi besedami (v italijanščini):",
+          "refusedLine": "Gost {guest}: „{said}“"
         },
         "fallbackTitle": "Ročna prijava",
         "fallbackHint": "Ista datoteka, ki bi jo poslali mi, ena vrstica na gosta. Koraki sledijo portalu, ki je samo v italijanščini.",

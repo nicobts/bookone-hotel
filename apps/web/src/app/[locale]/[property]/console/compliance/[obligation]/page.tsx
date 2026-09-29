@@ -9,7 +9,7 @@ import {
 } from '@bookone/core/compliance'
 import { PageShell } from '@/components/shell/page-shell'
 import { requireCompliance } from '@/lib/compliance/access'
-import { KNOWN_OBLIGATION_ERRORS } from '@/lib/compliance/errors'
+import { FIELD_LABELS, obligationErrorLines } from '@/lib/compliance/errors'
 import { buildManualFallback } from '@/lib/compliance/fallback'
 import { Badge } from '@bookone/ui/components/badge'
 import { Button } from '@bookone/ui/components/button'
@@ -41,6 +41,7 @@ export default async function ObligationPage({
 
   const t = await getTranslations('console.compliance')
   const errors = await getTranslations('console.arrival.obligation.errors')
+  const fields = await getTranslations('console.arrival.schedinaFields')
   const format = await getFormatter()
   const base = `/${locale}/${slug}/console/compliance`
   const now = new Date()
@@ -65,7 +66,12 @@ export default async function ObligationPage({
     }
   }
 
-  const known = obligation.lastError ? KNOWN_OBLIGATION_ERRORS[obligation.lastError] : undefined
+  const errorLines = obligationErrorLines(
+    obligation.lastError,
+    (key, values) => errors(key as Parameters<typeof errors>[0], values),
+    (field) =>
+      FIELD_LABELS[field] ? fields(FIELD_LABELS[field] as Parameters<typeof fields>[0]) : field,
+  )
   const deadline = format.dateTime(obligation.deadline, {
     timeZone: property.timezone,
     weekday: 'long',
@@ -118,12 +124,14 @@ export default async function ObligationPage({
             </dd>
           </div>
         </dl>
-        {obligation.lastError && obligation.state !== 'acknowledged' && (
-          <p
-            className={`text-xs ${obligation.state === 'manual' ? 'text-destructive' : 'text-muted-foreground'}`}
+        {errorLines.length > 0 && obligation.state !== 'acknowledged' && (
+          <div
+            className={`flex flex-col gap-0.5 text-xs ${obligation.state === 'manual' ? 'text-destructive' : 'text-muted-foreground'}`}
           >
-            {known ? errors(known) : obligation.lastError}
-          </p>
+            {errorLines.map((line, index) => (
+              <p key={index}>{line}</p>
+            ))}
+          </div>
         )}
         {obligation.state === 'submitted' && (
           <p className="text-muted-foreground text-xs">{t('submittedHint')}</p>

@@ -210,7 +210,21 @@
         "evidenceManual": "Quittung von Hand erfasst (Prüfsumme)",
         "errors": {
           "notConfirmed": "Niemand hat die Gäste bisher anhand der Dokumente bestätigt: bitte oben bestätigen.",
-          "deadlineClose": "Die Frist läuft bald ab: bitte mit der Datei unten von Hand melden."
+          "deadlineClose": "Die Frist läuft bald ab: bitte mit der Datei unten von Hand melden.",
+          "stayGone": "Den Aufenthalt gibt es nicht mehr.",
+          "checkFailed": "Der Kanal konnte nicht sagen, ob die Meldung angenommen wurde. Wir fragen erneut.",
+          "nothingStaged": "Es war nichts zum Einreichen bereit. Wir versuchen es erneut.",
+          "noReference": "Der Kanal hat keine Referenz für die Meldung zurückgegeben. Wir fragen erneut.",
+          "notConfirmedByChannel": "Der Kanal hat sie angenommen, aber noch nicht bestätigt: Prüfen Sie das Portal, bevor Sie von Hand einreichen.",
+          "credentialsRefused": "Das Portal hat die Zugangsdaten des Betriebs abgelehnt. Antwort: „{said}“",
+          "channelHttp": "Der Kanal hat nicht korrekt geantwortet (HTTP {status}).",
+          "ambiguous": "Keine Antwort nach dem Senden: Die Meldung ist möglicherweise angekommen. Prüfen Sie den Tagesbeleg im Portal, bevor Sie von Hand einreichen.",
+          "unreadable": "Die Antwort des Kanals konnte nicht gelesen werden.",
+          "guestIssue": "Gast {guest}, {field}: {problem}",
+          "originMissing": "Aufenthalt {reference}: Wohnsitz oder Staatsangehörigkeit eines Gastes ist nicht erfasst.",
+          "channelSaid": "Der Kanal hat geantwortet: „{said}“",
+          "refused": "Das Meldesystem der Questura hat die Meldung abgelehnt. Im Wortlaut (Italienisch):",
+          "refusedLine": "Gast {guest}: „{said}“"
         },
         "fallbackTitle": "Meldung von Hand",
         "fallbackHint": "Dieselbe Datei, die wir senden würden, eine Zeile pro Gast. Die Schritte folgen dem Portal, das nur auf Italienisch ist.",

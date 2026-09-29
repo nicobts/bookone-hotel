@@ -210,7 +210,21 @@
         "evidenceManual": "Ricevuta registrata a mano (impronta)",
         "errors": {
           "notConfirmed": "Nessuno ha ancora confermato gli ospiti sui documenti: confermali qui sopra.",
-          "deadlineClose": "La scadenza è vicina: inviala a mano con il file qui sotto."
+          "deadlineClose": "La scadenza è vicina: inviala a mano con il file qui sotto.",
+          "stayGone": "Il soggiorno non esiste più.",
+          "checkFailed": "Il canale non ha saputo dire se l’invio è stato accettato. Lo richiederemo.",
+          "nothingStaged": "Non c’era nulla di pronto da inviare. Riproveremo.",
+          "noReference": "Il canale non ha restituito un riferimento per l’invio. Lo richiederemo.",
+          "notConfirmedByChannel": "Il canale l’ha ricevuta ma non l’ha ancora confermata: controlla sul portale prima di inviarla a mano.",
+          "credentialsRefused": "Il portale ha rifiutato le credenziali della struttura. Ha risposto: “{said}”",
+          "channelHttp": "Il canale non ha risposto correttamente (HTTP {status}).",
+          "ambiguous": "Nessuna risposta dopo l’invio: potrebbe essere arrivata. Controlla la ricevuta del giorno sul portale prima di inviarla a mano.",
+          "unreadable": "Non è stato possibile leggere la risposta del canale.",
+          "guestIssue": "Ospite {guest}, {field}: {problem}",
+          "originMissing": "Soggiorno {reference}: la residenza o la cittadinanza di un ospite non è registrata.",
+          "channelSaid": "Il canale ha risposto: “{said}”",
+          "refused": "Il sistema della Questura ha rifiutato l’invio. Con le sue parole:",
+          "refusedLine": "Ospite {guest}: “{said}”"
         },
         "fallbackTitle": "Invio a mano",
         "fallbackHint": "Lo stesso file che invieremmo noi, una riga per ospite. I passaggi seguono le voci del portale, che è solo in italiano.",

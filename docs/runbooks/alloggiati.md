@@ -180,6 +180,14 @@ list that reveals one per round trip takes four conversations with the guest.
 down — are retried by the queue. Non-retryable ones mean the payload was
 rejected, and the reason is the authority's own message.
 
+The console shows `last_error` in the desk's language (`apps/web/src/lib/compliance/errors.ts`):
+our own sentences are translated, a refusal is framed as the registry's and each guest's line is
+quoted in the registry's own words (Italian), because a paraphrased refusal cannot be quoted back
+to the Questura. A message the console does not recognise is shown as "the channel said", as
+written. One gap remains: a missing or unresolved field names the field in the desk's language, but
+the resolver's explanation after it is still English, because it is written as a sentence in core.
+Making it a code is a change to the resolver.
+
 **A filing-deadline alert fired.** Since WP1.5 this is the alert ladder: the
 filing appears in the exceptions inbox twelve hours before its deadline, the
 staff phones get a message at six and the owner at three (per property). Open

@@ -4,7 +4,7 @@ import { listExceptions, type ExceptionItem } from '@bookone/core/db'
 import type { Feature } from '@bookone/core/onboarding'
 import { ADAPTER_FEATURES } from '@bookone/core/compliance'
 import { PageShell } from '@/components/shell/page-shell'
-import { KNOWN_OBLIGATION_ERRORS } from '@/lib/compliance/errors'
+import { FIELD_LABELS, obligationErrorLines } from '@/lib/compliance/errors'
 import { propertyFeatures, requireProperty } from '@/lib/auth/current-property'
 import { Badge } from '@bookone/ui/components/badge'
 import { Button } from '@bookone/ui/components/button'
@@ -136,11 +136,19 @@ async function ExceptionRow({
             : t('complianceDayBody', { deadline })
         : t('discrepancyBody')
 
-  const knownError =
+  const fields = await getTranslations('console.arrival.schedinaFields')
+  // A filing's reason in the desk's language; any other exception's detail as written.
+  const detail =
     item.kind === 'compliance-deadline' && item.detail
-      ? KNOWN_OBLIGATION_ERRORS[item.detail]
-      : undefined
-  const detail = knownError ? errors(knownError) : item.detail
+      ? obligationErrorLines(
+          item.detail,
+          (key, values) => errors(key as Parameters<typeof errors>[0], values),
+          (field) =>
+            FIELD_LABELS[field]
+              ? fields(FIELD_LABELS[field] as Parameters<typeof fields>[0])
+              : field,
+        ).join(' ')
+      : item.detail
 
   const reason =
     item.kind === 'compliance-deadline'
