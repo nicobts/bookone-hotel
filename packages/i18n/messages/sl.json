@@ -224,7 +224,8 @@
           "originMissing": "Bivanje {reference}: prebivališče ali državljanstvo gosta ni zabeleženo.",
           "channelSaid": "Kanal je odgovoril: „{said}“",
           "refused": "Sistem kvesture je zavrnil prijavo. Z njegovimi besedami (v italijanščini):",
-          "refusedLine": "Gost {guest}: „{said}“"
+          "refusedLine": "Gost {guest}: „{said}“",
+          "noChannel": "Za to prijavo še ni kanala: oddajte jo ročno."
         },
         "fallbackTitle": "Ročna prijava",
         "fallbackHint": "Ista datoteka, ki bi jo poslali mi, ena vrstica na gosta. Koraki sledijo portalu, ki je samo v italijanščini.",

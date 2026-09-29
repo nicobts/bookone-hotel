@@ -8,6 +8,9 @@ describe('describeObligationError', () => {
       { key: 'deadlineClose' },
     ])
     expect(describeObligationError('The stay no longer exists.')).toEqual([{ key: 'stayGone' }])
+    expect(describeObligationError('No channel to file this with yet: file it by hand.')).toEqual([
+      { key: 'noChannel' },
+    ])
   })
 
   it('keeps the registry’s refusal in its own words, guest by guest', () => {

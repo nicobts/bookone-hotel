@@ -224,7 +224,8 @@
           "originMissing": "Stay {reference}: a guest’s residence or citizenship is not recorded.",
           "channelSaid": "The channel said: “{said}”",
           "refused": "The Questura’s registry refused the filing. In its own words:",
-          "refusedLine": "Guest {guest}: “{said}”"
+          "refusedLine": "Guest {guest}: “{said}”",
+          "noChannel": "There is no channel to file this with yet: file it by hand."
         },
         "fallbackTitle": "Filing by hand",
         "fallbackHint": "The same file we would send, one line per guest. The steps follow the portal, which is in Italian only.",

@@ -224,7 +224,8 @@
           "originMissing": "Soggiorno {reference}: la residenza o la cittadinanza di un ospite non è registrata.",
           "channelSaid": "Il canale ha risposto: “{said}”",
           "refused": "Il sistema della Questura ha rifiutato l’invio. Con le sue parole:",
-          "refusedLine": "Ospite {guest}: “{said}”"
+          "refusedLine": "Ospite {guest}: “{said}”",
+          "noChannel": "Non c’è ancora un canale per inviarla: inviala a mano."
         },
         "fallbackTitle": "Invio a mano",
         "fallbackHint": "Lo stesso file che invieremmo noi, una riga per ospite. I passaggi seguono le voci del portale, che è solo in italiano.",

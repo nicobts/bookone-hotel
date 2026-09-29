@@ -224,7 +224,8 @@
           "originMissing": "Aufenthalt {reference}: Wohnsitz oder Staatsangehörigkeit eines Gastes ist nicht erfasst.",
           "channelSaid": "Der Kanal hat geantwortet: „{said}“",
           "refused": "Das Meldesystem der Questura hat die Meldung abgelehnt. Im Wortlaut (Italienisch):",
-          "refusedLine": "Gast {guest}: „{said}“"
+          "refusedLine": "Gast {guest}: „{said}“",
+          "noChannel": "Es gibt noch keinen Kanal für diese Meldung: Reichen Sie sie von Hand ein."
         },
         "fallbackTitle": "Meldung von Hand",
         "fallbackHint": "Dieselbe Datei, die wir senden würden, eine Zeile pro Gast. Die Schritte folgen dem Portal, das nur auf Italienisch ist.",

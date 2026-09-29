@@ -27,6 +27,7 @@ export type ErrorKey =
   | 'nothingStaged'
   | 'noReference'
   | 'notConfirmedByChannel'
+  | 'noChannel'
   | 'credentialsRefused'
   | 'channelHttp'
   | 'ambiguous'
@@ -44,6 +45,7 @@ const EXACT: Record<string, ErrorKey> = {
   'The channel returned no reference for the filing.': 'noReference',
   'The channel took it but has not confirmed it yet: check the portal before filing by hand.':
     'notConfirmedByChannel',
+  'No channel to file this with yet: file it by hand.': 'noChannel',
 }
 
 const PATTERNS: [RegExp, (match: RegExpMatchArray) => ErrorPart][] = [
