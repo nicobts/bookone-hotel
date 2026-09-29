@@ -137,7 +137,8 @@ describe('a property’s declaration', () => {
 
   it('reads only its own property’s stays', async () => {
     await db.execute(sql`
-      update properties set settings = settings || '{"accommodationCategory": "hotel-3"}'::jsonb
+      update properties
+         set settings = settings || '{"jurisdiction": {"region": "IT-36", "comune": "999001"}, "accommodationCategory": "hotel-3"}'::jsonb
        where id = ${fixture.beta.propertyId}`)
     const beta = await declarationForProperty(fixture.beta.propertyId, {
       from: '2026-06-01',

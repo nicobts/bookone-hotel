@@ -104,6 +104,21 @@ export function computeStayTax(rules: ComuneRules, stay: TaxStay): StayTax {
   for (let guestIndex = 0; guestIndex < size; guestIndex += 1) {
     const guest = stay.guests[guestIndex]
     const age = guest?.birthDate ? ageOn(guest.birthDate, stay.arrivalDate) : null
+    // A recorded guest with no birth date is charged as an adult. Say so when
+    // any version during the stay has an age rule, rather than guess.
+    if (guest && age === null) {
+      const ageRules = nights.some((date) => {
+        const version = versionOn(rules, date)
+        return (
+          version !== null &&
+          (version.exemptions.some((exemption) => exemption.kind === 'age') ||
+            version.reductions.length > 0)
+        )
+      })
+      if (ageRules) {
+        issues.push(`guest ${guestIndex + 1}: no birth date; charged as an adult`)
+      }
+    }
 
     const taxNights = nights.map((date, index): TaxNight => {
       const exempt = (code: string): TaxNight => ({
