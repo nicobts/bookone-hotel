@@ -227,6 +227,24 @@ describe('the imposta, golden bookings (WP1.4)', () => {
     ])
   })
 
+  it('flags a recorded guest with no birth date where age rules apply', () => {
+    const tax = computeStayTax(
+      esempio,
+      stay({ arrivalDate: '2026-05-10', departureDate: '2026-05-12', guests: [{}] }),
+    )
+    expect(tax.totalCents).toBe(400) // charged as an adult
+    expect(tax.issues).toEqual(['guest 1: no birth date; charged as an adult'])
+  })
+
+  it('escapes a reference in the declaration file', () => {
+    const declaration = buildDeclaration(
+      esempio,
+      [stay({ reference: '=CMD()', arrivalDate: '2026-05-10', departureDate: '2026-05-11' })],
+      { from: '2026-05-01', to: '2026-05-31' },
+    )
+    expect(declarationCsv(declaration).split('\r\n')[1]).toMatch(/^'=CMD\(\);/)
+  })
+
   it('rounds half up, from hundredths of a cent', () => {
     expect([roundCentiCents(12050), roundCentiCents(12049), roundCentiCents(12060)]).toEqual([
       121, 120, 121,
