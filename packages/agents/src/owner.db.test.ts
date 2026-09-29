@@ -17,9 +17,13 @@ let propertyId: string
 beforeAll(async () => {
   const [property] = await db.execute<{ id: string }>(
     sql`insert into properties (slug, name, settings)
-        values (${slug}, 'Owner Test', '{"ownerPhones": ["+39 040 0000001"]}'::jsonb) returning id`,
+        values (${slug}, 'Owner Test', '{}'::jsonb) returning id`,
   )
   propertyId = property!.id
+  await db.execute(
+    sql`insert into property_contacts (property_id, role, name, phone)
+        values (${propertyId}, 'owner', 'Owner', '+390400000001')`,
+  )
 
   await db.execute(
     sql`insert into entitlements (property_id, feature) values (${propertyId}, 'concierge')`,

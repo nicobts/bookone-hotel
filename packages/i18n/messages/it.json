@@ -813,6 +813,46 @@
       "sectionProfiles": "Di cosa si occupa",
       "sectionTools": "Cosa può fare",
       "sectionRules": "Regole che non infrange mai"
+    },
+    "contacts": {
+      "title": "Chi avvisiamo",
+      "body": "I numeri che la piattaforma contatta quando un ospite aspetta o sta per scadere una comunicazione obbligatoria. Solo i titolari vedono questo elenco. Siete voi i titolari del trattamento di questi numeri: informate ogni persona prima di aggiungerla e rimuovete chi lo chiede o lascia la struttura.",
+      "role": {
+        "owner": "Titolare",
+        "staff": "Personale"
+      },
+      "roleLabel": "Riceve",
+      "receives": {
+        "owner": "Ospiti in attesa, l'assistente del titolare su WhatsApp e l'ultimo promemoria prima di una scadenza.",
+        "staff": "Il primo promemoria prima di una scadenza."
+      },
+      "none": {
+        "owner": "Nessuno. Nessuno viene avvisato quando un ospite aspetta, e l'assistente del titolare non risponde a nessuno.",
+        "staff": "Nessuno. Il primo promemoria telefonico va solo ai numeri del titolare."
+      },
+      "informedOn": "Informato il {date}",
+      "notInformed": "Non confermato",
+      "confirmInformed": "Conferma che è stato informato",
+      "remove": "Rimuovi",
+      "add": "Aggiungi una persona",
+      "name": "Nome",
+      "nameExample": "Marta, reception",
+      "phone": "Numero di cellulare",
+      "phoneHint": "Con il prefisso internazionale, per esempio +39 o 0039. I messaggi arrivano su WhatsApp, o via SMS se è attivo solo quello.",
+      "informed": "Ho informato questa persona che il suo numero è usato per avvisarla di ospiti e scadenze, tramite Twilio e, su WhatsApp, Meta.",
+      "addButton": "Aggiungi",
+      "toast": {
+        "added": "Aggiunto",
+        "removed": "Rimosso",
+        "confirmed": "Confermato"
+      },
+      "error": {
+        "phone": "Inserisci il numero con il prefisso internazionale, per esempio +39 333 123 4567.",
+        "name": "Inserisci un nome di al massimo 80 caratteri.",
+        "informed": "Conferma di aver informato questa persona prima di aggiungerla.",
+        "duplicate": "Questo numero è già nell'elenco per quel ruolo.",
+        "generic": "Non è andato a buon fine. Ricarica la pagina e riprova."
+      }
     }
   },
   "noProperty": {

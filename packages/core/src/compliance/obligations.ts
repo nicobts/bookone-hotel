@@ -716,6 +716,8 @@ export interface OwnerObligationRow {
   deadline: Date
   /** The guest's name or booking reference; the day for a daily return. */
   subject: string
+  /** The stay, when the filing is about one: how an answer naming it is found. */
+  reservationId: string | null
   timeZone: string
 }
 
@@ -743,6 +745,7 @@ export async function listObligationsForOwner(
         state: complianceObligations.state,
         deadline: complianceObligations.deadline,
         periodDate: complianceObligations.periodDate,
+        reservationId: complianceObligations.reservationId,
         reference: reservations.reference,
         guestName: sql<
           string | null
@@ -768,6 +771,7 @@ export async function listObligationsForOwner(
     state: row.state,
     deadline: row.deadline,
     subject: row.guestName ?? row.reference ?? row.periodDate ?? '—',
+    reservationId: row.reservationId,
     timeZone: row.timeZone,
   }))
 }

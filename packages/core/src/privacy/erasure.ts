@@ -300,6 +300,57 @@ export async function eraseGuest(deps: ErasureDeps, input: ErasureInput): Promis
     )
 
     /*
+     * Pages to the property's own people about this guest's stay.
+     *
+     * They carry no `reservation_id` (its deduplication would drop the second
+     * recipient) and name the stay in the payload instead. The payload is what
+     * held the guest; the recipient is a member of staff, whose number is not
+     * this guest's to erase, so it stays and still answers "was I paged?".
+     */
+    const stays = sql`array[${sql.join(
+      stayIds.map((id) => sql`${id}`),
+      sql`, `,
+    )}]::text[]`
+
+    record(
+      'notifications',
+      await asService((db) =>
+        db
+          .update(notifications)
+          .set({ payload: {} })
+          .where(
+            and(
+              eq(notifications.propertyId, propertyId),
+              eq(notifications.alert, true),
+              sql`${notifications.payload}->>'reservationId' = any(${stays})`,
+            ),
+          )
+          .returning({ id: notifications.id }),
+      ),
+    )
+
+    /*
+     * The owner agent's answers that named this guest ("who arrives
+     * tomorrow?"). No thread leads to them; each run records the stays its
+     * answer listed, in `output.reservationIds`.
+     */
+    record(
+      'agent_runs',
+      await asService((db) =>
+        db
+          .update(agentRuns)
+          .set({ toolCalls: [], output: {} })
+          .where(
+            and(
+              eq(agentRuns.propertyId, propertyId),
+              sql`${agentRuns.output}->'reservationIds' ?| ${stays}`,
+            ),
+          )
+          .returning({ id: agentRuns.id }),
+      ),
+    )
+
+    /*
      * The billing details, which the first version of this routine kept.
      *
      * The data map claimed a carve-out on the grounds that the property issues

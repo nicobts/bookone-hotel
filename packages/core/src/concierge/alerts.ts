@@ -3,6 +3,7 @@ import { asService } from '../db/session'
 import { guests, properties, reservations } from '../db/schema'
 import { readContactEmail } from '../booking/request'
 import { ESCALATION_ALERT, queueNotification } from '../notifications'
+import { contactPhones } from '../contacts'
 
 /**
  * Telling the property somebody is waiting (E3.2 SLA alert).
@@ -76,10 +77,10 @@ export async function alertEscalation(input: {
     }
 
     // The owner's phones, on the first messaging channel the property has on:
-    // WhatsApp, else SMS (ADR-035). Numbers come only from `ownerPhones`, the
-    // same recorded list that gates the owner agent.
+    // WhatsApp, else SMS (ADR-035). Numbers come only from the property's
+    // `owner` contacts, the same list that gates the owner agent.
     const phoneChannel = await phoneChannelFor(db, input.propertyId)
-    const phones = phoneChannel ? readPhones(row.settings, 'ownerPhones') : []
+    const phones = phoneChannel ? await contactPhones(db, input.propertyId, 'owner') : []
 
     if (!contact && phones.length === 0) return null
 
@@ -102,6 +103,7 @@ export async function alertEscalation(input: {
             locale: row.localeDefault,
             recipient: contact,
             payload,
+            alert: { about: input.reservationId },
           })
         : null
 
@@ -114,6 +116,7 @@ export async function alertEscalation(input: {
           locale: row.localeDefault,
           recipient: phone,
           payload,
+          alert: { about: input.reservationId },
         })
         first ??= id
       }
@@ -137,19 +140,4 @@ export async function phoneChannelFor(
            exists (select 1 from entitlements where property_id = ${propertyId}
                     and feature = 'sms' and ended_at is null) as sms`)
   return channels?.whatsapp ? 'whatsapp' : channels?.sms ? 'sms' : null
-}
-
-/**
- * A phone list from settings (`ownerPhones`, `staffPhones`) as E.164; anything
- * without a country code is dropped rather than guessed at.
- */
-export function readPhones(settings: unknown, key: 'ownerPhones' | 'staffPhones'): string[] {
-  const raw = (settings as Record<string, unknown> | null)?.[key]
-  if (!Array.isArray(raw)) return []
-  const phones = raw
-    .map((value) => String(value).trim())
-    .filter((value) => value.startsWith('+'))
-    .map((value) => `+${value.replace(/\D/g, '')}`)
-    .filter((value) => /^\+[1-9]\d{6,14}$/.test(value))
-  return [...new Set(phones)]
 }

@@ -237,16 +237,39 @@ export async function buildGuestExport(input: ExportInput): Promise<GuestExport>
     ),
   )
 
-  data.notifications = await byStay((ids) =>
-    asService((db) =>
+  data.notifications = await byStay(async (ids) => {
+    const toGuest = await asService((db) =>
       db
         .select()
         .from(notifications)
         .where(
           and(inArray(notifications.reservationId, ids), eq(notifications.propertyId, propertyId)),
         ),
-    ),
-  )
+    )
+    /*
+     * Pages to the property's own people about this stay, which name the
+     * guest in their payload. What was said about the guest is theirs; the
+     * number it went to is a member of staff's, and never leaves the property
+     * in a guest's bundle.
+     */
+    const stays = sql`array[${sql.join(
+      ids.map((id) => sql`${id}`),
+      sql`, `,
+    )}]::text[]`
+    const aboutGuest = await asService((db) =>
+      db
+        .select()
+        .from(notifications)
+        .where(
+          and(
+            eq(notifications.propertyId, propertyId),
+            eq(notifications.alert, true),
+            sql`${notifications.payload}->>'reservationId' = any(${stays})`,
+          ),
+        ),
+    )
+    return [...toGuest, ...aboutGuest.map((row) => ({ ...row, recipient: null }))]
+  })
 
   data.stay_tasks = await byStay((ids) =>
     asService((db) =>

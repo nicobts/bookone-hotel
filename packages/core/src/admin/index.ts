@@ -103,6 +103,31 @@ async function liveFeatures(tx: Tx, propertyId: string): Promise<string[]> {
   return rows.map((row) => row.feature).sort()
 }
 
+/**
+ * Whether another property records the same sender number for this channel,
+ * compared as inbound routing compares it (`channels/inbound.ts`).
+ */
+async function numberSharedWithAnother(
+  tx: Tx,
+  propertyId: string,
+  channel: 'whatsapp' | 'sms',
+): Promise<boolean> {
+  const key = channel === 'whatsapp' ? 'whatsappNumber' : 'smsNumber'
+  const digits = (column: ReturnType<typeof sql>) =>
+    sql`regexp_replace(coalesce(${column}, ''), '\\D', '', 'g')`
+  const [row] = await tx.execute<{ shared: boolean }>(sql`
+    select exists (
+      select 1
+        from properties mine
+        join properties other
+          on other.id <> mine.id
+         and ${digits(sql`other.settings->>${key}`)} = ${digits(sql`mine.settings->>${key}`)}
+       where mine.id = ${propertyId}
+         and ${digits(sql`mine.settings->>${key}`)} <> ''
+    ) as shared`)
+  return Boolean(row?.shared)
+}
+
 /** Grant or revoke one feature, audited. Idempotent in both directions. */
 export async function adminSetFeature(
   staff: StaffActor,
@@ -121,6 +146,18 @@ export async function adminSetFeature(
       reason: input.reason,
     },
     async (tx) => {
+      // One number, one property: inbound routing refuses a number two
+      // properties record, so enabling the second would silence both.
+      if (
+        input.enabled &&
+        (input.feature === 'whatsapp' || input.feature === 'sms') &&
+        (await numberSharedWithAnother(tx, input.propertyId, input.feature))
+      ) {
+        throw new AdminRefused(
+          `another property records the same ${input.feature === 'whatsapp' ? 'WhatsApp' : 'SMS'} number`,
+        )
+      }
+
       const before = await liveFeatures(tx, input.propertyId)
       const changed = input.enabled
         ? (

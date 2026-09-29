@@ -178,11 +178,13 @@ async function purgeColumns(
 async function deleteRows(
   input: RetentionInput,
   entry: DataMapEntry & { retention: { kind: 'delete-rows' } },
+  sooner?: { afterDays: number; where: string },
 ): Promise<number> {
   const { retention } = entry
   const table = identifier(entry.table)
-  const older = sql`${sql.raw(identifier(retention.anchor))} < ${cutoff(retention.afterDays, input.now)}`
-  const where = sql`property_id = ${input.propertyId} and ${older}`
+  const older = sql`${sql.raw(identifier(retention.anchor))} < ${cutoff(sooner?.afterDays ?? retention.afterDays, input.now)}`
+  const subset = sooner ? sql` and ${sql.raw(guardWhere(sooner.where))}` : sql``
+  const where = sql`property_id = ${input.propertyId} and ${older}${subset}`
 
   if (input.dryRun) {
     return count(sql`select count(*)::int as n from ${sql.raw(table)} where ${where}`)
@@ -221,7 +223,7 @@ async function deleteRows(
  * Rather than inventing a predicate language for one caller, the shape is
  * pinned: a column, `=`, a quoted literal.
  */
-const SIMPLE_PREDICATE = /^[a-z_][a-z0-9_]* = '[a-z_]+'$/
+const SIMPLE_PREDICATE = /^[a-z_][a-z0-9_]* = ('[a-z_]+'|true|false)$/
 
 function guardWhere(value: string): string {
   if (!SIMPLE_PREDICATE.test(value)) {
@@ -253,6 +255,25 @@ export async function runRetention(input: RetentionInput): Promise<RetentionOutc
   const results: RetentionResult[] = []
 
   for (const entry of executableRules()) {
+    /*
+     * The shorter period first, as its own result: a rule for pages to staff
+     * that starts failing must show up as itself, not as a quieter total.
+     */
+    const sooner = entry.retention.kind === 'delete-rows' ? entry.retention.sooner : undefined
+    if (sooner) {
+      try {
+        const affected = await deleteRows(input, entry as never, sooner)
+        results.push({ table: entry.table, rule: 'delete-rows:sooner', affected })
+      } catch (error) {
+        results.push({
+          table: entry.table,
+          rule: 'delete-rows:sooner',
+          affected: 0,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
+    }
+
     try {
       const affected =
         entry.retention.kind === 'purge-columns'
@@ -328,8 +349,10 @@ export function declaredPeriods(): { table: string; period: string; why: string 
       case 'delete-rows':
         return {
           table: entry.table,
-          period: `deleted after ${retention.afterDays} days`,
-          why: retention.why,
+          period: retention.sooner
+            ? `deleted after ${retention.afterDays} days; where ${retention.sooner.where}, after ${retention.sooner.afterDays} days`
+            : `deleted after ${retention.afterDays} days`,
+          why: retention.sooner ? `${retention.why} ${retention.sooner.why}` : retention.why,
         }
       case 'job':
         return { table: entry.table, period: `on ${retention.job}`, why: retention.why }

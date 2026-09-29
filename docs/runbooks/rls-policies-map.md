@@ -53,6 +53,7 @@ only (`user_property_ids_admin()`).
 |---|---|---|---|---|---|
 | `properties` | member | any authenticated¹ | owner | — ² | 2026-08-28 |
 | `property_members` | member | owner | owner | owner | 2026-08-28 |
+| `property_contacts` | owner | owner | owner | owner | 2026-09-28 — both paths by query (`rls/property-contacts.test.ts`): alpha's receptionist (a member, not an owner) reads zero rows through PostgREST and through `withUser`, and alpha's settings no longer hold the numbers; beta's owner sees only beta's row on PostgREST and nothing of alpha's through `withUser`; the receptionist's insert is refused with `42501`, and a delete by the receptionist or by beta's owner removes nothing. Negative control: select opened to members (`user_property_ids()`) failed the receptionist test, then restored. Truncate revoked from client roles |
 | `guests` | member | member | member | — ³ | 2026-08-28 |
 | `room_types` | member | owner | owner | owner | 2026-08-28 |
 | `rate_snapshots` | member | — ⁴ | — ⁴ | — ⁴ | 2026-08-28 |

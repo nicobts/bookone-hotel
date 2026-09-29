@@ -353,6 +353,49 @@ export const propertyMembers = pgTable(
   ],
 )
 
+/**
+ * The people a property pages, by phone (privacy runbook, "Owner and staff
+ * contact numbers").
+ *
+ * `owner` numbers reach the owner agent and get the escalation page and the
+ * owner rung of the filing-deadline alert; `staff` numbers get the staff rung.
+ * They lived in `properties.settings` until this table, where every member
+ * could read them: a receptionist could read the owner's personal number.
+ * Here only owners read or change them (RLS), and the service role reads them
+ * to page or to recognise the owner, one property at a time.
+ *
+ * Not a membership: the person paged is often not a console user at all (a
+ * night porter, a family member). The property is their controller; it tells
+ * them before listing them, and `informed_at` is it saying so.
+ */
+export const propertyContacts = pgTable(
+  'property_contacts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+    role: text('role').notNull(),
+    /** How the property knows them: "Marta, reception". */
+    name: text('name').notNull(),
+    /** E.164, normalised on the way in. */
+    phone: text('phone').notNull(),
+    /**
+     * When the owner confirmed the person was told their number is used for
+     * these pages (Art. 13). Null only for numbers carried over from
+     * `settings`, which the screen flags until someone confirms.
+     */
+    informedAt: timestamp('informed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('property_contacts_property_role_phone').on(t.propertyId, t.role, t.phone),
+    check('property_contacts_role', sql`${t.role} in ('owner', 'staff')`),
+    check('property_contacts_phone_e164', sql`${t.phone} ~ '^\\+[1-9][0-9]{6,14}$'`),
+    check('property_contacts_name', sql`length(btrim(${t.name})) between 1 and 80`),
+  ],
+)
+
 // ---------------------------------------------------------------------------
 // External references (ADR-001, D10)
 // ---------------------------------------------------------------------------
@@ -918,6 +961,13 @@ export const notifications = pgTable(
 
     /** Last failure, human-readable. Kept even after a later attempt succeeds. */
     lastError: text('last_error'),
+
+    /**
+     * A page to the property's own people (`property_contacts`), not a
+     * message to a guest. Kept 90 days instead of two years (data map): it
+     * answers "was I paged?", and nothing a guest is owed.
+     */
+    alert: boolean('alert').notNull().default(false),
 
     sentAt: timestamp('sent_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

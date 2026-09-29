@@ -236,10 +236,10 @@ export const SUBPROCESSORS: SubProcessor[] = [
     id: 'SP-013',
     name: 'Twilio (Twilio Ireland Ltd)',
     purpose:
-      'WhatsApp and SMS: guest conversations on WhatsApp, owner alerts and handoffs to the owner’s phone (ADR-035).',
+      'WhatsApp and SMS: guest conversations on WhatsApp, owner alerts and handoffs to the owner’s phone, and filing-deadline alerts to the property’s staff and owner (ADR-035, ADR-039).',
     dataCategories: [
-      'guest and owner phone numbers',
-      'message text in transit',
+      'guest, owner and staff phone numbers',
+      'message text in transit, which in an alert to staff or the owner can include a guest’s name',
       'delivery status metadata',
     ],
     region:
