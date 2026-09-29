@@ -9,6 +9,7 @@ import {
 import { emit } from '../events'
 import { userActor } from '../events/actor'
 import { zonedStartOfDay } from '../policy/booking-policy'
+import { csvCell } from './csv'
 import type { ObligationType } from './adapter'
 import { addDays } from './istat'
 import type { ObligationState } from './lifecycle'
@@ -312,10 +313,6 @@ export async function inspectionExport(
       withoutEvidence: acknowledged.filter((row) => !row.evidence).length,
     },
   }
-}
-
-function csvCell(value: string): string {
-  return /[;"\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
 }
 
 /** The receipt's own reference, whichever name the channel or the person gave it. */
