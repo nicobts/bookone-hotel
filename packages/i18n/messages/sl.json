@@ -184,7 +184,9 @@
         "confirmed": "Dokumenti potrjeni",
         "confirmedDescription": "Potrditev je zabeležena na vaše ime.",
         "notConfirmed": "Potrditev ni mogoča",
-        "notConfirmedDescription": "Manjka podatek prijavnice ali dokument vsaj enega gosta."
+        "notConfirmedDescription": "Manjka podatek prijavnice ali dokument vsaj enega gosta.",
+        "retrying": "Ponoven poskus prek kanala",
+        "retryingDescription": "Rezultat se bo kmalu prikazal pri tem bivanju."
       },
       "obligation": {
         "authorities": {
@@ -214,7 +216,9 @@
           "inbox": "izjeme",
           "staff": "osebje",
           "owner": "lastnik"
-        }
+        },
+        "retryChannel": "Poskusi znova prek kanala",
+        "retryChannelHint": "Če storitev spet deluje, gre prijava prek nje in potrdilo se shrani kot dokaz. Sicer se tukaj prikaže razlog in prijava ostane pri vas."
       }
     },
     "conversations": {

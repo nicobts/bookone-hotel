@@ -3,6 +3,7 @@ import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/serve
 import { CheckCircle2Icon, DownloadIcon, FlaskConicalIcon, TriangleAlertIcon } from 'lucide-react'
 import { getArrival } from '@bookone/core/db'
 import { getSchedinaPreview } from '@bookone/core/journey'
+import { configuredCodes } from '@bookone/core/alloggiati'
 import {
   readingMismatches,
   registrationToGuestDetails,
@@ -24,7 +25,7 @@ import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Separator } from '@bookone/ui/components/separator'
 import { formatDate } from '@/components/booking/format'
 import { KNOWN_OBLIGATION_ERRORS } from '@/lib/compliance/errors'
-import { confirmDocumentsAction, fileNow, markArrived } from './actions'
+import { confirmDocumentsAction, fileNow, markArrived, retryByChannel } from './actions'
 
 /**
  * One arrival, and the registry filing that follows it (E2.3, E3.1).
@@ -64,7 +65,9 @@ export default async function ArrivalPage({
   const filing = await hasFeature(property.id, 'alloggiati')
   // The schedina preview and its confirmation belong to pre-arrival (WP0.4).
   const schedina = (await hasFeature(property.id, 'prearrival'))
-    ? await getSchedinaPreview(property.id, reservationId)
+    ? // With the registry's codes when they are configured (WP1.2): a birthplace
+      // the registry does not know shows here, while the guest is at the desk.
+      await getSchedinaPreview(property.id, reservationId, await configuredCodes())
     : null
   const context = { locale, slug, reservationId }
 
@@ -286,6 +289,7 @@ export default async function ArrivalPage({
                     }
                   : null
               }
+              retry={obligation.state === 'manual' ? retryByChannel.bind(null, context) : null}
             />
           ))}
 
@@ -379,11 +383,14 @@ function Obligation({
   t,
   when,
   fallback,
+  retry,
 }: {
   obligation: ObligationView
   t: Awaited<ReturnType<typeof getTranslations<'console.arrival'>>>
   when: string
   fallback: { steps: string[]; href: string } | null
+  /** "Try the channel again", offered once the filing is with a person (WP1.2). */
+  retry: ((formData: FormData) => Promise<void>) | null
 }) {
   const needsPerson = obligation.state === 'manual'
   const variant =
@@ -460,6 +467,19 @@ function Obligation({
               {t('obligation.fallbackDownload')}
             </a>
           </Button>
+          {retry && (
+            // After an outage, before filing by hand: one more attempt through
+            // the channel, whose receipt then becomes the evidence.
+            <form action={retry} className="mt-3">
+              <input type="hidden" name="obligationId" value={obligation.id} />
+              <PendingButton size="sm" variant="ghost">
+                {t('obligation.retryChannel')}
+              </PendingButton>
+              <p className="text-muted-foreground mt-1 text-xs">
+                {t('obligation.retryChannelHint')}
+              </p>
+            </form>
+          )}
         </div>
       )}
     </div>

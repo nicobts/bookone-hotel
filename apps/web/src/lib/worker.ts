@@ -445,6 +445,18 @@ export async function submitAlloggiatiNow(input: {
 }
 
 /**
+ * "Try the channel again" for a filing handed to a person (WP1.2): one attempt,
+ * queued. The result shows on the stay when the worker has run it.
+ */
+export async function retryFilingByChannel(input: {
+  propertyId: string
+  obligationId: string
+  userId: string
+}): Promise<boolean> {
+  return post('/jobs/compliance-retry', input)
+}
+
+/**
  * Apply an erasure request (E8.1).
  *
  * The one call in this module that is **not** best-effort in the way the header

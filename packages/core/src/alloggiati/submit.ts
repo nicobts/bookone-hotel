@@ -14,6 +14,8 @@ import { systemActor, userActor, type Actor } from '../events/actor'
 import { applyJourneyCommandIn } from '../journey/apply'
 import { hasFeatureSql } from '../onboarding/features'
 import { AlloggiatiError, type AlloggiatiAdapter } from './adapter'
+import type { CodeResolver } from './codes'
+import { resolveParty } from './resolve'
 import { buildPayload, validateParty, type GuestDetails, type ValidationIssue } from './record'
 
 /**
@@ -50,6 +52,13 @@ export async function stageAlloggiati(input: {
   reservationId: string
   channel: string
   actor?: Actor
+  /**
+   * The registry's codes, for a channel that needs them (WP1.2). Every value
+   * the guest wrote is resolved before the payload is built, and anything that
+   * does not resolve is an issue the desk can fix, not a filing the authority
+   * refuses. Absent (the mock), the payload carries what the guest wrote.
+   */
+  codes?: CodeResolver
 }): Promise<StageOutcome> {
   const { propertyId, reservationId, channel } = input
 
@@ -111,7 +120,12 @@ export async function stageAlloggiati(input: {
   const issues = validateParty(party, stay)
   if (issues.length > 0) return { status: 'incomplete', issues }
 
-  const payload = buildPayload(party as GuestDetails[], stay)
+  const coded = input.codes
+    ? resolveParty(party as GuestDetails[], stay, input.codes)
+    : { party: party as GuestDetails[], issues: [] }
+  if (coded.issues.length > 0) return { status: 'incomplete', issues: coded.issues }
+
+  const payload = buildPayload(coded.party, stay)
   const checksum = createHash('sha256').update(payload).digest('hex')
 
   return asService((db) =>
@@ -161,7 +175,14 @@ export type SubmitOutcome =
   /** Filed, awaiting the authority. The sweep picks it up. */
   | { status: 'submitted'; submissionId: string }
   | { status: 'already-done'; submissionId: string }
-  | { status: 'failed'; submissionId: string; reason: string; retryable: boolean }
+  | {
+      status: 'failed'
+      submissionId: string
+      reason: string
+      retryable: boolean
+      /** The channel's own classification, kept so "wrong credentials" is not read as "rejected". */
+      code: AlloggiatiError['code']
+    }
   | { status: 'nothing-staged' }
 
 /**
@@ -256,6 +277,7 @@ export async function submitAlloggiati(
       submissionId: staged.id,
       reason: error.message,
       retryable: error.retryable,
+      code: error.code,
     }
   }
 
@@ -774,6 +796,8 @@ export async function refreshAlloggiatiAcknowledgement(
 export async function buildAlloggiatiFile(input: {
   propertyId: string
   reservationId: string
+  /** The registry's codes; with them, every value is resolved first (WP1.2). */
+  codes?: CodeResolver | null
 }): Promise<
   | { status: 'ready'; content: string; guestCount: number; arrivalDate: string }
   | { status: 'incomplete'; issues: ValidationIssue[] }
@@ -816,9 +840,14 @@ export async function buildAlloggiatiFile(input: {
   const issues = validateParty(party, stay)
   if (issues.length > 0 || party.length === 0) return { status: 'incomplete', issues }
 
+  const coded = input.codes
+    ? resolveParty(party as GuestDetails[], stay, input.codes)
+    : { party: party as GuestDetails[], issues: [] }
+  if (coded.issues.length > 0) return { status: 'incomplete', issues: coded.issues }
+
   return {
     status: 'ready',
-    content: buildPayload(party as GuestDetails[], stay),
+    content: buildPayload(coded.party, stay),
     guestCount: party.length,
     arrivalDate: stay.arrivalDate,
   }

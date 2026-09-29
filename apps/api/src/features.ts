@@ -24,6 +24,7 @@ export const ROUTE_FEATURE: Record<string, Gate> = {
   '/jobs/guest-message': 'inbox',
   '/jobs/depart': 'core',
   '/jobs/alloggiati-submit': 'alloggiati',
+  '/jobs/compliance-retry': 'alloggiati',
   '/jobs/document-extract': 'document_ocr',
   '/jobs/owner-message': 'concierge',
   '/jobs/agent-preview': 'concierge',

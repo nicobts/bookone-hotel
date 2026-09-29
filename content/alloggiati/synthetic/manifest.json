@@ -1,0 +1,13 @@
+{
+  "source": "synthetic",
+  "fetchedAt": "2026-09-28",
+  "note": "Test and simulator tables. The codes exist nowhere: never use these with a real channel. The official tables are downloaded from Alloggiati Web by an operator (docs/runbooks/alloggiati.md).",
+  "documentMap": {
+    "passport": "SYNPA",
+    "idCard": "SYNID",
+    "drivingLicence": "SYNPT"
+  },
+  "countryAliases": {
+    "US": "STATI UNITI D'AMERICA"
+  }
+}

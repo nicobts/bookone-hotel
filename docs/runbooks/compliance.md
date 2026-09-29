@@ -160,6 +160,13 @@ rather than quoting buttons.
 stores the receipt as evidence with `source = 'manual'` and the person's id. The console screen for
 this (upload plus "mark submitted manually") is WP1.6. Until then, an operator runs it on request.
 
+**Trying the channel again (WP1.2).** When the channel was down and is back before the deadline,
+**Try the channel again** on the stay makes one attempt through it (`retryManualObligation`, job
+`compliance.retry`). On success the obligation is `acknowledged` with the channel's receipt as
+evidence (`source = 'channel'`), and `compliance_obligation.channel_retried` names who pressed it.
+On failure it stays `manual`, with the channel's reason. The sweep never retries a `manual` filing
+on its own.
+
 ## Evidence
 
 `compliance_evidence` holds each acknowledgement's receipt and the SHA-256 of its canonical JSON.
@@ -172,8 +179,10 @@ this (upload plus "mark submitted manually") is WP1.6. Until then, an operator r
 
 ## Not built yet
 
-- **WP1.2:** the real Alloggiati Web client. It needs software-house registration, a pilot's
-  credentials and certificate, and Secret Manager.
+- **WP1.2, the real endpoint.** The client, the adapter, the code tables and the daily
+  reconciliation are built and run against a local simulator (`docs/runbooks/alloggiati.md`). A
+  real filing still needs the software-house registration, a pilot's credentials in Secret Manager,
+  the official code tables, and the owner's go-ahead.
 - **WP1.3–1.4:** the WebTur FVG and imposta adapters. The registry already names them, and the
   generation job reports them as unsupported until they exist.
 - **WP1.6:** the compliance dashboard, the inspection export and the manual-receipt screen.

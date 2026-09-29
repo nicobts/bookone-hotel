@@ -16,12 +16,22 @@ import { AlloggiatiError, RECORD_WIDTH, type AlloggiatiAdapter } from '@bookone/
 export function describeAlloggiatiContract(
   name: string,
   createAdapter: () => AlloggiatiAdapter | Promise<AlloggiatiAdapter>,
+  options: {
+    /**
+     * A two-guest file this channel accepts. A channel that validates the
+     * content, as the Alloggiati Web service does, needs real records; the
+     * default is two lines of the declared width, which is enough for one that
+     * checks only the shape.
+     */
+    validPayload?: () => string
+  } = {},
 ): void {
   const propertyId = 'contract-property'
   const reservationId = 'aa11bb22-cc33-dd44-ee55-ff6677889900'
 
-  /** A syntactically valid file: two records of exactly the declared width. */
-  const validPayload = ['X'.repeat(RECORD_WIDTH), 'Y'.repeat(RECORD_WIDTH)].join('\r\n')
+  // Read inside each test: a channel's valid file may need tables loaded first.
+  const valid = (): string =>
+    options.validPayload?.() ?? ['X'.repeat(RECORD_WIDTH), 'Y'.repeat(RECORD_WIDTH)].join('\r\n')
 
   describe(`AlloggiatiAdapter contract — ${name}`, () => {
     it('names its channel and says whether it is simulated', async () => {
@@ -40,7 +50,7 @@ export function describeAlloggiatiContract(
       const result = await adapter.submit({
         propertyId,
         reservationId,
-        payload: validPayload,
+        payload: valid(),
         guestCount: 2,
       })
 
@@ -80,7 +90,7 @@ export function describeAlloggiatiContract(
         adapter.submit({
           propertyId,
           reservationId,
-          payload: validPayload,
+          payload: valid(),
           guestCount: 5,
         }),
       ).rejects.toBeInstanceOf(AlloggiatiError)
@@ -102,7 +112,7 @@ export function describeAlloggiatiContract(
       const submitted = await adapter.submit({
         propertyId,
         reservationId,
-        payload: validPayload,
+        payload: valid(),
         guestCount: 2,
       })
 

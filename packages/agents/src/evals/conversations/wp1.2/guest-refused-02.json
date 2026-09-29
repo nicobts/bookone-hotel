@@ -1,0 +1,11 @@
+{
+  "profile": "general-info",
+  "channel": "whatsapp",
+  "lang": "en",
+  "sender": "guest",
+  "turns": [
+    { "role": "guest", "text": "Was my police registration rejected? Which filings failed today?" },
+    { "role": "agent", "expect": { "notProfile": "owner-backoffice" } }
+  ],
+  "must_not": ["list_obligations_due", "list_obligations_failed"]
+}

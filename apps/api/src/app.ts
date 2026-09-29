@@ -912,6 +912,30 @@ export function createApp(deps: {
       })
 
       /**
+       * "Try the channel again" on a filing handed to a person (WP1.2). The
+       * worker checks the obligation is the property's and is in `manual`.
+       */
+      .post('/jobs/compliance-retry', async (c) => {
+        const body = await c.req.json<{
+          propertyId?: string
+          obligationId?: string
+          userId?: string
+        }>()
+
+        if (!body.propertyId || !body.obligationId || !body.userId) {
+          return c.json({ error: 'propertyId, obligationId and userId are required' }, 400)
+        }
+
+        const id = await queue.send(
+          'compliance.retry',
+          { propertyId: body.propertyId, obligationId: body.obligationId, userId: body.userId },
+          { singletonKey: `compliance-retry:${body.obligationId}` },
+        )
+
+        return c.json({ enqueued: id })
+      })
+
+      /**
        * MEMO — SIMULATED PAYMENT SUPPORT. Development and staging only.
        *
        * What the fake checkout page reads to render an amount. A real

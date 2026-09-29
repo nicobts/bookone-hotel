@@ -3,7 +3,7 @@ import { createLogger, startTelemetry } from '@bookone/telemetry'
 import { fileURLToPath } from 'node:url'
 import { MockEricsoftAdapter } from '@bookone/adapters/mock-ericsoft'
 import { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
-import { MockAlloggiatiAdapter } from '@bookone/adapters/mock-alloggiati'
+import { createAlloggiatiAdapter } from './alloggiati'
 import {
   COMPLIANCE_ALERT,
   ESCALATION_ALERT,
@@ -100,14 +100,16 @@ if (env.NODE_ENV === 'production' && paymentAdapter.simulated) {
  *
  * MEMO — SIMULATED. Nothing is filed with any authority. The direct-web-service
  * versus certified-intermediary decision is still open (04 §0 item 5), so this
- * ships behind a port exactly as the PMS connector and payments did.
+ * ships behind a port exactly as the PMS connector and payments did. The
+ * choice is `ALLOGGIATI_CHANNEL`: the mock, or the Alloggiati Web adapter on
+ * the local simulator (WP1.2).
  *
  * The guard below matters more here than for payments. A property that believes
  * its guests are registered when nothing was filed is a property facing a fine
  * for a breach it does not know about — so a simulated channel refuses to boot
  * in production, loudly, rather than warning into a log nobody reads.
  */
-const alloggiatiAdapter = new MockAlloggiatiAdapter()
+const alloggiatiAdapter = await createAlloggiatiAdapter(env)
 
 if (env.NODE_ENV === 'production' && alloggiatiAdapter.simulated) {
   throw new Error(

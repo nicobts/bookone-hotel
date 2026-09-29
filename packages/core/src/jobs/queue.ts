@@ -52,6 +52,10 @@ export const jobNames = [
   'compliance.sweep',
   /** Advance one compliance obligation by one step (ADR-039). */
   'compliance.run',
+  /** A person asks the channel to try a filing handed to them once more (WP1.2). */
+  'compliance.retry',
+  /** Compare one day's Alloggiati filings with the channel's side (WP1.2). */
+  'alloggiati.reconcile',
   /** Answer one guest message with AG-01 (E3.2). */
   'concierge.reply',
   /** Tell the property a guest has been waiting on a person too long (E3.2). */
@@ -175,6 +179,10 @@ export interface JobPayloads {
   'compliance.generate': Record<string, never>
   'compliance.sweep': Record<string, never>
   'compliance.run': { propertyId: string; obligationId: string }
+  /** `userId` is who pressed the button; the event records them. */
+  'compliance.retry': { propertyId: string; obligationId: string; userId: string }
+  /** `day` defaults to the property's yesterday, in its own zone: what the schedule wants. */
+  'alloggiati.reconcile': { propertyId: string; day?: string }
   /**
    * One turn of a conversation (E3.2).
    *

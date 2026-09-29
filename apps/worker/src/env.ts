@@ -87,6 +87,22 @@ const envSchema = z.object({
   TWILIO_TEMPLATE_COMPLIANCE_ALERT: z.string().startsWith('HX').optional(),
   /** `apps/api`'s public URL, for delivery-status callbacks. */
   TWILIO_WEBHOOK_BASE_URL: z.string().url().optional(),
+
+  /**
+   * The Alloggiati channel (WP1.2). `mock` files nothing and needs nothing.
+   * `simulator` talks to the local Alloggiati Web simulator
+   * (`pnpm alloggiati:simulator`) with the registry's code tables, and still
+   * files nothing: the adapter refuses any host but this machine. There is no
+   * value for the real service yet (docs/runbooks/alloggiati.md).
+   */
+  ALLOGGIATI_CHANNEL: z.enum(['mock', 'simulator']).default('mock'),
+  ALLOGGIATI_ENDPOINT: z.string().url().optional(),
+  /** The code tables: an operator-downloaded official set, or `content/alloggiati/synthetic`. */
+  ALLOGGIATI_TABLES_DIR: z.string().min(1).optional(),
+  /** The simulator's test user. Not a secret: the simulator accepts nothing else. */
+  ALLOGGIATI_SIMULATOR_USERNAME: z.string().default('TS000001'),
+  ALLOGGIATI_SIMULATOR_PASSWORD: z.string().default('simulator'),
+  ALLOGGIATI_SIMULATOR_WSKEY: z.string().default('SIMKEY'),
 })
 
 export type Env = z.infer<typeof envSchema>

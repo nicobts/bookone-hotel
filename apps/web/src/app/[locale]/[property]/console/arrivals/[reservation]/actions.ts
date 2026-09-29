@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { getTranslations } from 'next-intl/server'
 import { flash } from '@bookone/ui/lib/flash-server'
 import { requireFeature, requireProperty } from '@/lib/auth/current-property'
-import { confirmArrival, submitAlloggiatiNow } from '@/lib/worker'
+import { confirmArrival, retryFilingByChannel, submitAlloggiatiNow } from '@/lib/worker'
 import { confirmDocuments } from '@bookone/core/journey'
 
 /**
@@ -75,6 +75,28 @@ export async function fileNow(context: Context): Promise<void> {
 
   const t = await toasts(context)
   if (sent) await flash.info(t('filing'), t('filingDescription'))
+  else await flash.error(t('unreachable'), t('unreachableDescription'))
+
+  revalidatePath(`/${context.locale}/${context.slug}/console/arrivals/${context.reservationId}`)
+}
+
+/**
+ * Try the channel again, for a filing handed to a person (WP1.2). Usually the
+ * outage is over and there is still time; the channel's own receipt is better
+ * evidence than a protocol number typed in by hand. One attempt, queued: a
+ * refusal stays on the stay with the channel's reason.
+ */
+export async function retryByChannel(context: Context, formData: FormData): Promise<void> {
+  const { user, property } = await requireFeature(context.locale, context.slug, 'alloggiati')
+
+  const sent = await retryFilingByChannel({
+    propertyId: property.id,
+    obligationId: String(formData.get('obligationId') ?? ''),
+    userId: user.id,
+  })
+
+  const t = await toasts(context)
+  if (sent) await flash.info(t('retrying'), t('retryingDescription'))
   else await flash.error(t('unreachable'), t('unreachableDescription'))
 
   revalidatePath(`/${context.locale}/${context.slug}/console/arrivals/${context.reservationId}`)

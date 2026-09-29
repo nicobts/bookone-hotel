@@ -184,7 +184,9 @@
         "confirmed": "Dokumente bestätigt",
         "confirmedDescription": "Die Bestätigung ist auf Ihren Namen erfasst.",
         "notConfirmed": "Bestätigung nicht möglich",
-        "notConfirmedDescription": "Ein Meldefeld oder das Dokument eines Gastes fehlt."
+        "notConfirmedDescription": "Ein Meldefeld oder das Dokument eines Gastes fehlt.",
+        "retrying": "Neuer Versuch über den Kanal",
+        "retryingDescription": "Das Ergebnis erscheint gleich bei diesem Aufenthalt."
       },
       "obligation": {
         "authorities": {
@@ -214,7 +216,9 @@
           "inbox": "Ausnahmen",
           "staff": "Personal",
           "owner": "Inhaber"
-        }
+        },
+        "retryChannel": "Erneut über den Kanal versuchen",
+        "retryChannelHint": "Ist der Dienst wieder erreichbar, geht die Meldung darüber und die Quittung wird als Nachweis aufbewahrt. Sonst steht hier der Grund, und die Meldung bleibt bei Ihnen."
       }
     },
     "conversations": {

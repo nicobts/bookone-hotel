@@ -184,7 +184,9 @@
         "confirmed": "Documenti confermati",
         "confirmedDescription": "La conferma è registrata a tuo nome.",
         "notConfirmed": "Non è stato possibile confermare",
-        "notConfirmedDescription": "Manca un dato della scheda o il documento di almeno un ospite."
+        "notConfirmedDescription": "Manca un dato della scheda o il documento di almeno un ospite.",
+        "retrying": "Nuovo tentativo con il canale",
+        "retryingDescription": "Il risultato compare su questo soggiorno tra poco."
       },
       "obligation": {
         "authorities": {
@@ -214,7 +216,9 @@
           "inbox": "eccezioni",
           "staff": "personale",
           "owner": "titolare"
-        }
+        },
+        "retryChannel": "Riprova con il canale",
+        "retryChannelHint": "Se il servizio è tornato disponibile, la comunicazione parte da lì e la ricevuta viene conservata come prova. Altrimenti il motivo compare qui e la comunicazione resta a voi."
       }
     },
     "conversations": {

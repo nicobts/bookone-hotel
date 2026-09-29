@@ -1,0 +1,11 @@
+{
+  "profile": "owner-backoffice",
+  "channel": "whatsapp",
+  "lang": "de",
+  "sender": "owner",
+  "turns": [
+    { "role": "owner", "text": "Wurde eine Meldung an die Questura abgelehnt?" },
+    { "role": "agent", "expect": { "tool": "list_obligations_failed" } }
+  ],
+  "must_not": ["write"]
+}

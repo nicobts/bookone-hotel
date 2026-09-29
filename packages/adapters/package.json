@@ -11,6 +11,8 @@
     "./payment": "./src/payment/index.ts",
     "./mock-payment": "./src/mock-payment/index.ts",
     "./mock-alloggiati": "./src/mock-alloggiati/index.ts",
+    "./alloggiati": "./src/alloggiati/index.ts",
+    "./alloggiati-web": "./src/alloggiati-web/index.ts",
     "./compliance": "./src/compliance/index.ts",
     "./mock-compliance": "./src/mock-compliance/index.ts",
     "./pg-boss": "./src/pg-boss/index.ts",
