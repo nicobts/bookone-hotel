@@ -129,3 +129,11 @@ export function resolveAdapters(
 
   return { resolved, missing }
 }
+
+/** The region whose registry entry names a regional adapter, or null. */
+export function regionOf(adapterId: string, registry: Registry = REGISTRY): string | null {
+  for (const [code, region] of Object.entries(registry.regions)) {
+    if (region.regional.some((entry) => entry.adapter === adapterId)) return code
+  }
+  return null
+}

@@ -56,6 +56,11 @@ export const FEATURES = [
   'pms_sync',
   /** Alloggiati Web filing (E2.3). Off in Guest Desk Phase 0. */
   'alloggiati',
+  /**
+   * The regional ISTAT movement return (plan §2, WP1.3): WebTur for Friuli
+   * Venezia Giulia. Off in Phase 0; on mocks only until the Regione's spec.
+   */
+  'istat_regional',
   /** Rooms / IoT. Interface only (`stay/door.ts`); nothing to gate yet. */
   'rooms',
   /** Module fees on the monthly report (D14 row 4). Designed for, not yet populated. */

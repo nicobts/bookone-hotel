@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { MockEricsoftAdapter } from '@bookone/adapters/mock-ericsoft'
 import { MockPaymentAdapter } from '@bookone/adapters/mock-payment'
 import { createAlloggiatiAdapter } from './alloggiati'
+import { MockIstatTransport } from '@bookone/adapters/mock-istat'
 import {
   COMPLIANCE_ALERT,
   ESCALATION_ALERT,
@@ -111,6 +112,13 @@ if (env.NODE_ENV === 'production' && paymentAdapter.simulated) {
  */
 const alloggiatiAdapter = await createAlloggiatiAdapter(env)
 
+/**
+ * WebTur's route for the ISTAT return (WP1.3): the mock, outside production
+ * only. There is no real one until the Regione's specification; in production
+ * the obligation has no adapter and the console says the manual route applies.
+ */
+const istatTransport = env.NODE_ENV === 'production' ? null : new MockIstatTransport()
+
 if (env.NODE_ENV === 'production' && alloggiatiAdapter.simulated) {
   throw new Error(
     `Refusing to start: Alloggiati channel "${alloggiatiAdapter.channel}" is simulated and ` +
@@ -184,6 +192,7 @@ await registerHandlers({
   adapter,
   payments: paymentAdapter,
   alloggiati: alloggiatiAdapter,
+  istat: istatTransport,
   notifications,
   deleteObject,
   readObject,

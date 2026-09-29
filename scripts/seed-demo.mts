@@ -276,10 +276,16 @@ for (const feature of [
   'booking_engine',
   'document_ocr',
   'alloggiati',
+  // The daily ISTAT return (WP1.3), on the mock transport: the demo is in FVG.
+  'istat_regional',
   ...(WHATSAPP_NUMBER ? (['whatsapp'] as const) : []),
 ] as const) {
   await grantEntitlement({ propertyId, feature, note: 'seed-demo' })
 }
+// Three days of ISTAT returns to show: as if the demo had switched the return
+// on three days ago. Demo property only.
+await sql`update entitlements set granted_at = now() - interval '3 days'
+           where property_id = ${propertyId} and feature = 'istat_regional'`
 
 // ---------------------------------------------------------------- bookings
 type Stage = 'future' | 'invited' | 'details' | 'documents' | 'inhouse' | 'departed'

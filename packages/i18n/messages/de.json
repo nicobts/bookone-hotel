@@ -127,7 +127,10 @@
       },
       "complianceTitle": "Pflichtmeldung fällig",
       "complianceBody": "Noch nicht übermittelt. Frist: {deadline}. Öffnen Sie den Aufenthalt, um zu sehen, was fehlt, oder melden Sie mit der Datei dort von Hand.",
-      "complianceLate": "Die Frist ist abgelaufen ({deadline}). Bitte jetzt mit der Datei des Aufenthalts von Hand melden."
+      "complianceLate": "Die Frist ist abgelaufen ({deadline}). Bitte jetzt mit der Datei des Aufenthalts von Hand melden.",
+      "complianceDayBody": "Noch nicht gemeldet. Frist: {deadline}. Laden Sie die Datei des Tages herunter und tragen Sie sie im Portal ein.",
+      "complianceDayLate": "Die Frist ist abgelaufen ({deadline}). Tragen Sie den Tag jetzt im Portal ein, aus der Datei des Tages.",
+      "dayFile": "Datei des Tages"
     },
     "arrival": {
       "title": "Anreise",

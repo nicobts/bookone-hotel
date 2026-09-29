@@ -33,7 +33,7 @@ build). Remove every piece with `grep -rn DEV-LOGIN-HELPER`.
 The Phase 1 gate (5 named pilots and the Regione letter) has not been passed. Phase 1 is being
 built ahead of it **on mocks only**, with the owner's approval of 2026-09-28. No authority is
 called and nothing is filed. Branches `guest-desk/wp1.1`, then `guest-desk/wp1.5`, then
-`guest-desk/wp1.2`.
+`guest-desk/wp1.2`, then `guest-desk/wp1.3`.
 
 | WP1.1 acceptance item | State | What is left |
 |---|---|---|
@@ -80,6 +80,26 @@ WP1.2 as built, **on the simulator only**:
 Not built, and not to be improvised: a Secret Manager `CredentialSource`, the official tables, and
 the real endpoint. The message layout and two filing rules come from public documentation; they are
 go-live checks in `docs/runbooks/alloggiati.md`.
+
+| WP1.3 acceptance item | State | What is left |
+|---|---|---|
+| 30 consecutive simulated days produce a correct daily series (hand-computed fixture) | ✅ | `compliance/istat.test.ts`. Eight stays over October, including one that starts before the period, one that ends after it, a party with an unrecorded guest, and a zero-length stay, checked against a series worked out by hand for every day: arrivals, departures, presences, rooms occupied |
+| Zero-presence days are reported | ✅ | Every day is in the series, and each day is an obligation; the 15 quiet days of the fixture are asserted by name. A quiet day files as zero against the database (`rls/webtur.test.ts`) |
+| Manual fallback file matches the portal's expected format (validated with a pilot) | 🟨 | The day's file exists (semicolon CSV by origin, total, rooms occupied) and is downloadable from the inbox. Its format waits for the Regione's specification and a pilot |
+
+WP1.3 as built, **on a mock transport only**:
+- The daily series (`compliance/istat.ts`), and one `istat_movement` obligation per day from the
+  feature's grant (at most a week back), zero days included (`compliance/webtur.ts`).
+- The WebTur adapter behind an `IstatTransport` port, with its contract suite and
+  `MockIstatTransport` (`packages/adapters`). No transport is registered in production.
+- The day's fallback file, and the comparison with what the portal holds.
+- A new feature, `istat_regional` (plan §2), off except on the demo property.
+- 7 replayed conversations (`conversations/wp1.3/`).
+
+Two open questions for the Regione:
+- **Origin.** ISTAT counts by residence; we count by citizenship when residence is not recorded,
+  and say how many.
+- **The deadline.** We use the end of the following day.
 
 | ADR | Decision | Built? | Where |
 |---|---|---|---|

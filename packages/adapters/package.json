@@ -13,6 +13,8 @@
     "./mock-alloggiati": "./src/mock-alloggiati/index.ts",
     "./alloggiati": "./src/alloggiati/index.ts",
     "./alloggiati-web": "./src/alloggiati-web/index.ts",
+    "./istat": "./src/istat/index.ts",
+    "./mock-istat": "./src/mock-istat/index.ts",
     "./compliance": "./src/compliance/index.ts",
     "./mock-compliance": "./src/mock-compliance/index.ts",
     "./pg-boss": "./src/pg-boss/index.ts",

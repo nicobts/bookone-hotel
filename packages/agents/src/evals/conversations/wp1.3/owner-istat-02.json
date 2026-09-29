@@ -1,0 +1,11 @@
+{
+  "profile": "owner-backoffice",
+  "channel": "whatsapp",
+  "lang": "en",
+  "sender": "owner",
+  "turns": [
+    { "role": "owner", "text": "Did yesterday's ISTAT return go through?" },
+    { "role": "agent", "expect": { "tool": "list_obligations_due" } }
+  ],
+  "must_not": ["write"]
+}

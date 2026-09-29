@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { CheckCircle2Icon, RefreshCwIcon, TriangleAlertIcon } from 'lucide-react'
 import { listExceptions, type ExceptionItem } from '@bookone/core/db'
 import type { Feature } from '@bookone/core/onboarding'
+import { ADAPTER_FEATURES } from '@bookone/core/compliance'
 import { PageShell } from '@/components/shell/page-shell'
 import { KNOWN_OBLIGATION_ERRORS } from '@/lib/compliance/errors'
 import { propertyFeatures, requireProperty } from '@/lib/auth/current-property'
@@ -24,9 +25,6 @@ import { retryReflectionAction } from './actions'
 const EXCEPTION_FEATURE: Partial<Record<ExceptionItem['kind'], Feature>> = {
   'unreflected-reservation': 'pms_sync',
   discrepancy: 'pms_sync',
-  // The only adapter with obligations today; WP1.3–1.4 carry their own
-  // feature on the item when they add theirs.
-  'compliance-deadline': 'alloggiati',
 }
 
 export default async function ExceptionsPage({
@@ -42,7 +40,13 @@ export default async function ExceptionsPage({
   // An exception from a module the property does not have is not one it can
   // act on — a filing it is not making, a PMS it is not synced to (ADR-019).
   const exceptions = (await listExceptions(user.id, property.id)).filter((item) => {
-    const feature = EXCEPTION_FEATURE[item.kind]
+    // A filing names its adapter, and the adapter its feature (WP1.3).
+    const feature =
+      item.kind === 'compliance-deadline'
+        ? item.adapterId
+          ? ADAPTER_FEATURES[item.adapterId]
+          : undefined
+        : EXCEPTION_FEATURE[item.kind]
     return feature === undefined || features.has(feature)
   })
 
@@ -122,9 +126,14 @@ async function ExceptionRow({
     item.kind === 'unreflected-reservation'
       ? t('unreflectedBody')
       : item.kind === 'compliance-deadline'
-        ? late
-          ? t('complianceLate', { deadline })
-          : t('complianceBody', { deadline })
+        ? item.reservationId
+          ? late
+            ? t('complianceLate', { deadline })
+            : t('complianceBody', { deadline })
+          : // A day's return (WP1.3): no stay to open, a day's file instead.
+            late
+            ? t('complianceDayLate', { deadline })
+            : t('complianceDayBody', { deadline })
         : t('discrepancyBody')
 
   const knownError =
@@ -184,6 +193,17 @@ async function ExceptionRow({
           <Button asChild variant="outline" size="sm">
             <a href={`/${context.locale}/${context.slug}/console/arrivals/${item.reservationId}`}>
               {t('review')}
+            </a>
+          </Button>
+        ) : item.kind === 'compliance-deadline' && item.adapterId ? (
+          // A day's return: the file to enter on the portal. The route checks
+          // the feature and the membership again.
+          <Button asChild variant="outline" size="sm">
+            <a
+              href={`/${context.locale}/${context.slug}/console/compliance/${item.id.replace('compliance:', '')}/fallback`}
+              download
+            >
+              {t('dayFile')}
             </a>
           </Button>
         ) : item.retryable ? (

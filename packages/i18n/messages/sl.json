@@ -127,7 +127,10 @@
       },
       "complianceTitle": "Obvezna prijava zapada",
       "complianceBody": "Še ni poslana. Rok: {deadline}. Odprite bivanje in preverite, kaj manjka, ali jo pošljite ročno z datoteko.",
-      "complianceLate": "Rok je potekel ({deadline}). Pošljite jo ročno zdaj z datoteko bivanja."
+      "complianceLate": "Rok je potekel ({deadline}). Pošljite jo ročno zdaj z datoteko bivanja.",
+      "complianceDayBody": "Še ni poslano. Rok: {deadline}. Prenesite datoteko dneva in jo vnesite na portalu.",
+      "complianceDayLate": "Rok je potekel ({deadline}). Dan zdaj vnesite na portalu, iz datoteke dneva.",
+      "dayFile": "Datoteka dneva"
     },
     "arrival": {
       "title": "Prihod",

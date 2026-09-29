@@ -127,7 +127,10 @@
       },
       "complianceTitle": "Comunicazione obbligatoria in scadenza",
       "complianceBody": "Non ancora inviata. Scadenza: {deadline}. Apri il soggiorno per vedere cosa manca o per inviarla a mano con il file.",
-      "complianceLate": "La scadenza è passata ({deadline}). Inviala a mano adesso con il file del soggiorno."
+      "complianceLate": "La scadenza è passata ({deadline}). Inviala a mano adesso con il file del soggiorno.",
+      "complianceDayBody": "Non ancora inviata. Scadenza: {deadline}. Scarica il file del giorno e inseriscilo nel portale.",
+      "complianceDayLate": "La scadenza è passata ({deadline}). Inserisci subito la giornata nel portale, dal file del giorno.",
+      "dayFile": "File del giorno"
     },
     "arrival": {
       "title": "Arrivo",
