@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { chooseOwnerTool, phoneKey } from './owner'
+import { toE164 } from '@bookone/core/contacts'
+import { chooseOwnerTool } from './owner'
 
 describe("the owner's assistant — routing by rules (WP0.5)", () => {
   it.each([
@@ -29,8 +30,13 @@ describe("the owner's assistant — routing by rules (WP0.5)", () => {
 })
 
 describe('phone numbers', () => {
-  it('compares on digits, with or without the international prefix style', () => {
-    expect(phoneKey('+39 040 0000001')).toBe(phoneKey('0039 040-000-0001'))
-    expect(phoneKey('+39 040 0000001')).not.toBe(phoneKey('+39 040 0000002'))
+  it('compares as E.164, with either international prefix style', () => {
+    expect(toE164('+39 040 0000001')).toBe(toE164('0039 040-000-0001'))
+    expect(toE164('+39 040 0000001')).not.toBe(toE164('+39 040 0000002'))
+  })
+
+  it('refuses a number without a country code rather than guessing one', () => {
+    expect(toE164('040 0000001')).toBeNull()
+    expect(toE164('+39')).toBeNull()
   })
 })

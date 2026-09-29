@@ -1,6 +1,5 @@
-import { asService, properties } from '@bookone/core/db'
+import { isOwnerContact } from '@bookone/core/contacts'
 import type { LlmProvider } from '@bookone/core/llm'
-import { eq } from 'drizzle-orm'
 import { getProfile } from './profiles'
 import { PROFILE_PROMPTS } from './prompts/profiles'
 import { normalise } from './router/hard-rules'
@@ -13,35 +12,15 @@ import type { ExecuteTool } from './orchestrator'
  *
  * A separate orchestrator on a separate trigger, never a peer in a guest
  * conversation: it answers only numbers the property has recorded as its
- * owner's (`settings.ownerPhones`). Anything else is refused before a single
- * tool runs, so a guest who writes "how many arrivals tomorrow?" from their own
- * phone reaches the guest concierge, not this.
+ * owner's (its `owner` contacts, `property_contacts`). Anything else is
+ * refused before a single tool runs, so a guest who writes "how many arrivals
+ * tomorrow?" from their own phone reaches the guest concierge, not this.
  *
  * Read-only: its six tools list, and nothing it can call changes a row.
  */
 
-/** Digits only, so "+39 040 000 0001" and "0039040 0000001" compare equal. */
-export function phoneKey(phone: string): string {
-  const digits = phone.replace(/\D/g, '')
-  return digits.startsWith('00') ? digits.slice(2) : digits
-}
-
 export async function isOwnerPhone(propertyId: string, phone: string): Promise<boolean> {
-  const [row] = await asService((db) =>
-    db
-      .select({ settings: properties.settings })
-      .from(properties)
-      .where(eq(properties.id, propertyId))
-      .limit(1),
-  )
-  const recorded = (row?.settings as { ownerPhones?: unknown } | undefined)?.ownerPhones
-  if (!Array.isArray(recorded)) return false
-
-  const key = phoneKey(phone)
-  return (
-    key.length >= 6 &&
-    recorded.some((entry) => typeof entry === 'string' && phoneKey(entry) === key)
-  )
+  return isOwnerContact(propertyId, phone)
 }
 
 /*
@@ -274,6 +253,11 @@ export async function executeOwner(
       tool,
       reply: result.ok ? phrase : '',
       understood: true,
+      // The stays the reply names, so a guest's erasure finds this run
+      // (data map, `agent_runs`).
+      reservationIds: Array.isArray(result.output.reservationIds)
+        ? result.output.reservationIds
+        : [],
     },
     confidence: null,
   }

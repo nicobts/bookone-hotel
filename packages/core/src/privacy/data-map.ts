@@ -87,6 +87,13 @@ export type Retention =
        * fails here rather than at 04:00 in a job nobody is watching.
        */
       dependents?: { table: string; via: string; where?: string }[]
+      /**
+       * A shorter period for a subset of the rows, named by a simple predicate
+       * (`column = 'literal'` or `column = true`). For a table that holds two
+       * kinds of record with different worth, such as `notifications`: what the
+       * hotel told a guest, and a page to its own staff.
+       */
+      sooner?: { afterDays: number; where: string; why: string }
       why: string
     }
   | { kind: 'job'; job: string; why: string }
@@ -161,14 +168,48 @@ export const DATA_MAP: DataMapEntry[] = [
   // -------------------------------------------------------------------------
   {
     table: 'properties',
-    subject: 'none',
-    categories: [],
-    basis: 'Customer record. Contract with the property (Art. 6(1)(b)).',
+    /*
+     * Not `none`, although it was declared so until 2026-09-28: the contact
+     * email in `settings` is, at a family-run property, usually the owner's own
+     * address. The owner and staff phone numbers that also lived in `settings`
+     * moved to `property_contacts`, where only owners read them.
+     */
+    subject: 'staff',
+    categories: ['contact'],
+    basis:
+      'Customer record: contract with the property (Art. 6(1)(b)). The contact email is the one the property chose to publish to its guests.',
     retention: {
       kind: 'keep',
-      why: 'The customer relationship. Deleted when a hotel leaves and asks.',
+      why: 'The customer relationship, deleted when a hotel leaves and asks. The contact email is replaced when the property changes it.',
     },
-    erasure: { kind: 'none' },
+    erasure: {
+      kind: 'keep',
+      why: 'Not a guest. The property changes its own contact email; the guest erasure routine never reads `settings`.',
+    },
+    exportVia: 'none',
+  },
+  {
+    table: 'property_contacts',
+    /*
+     * The people a property pages by phone: its owner (the owner agent's
+     * allow-list, the escalation page, the owner rung of the filing-deadline
+     * alert) and its staff (the staff rung). Often not console users at all.
+     * The property is their controller; we page them and recognise the owner
+     * on WhatsApp, nothing else. docs/runbooks/privacy.md, "Owner and staff
+     * contact numbers".
+     */
+    subject: 'staff',
+    categories: ['identity', 'contact'],
+    basis:
+      'The property’s legitimate interest in being told a guest is waiting or a legal filing is about to be missed (Art. 6(1)(f)). The property informs each person before listing them (Art. 13), and `informed_at` records that it said so.',
+    retention: {
+      kind: 'keep',
+      why: 'While the property lists the person. The owner removes someone who asks or leaves; nothing else knows they have left. Goes with the property. Copies made when a page is sent live in `notifications` and follow its 90-day clock.',
+    },
+    erasure: {
+      kind: 'keep',
+      why: 'Not a guest. The owner removes a contact from the team screen, as the controller; a staff member’s request goes to their employer, not through the guest desk.',
+    },
     exportVia: 'none',
   },
   {
@@ -576,6 +617,13 @@ export const DATA_MAP: DataMapEntry[] = [
     exportVia: 'reservation',
   },
   {
+    /*
+     * Not only guests. Pages to the property's own people (escalation,
+     * filing-deadline) are rows here too, marked `alert`, with a staff or
+     * owner number as `recipient` and the stay they concern in
+     * `payload.reservationId` rather than the column. The guest erasure and
+     * export find them there; the export leaves the staff number out.
+     */
     table: 'notifications',
     subject: 'guest',
     categories: ['contact', 'content'],
@@ -585,11 +633,16 @@ export const DATA_MAP: DataMapEntry[] = [
       afterDays: DAYS.twoYears,
       anchor: 'created_at',
       why: '`recipient` is an email address or a phone number and `payload` is what we said. Kept as long as the messages, because it answers the same question: what did this hotel send this person.',
+      sooner: {
+        afterDays: DAYS.ninety,
+        where: 'alert = true',
+        why: 'A page to the property’s own staff or owner goes after 90 days: it answers “was I paged?”, and nothing a guest is owed.',
+      },
     },
     erasure: {
       kind: 'redact',
       columns: { recipient: "'—'", payload: "'{}'::jsonb" },
-      why: 'The row survives as proof a required notice went out; the address it went to does not.',
+      why: 'The row survives as proof a required notice went out; the address it went to does not. A page to staff about the stay loses its payload and keeps the staff number, which is not the guest’s.',
     },
     exportVia: 'reservation',
   },
@@ -639,7 +692,7 @@ export const DATA_MAP: DataMapEntry[] = [
     erasure: {
       kind: 'redact',
       columns: { tool_calls: "'[]'::jsonb", output: "'{}'::jsonb" },
-      why: 'A concierge reply quotes the guest. The run record survives so the audit trail has no hole where a person used to be.',
+      why: 'A concierge reply quotes the guest, and an owner-agent answer can name them; that run records the stays it listed in `output.reservationIds`, which is how it is found. The run record survives so the audit trail has no hole where a person used to be.',
     },
     exportVia: 'none',
   },

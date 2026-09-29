@@ -820,6 +820,46 @@
       "sectionProfiles": "Wofür er zuständig ist",
       "sectionTools": "Was er tun kann",
       "sectionRules": "Regeln, die er nie bricht"
+    },
+    "contacts": {
+      "title": "Wen wir benachrichtigen",
+      "body": "Die Telefonnummern, die die Plattform benachrichtigt, wenn ein Gast wartet oder eine gesetzliche Meldung zu spät zu kommen droht. Nur Inhaber sehen diese Liste. Sie sind für diese Nummern verantwortlich: Informieren Sie jede Person, bevor Sie sie hinzufügen, und entfernen Sie alle, die es wünschen oder das Haus verlassen.",
+      "role": {
+        "owner": "Inhaber",
+        "staff": "Personal"
+      },
+      "roleLabel": "Erhält",
+      "receives": {
+        "owner": "Wartende Gäste, den Inhaber-Assistenten auf WhatsApp und die letzte Erinnerung vor einer Meldefrist.",
+        "staff": "Die erste Erinnerung vor einer Meldefrist."
+      },
+      "none": {
+        "owner": "Niemand. Niemand wird benachrichtigt, wenn ein Gast wartet, und der Inhaber-Assistent antwortet niemandem.",
+        "staff": "Niemand. Die erste telefonische Erinnerung geht nur an die Inhabernummern."
+      },
+      "informedOn": "Informiert am {date}",
+      "notInformed": "Nicht bestätigt",
+      "confirmInformed": "Information bestätigen",
+      "remove": "Entfernen",
+      "add": "Person hinzufügen",
+      "name": "Name",
+      "nameExample": "Marta, Rezeption",
+      "phone": "Handynummer",
+      "phoneHint": "Mit Ländervorwahl, z. B. +43 oder 0043. Nachrichten kommen per WhatsApp oder per SMS, wenn nur das aktiv ist.",
+      "informed": "Ich habe diese Person informiert, dass ihre Nummer für Benachrichtigungen zu Gästen und Meldefristen genutzt wird, über Twilio und, bei WhatsApp, Meta.",
+      "addButton": "Hinzufügen",
+      "toast": {
+        "added": "Hinzugefügt",
+        "removed": "Entfernt",
+        "confirmed": "Bestätigt"
+      },
+      "error": {
+        "phone": "Geben Sie die Nummer mit Ländervorwahl ein, z. B. +43 660 123 4567.",
+        "name": "Geben Sie einen Namen mit höchstens 80 Zeichen ein.",
+        "informed": "Bestätigen Sie, dass Sie diese Person vor dem Hinzufügen informiert haben.",
+        "duplicate": "Diese Nummer steht für diese Rolle schon auf der Liste.",
+        "generic": "Das hat nicht geklappt. Laden Sie die Seite neu und versuchen Sie es noch einmal."
+      }
     }
   },
   "noProperty": {

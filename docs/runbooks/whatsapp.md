@@ -11,7 +11,8 @@ still missing before a real property uses it.
 2. `routeInboundMessage` (`packages/core/src/channels`) resolves the property by
    the number the message was sent *to*. It then checks the channel's feature
    and decides who the sender is:
-   - **Owner:** the number is in `settings.ownerPhones`. The `owner.message` job
+   - **Owner:** the number is one of the property's `owner` contacts
+     (`property_contacts`, Team → Who we page). The `owner.message` job
      runs the owner agent (AG-06), which re-checks the number, and sends the
      answer back.
    - **Guest:** an exact E.164 match on the guest phone of a confirmed stay,
@@ -75,13 +76,13 @@ should come back from the owner agent.
       can't, SP-013 says US and the delete-after-final-state behaviour carries
       the weight.
 - [ ] **Templates.** The owner's handover alert is built.
-      - It goes to every number in `ownerPhones` at the moment of handover,
+      - It goes to every `owner` contact at the moment of handover,
         through the notification outbox.
       - It uses the Twilio template in `TWILIO_TEMPLATE_ESCALATION_ALERT`,
         with {{1}} who is waiting and {{2}} the link. Submit that template to
         Meta.
-      - The filing-deadline alert (WP1.5) goes to `staffPhones` and then
-        `ownerPhones` through the same outbox, as the template in
+      - The filing-deadline alert (WP1.5) goes to the `staff` contacts and
+        then the `owner` contacts through the same outbox, as the template in
         `TWILIO_TEMPLATE_COMPLIANCE_ALERT`: {{1}} whose filing, {{2}} the
         deadline, {{3}} the link. Submit that one too.
       - Without it, free text is sent, which WhatsApp accepts only inside
@@ -91,6 +92,8 @@ should come back from the owner agent.
       than a number.
 - [ ] **Per-property numbers.** Today one sender per deployment
       (`TWILIO_WHATSAPP_FROM`); the property's `settings.whatsappNumber` must
-      match it.
+      match it. So only one property per deployment can have WhatsApp on:
+      inbound routing refuses a number two properties record, and the admin
+      console refuses to switch the channel on for the second.
 - [ ] Enabling `whatsapp` for a real property is an operator action in
       `apps/admin`, with a reason. It is never done by seed or script.

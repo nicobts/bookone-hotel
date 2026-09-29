@@ -42,9 +42,12 @@ beforeAll(async () => {
     await grantEntitlement({ propertyId: property.propertyId, feature: 'alloggiati' })
     await db.execute(sql`
       update properties
-         set settings = settings || ${JSON.stringify({ staffPhones: [STAFF], ownerPhones: [OWNER] })}::jsonb,
-             timezone = 'Europe/Rome'
+         set timezone = 'Europe/Rome'
        where id = ${property.propertyId}`)
+    await db.execute(sql`
+      insert into property_contacts (property_id, role, name, phone)
+      values (${property.propertyId}, 'staff', 'Staff', ${STAFF}),
+             (${property.propertyId}, 'owner', 'Owner', ${OWNER})`)
   }
   // Alpha can message; beta has no messaging channel on.
   await grantEntitlement({ propertyId: fixture.alpha.propertyId, feature: 'whatsapp' })

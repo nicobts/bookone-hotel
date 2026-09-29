@@ -120,6 +120,13 @@
       "when": 1790560168744,
       "tag": "20260928014928_light_tana_nile",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790583986226,
+      "tag": "20260928082626_common_synch",
+      "breakpoints": true
     }
   ]
 }

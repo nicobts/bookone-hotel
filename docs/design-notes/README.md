@@ -32,6 +32,7 @@ If a note quotes a competitor's wording, the note is wrong.
 | Monthly report | *none named in 08 §3* — proposed in the note | [monthly-report.md](monthly-report.md) |
 | Onboarding & self-service | Mews property setup + the self-serve activation checklist (Stripe) | [onboarding.md](onboarding.md) |
 | Data-subject requests | *none named in 08 §3* — proposed in the note | [privacy.md](privacy.md) |
+| Alert contacts (Team) | *none named in 08 §3* — proposed in the note | [alert-contacts.md](alert-contacts.md) |
 
 Two notes on the state of this table.
 

@@ -202,13 +202,25 @@ const [property] = await sql`
       // The agent playground runs real turns and refuses any property without
       // this flag (ADR-037). Only this seed sets it.
       demo: true,
-      ownerPhones: DEMO_OWNER_PHONE ? [...OWNER_PHONES, DEMO_OWNER_PHONE] : OWNER_PHONES,
-      staffPhones: DEMO_STAFF_PHONE ? [...STAFF_PHONES, DEMO_STAFF_PHONE] : STAFF_PHONES,
       ...(WHATSAPP_NUMBER ? { whatsappNumber: WHATSAPP_NUMBER } : {}),
     })}
   )
   returning id`
 const propertyId = property!.id as string
+
+// The people the demo pages, owner-only in the console (property_contacts).
+// Stored as E.164; `informed_at` set, since a demo contact is ours to tell.
+const contacts: [role: 'owner' | 'staff', name: string, phone: string][] = [
+  ...OWNER_PHONES.map((phone) => ['owner', 'Giulia Demo', phone] as const),
+  ...(DEMO_OWNER_PHONE ? [['owner', 'Presenter', DEMO_OWNER_PHONE] as const] : []),
+  ...STAFF_PHONES.map((phone) => ['staff', 'Luca Demo', phone] as const),
+  ...(DEMO_STAFF_PHONE ? [['staff', 'Presenter', DEMO_STAFF_PHONE] as const] : []),
+].map(([role, name, phone]) => [role, name, `+${phone.replace(/\D/g, '').replace(/^00/, '')}`])
+for (const [role, name, phone] of contacts) {
+  await sql`insert into property_contacts (property_id, role, name, phone, informed_at)
+    values (${propertyId}, ${role}, ${name}, ${phone}, now())
+    on conflict do nothing`
+}
 
 const ownerId = await createUser(OWNER_EMAIL, 'Giulia Demo')
 const staffId = await createUser(STAFF_EMAIL, 'Luca Demo')

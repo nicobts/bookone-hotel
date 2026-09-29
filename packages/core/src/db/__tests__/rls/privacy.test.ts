@@ -33,6 +33,9 @@ const NEEDLES = {
   phone: '+39 055 0000191',
 }
 
+/** A receptionist's number: paged about the guest, but not the guest's to erase. */
+const STAFF_PHONE = '+390400000999'
+
 beforeAll(async () => {
   fixture = await seed()
 }, 60_000)
@@ -294,6 +297,25 @@ async function plantGuest(propertyId: string): Promise<{ guestId: string; stayId
             ${JSON.stringify({ name: NEEDLES.name })}::jsonb)
   `)
 
+  // A page to the property's staff about this stay: no reservation_id (the
+  // column's dedupe would drop a second recipient), the stay in the payload,
+  // and the guest's name in what was said.
+  await db.execute(sql`
+    insert into notifications (property_id, channel, template, locale, recipient, payload, alert)
+    values (${propertyId}, 'whatsapp', 'compliance.alert', 'it', ${STAFF_PHONE},
+            ${JSON.stringify({ subject: NEEDLES.name, reservationId: stayId })}::jsonb, true)
+  `)
+
+  // The owner agent's answer naming the guest. No thread leads here; the run
+  // records the stays its answer listed.
+  await db.execute(sql`
+    insert into agent_runs (agent, property_id, tool_calls, output, tier_applied)
+    values ('AG-06', ${propertyId},
+            ${JSON.stringify([{ tool: 'list_arrivals', output: { phrase: 'Domani: ' + NEEDLES.name } }])}::jsonb,
+            ${JSON.stringify({ reply: 'Domani: ' + NEEDLES.name, reservationIds: [stayId] })}::jsonb,
+            'T1')
+  `)
+
   const [run] = await db.execute<{ id: string }>(sql`
     insert into agent_runs (agent, property_id, tool_calls, output, tier_applied)
     values ('AG-01', ${propertyId}, ${JSON.stringify([{ tool: 'searchKb', args: { q: NEEDLES.name } }])}::jsonb,
@@ -450,6 +472,28 @@ describe('the export bundle', () => {
     expect(records[0]).toHaveProperty('data')
   })
 
+  it('includes a page to staff about the stay, without the staff number', async () => {
+    const guestId = (
+      await db.execute<{ id: string }>(
+        sql`select id from guests where email = ${NEEDLES.email} limit 1`,
+      )
+    )[0]!.id
+
+    const bundle = await buildGuestExport({ propertyId: fixture.alpha.propertyId, guestId })
+    const rows = bundle.data.notifications as Record<string, unknown>[]
+    const page = rows.find((row) => row.alert === true)
+
+    // What was said about the guest is theirs to see ...
+    expect(page?.payload).toMatchObject({ subject: NEEDLES.name })
+    // ... the receptionist's number is not, and never leaves the property.
+    expect(page?.recipient).toBeNull()
+    expect(
+      JSON.stringify(bundle, (_key, value) =>
+        typeof value === 'bigint' ? value.toString() : (value as unknown),
+      ),
+    ).not.toContain(STAFF_PHONE)
+  })
+
   it('refuses a guest belonging to another property', async () => {
     const betaGuest = await guestOf(fixture.beta.propertyId)
 
@@ -520,6 +564,10 @@ describe('erasure', () => {
     // Neither of these appears in a filing, so both must be gone entirely.
     expect(await findAnywhere(NEEDLES.email)).toEqual([])
     expect(await findAnywhere(NEEDLES.phone)).toEqual([])
+
+    // The receptionist's number on the page about this guest is theirs, not
+    // the guest's: it stays, and still answers "was I paged?".
+    expect(await findAnywhere(STAFF_PHONE)).toEqual(['notifications.recipient'])
   })
 
   it('keeps the transaction, and says which carve-out kept it', async () => {
@@ -566,6 +614,42 @@ describe('erasure', () => {
 })
 
 describe('the retention sweep', () => {
+  it('deletes a page to staff after 90 days, and keeps a guest message of the same age', async () => {
+    const [page] = await db.execute<{ id: string }>(sql`
+      insert into notifications (property_id, channel, template, locale, recipient, payload,
+                                 alert, created_at)
+      values (${fixture.beta.propertyId}, 'whatsapp', 'compliance.alert', 'it', '+390400000998',
+              '{}'::jsonb, true, now() - interval '91 days')
+      returning id
+    `)
+    const [toGuest] = await db.execute<{ id: string }>(sql`
+      insert into notifications (property_id, channel, template, locale, recipient, payload,
+                                 created_at)
+      values (${fixture.beta.propertyId}, 'email', 'booking.request', 'it', 'old@example.invalid',
+              '{}'::jsonb, now() - interval '91 days')
+      returning id
+    `)
+    // A recent page stays: the clock runs from when it was sent.
+    const [recent] = await db.execute<{ id: string }>(sql`
+      insert into notifications (property_id, channel, template, locale, recipient, payload,
+                                 alert, created_at)
+      values (${fixture.beta.propertyId}, 'whatsapp', 'compliance.alert', 'it', '+390400000997',
+              '{}'::jsonb, true, now() - interval '89 days')
+      returning id
+    `)
+
+    const outcome = await runRetention({ propertyId: fixture.beta.propertyId })
+    const sooner = outcome.results.find(
+      (result) => result.table === 'notifications' && result.rule === 'delete-rows:sooner',
+    )!
+    expect(sooner.error).toBeUndefined()
+    expect(sooner.affected).toBe(1)
+
+    const left = await db.execute<{ id: string }>(sql`
+      select id from notifications where id in (${page!.id}, ${toGuest!.id}, ${recent!.id})`)
+    expect(left.map((row) => row.id).sort()).toEqual([toGuest!.id, recent!.id].sort())
+  })
+
   it('purges a registration record thirty days after the guest left', async () => {
     const [roomType] = await db.execute<{ id: string }>(
       sql`select id from room_types where property_id = ${fixture.beta.propertyId} limit 1`,

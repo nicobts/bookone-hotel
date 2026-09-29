@@ -18,6 +18,7 @@ import type {
   SubmitResult,
 } from './adapter'
 import { addDays, dailyMovement, type DayMovement, type MovementStay } from './istat'
+import { csvCell } from './csv'
 import type { ComplianceDeps, GenerateResult } from './obligations'
 import { coverageFor, readJurisdiction, regionOf, resolveAdapters } from './registry'
 import { localDate } from './reconcile'
@@ -183,6 +184,9 @@ export async function movementForDay(propertyId: string, day: string): Promise<D
   return dailyMovement(stays, day, day)[0]!
 }
 
+/** Why a day went straight to a person: there is no channel to file it with. */
+export const NO_CHANNEL = 'No channel to file this with yet: file it by hand.'
+
 /**
  * Creates one `istat_movement` obligation per day, for every property whose
  * region owes one and which has the feature: from the day the feature was
@@ -228,7 +232,28 @@ export async function generateIstatMovements(
     const granted = localDate(property.grantedAt, property.timeZone)
     const first = granted > weekAgo ? granted : weekAgo
 
-    for (const { entry, adapter } of resolved) {
+    // A region that owes a return but has no channel registered here (no
+    // transport in production until the Regione's specification): each day is
+    // still created, straight to a person, so its file and the form that
+    // records it exist. Never queued: the sweep has nothing to send it with.
+    const targets = [
+      ...resolved.map(({ entry, adapter }) => ({
+        entry,
+        adapterId: adapter.capabilities().id,
+        state: 'pending' as const,
+        nextAttemptAt: now as Date | null,
+        lastError: null as string | null,
+      })),
+      ...missing.map((entry) => ({
+        entry,
+        adapterId: entry.adapter,
+        state: 'manual' as const,
+        nextAttemptAt: null as Date | null,
+        lastError: NO_CHANNEL as string | null,
+      })),
+    ]
+
+    for (const { entry, adapterId, state, nextAttemptAt, lastError } of targets) {
       for (let day = first; day <= yesterday; day = addDays(day, 1)) {
         const deadline = istatMovementDeadline(day, property.timeZone)
         const created = await asService((db) =>
@@ -237,14 +262,15 @@ export async function generateIstatMovements(
               .insert(complianceObligations)
               .values({
                 propertyId: property.propertyId,
-                adapterId: adapter.capabilities().id,
+                adapterId,
                 authority: entry.authority,
                 type: 'istat_movement',
                 subjectKey: subjectKeyFor(day),
                 periodDate: day,
                 deadline,
-                state: 'pending',
-                nextAttemptAt: now,
+                state,
+                nextAttemptAt,
+                lastError,
               })
               .onConflictDoNothing()
               .returning({ id: complianceObligations.id })
@@ -257,10 +283,11 @@ export async function generateIstatMovements(
               origin: 'platform',
               actor: systemActor,
               payload: {
-                adapterId: adapter.capabilities().id,
+                adapterId,
                 type: 'istat_movement',
                 day,
                 deadline: deadline.toISOString(),
+                ...(state === 'manual' ? { manual: true } : {}),
               },
             })
             return true
@@ -357,8 +384,10 @@ export async function webturManualFallback(
     ...Object.entries(movement.byOrigin)
       .sort(([a], [b]) => (a < b ? -1 : 1))
       .map(
+        // The origin comes from what a guest typed: escaped, so it can neither
+        // run as a spreadsheet formula nor break the columns.
         ([origin, counts]) =>
-          `${day};${origin};${counts.arrivals};${counts.departures};${counts.presences}`,
+          `${day};${csvCell(origin)};${counts.arrivals};${counts.departures};${counts.presences}`,
       ),
     `${day};TOTALE;${movement.totals.arrivals};${movement.totals.departures};${movement.totals.presences}`,
     `${day};CAMERE_OCCUPATE;;;${movement.roomsOccupied}`,

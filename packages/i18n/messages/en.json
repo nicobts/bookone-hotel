@@ -820,6 +820,46 @@
       "sectionProfiles": "What it handles",
       "sectionTools": "What it can do",
       "sectionRules": "Rules it never breaks"
+    },
+    "contacts": {
+      "title": "Who we page",
+      "body": "The phone numbers the platform messages when a guest is waiting or a legal filing is about to be missed. Only owners can see this list. You are the controller of these numbers: tell each person before you add them, and remove anyone who asks or leaves.",
+      "role": {
+        "owner": "Owner",
+        "staff": "Staff"
+      },
+      "roleLabel": "Receives",
+      "receives": {
+        "owner": "Guests left waiting, the owner assistant on WhatsApp, and the last reminder before a filing deadline.",
+        "staff": "The earlier reminder before a filing deadline."
+      },
+      "none": {
+        "owner": "Nobody. Nobody is paged when a guest waits, and the owner assistant answers no one.",
+        "staff": "Nobody. The first phone reminder for a filing goes to the owner numbers only."
+      },
+      "informedOn": "Told on {date}",
+      "notInformed": "Not confirmed",
+      "confirmInformed": "Confirm they were told",
+      "remove": "Remove",
+      "add": "Add a person",
+      "name": "Name",
+      "nameExample": "Marta, reception",
+      "phone": "Mobile number",
+      "phoneHint": "With the country code, e.g. +39 or 0039. Messages go by WhatsApp, or SMS if only that is on.",
+      "informed": "I have told this person that their number is used to page them about guests and filing deadlines, through Twilio and, on WhatsApp, Meta.",
+      "addButton": "Add",
+      "toast": {
+        "added": "Added",
+        "removed": "Removed",
+        "confirmed": "Confirmed"
+      },
+      "error": {
+        "phone": "Enter the number with its country code, e.g. +39 333 123 4567.",
+        "name": "Enter a name of up to 80 characters.",
+        "informed": "Confirm that you have told this person before adding them.",
+        "duplicate": "This number is already on the list for that role.",
+        "generic": "That did not work. Reload the page and try again."
+      }
     }
   },
   "noProperty": {
