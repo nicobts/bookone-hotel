@@ -1,0 +1,22 @@
+{
+  "comune": "999002",
+  "name": "Comune di Altrove (fittizio)",
+  "fictional": true,
+  "versions": [
+    {
+      "effectiveFrom": "2025-01-01",
+      "effectiveTo": null,
+      "currency": "EUR",
+      "seasons": [{ "name": "anno", "from": "01-01", "to": "12-31" }],
+      "rates": [{ "category": "*", "season": "anno", "amountCents": 180 }],
+      "maxNights": null,
+      "exemptions": [
+        { "kind": "age", "code": "minori-12", "underAge": 12 },
+        { "kind": "reason", "code": "residente", "description": "Residente nel comune" }
+      ],
+      "reductions": [{ "code": "over-65", "fromAge": 65, "percent": 33 }],
+      "rounding": "per-stay",
+      "attribution": "departure"
+    }
+  ]
+}

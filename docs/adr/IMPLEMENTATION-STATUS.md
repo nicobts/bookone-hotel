@@ -33,7 +33,7 @@ build). Remove every piece with `grep -rn DEV-LOGIN-HELPER`.
 The Phase 1 gate (5 named pilots and the Regione letter) has not been passed. Phase 1 is being
 built ahead of it **on mocks only**, with the owner's approval of 2026-09-28. No authority is
 called and nothing is filed. Branches `guest-desk/wp1.1`, then `guest-desk/wp1.5`, then
-`guest-desk/wp1.2`, then `guest-desk/wp1.3`.
+`guest-desk/wp1.2`, then `guest-desk/wp1.3`, then `guest-desk/wp1.4`.
 
 | WP1.1 acceptance item | State | What is left |
 |---|---|---|
@@ -100,6 +100,27 @@ Two open questions for the Regione:
 - **Origin.** ISTAT counts by residence; we count by citizenship when residence is not recorded,
   and say how many.
 - **The deadline.** We use the end of the following day.
+
+| WP1.4 acceptance item | State | What is left |
+|---|---|---|
+| Golden tests for 20 booking scenarios (children, long stays, mixed exemptions) | ✅ | `compliance/imposta/imposta.test.ts`: 20 bookings on two fictional comuni, each total worked out by hand from the rule files. They cover children and teens, the night cap and the cap at arrival, declared and unknown exemptions, season and rate changes mid-stay, the new year, unrecorded guests, missing rates and rules, and per-stay rounding |
+| One full period reconciles to the cent with a pilot's own books | 🟨 fixture | A June declaration reconciles to the cent against a fixture, and a one-cent difference is named by stay. It also runs against the database (`rls/imposta.test.ts`). A pilot's books need a pilot, and Trieste's rules |
+| Adding a second comune requires only a new rules file (test with a fictional comune) | ✅ | `999002.json` adds a comune with a flat rate, per-stay rounding and departure attribution. No code changed |
+
+WP1.4 as built, **on fictional comuni only**:
+- The rules schema with dated versions, the night-by-night engine, the declaration and its CSV,
+  and the reconciliation (`compliance/imposta`).
+- `declarationForProperty`, reading the comune from `settings.jurisdiction` and the category from
+  `settings.accommodationCategory`.
+- 7 replayed conversations (`conversations/wp1.4/`).
+
+Not built, by decision:
+- **Collection**, which moves money and needs its own ADR (ADR-020).
+- **Trieste's rule table**, which waits for the regolamento.
+- **The declaration obligation**, which waits for the comune's period and deadline.
+
+Open: where a declared exemption and its evidence are kept, since some reveal special-category
+data (`docs/runbooks/compliance.md`).
 
 | ADR | Decision | Built? | Where |
 |---|---|---|---|
