@@ -1,4 +1,4 @@
-import { and, eq, gte, sql } from 'drizzle-orm'
+import { and, eq, gte, lt, sql } from 'drizzle-orm'
 import { asService } from '../db/session'
 import { agentRuns, messages } from '../db/schema'
 
@@ -182,6 +182,8 @@ export interface AuditReport {
 export async function auditToolBoundary(input: {
   propertyId: string
   since: Date
+  /** Exclusive; open-ended when absent (the nightly audit). WP1.7's weekly report bounds it. */
+  until?: Date
 }): Promise<AuditReport> {
   const rows = await asService((db) =>
     db
@@ -203,6 +205,7 @@ export async function auditToolBoundary(input: {
           eq(messages.propertyId, input.propertyId),
           eq(messages.author, 'agent'),
           gte(messages.createdAt, input.since),
+          input.until ? lt(messages.createdAt, input.until) : undefined,
         ),
       ),
   )

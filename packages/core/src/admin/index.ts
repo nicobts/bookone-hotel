@@ -243,6 +243,8 @@ export interface AdminPropertyRow {
   slug: string
   name: string
   createdAt: Date
+  /** The property's zone, for anything reported in its days (WP1.7). */
+  timezone: string
   members: number
   features: string[]
   agentPaused: boolean
@@ -257,6 +259,7 @@ export async function listPropertiesForAdmin(): Promise<AdminPropertyRow[]> {
         slug: properties.slug,
         name: properties.name,
         createdAt: properties.createdAt,
+        timezone: properties.timezone,
         settings: properties.settings,
         // Correlated subqueries written with qualified names: Drizzle renders
         // columns unqualified inside `sql`, and an unqualified `id` binds to the
@@ -275,6 +278,7 @@ export async function listPropertiesForAdmin(): Promise<AdminPropertyRow[]> {
     slug: row.slug,
     name: row.name,
     createdAt: row.createdAt,
+    timezone: row.timezone,
     members: row.members,
     features: row.features,
     agentPaused: Boolean((row.settings as { agentPausedAt?: unknown } | null)?.agentPausedAt),
