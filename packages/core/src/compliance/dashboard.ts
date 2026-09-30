@@ -24,6 +24,9 @@ import { localDate } from './reconcile'
  * shows nothing (ADR-019); the caller reads the features.
  */
 
+/** The most open filings the dashboard lists; the counts cover them all. */
+export const OPEN_LIST_LIMIT = 500
+
 /** Not yet with the authority, and a person may have to act. */
 const OPEN_STATES: readonly ObligationState[] = ['pending', 'queued', 'failed', 'manual']
 
@@ -63,7 +66,7 @@ export interface ComplianceToday {
   /** The property's date, `YYYY-MM-DD`. */
   date: string
   authorities: AuthorityToday[]
-  /** Everything not acknowledged, soonest deadline first. */
+  /** Everything not acknowledged, soonest deadline first, at most `OPEN_LIST_LIMIT`. */
   open: (DashboardRow & { overdue: boolean })[]
 }
 
@@ -157,7 +160,6 @@ export async function complianceToday(
         and(scope, inArray(complianceObligations.state, [...OPEN_STATES, 'submitted' as const])),
       )
       .orderBy(asc(complianceObligations.deadline))
-      .limit(500)
     const done = await db
       .select(dashboardColumns)
       .from(complianceObligations)
@@ -172,7 +174,10 @@ export async function complianceToday(
     return [...pending, ...done]
   })
 
-  return { date, ...summariseToday(rows, { now, dayStart, dayEnd }) }
+  // Counted over every open row; only the list is bounded, so a property with
+  // a backlog still sees its true counts.
+  const summary = summariseToday(rows, { now, dayStart, dayEnd })
+  return { date, authorities: summary.authorities, open: summary.open.slice(0, OPEN_LIST_LIMIT) }
 }
 
 // ---------------------------------------------------------------------------
