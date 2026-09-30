@@ -282,6 +282,10 @@ staff see it too.
 An officer who wants to check a receipt compares its SHA-256 with the file or with the portal's
 record.
 
+**For the operator (WP1.7):** the operator console's **Health → Filings, last 7 days** lists missed
+deadlines across properties, and each property's **Pilot week** card has its week's filings. The
+morning and Monday routine is in `docs/runbooks/pilot-onboarding.md`.
+
 **Receipt files** are deleted two years after upload by `receipts.purge` (daily, 04:40); the row and
 the fingerprint stay. See `docs/runbooks/privacy.md`.
 

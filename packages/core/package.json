@@ -32,7 +32,8 @@
     "./telemetry": "./src/telemetry/index.ts",
     "./preview": "./src/preview/index.ts",
     "./compliance": "./src/compliance/index.ts",
-    "./contacts": "./src/contacts/index.ts"
+    "./contacts": "./src/contacts/index.ts",
+    "./pilot": "./src/pilot/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -33,7 +33,7 @@ build). Remove every piece with `grep -rn DEV-LOGIN-HELPER`.
 The Phase 1 gate (5 named pilots and the Regione letter) has not been passed. Phase 1 is being
 built ahead of it **on mocks only**, with the owner's approval of 2026-09-28. No authority is
 called and nothing is filed. Branches `guest-desk/wp1.1`, then `guest-desk/wp1.5`, then
-`guest-desk/wp1.2`, then `guest-desk/wp1.3`, then `guest-desk/wp1.4`, then `guest-desk/wp1.6`.
+`guest-desk/wp1.2`, then `guest-desk/wp1.3`, then `guest-desk/wp1.4`, then `guest-desk/wp1.6`, then `guest-desk/wp1.7-prep`.
 
 | WP1.1 acceptance item | State | What is left |
 |---|---|---|
@@ -144,6 +144,19 @@ WP1.6 as built:
 
 Open: whether an authority requires the property to keep portal receipts longer than two years
 (the file goes at two years; the hash stays). For counsel.
+
+**WP1.7, the parts that need no pilot** (branch `guest-desk/wp1.7-prep`). WP1.7 itself is blocked
+on 5 signed pilots; its exit criterion (30 consecutive days, 5 pilots, no manual correction) cannot
+start before them.
+
+| WP1.7 deliverable | State | What is left |
+|---|---|---|
+| Runbook: tenant creation, flags, credentials, WhatsApp number, content ingestion, 1-hour staff training, go-live checklist, rollback | ✅ written | `docs/runbooks/pilot-onboarding.md`. Not yet done for a real property; the steps that need the owner's go-ahead are marked |
+| Monitoring: obligations SLA | ✅ | Operator console, **Health → Filings, last 7 days**: per property and authority, due, on time, late, missed and filed by hand (`filingSlaByProperty`) |
+| Monitoring: agent metrics from plan §6, cost per thread | 🟨 | **Pilot week** card per property: turns, median first response, resolved without a person, escalations, phone alerts, model cost per conversation, tool-boundary audit, each target met or missed (`packages/core/src/pilot/weekly.ts`). Escalation precision and CSAT are not measured by the product: the first needs a person to label escalations, the second a survey that is not sent |
+| Weekly report to each pilot | 🟨 by hand | The card gives the report as text, counts only. The operator sends it until an email provider is chosen |
+
+No replayed conversations: this adds no agent behaviour, as with WP1.1.
 
 | ADR | Decision | Built? | Where |
 |---|---|---|---|
