@@ -155,7 +155,7 @@ describe('the fallback drill, per adapter', () => {
           userId: fixture.alpha.user.id,
           receipt: { protocol: `P-${obligationId.slice(0, 4)}`, filedOn: '2026-06-10' },
           attachment: {
-            path: receiptPath({ propertyId: alpha, obligationId }),
+            path: receiptPath({ propertyId: alpha, obligationId, uploadId: 'u1' }),
             contentType: 'application/pdf',
             sizeBytes: 1234,
             sha256: 'f'.repeat(64),

@@ -1,6 +1,6 @@
 import 'server-only'
 import { createClient } from '@supabase/supabase-js'
-import { createHash } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import {
   ALLOWED_DOCUMENT_TYPES,
   DOCUMENT_BUCKET,
@@ -150,8 +150,8 @@ export type ReceiptUpload =
  * The same containment as the identity documents: the path is built here from
  * the property and the obligation, never taken from the caller. The caller has
  * already checked the membership, the feature and that the obligation is the
- * property's. Overwrites, so a second attempt after a refused record replaces
- * the first file rather than leaving an orphan.
+ * property's. Never overwrites: each upload has its own key (`receiptPath`),
+ * so removing a refused upload can never touch a receipt already recorded.
  */
 export async function storeComplianceReceipt(input: {
   propertyId: string
@@ -168,11 +168,11 @@ export async function storeComplianceReceipt(input: {
 
   const bytes = Buffer.from(await file.arrayBuffer())
   const sha256 = createHash('sha256').update(bytes).digest('hex')
-  const path = receiptPath(input)
+  const path = receiptPath({ ...input, uploadId: randomUUID() })
 
   const { error } = await supabase.storage
     .from(RECEIPT_BUCKET)
-    .upload(path, bytes, { upsert: true, contentType: file.type })
+    .upload(path, bytes, { upsert: false, contentType: file.type })
   if (error) return { status: 'failed', reason: error.message }
 
   return { status: 'stored', path, contentType: file.type, sizeBytes: file.size, sha256 }

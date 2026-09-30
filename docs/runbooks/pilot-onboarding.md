@@ -37,7 +37,11 @@ a real property, and any filing with an authority.
 
 - 🔒 **Alloggiati Web:** the property's credentials go into Secret Manager, never into `.env` or a
   database column in clear. Then do the five checks in `docs/runbooks/alloggiati.md`, "Before a
-  single real submission". The channel is the software-house web service once it is registered.
+  single real submission". The channel is the software-house web service once it is registered,
+  but registering it is not enough: the real endpoint and the Secret Manager `CredentialSource` are
+  not built yet, and the adapter refuses any host but the simulator
+  (`docs/adr/IMPLEMENTATION-STATUS.md`). Until both exist this step stays blocked, the `alloggiati`
+  flag stays off, and the property files by hand as it does today.
 - **WebTur:** waits for the Regione's specification (`docs/runbooks/compliance.md`, WP1.3). Until
   then the property files the day's return by hand from **Adempimenti**, and records it there.
 - **Tourist tax:** waits for the comune's regolamento and the collection ADR (WP1.4).

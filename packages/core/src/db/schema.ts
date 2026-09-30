@@ -1556,7 +1556,7 @@ export const complianceAttachments = pgTable(
       .notNull()
       .references(() => complianceEvidence.id, { onDelete: 'cascade' }),
 
-    /** `<property>/<obligation>`: no name, no reference (`storage/receipts.ts`). */
+    /** `<property>/<obligation>/<upload>`, one key per upload: no name, no reference (`storage/receipts.ts`). */
     path: text('path').notNull(),
     contentType: text('content_type').notNull(),
     sizeBytes: integer('size_bytes').notNull(),

@@ -21,6 +21,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
+/** A real calendar day: `Date` would roll 2026-02-30 into March rather than refuse it. */
+function isCalendarDate(value: string): boolean {
+  if (!DATE.test(value)) return false
+  const parsed = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value
+}
+
 export default async function PropertyPage({
   params,
   searchParams,
@@ -41,7 +48,7 @@ export default async function PropertyPage({
 
   // The pilot's week (WP1.7): last week by default, or `?week=` any day of another.
   const weekStart =
-    week && DATE.test(week) ? weekStartOf(week) : lastWeekStart(new Date(), property.timezone)
+    week && isCalendarDate(week) ? weekStartOf(week) : lastWeekStart(new Date(), property.timezone)
   const report = await weeklyPilotReport(property.id, { weekStart, timeZone: property.timezone })
   const firstWeek = await firstActivityWeek(property.id, property.timezone)
   const baseline =
