@@ -31,9 +31,16 @@ export function isAllowedReceiptType(value: string): boolean {
 export const RECEIPT_RETENTION_DAYS = 730
 
 /**
- * One file per obligation: a filing is recorded once. Property first, and no
- * name or reference, because object keys turn up in logs.
+ * Each upload gets its own key, under its property and obligation. A filing is
+ * recorded once, but two people can submit at once, or a stale tab can submit
+ * again: with a shared key the second upload would overwrite the recorded
+ * receipt, and the cleanup after its refusal would delete it. Property first,
+ * and no name or reference, because object keys turn up in logs.
  */
-export function receiptPath(input: { propertyId: string; obligationId: string }): string {
-  return `${input.propertyId}/${input.obligationId}`
+export function receiptPath(input: {
+  propertyId: string
+  obligationId: string
+  uploadId: string
+}): string {
+  return `${input.propertyId}/${input.obligationId}/${input.uploadId}`
 }

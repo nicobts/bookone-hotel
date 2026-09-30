@@ -35,6 +35,15 @@ export async function recordManualFilingAction(context: Context, formData: FormD
   })
   const page = `/${context.locale}/${context.slug}/console/compliance/${context.obligationId}`
 
+  // Refused before any upload: a stale tab or a second click on a filing
+  // already recorded stores nothing. Core refuses it again under a row lock,
+  // for two submits at once.
+  if (obligation.state === 'acknowledged' || obligation.state === 'submitted') {
+    await flash.error(t('refused'), t('refusedDescription'))
+    revalidatePath(page)
+    return
+  }
+
   const protocol = String(formData.get('protocol') ?? '').trim()
   const filedOn = String(formData.get('filedOn') ?? '')
   const today = localDate(new Date(), property.timezone)
