@@ -46,6 +46,8 @@ export const jobNames = [
   'alloggiati.check',
   /** Destroy identity documents for stays whose filing was acknowledged (E2.4). */
   'documents.purge',
+  /** Delete manual-filing receipt files past their two years (WP1.6). */
+  'receipts.purge',
   /** Create compliance obligations from confirmed schedine and arrivals (ADR-039). */
   'compliance.generate',
   /** Enqueue the compliance obligations that are due (ADR-039). */
@@ -176,6 +178,7 @@ export interface JobPayloads {
   'alloggiati.file': { propertyId: string; reservationId: string }
   'alloggiati.check': Record<string, never>
   'documents.purge': Record<string, never>
+  'receipts.purge': Record<string, never>
   'compliance.generate': Record<string, never>
   'compliance.sweep': Record<string, never>
   'compliance.run': { propertyId: string; obligationId: string }

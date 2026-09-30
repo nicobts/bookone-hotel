@@ -1,15 +1,12 @@
 import {
   ADAPTER_FEATURES,
-  ALLOGGIATI_ADAPTER_ID,
   ManualFallbackUnavailable,
-  WEBTUR_FVG_ADAPTER_ID,
-  alloggiatiManualFallback,
   getObligationForMember,
   noteFallbackDownloaded,
-  webturManualFallback,
   type ManualFallback,
 } from '@bookone/core/compliance'
 import { hasFeature, requireProperty } from '@/lib/auth/current-property'
+import { buildManualFallback } from '@/lib/compliance/fallback'
 
 /**
  * The manual fallback for one obligation, as a download (ADR-026, WP1.1).
@@ -24,7 +21,7 @@ import { hasFeature, requireProperty } from '@/lib/auth/current-property'
  * is a 404 like one that does not exist.
  *
  * Alloggiati's file for a stay, WebTur's for a day (WP1.3). The tourist-tax
- * declaration arrives with its adapter (WP1.4) and answers 404 until then.
+ * declaration has no obligation yet (WP1.4) and answers 404.
  */
 export async function GET(
   _request: Request,
@@ -40,24 +37,16 @@ export async function GET(
     return new Response('Not found', { status: 404 })
   }
 
-  let fallback: ManualFallback
+  let fallback: ManualFallback | null
   try {
-    if (obligation.adapterId === ALLOGGIATI_ADAPTER_ID && obligation.reservationId) {
-      fallback = await alloggiatiManualFallback({
-        propertyId: property.id,
-        reservationId: obligation.reservationId,
-      })
-    } else if (obligation.adapterId === WEBTUR_FVG_ADAPTER_ID && obligation.periodDate) {
-      fallback = await webturManualFallback(property.id, obligation.periodDate)
-    } else {
-      return new Response('Not found', { status: 404 })
-    }
+    fallback = await buildManualFallback(property.id, obligation)
   } catch (error) {
     if (error instanceof ManualFallbackUnavailable) {
       return new Response(`Not ready: ${error.reasons.join('; ')}`, { status: 409 })
     }
     throw error
   }
+  if (!fallback) return new Response('Not found', { status: 404 })
 
   await noteFallbackDownloaded({ propertyId: property.id, obligationId, userId: user.id })
 

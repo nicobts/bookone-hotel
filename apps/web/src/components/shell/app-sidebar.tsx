@@ -14,6 +14,7 @@ import {
   ShieldIcon,
   SunIcon,
   TriangleAlertIcon,
+  LandmarkIcon,
   UsersIcon,
   UsersRoundIcon,
 } from 'lucide-react'
@@ -111,6 +112,7 @@ export async function AppSidebar({
   const items: Record<NavKey, NavGroup['items'][number]> = {
     today: { title: t('today'), href: `${base}/today`, icon: <SunIcon /> },
     exceptions: { title: t('exceptions'), href: `${base}/exceptions`, icon: <TriangleAlertIcon /> },
+    compliance: { title: t('compliance'), href: `${base}/compliance`, icon: <LandmarkIcon /> },
     assistant: { title: t('assistant'), href: `${base}/assistant`, icon: <BotIcon /> },
     approvals: { title: t('approvals'), href: `${base}/approvals`, icon: <ClipboardCheckIcon /> },
     agents: { title: t('agents'), href: `${base}/agents`, icon: <SparklesIcon /> },

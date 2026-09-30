@@ -2,7 +2,14 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { ComplianceAdapter } from './adapter'
-import { REGISTRY, coverageFor, readJurisdiction, resolveAdapters, type Registry } from './registry'
+import {
+  REGISTRY,
+  authorityOf,
+  coverageFor,
+  readJurisdiction,
+  resolveAdapters,
+  type Registry,
+} from './registry'
 
 const trieste = { region: 'IT-36', comune: '032006' }
 
@@ -94,6 +101,12 @@ describe('the region registry', () => {
     expect(readJurisdiction({ jurisdiction: { region: 'FVG', comune: '32006' } })).toBeNull()
     expect(readJurisdiction({})).toBeNull()
     expect(readJurisdiction(null)).toBeNull()
+  })
+
+  it('names the authority each adapter files with, from the registry', () => {
+    expect(authorityOf('alloggiati')).toBe('questura')
+    expect(authorityOf('webtur-fvg')).toBe('regione-fvg')
+    expect(authorityOf('nothing')).toBeNull()
   })
 
   it('no compliance code branches on a region or comune (ADR-028)', () => {

@@ -15,6 +15,7 @@ import { openRouterFromEnv, registerProvider } from '@bookone/core/llm'
 import { loadProfiles } from '@bookone/agents/profiles'
 import { LogNotificationProvider } from './notifications/log-provider'
 import { TwilioClient, TwilioError, TwilioNotificationProvider } from '@bookone/adapters/twilio'
+import { RECEIPT_BUCKET } from '@bookone/core/storage'
 import { createDocumentDeleter, createDocumentReader } from './storage/documents'
 import { loadEnv } from './env'
 import { registerHandlers } from './jobs/handlers'
@@ -129,6 +130,8 @@ if (env.NODE_ENV === 'production' && alloggiatiAdapter.simulated) {
 
 /** E2.4. See the module for why it reports failure rather than swallowing it. */
 const deleteObject = createDocumentDeleter(logger)
+/** WP1.6: the manual-filing receipts, in their own bucket. */
+const deleteReceipt = createDocumentDeleter(logger, RECEIPT_BUCKET)
 const readObject = createDocumentReader(logger)
 
 const queue = new PgBossQueue(env.DATABASE_URL)
@@ -195,6 +198,7 @@ await registerHandlers({
   istat: istatTransport,
   notifications,
   deleteObject,
+  deleteReceipt,
   readObject,
   appUrl: env.APP_URL,
   logger,

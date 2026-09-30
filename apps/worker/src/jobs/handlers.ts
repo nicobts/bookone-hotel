@@ -80,6 +80,7 @@ import {
   generateGuestRegistrations,
   listDueObligations,
   listObligationIds,
+  purgeReceiptFiles,
   reconcileAlloggiatiDay,
   retryManualObligation,
   runObligation,
@@ -115,6 +116,11 @@ export interface HandlerDeps {
    * testable without a storage service.
    */
   deleteObject: (path: string) => Promise<boolean>
+  /**
+   * Destroys one manual-filing receipt file (WP1.6), in its own bucket.
+   * Optional: without it the purge deletes nothing and stamps nothing.
+   */
+  deleteReceipt?: (path: string) => Promise<boolean>
   /**
    * Reads one stored document as base64 (WP0.4). Injected for the same reason
    * as `deleteObject`. Optional: without it the extraction job reads nothing.
@@ -657,6 +663,15 @@ export async function registerHandlers(deps: HandlerDeps): Promise<void> {
     // purpose (E2.4), and a silent one is a job nobody can show worked.
     if (deleted > 0 || failed > 0) {
       logger.info({ jobId: job.id, stays: due.length, deleted, failed }, 'documents.purge')
+    }
+  })
+
+  await work('receipts.purge', async (job) => {
+    if (!deps.deleteReceipt) return
+    const { deleted, failed } = await purgeReceiptFiles({ deleteObject: deps.deleteReceipt })
+    // Logged whenever it did anything: it destroys files on purpose.
+    if (deleted > 0 || failed > 0) {
+      logger.info({ jobId: job.id, deleted, failed }, 'receipts.purge')
     }
   })
 

@@ -1531,6 +1531,54 @@ export const complianceEvidence = pgTable(
   ],
 )
 
+/**
+ * The file a person uploaded when they filed by hand (WP1.6): the portal's
+ * receipt, as a PDF or a screenshot, in the private `compliance-receipts`
+ * bucket.
+ *
+ * Its own table, not a column on the evidence: the evidence is append-only and
+ * keeps proving the filing for as long as the property is a client, while the
+ * file may show the party's names and goes at two years (data map), like the
+ * filing's own payload. The evidence receipt carries the file's SHA-256, so the
+ * proof outlives the file.
+ */
+export const complianceAttachments = pgTable(
+  'compliance_attachments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    propertyId: uuid('property_id')
+      .notNull()
+      .references(() => properties.id, { onDelete: 'cascade' }),
+    obligationId: uuid('obligation_id')
+      .notNull()
+      .references(() => complianceObligations.id, { onDelete: 'cascade' }),
+    evidenceId: uuid('evidence_id')
+      .notNull()
+      .references(() => complianceEvidence.id, { onDelete: 'cascade' }),
+
+    /** `<property>/<obligation>/<upload>`, one key per upload: no name, no reference (`storage/receipts.ts`). */
+    path: text('path').notNull(),
+    contentType: text('content_type').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    /** SHA-256 of the file's bytes, also inside the evidence receipt. */
+    sha256: text('sha256').notNull(),
+
+    uploadedBy: uuid('uploaded_by').notNull(),
+    uploadedAt: timestamp('uploaded_at', { withTimezone: true }).notNull().defaultNow(),
+
+    /** When the retention job removed the file. The row, and the hash, stay. */
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  },
+  (t) => [
+    unique('compliance_attachments_obligation').on(t.obligationId),
+    index('compliance_attachments_property_idx').on(t.propertyId),
+    index('compliance_attachments_purge_idx')
+      .on(t.uploadedAt)
+      .where(sql`${t.deletedAt} is null`),
+    check('compliance_attachments_size', sql`${t.sizeBytes} > 0`),
+  ],
+)
+
 // ---------------------------------------------------------------------------
 // Knowledge base, messaging and departure (E3.2, E3.3, E3.4, E4.1)
 // ---------------------------------------------------------------------------

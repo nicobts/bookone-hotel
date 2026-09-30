@@ -185,7 +185,15 @@ describe('the declaration is coherent', () => {
       (entry) => entry.subject === 'guest' && entry.exportVia === 'none',
     ).map((entry) => entry.table)
 
-    expect(unreachable.sort()).toEqual(['agent_runs', 'discrepancies', 'domain_events'])
+    // `compliance_attachments` (WP1.6): the row names nobody, and the file is
+    // the portal's receipt for a filing whose content the bundle already
+    // carries through `alloggiati_submissions`.
+    expect(unreachable.sort()).toEqual([
+      'agent_runs',
+      'compliance_attachments',
+      'discrepancies',
+      'domain_events',
+    ])
   })
 
   it('states a reason for every carve-out', () => {

@@ -61,6 +61,7 @@
   "nav": {
     "today": "Oggi",
     "exceptions": "Eccezioni",
+    "compliance": "Adempimenti",
     "reservations": "Prenotazioni",
     "guests": "Ospiti",
     "sections": {
@@ -130,7 +131,7 @@
       "complianceLate": "La scadenza è passata ({deadline}). Inviala a mano adesso con il file del soggiorno.",
       "complianceDayBody": "Non ancora inviata. Scadenza: {deadline}. Scarica il file del giorno e inseriscilo nel portale.",
       "complianceDayLate": "La scadenza è passata ({deadline}). Inserisci subito la giornata nel portale, dal file del giorno.",
-      "dayFile": "File del giorno"
+      "dayFile": "Apri l’adempimento"
     },
     "arrival": {
       "title": "Arrivo",
@@ -214,6 +215,7 @@
         "fallbackTitle": "Invio a mano",
         "fallbackHint": "Lo stesso file che invieremmo noi, una riga per ospite. I passaggi seguono le voci del portale, che è solo in italiano.",
         "fallbackDownload": "Scarica il file per il portale",
+        "recordManual": "Registra l’invio fatto a mano",
         "alerted": "Livello di avviso",
         "reaches": {
           "inbox": "eccezioni",
@@ -511,7 +513,8 @@
         "fee_events": "Quanto abbiamo addebitato alla struttura",
         "alloggiati_submissions": "La schedina alla Questura",
         "privacy_requests": "Questa richiesta",
-        "compliance_obligations": "Il registro delle comunicazioni obbligatorie"
+        "compliance_obligations": "Il registro delle comunicazioni obbligatorie",
+        "compliance_attachments": "Le ricevute delle comunicazioni fatte a mano"
       },
       "toast": {
         "exportRecorded": "Richiesta registrata: il download sta partendo",
@@ -859,6 +862,89 @@
         "informed": "Conferma di aver informato questa persona prima di aggiungerla.",
         "duplicate": "Questo numero è già nell'elenco per quel ruolo.",
         "generic": "Non è andato a buon fine. Ricarica la pagina e riprova."
+      }
+    },
+    "compliance": {
+      "title": "Adempimenti",
+      "subtitle": "Cosa la struttura deve alle autorità, oggi e per periodo.",
+      "today": "Oggi, {date}",
+      "counts": {
+        "overdue": "Scaduti",
+        "dueToday": "In scadenza oggi",
+        "failed": "Da gestire",
+        "submitted": "In attesa di esito",
+        "acknowledgedToday": "Ricevuti oggi"
+      },
+      "authorities": {
+        "questura": "Questura (Alloggiati Web)",
+        "regione-fvg": "Regione FVG (ISTAT)",
+        "comune-trieste": "Comune di Trieste (imposta di soggiorno)"
+      },
+      "types": {
+        "guest_registration": "Comunicazione degli alloggiati",
+        "istat_movement": "Movimento ISTAT giornaliero",
+        "tourist_tax_declaration": "Dichiarazione dell’imposta di soggiorno"
+      },
+      "states": {
+        "pending": "In attesa",
+        "queued": "In coda",
+        "submitted": "Inviata, in attesa di ricevuta",
+        "acknowledged": "Ricevuta",
+        "failed": "Nuovo tentativo programmato",
+        "manual": "Da inviare a mano"
+      },
+      "openTitle": "Ancora aperti",
+      "openEmpty": "Nulla di aperto: ogni adempimento è presso l’autorità o ricevuto.",
+      "noSubject": "Nessun soggiorno",
+      "dueBy": "Scade {deadline} ({relative})",
+      "overdueSince": "Scaduto dal {deadline} ({relative})",
+      "open": "Apri",
+      "archiveTitle": "Archivio ed esportazione per ispezione",
+      "archiveHint": "Ogni adempimento dovuto nel periodo, inviato o no, con ricevuta e impronta. Un file per foglio di calcolo, per un agente o un revisore.",
+      "from": "Dal",
+      "to": "Al",
+      "export": "Scarica l’esportazione",
+      "back": "Tutti gli adempimenti",
+      "statusTitle": "Stato",
+      "deadline": "Scadenza",
+      "submittedHint": "L’autorità l’ha ricevuta; si attende l’esito. Nulla da fare qui, salvo rifiuto.",
+      "manualTitle": "Invio a mano",
+      "manualHint": "Inviala dal portale dell’autorità con le credenziali della struttura, poi registrala qui sotto.",
+      "notReady": "Il file per il portale non si può ancora preparare:",
+      "download": "Scarica il file per il portale",
+      "recordTitle": "Registra l’invio",
+      "recordHint": "Quando il portale l’ha accettata: il numero di protocollo, il giorno e la ricevuta, se c’è.",
+      "protocol": "Numero di protocollo",
+      "filedOn": "Inviata il",
+      "receiptFile": "Ricevuta (PDF o immagine, facoltativa)",
+      "receiptFileHint": "Fino a 10 MB. Può riportare i nomi degli ospiti, perciò è cancellata dopo due anni; la sua impronta resta con la registrazione.",
+      "record": "Registra come inviata a mano",
+      "proofTitle": "Prova dell’invio",
+      "source": "Registrata da",
+      "sources": {
+        "manual": "Una persona, inviata a mano",
+        "channel": "Il canale, in automatico"
+      },
+      "recordedAt": "Registrata il",
+      "fingerprint": "Impronta (SHA-256)",
+      "openFile": "Apri la ricevuta",
+      "fileDeleted": "Il file della ricevuta è stato cancellato il {date}, dopo due anni. L’impronta la prova ancora.",
+      "toast": {
+        "invalid": "Non registrata",
+        "protocolRequired": "Inserisci il numero di protocollo del portale (fino a 64 caratteri).",
+        "dateInvalid": "Inserisci il giorno dell’invio; non può essere nel futuro.",
+        "fileRefused": "Ricevuta non accettata",
+        "file": {
+          "too-large": "Il file supera i 10 MB.",
+          "wrong-type": "Usa un file PDF, JPEG, PNG o WebP.",
+          "empty": "Il file è vuoto."
+        },
+        "fileFailed": "Impossibile salvare la ricevuta",
+        "fileFailedDescription": "Non è stato registrato nulla. Riprova tra poco.",
+        "refused": "Non registrata",
+        "refusedDescription": "Questo adempimento risulta già ricevuto, oppure è presso l’autorità in attesa di esito.",
+        "recorded": "Registrata",
+        "recordedDescription": "L’adempimento risulta ricevuto, con la ricevuta come prova."
       }
     }
   },

@@ -33,7 +33,7 @@ build). Remove every piece with `grep -rn DEV-LOGIN-HELPER`.
 The Phase 1 gate (5 named pilots and the Regione letter) has not been passed. Phase 1 is being
 built ahead of it **on mocks only**, with the owner's approval of 2026-09-28. No authority is
 called and nothing is filed. Branches `guest-desk/wp1.1`, then `guest-desk/wp1.5`, then
-`guest-desk/wp1.2`, then `guest-desk/wp1.3`, then `guest-desk/wp1.4`.
+`guest-desk/wp1.2`, then `guest-desk/wp1.3`, then `guest-desk/wp1.4`, then `guest-desk/wp1.6`.
 
 | WP1.1 acceptance item | State | What is left |
 |---|---|---|
@@ -44,7 +44,7 @@ called and nothing is filed. Branches `guest-desk/wp1.1`, then `guest-desk/wp1.5
 Not in WP1.1, by design:
 - **Replayed conversations.** WP1.1 adds no agent behaviour. The owner agent's obligation tools come
   with WP1.5, and their conversations with them.
-- **The dashboard and manual-receipt screen.** Those are WP1.6.
+- **The dashboard and manual-receipt screen.** Built in WP1.6, below.
 
 | WP1.5 acceptance item | State | What is left |
 |---|---|---|
@@ -121,6 +121,29 @@ Not built, by decision:
 
 Open: where a declared exemption and its evidence are kept, since some reveal special-category
 data (`docs/runbooks/compliance.md`).
+
+| WP1.6 acceptance item | State | What is left |
+|---|---|---|
+| Inspection export for a period contains every acknowledged submission with receipt | ✅ | `inspectionExport` lists every obligation whose deadline falls in the period, in the property's days, filed or not, with its receipt, the receipt's hash and the uploaded file's hash. `rls/compliance-dashboard.test.ts` asserts that every acknowledged row carries its receipt and that the hash matches it, including after the file's two-year purge; `counts.withoutEvidence` is zero |
+| Fallback drill executed once per adapter and recorded | 🟨 demo | Automated per adapter in `rls/compliance-dashboard.test.ts`, and done by hand in the console on the demo for Alloggiati and WebTur (drill log in `docs/runbooks/compliance.md`). The portal half needs a pilot's credentials, as for WP1.1 |
+
+WP1.6 as built:
+- **The dashboard** (`console/compliance`): per authority, today's overdue, due, needing a person,
+  awaiting an answer and received; every open filing, soonest first; the period export. Shown for
+  the filing modules the property has, and to staff too.
+- **The filing screen** (`console/compliance/[obligation]`): the reason, the portal steps and file,
+  and the form that records a filing made by hand, with the protocol number, the day and the
+  receipt. Once recorded, the proof: the receipt, its SHA-256 and the file.
+- **Receipt files** in a private bucket, `compliance-receipts`, with a table
+  (`compliance_attachments`) and a two-year purge (`receipts.purge`, daily). The file's SHA-256 is
+  in the evidence receipt, so the proof outlives the file. Migration
+  `20260929055737_damp_whistler.sql` with its RLS in `20260929055738_compliance_attachments_rls.sql`.
+- **Server actions accept files up to 11 MB** (`next.config.ts`). The default 1 MB also refused
+  guests' document photos before any check could say why.
+- 8 replayed conversations (`conversations/wp1.6/`): the owner agent lists, and never records.
+
+Open: whether an authority requires the property to keep portal receipts longer than two years
+(the file goes at two years; the hash stays). For counsel.
 
 | ADR | Decision | Built? | Where |
 |---|---|---|---|

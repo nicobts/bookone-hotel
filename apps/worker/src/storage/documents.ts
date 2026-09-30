@@ -14,7 +14,10 @@ import type { Logger } from 'pino'
  * on true — a row claiming deletion over a file that still exists is a lie the
  * product would then repeat to a supervisory authority.
  */
-export function createDocumentDeleter(logger: Logger): (path: string) => Promise<boolean> {
+export function createDocumentDeleter(
+  logger: Logger,
+  bucket: string = DOCUMENT_BUCKET,
+): (path: string) => Promise<boolean> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -22,7 +25,7 @@ export function createDocumentDeleter(logger: Logger): (path: string) => Promise
     // Loud, and returns false forever. Silently succeeding would mark documents
     // deleted that were never touched, which is the one failure this feature
     // exists to prevent.
-    logger.error('storage is not configured; identity documents cannot be deleted')
+    logger.error({ bucket }, 'storage is not configured; stored files cannot be deleted')
 
     return () => Promise.resolve(false)
   }
@@ -32,10 +35,10 @@ export function createDocumentDeleter(logger: Logger): (path: string) => Promise
   })
 
   return async (path: string) => {
-    const { error } = await client.storage.from(DOCUMENT_BUCKET).remove([path])
+    const { error } = await client.storage.from(bucket).remove([path])
 
     if (error) {
-      logger.warn({ path, error: error.message }, 'could not delete an identity document')
+      logger.warn({ bucket, path, error: error.message }, 'could not delete a stored file')
 
       return false
     }

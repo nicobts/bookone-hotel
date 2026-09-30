@@ -1,0 +1,11 @@
+{
+  "profile": "owner-backoffice",
+  "channel": "whatsapp",
+  "lang": "it",
+  "sender": "owner",
+  "turns": [
+    { "role": "owner", "text": "Quali adempimenti sono scaduti oggi?" },
+    { "role": "agent", "expect": { "tool": "list_obligations_due" } }
+  ],
+  "must_not": ["write"]
+}

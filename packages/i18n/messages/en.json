@@ -61,6 +61,7 @@
   "nav": {
     "today": "Today",
     "exceptions": "Exceptions",
+    "compliance": "Filings",
     "reservations": "Reservations",
     "guests": "Guests",
     "sections": {
@@ -130,7 +131,7 @@
       "complianceLate": "The deadline passed ({deadline}). File it by hand now with the stay's file.",
       "complianceDayBody": "Not filed yet. Deadline: {deadline}. Download the day's file and enter it on the portal.",
       "complianceDayLate": "The deadline has passed ({deadline}). Enter the day on the portal now, from the day's file.",
-      "dayFile": "Day's file"
+      "dayFile": "Open the filing"
     },
     "arrival": {
       "title": "Arrival",
@@ -214,6 +215,7 @@
         "fallbackTitle": "Filing by hand",
         "fallbackHint": "The same file we would send, one line per guest. The steps follow the portal, which is in Italian only.",
         "fallbackDownload": "Download the file for the portal",
+        "recordManual": "Record the filing made by hand",
         "alerted": "Alert level",
         "reaches": {
           "inbox": "exceptions inbox",
@@ -511,7 +513,8 @@
         "fee_events": "What we charged this property",
         "alloggiati_submissions": "The Questura filing",
         "privacy_requests": "This request",
-        "compliance_obligations": "The record of statutory filings"
+        "compliance_obligations": "The record of statutory filings",
+        "compliance_attachments": "Receipts of filings made by hand"
       },
       "toast": {
         "exportRecorded": "Request recorded: the download is starting",
@@ -859,6 +862,89 @@
         "informed": "Confirm that you have told this person before adding them.",
         "duplicate": "This number is already on the list for that role.",
         "generic": "That did not work. Reload the page and try again."
+      }
+    },
+    "compliance": {
+      "title": "Filings",
+      "subtitle": "What the property owes the authorities, today and by period.",
+      "today": "Today, {date}",
+      "counts": {
+        "overdue": "Overdue",
+        "dueToday": "Due today",
+        "failed": "Need a person",
+        "submitted": "Awaiting answer",
+        "acknowledgedToday": "Received today"
+      },
+      "authorities": {
+        "questura": "Questura (Alloggiati Web)",
+        "regione-fvg": "Regione FVG (ISTAT)",
+        "comune-trieste": "Comune di Trieste (tourist tax)"
+      },
+      "types": {
+        "guest_registration": "Guest registration",
+        "istat_movement": "Daily ISTAT return",
+        "tourist_tax_declaration": "Tourist tax declaration"
+      },
+      "states": {
+        "pending": "Waiting",
+        "queued": "Queued",
+        "submitted": "Sent, awaiting receipt",
+        "acknowledged": "Received",
+        "failed": "Retry scheduled",
+        "manual": "File by hand"
+      },
+      "openTitle": "Still open",
+      "openEmpty": "Nothing open: every filing is with the authority or received.",
+      "noSubject": "No stay",
+      "dueBy": "Due {deadline} ({relative})",
+      "overdueSince": "Overdue since {deadline} ({relative})",
+      "open": "Open",
+      "archiveTitle": "Archive and inspection export",
+      "archiveHint": "Every filing owed in the period, filed or not, with its receipt and fingerprint. A spreadsheet file, for an officer or an auditor.",
+      "from": "From",
+      "to": "To",
+      "export": "Download the export",
+      "back": "All filings",
+      "statusTitle": "Status",
+      "deadline": "Deadline",
+      "submittedHint": "The authority has it; its answer is awaited. Nothing to do here unless it is refused.",
+      "manualTitle": "Filing by hand",
+      "manualHint": "File it on the authority’s portal with the property’s own credentials, then record it below.",
+      "notReady": "The file for the portal cannot be built yet:",
+      "download": "Download the file for the portal",
+      "recordTitle": "Record the filing",
+      "recordHint": "Once the portal has accepted it: its protocol number, the day, and its receipt if it gave one.",
+      "protocol": "Protocol number",
+      "filedOn": "Filed on",
+      "receiptFile": "Receipt (PDF or image, optional)",
+      "receiptFileHint": "Up to 10 MB. It may show the guests’ names, so it is deleted after two years; its fingerprint stays with the record.",
+      "record": "Record as filed by hand",
+      "proofTitle": "Proof of filing",
+      "source": "Recorded by",
+      "sources": {
+        "manual": "A person, filed by hand",
+        "channel": "The channel, automatically"
+      },
+      "recordedAt": "Recorded",
+      "fingerprint": "Fingerprint (SHA-256)",
+      "openFile": "Open the receipt",
+      "fileDeleted": "The receipt file was deleted on {date}, after two years. The fingerprint still proves it.",
+      "toast": {
+        "invalid": "Not recorded",
+        "protocolRequired": "Enter the portal’s protocol number (up to 64 characters).",
+        "dateInvalid": "Enter the day it was filed; it cannot be in the future.",
+        "fileRefused": "The receipt was not accepted",
+        "file": {
+          "too-large": "The file is larger than 10 MB.",
+          "wrong-type": "Use a PDF, JPEG, PNG or WebP file.",
+          "empty": "The file is empty."
+        },
+        "fileFailed": "The receipt could not be stored",
+        "fileFailedDescription": "Nothing was recorded. Try again in a moment.",
+        "refused": "Not recorded",
+        "refusedDescription": "This filing is already received, or the authority has it and its answer is awaited.",
+        "recorded": "Recorded",
+        "recordedDescription": "The filing is marked as received, with its receipt as proof."
       }
     }
   },
