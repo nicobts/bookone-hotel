@@ -146,7 +146,7 @@ External blockers that decide the demo, none of them code: ~~EU LLM provider~~ a
 | 3 | F1–F9 recorded as ADR-019…028 | [adr/README.md](adr/README.md) |
 | 4 | The model selects; tools author every guest-facing sentence; audit unchanged | ADR-022 |
 | 5, 6 | AI SDK behind `LlmProvider`; tools stay in-process with zod schemas; MCP deferred to voice | ADR-023 |
-| 10 | Imposta reporting is in scope; collection needs its own ADR before WP1.4 | ADR-020 |
+| 10 | Imposta reporting is in scope; collection needs its own ADR before WP1.4 | ADR-020; collection decided by ADR-044 (2026-09-30) |
 | 11 | No flag key for restaurant booking until it exists | ADR-019 |
 | 13 | Conversations are fixtures of the existing evals gate | ADR-024 |
 

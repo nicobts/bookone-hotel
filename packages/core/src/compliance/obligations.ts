@@ -625,7 +625,7 @@ async function channelRetried(
  * With `attachment` (WP1.6), the file they uploaded is recorded beside the
  * evidence, in the same transaction, and its SHA-256 goes into the receipt: the
  * evidence hash then proves the file too, after the file itself has gone at
- * two years. The caller has already stored the file at `receiptPath`.
+ * five years (ADR-041). The caller has already stored the file at `receiptPath`.
  */
 export async function recordManualFiling(input: {
   propertyId: string

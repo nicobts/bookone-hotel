@@ -35,6 +35,27 @@ built ahead of it **on mocks only**, with the owner's approval of 2026-09-28. No
 called and nothing is filed. Branches `guest-desk/wp1.1`, then `guest-desk/wp1.5`, then
 `guest-desk/wp1.2`, then `guest-desk/wp1.3`, then `guest-desk/wp1.4`, then `guest-desk/wp1.6`, then `guest-desk/wp1.7-prep`.
 
+### Phase 1 decisions: taken and open
+
+Every owner decision taken in Phase 1 is here with its record, so the rules behind the compliance
+modules can be read in one place. A decision leaves the "open" list only with a record.
+
+| Date | Decision | Record | Built? |
+|---|---|---|---|
+| 2026-09-28 | Phase 1 is built ahead of its gate, on mocks only | owner approval, `CLAUDE.md` | ✅ |
+| 2026-09-30 | Manual-filing receipt files are kept five years, not two | ADR-041 | ✅ |
+| 2026-09-30 | A tourist-tax exemption is stored as a code; its evidence stays with the hotel | ADR-042 | ✅ nothing to build yet |
+| 2026-09-30 | Each stay's tax is frozen before its registration records are purged | ADR-043 | ⬜ with the first real comune |
+| 2026-09-30 | Tourist tax collected online goes to the hotel's own account; BookOne never collects | ADR-044 | ⬜ after Stripe is live |
+| 2026-09-30 | ISTAT origin is residence, asked in pre-arrival; citizenship stays the counted fallback | ADR-045 | 🟨 capture in progress |
+
+Still open, and who decides:
+- **Counsel:** confirm the five-year receipt period (ADR-041), and review
+  `docs/contracts/alloggiati-responsibility.md`.
+- **The Regione FVG:** the WebTur specification and the day's deadline (WP1.3).
+- **The Comune di Trieste:** its regolamento, rates and declaration period (WP1.4).
+- **The owner:** 5 signed pilots (the WP1.7 exit criterion), the payment provider, the ESP.
+
 | WP1.1 acceptance item | State | What is left |
 |---|---|---|
 | A fake adapter passes the contract suite (submit, retry, fail → manual, evidence stored) | ✅ | `MockComplianceAdapter` passes the contract, in two modes (acknowledges on upload, and a queued channel). The lifecycle's retry, hand-over and evidence are tested against the database (`rls/compliance.test.ts`) |
@@ -119,12 +140,13 @@ Not built, by decision:
 - **Trieste's rule table**, which waits for the regolamento.
 - **The declaration obligation**, which waits for the comune's period and deadline.
 
-Open: where a declared exemption and its evidence are kept, since some reveal special-category
-data (`docs/runbooks/compliance.md`).
+Decided 2026-09-30 (owner): an exemption is stored as a code only, its evidence stays with the
+hotel (ADR-042); each stay's tax is frozen before its records are purged (ADR-043, built with the
+first real comune); collection goes on the hotel's own payment account (ADR-044, after Stripe).
 
 | WP1.6 acceptance item | State | What is left |
 |---|---|---|
-| Inspection export for a period contains every acknowledged submission with receipt | ✅ | `inspectionExport` lists every obligation whose deadline falls in the period, in the property's days, filed or not, with its receipt, the receipt's hash and the uploaded file's hash. `rls/compliance-dashboard.test.ts` asserts that every acknowledged row carries its receipt and that the hash matches it, including after the file's two-year purge; `counts.withoutEvidence` is zero |
+| Inspection export for a period contains every acknowledged submission with receipt | ✅ | `inspectionExport` lists every obligation whose deadline falls in the period, in the property's days, filed or not, with its receipt, the receipt's hash and the uploaded file's hash. `rls/compliance-dashboard.test.ts` asserts that every acknowledged row carries its receipt and that the hash matches it, including after the file's five-year purge (ADR-041); `counts.withoutEvidence` is zero |
 | Fallback drill executed once per adapter and recorded | 🟨 demo | Automated per adapter in `rls/compliance-dashboard.test.ts`, and done by hand in the console on the demo for Alloggiati and WebTur (drill log in `docs/runbooks/compliance.md`). The portal half needs a pilot's credentials, as for WP1.1 |
 
 WP1.6 as built:
@@ -135,15 +157,15 @@ WP1.6 as built:
   and the form that records a filing made by hand, with the protocol number, the day and the
   receipt. Once recorded, the proof: the receipt, its SHA-256 and the file.
 - **Receipt files** in a private bucket, `compliance-receipts`, with a table
-  (`compliance_attachments`) and a two-year purge (`receipts.purge`, daily). The file's SHA-256 is
+  (`compliance_attachments`) and a five-year purge (`receipts.purge`, daily; two years until ADR-041). The file's SHA-256 is
   in the evidence receipt, so the proof outlives the file. Migration
   `20260929055737_damp_whistler.sql` with its RLS in `20260929055738_compliance_attachments_rls.sql`.
 - **Server actions accept files up to 11 MB** (`next.config.ts`). The default 1 MB also refused
   guests' document photos before any check could say why.
 - 8 replayed conversations (`conversations/wp1.6/`): the owner agent lists, and never records.
 
-Open: whether an authority requires the property to keep portal receipts longer than two years
-(the file goes at two years; the hash stays). For counsel.
+Decided 2026-09-30 (owner): receipt files are kept five years (ADR-041). Counsel confirms the
+period in writing before a real property files by hand.
 
 **WP1.7, the parts that need no pilot** (branch `guest-desk/wp1.7-prep`). WP1.7 itself is blocked
 on 5 signed pilots; its exit criterion (30 consecutive days, 5 pilots, no manual correction) cannot
@@ -179,7 +201,7 @@ No replayed conversations: this adds no agent behaviour, as with WP1.1.
 | 017 | Identity tables sit outside tenancy | ✅ as-built | `profiles` isolated by `auth.uid()`; asserted separately in the suite |
 | 018 | RLS enforced on the Drizzle path via `withUser` | ✅ as-built | `packages/core/src/db/session.ts`; removing the role-drop fails 8 of 21 |
 | 019 | Feature flags are entitlements, gated where the property is known | ✅ as-built (WP0.1 Part B) | `FEATURES` has the plan §2 keys that exist in code; `JOB_FEATURE` classifies every job, `ROUTE_FEATURE` every `/jobs/*` route, each agent declares its feature. Gates: worker middleware (404), gated `work()` wrapper, sweep queries filtered before the batch limit, per-property schedules re-synced every 10 min by `schedules.sync`, runner refusal recorded in `agent_runs`, `requireFeature` on console pages and actions, guest surfaces per section, nav from a pure `navBands`. Asserted as exact lists for all-off and Phase 0; negative control (both worker gates disabled) fails 11 tests; verified live: revoking `booking_engine` 404s `/book` on the next request, no restart. Per-tool gating arrives with profiles (WP0.2) — today every tool belongs to one agent |
-| 020 | Statutory registration reporting is not fiscal core | ✅ decided, nothing to build | Scoping record. Imposta *collection* through payments still needs its own ADR before WP1.4 |
+| 020 | Statutory registration reporting is not fiscal core | ✅ decided, nothing to build | Scoping record. Imposta *collection* is decided by ADR-044 |
 | 021 | One orchestrator, profiles as data, hard rules in code | ✅ as-built (WP0.2) | `packages/agents/src/orchestrator.ts`, `router/{hard-rules,route}.ts`, `profiles/*.json` validated at worker boot (a bad file stops the process, naming it). Allow-list refusal and approval holds are recorded, never executed. Sticky profile and unknown-twice read the thread's own runs (`recentRouting`), no migration. The emergency rule silences the agent until staff hand the thread back. WP0.3's action tools are stubs that **refuse** rather than return seeded data |
 | 022 | The model selects; tools author every guest-facing sentence | ✅ as-built | Model calls are classification and tool selection only. Emergency and approval-pending texts come out of the `escalate` tool, so `reply ⊆ tool output` still holds on every turn and the tool-boundary audit is unchanged |
 | 023 | AI SDK behind `LlmProvider`, no agent framework | ✅ as-built | `ai` 7 + `@openrouter/ai-sdk-provider` in core only. Tools stay in-process with JSON-schema inputs; the SDK never executes a tool. No MCP (ADR-034) |
@@ -195,6 +217,11 @@ No replayed conversations: this adds no agent behaviour, as with WP1.1.
 | 038 | Hotels see and preview their agents in the console, without side effects | ✅ as-built | Runner preview mode, fail-closed: only `READ_ONLY_TOOLS` run, everything else is recorded as `simulated` with a "would do, nothing done" phrase; no thread, so no message, escalation or alert; approvals never list a preview. `create_task` now flagged as a write (fixes its idempotency). Console chat endpoint `apps/web/src/app/api/agents/chat` enqueues through `apps/api` (`/jobs/agent-preview` → worker `agent.preview`; `owner.ask` with `requestId`) and reads the run back by `input_ref` under the member's session. `/console/agents`: every agent's purpose, status, 7-day activity, profiles, tools classed read / act / needs approval, hard rules, from `@bookone/agents/catalog` (tested against registry, profiles, tools and all four locales); "Try it" opens the shared chat in a side sheet, optionally as a current stay. The owner's assistant page now uses the same chat |
 | 039 | Compliance obligations are a state table that adapters discharge | ✅ as-built (WP1.1, mocks only) | `compliance_obligations` + append-only `compliance_evidence` (trigger; RLS member-read, no client writes, verified both paths with a negative control). Lifecycle as one pure function with its transition table under test; retries with doubling backoff; hand-over to a person inside the adapter's margin (Alloggiati: T−2h); a filed obligation is only ever asked again. Deadline = 24h from arrival, capped at the end of the arrival day for a late click (`compliance/deadlines.ts`). Worker: `compliance.generate` (10 min), `compliance.sweep` (5 min), `compliance.run`; `alloggiati.file` now goes through the lifecycle and waits for a person's confirmation. Demo property: FVG/Trieste, `alloggiati` on against the mock, past stays filed as of their arrival day. **Nothing reaches any authority** |
 | 040 | The staging database runs in Ireland, and the app runs beside its database | ✅ | Staging in `eu-west-1`; any EU region acceptable (residency unchanged); services co-located with their database (staging web on Vercel `dub1` when deployed). Register SP-001 updated |
+| 041 | Manual-filing receipt files are kept five years | ✅ as-built | `RECEIPT_RETENTION_DAYS = 1827` (`packages/core/src/storage/receipts.ts`), used by `receipts.purge`; data map, desk strings (4 locales), runbooks and the purge test updated. The filing payload stays on two years. Counsel to confirm the period in writing |
+| 042 | A tourist-tax exemption is stored as a code; its evidence stays with the hotel | ✅ decided · nothing to build yet | The engine and loader already take only a code (`taxExemption`). The capture screen, when built, is a picker of the rules file's codes plus a "keep the signed form" reminder; no upload |
+| 043 | Each stay's tourist tax is frozen before its registration records are purged | ⬜ decided, not built | Per-stay record (counts, amounts, rules version; no names), recomputed until the purge, fixed after; the purge waits for it; kept five years. Table, migration and RLS arrive with the first real comune |
+| 044 | Tourist tax collected online goes to the hotel's own account | ⬜ decided, not built | Interim: the booking flow keeps the tax as a note (`booking/quote.ts`). With Stripe: its own line, engine amount only, per-property flag off by default, no agent tool touches it. BookOne as collector rejected |
+| 045 | ISTAT counts guests by residence, which pre-arrival asks for | 🟨 in progress | Engine already reads `residenceCountry`/`residenceProvince` (`compliance/istat.ts`, `webtur.ts`). Pre-arrival capture: next PR. Citizenship fallback and its daily count stay |
 | 024 | Replay conversations extend the evals gate | ✅ as-built (WP0.2) | 57 conversations in `packages/agents/src/evals/conversations/wp0.2/`, replayed by `evals/wp0.2/orchestrator.eval.ts`: unsafe actions 0 (gate), routing ≥ 90%, hard-rule negatives. Negative control: disabling the hard rules fails 13. The rules score is coverage, not generalisation. **Live, 2026-09-27** (Haiku 4.5 routing, Sonnet 5 actions, via OpenRouter): 85.7% on the first run — invoice/luggage sent to payments, "which documents" flagged as identity — then **100%, 0 unsafe** once the routing prompt carried each profile's description and sharper flag definitions. 35 routed turns written by us: evidence the design works on a model, not a measure of real traffic. Phoenix not yet |
 | 025 | Workflow engine deferred until a named trigger | Proposed · data collection ✅ (WP1.1) | ADR-039 starts Phase 1 on a state table + pg-boss; every obligation transition is a `compliance_obligation.*` event with `waitedSeconds`, and one SQL query answers "where is it stuck" (`docs/runbooks/compliance.md`). Decide in Phase 1 on that evidence |
 | 026 | ComplianceAdapter with a manual fallback | 🟨 port + first implementation (WP1.1) | `packages/core/src/compliance/adapter.ts`: the four methods of the WP1.1 spec, capabilities as ADR-026 lists them. Alloggiati is the first implementation, as a bridge over the Sprint 6 chain (`compliance/alloggiati.ts`); its manual fallback is the exact fixed-width file, downloadable from the arrival page (`docs/runbooks/compliance.md`). Contract suite `packages/adapters/src/compliance/contract.ts` (idempotent submit, receipts, retryability, fallback), passed by `MockComplianceAdapter` in two modes. The Alloggiati Web client and adapter are built against a local simulator (WP1.2); not built: the real endpoint, and the WebTur and imposta adapters (WP1.3–1.4) |

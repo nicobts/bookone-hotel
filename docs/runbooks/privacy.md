@@ -214,11 +214,12 @@ years as a fiscal-adjacent floor — and the rest are our judgement, marked as
 such, pending counsel.
 
 **Receipt files of manual filings (WP1.6)** have their own job, `receipts.purge`, daily at 04:40.
-A file goes two years after upload, like the filing payload it proves, because a portal receipt may
-list the party's names; the row is stamped `deleted_at` only once the object is gone. The evidence
-keeps the file's SHA-256. An erasure request does not remove it early: it covers the whole party
-and proves a filing owed to an authority (Art. 17(3)(b)), so the desk gives the requester the
-two-year date instead.
+A file goes five years after upload (ADR-041): it is the property's proof of a filing the Ministry
+keeps for five years, and a portal receipt may list the party's names, so it goes then and not
+later. The filing payload with the names stays on two years. The row is stamped `deleted_at`
+only once the object is gone, and the evidence keeps the file's SHA-256. An erasure request does
+not remove it early: it covers the whole party and proves a filing owed to an authority
+(Art. 17(3)(b)), so the desk gives the requester the five-year date instead.
 
 **02:15 is deliberate.** Everything else in the night runs between 03:30 and
 06:00; a sweep that one day takes twenty minutes must not delay the parity
