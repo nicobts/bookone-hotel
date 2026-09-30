@@ -1246,6 +1246,9 @@
       "citizenship": "Staatsangehörigkeit",
       "documentIssuer": "Ausgestellt von",
       "countryHint": "Zweibuchstabiger Ländercode, z. B. IT, AT, DE, SI",
+      "residenceCountry": "Wohnsitzland",
+      "residenceProvince": "Provinz (wenn Sie in Italien wohnen)",
+      "residenceHint": "Die Region zählt Gäste nach ihrem Wohnort, nicht nach der Staatsangehörigkeit. Zweistellige Codes; die Provinz nur, wenn Sie in Italien wohnen, z. B. TS, UD, MI.",
       "required": "Das Haus muss diese Angaben der Polizei melden, daher sind alle erforderlich."
     },
     "documents": {

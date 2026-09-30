@@ -110,6 +110,8 @@ export async function submitParty(context: Context, formData: FormData): Promise
       ...optional(formData, `birthPlace-${index}`, 'birthPlace'),
       ...optional(formData, `birthCountry-${index}`, 'birthCountry'),
       ...optional(formData, `citizenship-${index}`, 'citizenship'),
+      ...optional(formData, `residenceCountry-${index}`, 'residenceCountry'),
+      ...optional(formData, `residenceProvince-${index}`, 'residenceProvince'),
       ...optional(formData, `docType-${index}`, 'documentType'),
       ...optional(formData, `docNumber-${index}`, 'documentNumber'),
       ...optional(formData, `docIssuer-${index}`, 'documentIssuer'),
@@ -225,6 +227,8 @@ type OptionalField =
   | 'birthPlace'
   | 'birthCountry'
   | 'citizenship'
+  | 'residenceCountry'
+  | 'residenceProvince'
   | 'documentType'
   | 'documentNumber'
   | 'documentIssuer'

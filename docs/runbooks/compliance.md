@@ -102,8 +102,9 @@ the day the feature was switched on (at most a week back) to yesterday, in the p
 - rooms occupied;
 - all of it by origin: the country for foreign residents, `IT-` and the province for Italian ones.
 
-**Origin.** ISTAT counts by residence, and the pre-arrival form does not ask for it yet. So a guest
-counts by their recorded residence when there is one, and otherwise by citizenship. Each day
+**Origin.** ISTAT counts by residence (ADR-045). Pre-arrival asks each guest for their country of
+residence and, for Italy, the province. A guest counts by their recorded residence when there is
+one, and otherwise by citizenship: a guest added at the desk, or one who skipped the question. Each day
 records how many were counted by citizenship.
 
 **A guest with no origin holds the day.** A guest with neither residence nor citizenship is
