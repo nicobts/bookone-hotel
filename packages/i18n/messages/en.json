@@ -210,7 +210,22 @@
         "evidenceManual": "Receipt recorded by hand (fingerprint)",
         "errors": {
           "notConfirmed": "Nobody has confirmed the guests against their documents yet: confirm them above.",
-          "deadlineClose": "The deadline is close: file it by hand with the file below."
+          "deadlineClose": "The deadline is close: file it by hand with the file below.",
+          "stayGone": "The stay no longer exists.",
+          "checkFailed": "The channel could not say whether the filing was accepted. It will be asked again.",
+          "nothingStaged": "There was nothing ready to file. It will be tried again.",
+          "noReference": "The channel gave no reference for the filing. It will be asked again.",
+          "notConfirmedByChannel": "The channel took it but has not confirmed it yet: check the portal before filing by hand.",
+          "credentialsRefused": "The portal refused the property’s credentials. It said: “{said}”",
+          "channelHttp": "The channel did not answer properly (HTTP {status}).",
+          "ambiguous": "No answer after sending: the filing may have gone through. Check the day’s receipt on the portal before filing by hand.",
+          "unreadable": "The channel’s answer could not be read.",
+          "guestIssue": "Guest {guest}, {field}: {problem}",
+          "originMissing": "Stay {reference}: a guest’s residence or citizenship is not recorded.",
+          "channelSaid": "The channel said: “{said}”",
+          "refused": "The Questura’s registry refused the filing. In its own words:",
+          "refusedLine": "Guest {guest}: “{said}”",
+          "noChannel": "There is no channel to file this with yet: file it by hand."
         },
         "fallbackTitle": "Filing by hand",
         "fallbackHint": "The same file we would send, one line per guest. The steps follow the portal, which is in Italian only.",

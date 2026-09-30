@@ -24,7 +24,7 @@ import { Button } from '@bookone/ui/components/button'
 import { PendingButton } from '@bookone/ui/components/pending-button'
 import { Separator } from '@bookone/ui/components/separator'
 import { formatDate } from '@/components/booking/format'
-import { KNOWN_OBLIGATION_ERRORS } from '@/lib/compliance/errors'
+import { FIELD_LABELS, obligationErrorLines } from '@/lib/compliance/errors'
 import { confirmDocumentsAction, fileNow, markArrived, retryByChannel } from './actions'
 
 /**
@@ -395,7 +395,16 @@ function Obligation({
   const needsPerson = obligation.state === 'manual'
   const variant =
     obligation.state === 'acknowledged' ? 'secondary' : needsPerson ? 'destructive' : 'outline'
-  const known = obligation.lastError ? KNOWN_OBLIGATION_ERRORS[obligation.lastError] : undefined
+  // The lifecycle's and the channel's words, in the desk's language (the
+  // authority's own words kept as said).
+  const errorLines = obligationErrorLines(
+    obligation.lastError,
+    (key, values) => t(`obligation.errors.${key}` as Parameters<typeof t>[0], values),
+    (field) =>
+      FIELD_LABELS[field]
+        ? t(`schedinaFields.${FIELD_LABELS[field]}` as Parameters<typeof t>[0])
+        : field,
+  )
 
   return (
     <div className="border-border mt-4 border-t pt-4">
@@ -446,9 +455,13 @@ function Obligation({
       </dl>
 
       {obligation.lastError && obligation.state !== 'acknowledged' && (
-        <p className={`mt-2 text-xs ${needsPerson ? 'text-destructive' : 'text-muted-foreground'}`}>
-          {known ? t(`obligation.errors.${known}`) : obligation.lastError}
-        </p>
+        <div
+          className={`mt-2 flex flex-col gap-0.5 text-xs ${needsPerson ? 'text-destructive' : 'text-muted-foreground'}`}
+        >
+          {errorLines.map((line, index) => (
+            <p key={index}>{line}</p>
+          ))}
+        </div>
       )}
 
       {fallback && (
