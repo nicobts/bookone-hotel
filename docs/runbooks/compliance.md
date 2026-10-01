@@ -177,7 +177,9 @@ while the declaration is periodic and the annual one is due by 30 June of the fo
 declaration computed after the purge would charge children and teenagers as adults.
 
 - **Exemptions (ADR-042):** BookOne stores the code only. The hotel keeps the signed declaration or
-  certificate for five years, as the law already asks, and shows it to the comune on request. Never
+  certificate, and shows it to the comune on request, at least until the comune can no longer
+  assess the year (31 December of the fifth year after the declaration was due) or longer if its
+  regolamento says so. Never
   upload it to BookOne.
 - **The purge (ADR-043):** each stay's tax is computed at checkout and frozen (counts and amounts,
   no names), and the declaration adds up those records. Built with the first real comune.

@@ -36,7 +36,10 @@ It holds no name, birth date or document.
   property whose tourist-tax feature is on. The desk sees why.
 - The declaration, the reconciliation with the hotel's books and the inspection export all read
   these records. They are the tax ledger.
-- The records are kept five years (L. 296/2006, art. 1 c. 161), as tax documentation.
+- The records are kept until the comune's window to assess the year closes: 31 December of the
+  fifth year after that year's declaration was due (L. 296/2006, art. 1 c. 161 sets the window, not
+  a retention duty). That is product policy until the first real comune's regolamento says
+  otherwise; it is checked against the regolamento when the table is built.
 
 A change complies if nothing computes a tax amount for a period from registration records once
 those records can have been purged.
@@ -62,6 +65,6 @@ accountant; the second perhaps never.
 
 ## Consequences
 
-- One new table, property-scoped with RLS, in the data map with a five-year retention.
+- One new table, property-scoped with RLS, in the data map, retained until the assessment window above closes.
 - The declaration becomes a sum over stored records, not a recomputation, which also makes
   "reconciles to the cent" (the WP1.4 gate) easier to check.
