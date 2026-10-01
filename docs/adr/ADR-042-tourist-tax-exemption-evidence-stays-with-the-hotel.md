@@ -14,8 +14,10 @@ and before anyone builds the screen that records an exemption.
 ## Context
 
 - Since DL 34/2020 art. 180 the hotel is *responsabile d'imposta*. It must keep the documentation
-  behind every exemption (usually a signed self-declaration, sometimes a certificate) for five years
-  (L. 296/2006, art. 1 c. 161) and show it to the comune on request.
+  behind every exemption (usually a signed self-declaration, sometimes a certificate) and show it to
+  the comune on request. How long is the comune's regolamento to say; what the law fixes is the
+  comune's window to assess, which closes on 31 December of the fifth year after the declaration
+  was due (L. 296/2006, art. 1 c. 161). The evidence has to outlast that window.
 - To compute the tax and write the declaration, BookOne needs only **which** exemption applied. It
   never needs the document.
 - Storing scanned certificates would make BookOne a processor of health data at scale: stricter
