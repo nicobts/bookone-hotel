@@ -179,12 +179,14 @@ declaration computed after the purge would charge children and teenagers as adul
 - **Exemptions (ADR-042):** BookOne stores the code only. The hotel keeps the signed declaration or
   certificate, and shows it to the comune on request, at least until the comune can no longer
   assess the year (31 December of the fifth year after the declaration was due) or longer if its
-  regolamento says so. Never
-  upload it to BookOne.
-- **The purge (ADR-043):** each stay's tax is computed at checkout and frozen (counts and amounts,
-  no names), and the declaration adds up those records. Built with the first real comune.
-- **Collection (ADR-044):** online, only ever into the hotel's own payment account, once a payment
-  provider is live. Until then the guest pays at the desk.
+  regolamento says so. Never upload it to BookOne.
+- **The purge (ADR-043), planned, not built.** Today the declaration recomputes every stay from its
+  registration records (`buildDeclaration` → `computeStayTax`), so it is only right for stays whose
+  records have not been purged. Planned: each stay's tax computed at checkout and frozen (counts
+  and amounts, no names), and the declaration adding up those records. Built with the first real
+  comune, before its rules go live; until then no real declaration is made.
+- **Collection (ADR-044), planned, not built:** online, only ever into the hotel's own payment
+  account, once a payment provider is live. Today the guest pays at the desk.
 
 ## Where things run
 
