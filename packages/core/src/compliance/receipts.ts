@@ -6,7 +6,7 @@ import { systemActor } from '../events/actor'
 import { RECEIPT_RETENTION_DAYS } from '../storage/receipts'
 
 /**
- * The two-year purge of manual-filing receipt files (WP1.6, data map).
+ * The five-year purge (ADR-041) of manual-filing receipt files (WP1.6, data map).
  *
  * The file goes; the row and the evidence stay, and the evidence receipt holds
  * the file's SHA-256, so the filing is still proven. A row is stamped only

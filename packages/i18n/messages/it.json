@@ -932,7 +932,7 @@
       "protocol": "Numero di protocollo",
       "filedOn": "Inviata il",
       "receiptFile": "Ricevuta (PDF o immagine, facoltativa)",
-      "receiptFileHint": "Fino a 10 MB. Può riportare i nomi degli ospiti, perciò è cancellata dopo due anni; la sua impronta resta con la registrazione.",
+      "receiptFileHint": "Fino a 10 MB. Può riportare i nomi degli ospiti, perciò è cancellata dopo cinque anni; la sua impronta resta con la registrazione.",
       "record": "Registra come inviata a mano",
       "proofTitle": "Prova dell’invio",
       "source": "Registrata da",
@@ -943,7 +943,7 @@
       "recordedAt": "Registrata il",
       "fingerprint": "Impronta (SHA-256)",
       "openFile": "Apri la ricevuta",
-      "fileDeleted": "Il file della ricevuta è stato cancellato il {date}, dopo due anni. L’impronta la prova ancora.",
+      "fileDeleted": "Il file della ricevuta è stato cancellato il {date}, dopo cinque anni. L’impronta la prova ancora.",
       "toast": {
         "invalid": "Non registrata",
         "protocolRequired": "Inserisci il numero di protocollo del portale (fino a 64 caratteri).",

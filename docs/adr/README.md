@@ -74,6 +74,11 @@ split here unchanged; their bodies are verbatim, with only a status line added.
 | [038](ADR-038-hotels-preview-agents-without-side-effects.md) | Hotels see and preview their agents in the console, without side effects | Accepted |
 | [039](ADR-039-compliance-obligations-are-a-state-table.md) | Compliance obligations are a state table that adapters discharge | Accepted |
 | [040](ADR-040-staging-database-in-ireland.md) | The staging database runs in Ireland, and the app runs beside its database | Accepted |
+| [041](ADR-041-portal-receipts-kept-five-years.md) | Manual-filing receipt files are kept five years | Accepted |
+| [042](ADR-042-tourist-tax-exemption-evidence-stays-with-the-hotel.md) | A tourist-tax exemption is stored as a code; its evidence stays with the hotel | Accepted |
+| [043](ADR-043-tourist-tax-frozen-per-stay-before-the-purge.md) | Each stay's tourist tax is computed and frozen before its registration records are purged | Accepted |
+| [044](ADR-044-tourist-tax-collected-on-the-hotels-own-account.md) | The tourist tax, when collected online, is charged to the hotel's own payment account | Accepted |
+| [045](ADR-045-istat-origin-by-residence-from-pre-arrival.md) | ISTAT counts guests by residence, which pre-arrival asks for | Accepted |
 
 ADR-019 to ADR-034 come from the Guest Desk handoff (`docs/guest_desk_20260927/`, ADR-F1…F13 and UPGRADE-01),
 amended where the WP0.1 inventory ([11-inventory.md](../11-inventory.md)) found the handoff's

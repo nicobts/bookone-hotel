@@ -10,7 +10,7 @@ import { receiptPath } from '../../../storage/receipts'
 
 /**
  * WP1.6 against a real database: the dashboard, the inspection export, the
- * manual filing with its uploaded receipt, and the two-year purge of the file.
+ * manual filing with its uploaded receipt, and the five-year purge of the file (ADR-041).
  *
  * The fallback drill, per adapter: an obligation handed to a person
  * (`manual`) is filed by hand, recorded with its receipt and file, and then
@@ -244,24 +244,24 @@ describe('the receipt files', () => {
     )
   })
 
-  it('go at two years; the row and the evidence hash stay', async () => {
+  it('go at five years; the row and the evidence hash stay', async () => {
     const deleted: string[] = []
     const early = await purgeReceiptFiles(
       { deleteObject: async (path) => (deleted.push(path), true) },
-      { now: new Date('2028-06-01T00:00:00Z') },
+      { now: new Date('2031-06-01T00:00:00Z') },
     )
     expect(early).toEqual({ deleted: 0, failed: 0 })
 
     // A storage failure stamps nothing.
     const refused = await purgeReceiptFiles(
       { deleteObject: async () => false },
-      { now: new Date('2028-06-11T00:00:00Z') },
+      { now: new Date('2031-06-12T00:00:00Z') },
     )
     expect(refused).toEqual({ deleted: 0, failed: 2 })
 
     const later = await purgeReceiptFiles(
       { deleteObject: async (path) => (deleted.push(path), true) },
-      { now: new Date('2028-06-11T00:00:00Z') },
+      { now: new Date('2031-06-12T00:00:00Z') },
     )
     expect(later).toEqual({ deleted: 2, failed: 0 })
     expect(deleted.every((path) => path.startsWith(`${fixture.alpha.propertyId}/`))).toBe(true)

@@ -170,13 +170,23 @@ Not built, by decision:
   The booking flow still shows the tax as a note (`booking/quote.ts`).
 - **The declaration obligation and its deadline.** They wait for the comune's period and due date.
 
-**Open, for privacy.** Some exemption reasons reveal special-category data (Art. 9); a patient's
-companion is one. Only a code is used, never the evidence. Where the code and its evidence are
-kept, and for how long, must be decided before a real comune's rules go live. Registration records are purged 30 days after departure, while declarations can be quarterly. The
-same purge takes the birth dates the engine needs: a declaration computed after it would charge
-children and teenagers as adults. So each stay's tax must be computed and kept, counts and amounts
-only, before its records are purged, or the retention must change. Decide which with the first
-real comune.
+**Privacy and the purge: decided 2026-09-30 by the owner.** Two facts forced the decisions below.
+Some exemption reasons reveal special-category data (Art. 9); a patient's companion is one. And
+registration records are purged 30 days after departure, taking the birth dates the engine needs,
+while the declaration is periodic and the annual one is due by 30 June of the following year: a
+declaration computed after the purge would charge children and teenagers as adults.
+
+- **Exemptions (ADR-042):** BookOne stores the code only. The hotel keeps the signed declaration or
+  certificate, and shows it to the comune on request, at least until the comune can no longer
+  assess the year (31 December of the fifth year after the declaration was due) or longer if its
+  regolamento says so. Never upload it to BookOne.
+- **The purge (ADR-043), planned, not built.** Today the declaration recomputes every stay from its
+  registration records (`buildDeclaration` → `computeStayTax`), so it is only right for stays whose
+  records have not been purged. Planned: each stay's tax computed at checkout and frozen (counts
+  and amounts, no names), and the declaration adding up those records. Built with the first real
+  comune, before its rules go live; until then no real declaration is made.
+- **Collection (ADR-044), planned, not built:** online, only ever into the hotel's own payment
+  account, once a payment provider is live. Today the guest pays at the desk.
 
 ## Where things run
 
@@ -286,8 +296,8 @@ record.
 deadlines across properties, and each property's **Pilot week** card has its week's filings. The
 morning and Monday routine is in `docs/runbooks/pilot-onboarding.md`.
 
-**Receipt files** are deleted two years after upload by `receipts.purge` (daily, 04:40); the row and
-the fingerprint stay. See `docs/runbooks/privacy.md`.
+**Receipt files** are deleted five years after upload (ADR-041) by `receipts.purge` (daily, 04:40);
+the row and the fingerprint stay. See `docs/runbooks/privacy.md`.
 
 ### Fallback drill log
 

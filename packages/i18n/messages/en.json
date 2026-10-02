@@ -932,7 +932,7 @@
       "protocol": "Protocol number",
       "filedOn": "Filed on",
       "receiptFile": "Receipt (PDF or image, optional)",
-      "receiptFileHint": "Up to 10 MB. It may show the guests’ names, so it is deleted after two years; its fingerprint stays with the record.",
+      "receiptFileHint": "Up to 10 MB. It may show the guests’ names, so it is deleted after five years; its fingerprint stays with the record.",
       "record": "Record as filed by hand",
       "proofTitle": "Proof of filing",
       "source": "Recorded by",
@@ -943,7 +943,7 @@
       "recordedAt": "Recorded",
       "fingerprint": "Fingerprint (SHA-256)",
       "openFile": "Open the receipt",
-      "fileDeleted": "The receipt file was deleted on {date}, after two years. The fingerprint still proves it.",
+      "fileDeleted": "The receipt file was deleted on {date}, after five years. The fingerprint still proves it.",
       "toast": {
         "invalid": "Not recorded",
         "protocolRequired": "Enter the portal’s protocol number (up to 64 characters).",

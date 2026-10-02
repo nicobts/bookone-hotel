@@ -87,8 +87,8 @@ const PRECHECKIN_SWEEP = '7 * * * *'
 const ALLOGGIATI_CHECK = '*/10 * * * *'
 
 /**
- * Manual-filing receipt files past their two years (WP1.6). Daily is plenty
- * for a two-year period; 04:40 keeps it clear of the nightly reconciliation.
+ * Manual-filing receipt files past their five years (WP1.6, ADR-041). Daily is
+ * plenty for a five-year period; 04:40 keeps it clear of the nightly reconciliation.
  */
 const RECEIPT_PURGE = '40 4 * * *'
 

@@ -932,7 +932,7 @@
       "protocol": "Protokollnummer",
       "filedOn": "Eingereicht am",
       "receiptFile": "Beleg (PDF oder Bild, optional)",
-      "receiptFileHint": "Bis 10 MB. Er kann die Namen der Gäste zeigen und wird daher nach zwei Jahren gelöscht; seine Prüfsumme bleibt beim Eintrag.",
+      "receiptFileHint": "Bis 10 MB. Er kann die Namen der Gäste zeigen und wird daher nach fünf Jahren gelöscht; seine Prüfsumme bleibt beim Eintrag.",
       "record": "Als von Hand eingereicht erfassen",
       "proofTitle": "Nachweis der Einreichung",
       "source": "Erfasst durch",
@@ -943,7 +943,7 @@
       "recordedAt": "Erfasst",
       "fingerprint": "Prüfsumme (SHA-256)",
       "openFile": "Beleg öffnen",
-      "fileDeleted": "Die Belegdatei wurde am {date} nach zwei Jahren gelöscht. Die Prüfsumme weist die Einreichung weiterhin nach.",
+      "fileDeleted": "Die Belegdatei wurde am {date} nach fünf Jahren gelöscht. Die Prüfsumme weist die Einreichung weiterhin nach.",
       "toast": {
         "invalid": "Nicht erfasst",
         "protocolRequired": "Geben Sie die Protokollnummer des Portals ein (bis 64 Zeichen).",

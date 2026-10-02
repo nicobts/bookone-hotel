@@ -46,7 +46,7 @@ export const jobNames = [
   'alloggiati.check',
   /** Destroy identity documents for stays whose filing was acknowledged (E2.4). */
   'documents.purge',
-  /** Delete manual-filing receipt files past their two years (WP1.6). */
+  /** Delete manual-filing receipt files past their five years (WP1.6, ADR-041). */
   'receipts.purge',
   /** Create compliance obligations from confirmed schedine and arrivals (ADR-039). */
   'compliance.generate',

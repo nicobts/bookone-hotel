@@ -932,7 +932,7 @@
       "protocol": "Številka protokola",
       "filedOn": "Oddano dne",
       "receiptFile": "Potrdilo (PDF ali slika, neobvezno)",
-      "receiptFileHint": "Do 10 MB. Lahko prikazuje imena gostov, zato se po dveh letih izbriše; njegov prstni odtis ostane z zapisom.",
+      "receiptFileHint": "Do 10 MB. Lahko prikazuje imena gostov, zato se po petih letih izbriše; njegov prstni odtis ostane z zapisom.",
       "record": "Zabeleži kot ročno oddano",
       "proofTitle": "Dokaz o oddaji",
       "source": "Zabeležil",
@@ -943,7 +943,7 @@
       "recordedAt": "Zabeleženo",
       "fingerprint": "Prstni odtis (SHA-256)",
       "openFile": "Odpri potrdilo",
-      "fileDeleted": "Datoteka potrdila je bila izbrisana {date}, po dveh letih. Prstni odtis še vedno dokazuje oddajo.",
+      "fileDeleted": "Datoteka potrdila je bila izbrisana {date}, po petih letih. Prstni odtis še vedno dokazuje oddajo.",
       "toast": {
         "invalid": "Ni zabeleženo",
         "protocolRequired": "Vnesite številko protokola s portala (do 64 znakov).",

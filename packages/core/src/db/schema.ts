@@ -1538,8 +1538,7 @@ export const complianceEvidence = pgTable(
  *
  * Its own table, not a column on the evidence: the evidence is append-only and
  * keeps proving the filing for as long as the property is a client, while the
- * file may show the party's names and goes at two years (data map), like the
- * filing's own payload. The evidence receipt carries the file's SHA-256, so the
+ * file may show the party's names and goes at five years (ADR-041, data map). The evidence receipt carries the file's SHA-256, so the
  * proof outlives the file.
  */
 export const complianceAttachments = pgTable(

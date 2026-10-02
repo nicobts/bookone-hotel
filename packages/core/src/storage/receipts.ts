@@ -24,11 +24,13 @@ export function isAllowedReceiptType(value: string): boolean {
 }
 
 /**
- * Two years, like the filing's own payload (`alloggiati_submissions`): the
- * file may show the party's names, and it should not outlive the filing it
- * proves. The evidence keeps the file's hash after it goes.
+ * Five years (ADR-041): the portal receipt is the property's proof that it
+ * filed, and the Ministry keeps the filing itself for five years, so the proof
+ * must last as long as the filing can be questioned. 5 × 365 + 2 covers any
+ * five calendar years, leap days included. The file may show the party's
+ * names, which is why it goes at all; the evidence keeps its hash after it goes.
  */
-export const RECEIPT_RETENTION_DAYS = 730
+export const RECEIPT_RETENTION_DAYS = 1827
 
 /**
  * Each upload gets its own key, under its property and obligation. A filing is

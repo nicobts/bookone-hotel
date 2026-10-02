@@ -441,11 +441,11 @@ export const DATA_MAP: DataMapEntry[] = [
     retention: {
       kind: 'job',
       job: 'receipts.purge',
-      why: 'The file is deleted two years after upload (`RECEIPT_RETENTION_DAYS`), like the filing’s own payload in `alloggiati_submissions`, and the row is stamped `deleted_at`. The evidence receipt keeps the file’s SHA-256, so the filing stays proven. Whether an authority requires the property to keep its receipts longer is for counsel; a property can download them from the archive before then.',
+      why: 'The file is deleted five years after upload (`RECEIPT_RETENTION_DAYS`, ADR-041) and the row is stamped `deleted_at`. Five years because the receipt is the property’s proof that it filed, and the Ministry keeps the filing for five years; the filing’s own payload in `alloggiati_submissions` still goes at two, because the receipt, not our copy of the names, is the proof. The evidence receipt keeps the file’s SHA-256 after the file goes. Counsel to confirm the period in writing.',
     },
     erasure: {
       kind: 'keep',
-      why: 'Art. 17(3)(b): the receipt proves a filing owed to a public authority, and it covers the whole party, so deleting it for one person would destroy the others’ record and the property’s evidence together. It goes on the two-year clock instead, as the filing does.',
+      why: 'Art. 17(3)(b): the receipt proves a filing owed to a public authority, and it covers the whole party, so deleting it for one person would destroy the others’ record and the property’s evidence together. It goes on the five-year clock instead (ADR-041).',
       retainedByLaw: true,
     },
     exportVia: 'none',

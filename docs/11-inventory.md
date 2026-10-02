@@ -150,6 +150,9 @@ External blockers that decide the demo, none of them code: ~~EU LLM provider~~ a
 | 11 | No flag key for restaurant booking until it exists | ADR-019 |
 | 13 | Conversations are fixtures of the existing evals gate | ADR-024 |
 
+Later, 2026-09-30: imposta collection (item 10) is decided by ADR-044. The table above stays as it
+stood on 2026-09-27.
+
 Still open: item 7 (channels WP and the thread-without-reservation migration), item 8 (WP0.4 scope as
 "extend"), item 12 (Stripe mock for the demo), item 14 (demo seed), and the external blockers in §4.
 WP0.1 Part B is done (ADR-019 row in IMPLEMENTATION-STATUS). Found while building it, for the next WPs:
