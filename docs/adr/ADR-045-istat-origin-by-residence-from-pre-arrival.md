@@ -24,8 +24,11 @@ residence is recorded, and says how many.
 ## Decision
 
 - **Pre-arrival asks each guest for their country of residence**, and for the province when the
-  country is Italy. It is required for a guest filling the form, stored on the registration record
-  next to citizenship, and purged with it after 30 days.
+  country is Italy. Like every field but the name, it is not enforced on save: a half-filled form
+  is kept (Sprint 6's rule). It is stored on the registration record next to citizenship, under the
+  keys the return already reads, and purged with it after 30 days. Anything that is not a
+  two-letter code is dropped rather than stored, so the return falls back openly instead of
+  counting a guess (`journey/residence.ts`).
 - The daily return is computed from the records while they exist (it is due the following day), so
   the purge does not affect it.
 - **The citizenship fallback stays** for guests who skip pre-arrival or are added at the desk, and
@@ -52,5 +55,6 @@ country of citizenship, and the regional office has no way to tell.
 
 ## Consequences
 
-- One more question per guest in pre-arrival, in four languages.
-- The desk's arrival view shows the residence with the other details.
+- Two more inputs per guest in pre-arrival, in four languages.
+- The data export includes residence with the rest of the registration record; the data map is
+  unchanged, since the record's categories already cover it.

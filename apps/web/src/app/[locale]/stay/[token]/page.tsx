@@ -314,6 +314,37 @@ export default async function StayPage({
                       <p className="text-muted-foreground text-xs">{t('party.countryHint')}</p>
                     </div>
 
+                    {/* For the ISTAT return, not the police (ADR-045). */}
+                    <div className="grid gap-2">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="grid gap-2">
+                          <Label htmlFor={`residenceCountry-${index}`}>
+                            {t('party.residenceCountry')}
+                          </Label>
+                          <Input
+                            id={`residenceCountry-${index}`}
+                            name={`residenceCountry-${index}`}
+                            maxLength={2}
+                            placeholder="IT"
+                            defaultValue={readString(member?.data.residenceCountry)}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor={`residenceProvince-${index}`}>
+                            {t('party.residenceProvince')}
+                          </Label>
+                          <Input
+                            id={`residenceProvince-${index}`}
+                            name={`residenceProvince-${index}`}
+                            maxLength={2}
+                            placeholder="TS"
+                            defaultValue={readString(member?.data.residenceProvince)}
+                          />
+                        </div>
+                      </div>
+                      <p className="text-muted-foreground text-xs">{t('party.residenceHint')}</p>
+                    </div>
+
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="grid gap-2">
                         <Label htmlFor={`docType-${index}`}>{t('party.documentType')}</Label>

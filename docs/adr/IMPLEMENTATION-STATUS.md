@@ -47,7 +47,7 @@ modules can be read in one place. A decision leaves the "open" list only with a 
 | 2026-09-30 | A tourist-tax exemption is stored as a code; its evidence stays with the hotel | ADR-042 | ✅ nothing to build yet |
 | 2026-09-30 | Each stay's tax is frozen before its registration records are purged | ADR-043 | ⬜ with the first real comune |
 | 2026-09-30 | Tourist tax collected online goes to the hotel's own account; BookOne never collects | ADR-044 | ⬜ after Stripe is live |
-| 2026-09-30 | ISTAT origin is residence, asked in pre-arrival; citizenship stays the counted fallback | ADR-045 | 🟨 capture in progress |
+| 2026-09-30 | ISTAT origin is residence, asked in pre-arrival; citizenship stays the counted fallback | ADR-045 | ✅ |
 
 Still open, and who decides:
 - **Counsel:** confirm the five-year receipt period (ADR-041), and review
@@ -117,9 +117,9 @@ WP1.3 as built, **on a mock transport only**:
 - A new feature, `istat_regional` (plan §2), off except on the demo property.
 - 7 replayed conversations (`conversations/wp1.3/`).
 
-Two open questions for the Regione:
-- **Origin.** ISTAT counts by residence; we count by citizenship when residence is not recorded,
-  and say how many.
+Two questions for the Regione, one since answered by ADR-045:
+- **Origin.** ISTAT counts by residence. Pre-arrival asks for it since ADR-045; we count by
+  citizenship only when residence is not recorded, and say how many.
 - **The deadline.** We use the end of the following day.
 
 | WP1.4 acceptance item | State | What is left |
@@ -221,7 +221,7 @@ No replayed conversations: this adds no agent behaviour, as with WP1.1.
 | 042 | A tourist-tax exemption is stored as a code; its evidence stays with the hotel | ✅ decided · nothing to build yet | The engine and loader already take only a code (`taxExemption`). The capture screen, when built, is a picker of the rules file's codes plus a "keep the signed form" reminder; no upload |
 | 043 | Each stay's tourist tax is frozen before its registration records are purged | ⬜ decided, not built | Per-stay record (counts, amounts, rules version; no names), recomputed until the purge, fixed after; the purge waits for it; kept until the comune's assessment window for the year closes. Table, migration and RLS arrive with the first real comune |
 | 044 | Tourist tax collected online goes to the hotel's own account | ⬜ decided, not built | Interim: the booking flow keeps the tax as a note (`booking/quote.ts`). With Stripe: its own line, engine amount only, per-property flag off by default, no agent tool touches it. BookOne as collector rejected |
-| 045 | ISTAT counts guests by residence, which pre-arrival asks for | 🟨 in progress | Engine already reads `residenceCountry`/`residenceProvince` (`compliance/istat.ts`, `webtur.ts`). Pre-arrival capture: next PR. Citizenship fallback and its daily count stay |
+| 045 | ISTAT counts guests by residence, which pre-arrival asks for | ✅ as-built | Pre-arrival asks each guest's country of residence and, for Italy, the province (`stay/[token]` form, four locales); `journey/residence.ts` keeps only two-letter codes, the province only for IT, stored as `residenceCountry`/`residenceProvince`, which `compliance/istat.ts` and `webtur.ts` already read. Citizenship fallback and its daily count stay. Not done: an Italian resident without a province counts as `IT`, not flagged |
 | 024 | Replay conversations extend the evals gate | ✅ as-built (WP0.2) | 57 conversations in `packages/agents/src/evals/conversations/wp0.2/`, replayed by `evals/wp0.2/orchestrator.eval.ts`: unsafe actions 0 (gate), routing ≥ 90%, hard-rule negatives. Negative control: disabling the hard rules fails 13. The rules score is coverage, not generalisation. **Live, 2026-09-27** (Haiku 4.5 routing, Sonnet 5 actions, via OpenRouter): 85.7% on the first run — invoice/luggage sent to payments, "which documents" flagged as identity — then **100%, 0 unsafe** once the routing prompt carried each profile's description and sharper flag definitions. 35 routed turns written by us: evidence the design works on a model, not a measure of real traffic. Phoenix not yet |
 | 025 | Workflow engine deferred until a named trigger | Proposed · data collection ✅ (WP1.1) | ADR-039 starts Phase 1 on a state table + pg-boss; every obligation transition is a `compliance_obligation.*` event with `waitedSeconds`, and one SQL query answers "where is it stuck" (`docs/runbooks/compliance.md`). Decide in Phase 1 on that evidence |
 | 026 | ComplianceAdapter with a manual fallback | 🟨 port + first implementation (WP1.1) | `packages/core/src/compliance/adapter.ts`: the four methods of the WP1.1 spec, capabilities as ADR-026 lists them. Alloggiati is the first implementation, as a bridge over the Sprint 6 chain (`compliance/alloggiati.ts`); its manual fallback is the exact fixed-width file, downloadable from the arrival page (`docs/runbooks/compliance.md`). Contract suite `packages/adapters/src/compliance/contract.ts` (idempotent submit, receipts, retryability, fallback), passed by `MockComplianceAdapter` in two modes. The Alloggiati Web client and adapter are built against a local simulator (WP1.2); not built: the real endpoint, and the WebTur and imposta adapters (WP1.3–1.4) |

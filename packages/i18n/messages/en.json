@@ -1246,6 +1246,9 @@
       "citizenship": "Citizenship",
       "documentIssuer": "Issued by",
       "countryHint": "Two-letter country code, e.g. IT, AT, DE, SI",
+      "residenceCountry": "Country of residence",
+      "residenceProvince": "Province (if you live in Italy)",
+      "residenceHint": "The region counts guests by where they live, not by citizenship. Two-letter codes; the province only if you live in Italy, e.g. TS, UD, MI.",
       "required": "The property must file these with the police, so all of them are required."
     },
     "documents": {

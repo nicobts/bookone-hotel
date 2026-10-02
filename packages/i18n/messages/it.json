@@ -1246,6 +1246,9 @@
       "citizenship": "Cittadinanza",
       "documentIssuer": "Rilasciato da",
       "countryHint": "Codice stato di due lettere, es. IT, AT, DE, SI",
+      "residenceCountry": "Paese di residenza",
+      "residenceProvince": "Provincia (se risiedi in Italia)",
+      "residenceHint": "La regione conta gli ospiti in base a dove vivono, non alla cittadinanza. Codici di due lettere; la provincia solo se risiedi in Italia, ad es. TS, UD, MI.",
       "required": "La struttura deve comunicarli alla questura, quindi sono tutti obbligatori."
     },
     "documents": {

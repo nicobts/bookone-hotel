@@ -1246,6 +1246,9 @@
       "citizenship": "Državljanstvo",
       "documentIssuer": "Izdal",
       "countryHint": "Dvočrkovna oznaka države, npr. IT, AT, DE, SI",
+      "residenceCountry": "Država prebivališča",
+      "residenceProvince": "Pokrajina (če živite v Italiji)",
+      "residenceHint": "Regija šteje goste po kraju prebivališča, ne po državljanstvu. Dvočrkovne kode; pokrajino le, če živite v Italiji, npr. TS, UD, MI.",
       "required": "Nastanitev jih mora sporočiti policiji, zato so vsi obvezni."
     },
     "documents": {

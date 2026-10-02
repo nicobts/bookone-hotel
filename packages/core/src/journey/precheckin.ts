@@ -15,6 +15,7 @@ import { guestActor } from '../events/actor'
 import { applyJourneyCommandIn } from './apply'
 import { verifyStayToken } from './token'
 import { outstandingForGuest, type JourneyState } from './machine'
+import { residenceFields } from './residence'
 
 /**
  * Pre-arrival (E2.1, E2.2).
@@ -209,7 +210,9 @@ export async function resolveStay(token: string, now: Date = new Date()): Promis
  * is pleasant to type. Surname and given name are separate because the registry
  * files them separately and splitting a free-text full name is a guess that
  * gets Spanish and Hungarian names wrong; sex and citizenship are there because
- * a filing without them is rejected.
+ * a filing without them is rejected. Residence is not filed with the police; it
+ * is there for the daily ISTAT return, which counts guests by where they live
+ * (ADR-045).
  *
  * Everything except the name is optional *here* and required at staging. That
  * split is deliberate: a guest who fills in half the form on a train has their
@@ -225,6 +228,10 @@ export interface PartyInput {
   birthPlace?: string
   birthCountry?: string
   citizenship?: string
+  /** ISO alpha-2 country of residence (ADR-045). */
+  residenceCountry?: string
+  /** Two-letter Italian province, kept only when the country is IT. */
+  residenceProvince?: string
   documentType?: string
   documentNumber?: string
   documentIssuer?: string
@@ -279,6 +286,7 @@ export async function saveParty(input: {
           ...(member.birthPlace ? { birthPlace: member.birthPlace } : {}),
           ...(member.birthCountry ? { birthCountry: member.birthCountry.toUpperCase() } : {}),
           ...(member.citizenship ? { citizenship: member.citizenship.toUpperCase() } : {}),
+          ...residenceFields(member.residenceCountry, member.residenceProvince),
           ...(member.documentType ? { documentType: member.documentType } : {}),
           ...(member.documentNumber ? { documentNumber: member.documentNumber } : {}),
           ...(member.documentIssuer ? { documentIssuer: member.documentIssuer } : {}),
